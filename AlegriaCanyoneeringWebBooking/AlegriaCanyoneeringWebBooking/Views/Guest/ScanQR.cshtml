@@ -1,0 +1,94 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Guest
+
+@{
+    ViewData["Title"] = "Scan QR Code";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-qrcode me-2"></i>Scan QR Code & Confirm Reservation
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Booking / Guest Details -->
+                        <div class="col-md-6">
+                            <div class="booking-details">
+                                <h5>Guest Details</h5>
+                                <dl class="row">
+                                    <dt class="col-sm-4">ID:</dt>
+                                    <dd class="col-sm-8">@Model.Id</dd>
+
+                                    <dt class="col-sm-4">Full Name:</dt>
+                                    <dd class="col-sm-8">@Model.Fullname</dd>
+
+                                    <dt class="col-sm-4">Age:</dt>
+                                    <dd class="col-sm-8">@Model.Age</dd>
+
+                                    <dt class="col-sm-4">Gender:</dt>
+                                    <dd class="col-sm-8">@Model.Gender</dd>
+
+                                    <dt class="col-sm-4">Nationality:</dt>
+                                    <dd class="col-sm-8">@Model.Nationality</dd>
+
+                                    <dt class="col-sm-4">National Status:</dt>
+                                    <dd class="col-sm-8">@Model.NatStat</dd>
+
+                                    <dt class="col-sm-4">Arrival Date:</dt>
+                                    <dd class="col-sm-8">@Model.ArrivalDate</dd>
+
+                                    <dt class="col-sm-4">Month:</dt>
+                                    <dd class="col-sm-8">@Model.Month</dd>
+
+                                    <dt class="col-sm-4">Batch:</dt>
+                                    <dd class="col-sm-8">@Model.Batch</dd>
+
+                                    <dt class="col-sm-4">No. of Guests:</dt>
+                                    <dd class="col-sm-8">@Model.NumberOfGuests</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <!-- QR Code + Confirm -->
+                        <div class="col-md-6 text-center">
+                            <h5>QR Code</h5>
+
+                            @if (!string.IsNullOrEmpty(ViewBag.QRCodeImage))
+                            {
+                                <div class="qr-code-container mb-3">
+                                    <img src="@ViewBag.QRCodeImage" alt="Guest QR Code" class="img-fluid"
+                                         style="max-width: 250px; border: 1px solid #ddd; padding: 10px; background: white;" />
+                                </div>
+
+                                <form asp-action="ConfirmQR" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-check-circle me-2"></i>Confirm Reservation
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    QR Code could not be generated.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <a asp-action="Accept" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

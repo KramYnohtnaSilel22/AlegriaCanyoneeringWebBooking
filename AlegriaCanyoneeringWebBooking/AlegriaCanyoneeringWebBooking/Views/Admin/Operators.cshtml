@@ -1,0 +1,39 @@
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.Models.Operator>
+
+@{
+    ViewData["Title"] = "Operators Management";
+}
+
+<div class="container">
+    <h2>Operators</h2>
+    <a asp-action="CreateOperator" class="btn btn-primary mb-3">Create New Operator</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Owner Name</th>
+                <th>Gender</th>
+                <th>Business Name</th>
+                <th>Business Permit</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.OwnerName</td>
+                    <td>@item.Gender</td>
+                    <td>@item.BusinessName</td>
+                    <td>@item.BussPermit</td>
+                    <td>@item.Location</td>
+                    <td>@(item.Status == 1 ? "Active" : "Inactive")</td>
+                    <td>
+                        <a asp-action="EditOperator" asp-route-id="@item.OperatorId" class="btn btn-warning btn-sm">Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

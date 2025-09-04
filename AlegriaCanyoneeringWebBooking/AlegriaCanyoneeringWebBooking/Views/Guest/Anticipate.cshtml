@@ -1,0 +1,120 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Guest
+
+@{
+    ViewData["Title"] = "Add New Guest";
+}
+
+<div class="container">
+    <h2>Add New Guest</h2>
+    <!-- Make sure the form tag is properly closed -->
+    <form asp-action="Anticipate" method="post">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Fullname" class="control-label"></label>
+                    <input asp-for="Fullname" class="form-control" />
+                    <span asp-validation-for="Fullname" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Age" class="control-label"></label>
+                    <input asp-for="Age" class="form-control" />
+                    <span asp-validation-for="Age" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Gender" class="control-label"></label>
+                    <select asp-for="Gender" class="form-control">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <span asp-validation-for="Gender" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Nationality" class="control-label"></label>
+                    <input asp-for="Nationality" class="form-control" />
+                    <span asp-validation-for="Nationality" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="NatStat" class="control-label"></label>
+                    <input asp-for="NatStat" class="form-control" />
+                    <span asp-validation-for="NatStat" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <!-- Dropdown for Operator -->
+                <div class="form-group">
+                    <label asp-for="OperatorId" class="control-label">Operator</label>
+                    <select asp-for="OperatorId" class="form-control" asp-items="@(new SelectList(ViewBag.OperatorList, "Value", "Text"))">
+                        <option value="">Select Operator</option>
+                    </select>
+                    <span asp-validation-for="OperatorId" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Date" class="control-label"></label>
+                    <input asp-for="Date" type="date" class="form-control" />
+                    <span asp-validation-for="Date" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ArrivalDate" class="control-label"></label>
+                    <input asp-for="ArrivalDate" type="date" class="form-control" />
+                    <span asp-validation-for="ArrivalDate" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Month" class="control-label"></label>
+                    <input asp-for="Month" type="month" class="form-control" />
+                    <span asp-validation-for="Month" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="DateShort" class="control-label"></label>
+                    <input asp-for="DateShort" type="date" class="form-control" />
+                    <span asp-validation-for="DateShort" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Batch" class="control-label"></label>
+                    <input asp-for="Batch" class="form-control" readonly />
+                    <span asp-validation-for="Batch" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="NumberOfGuests" class="control-label"></label>
+                    <input asp-for="NumberOfGuests" type="number" class="form-control" min="1" />
+                    <span asp-validation-for="NumberOfGuests" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="RFID" class="control-label"></label>
+                    <input asp-for="RFID" class="form-control" />
+                    <span asp-validation-for="RFID" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-success">Save Guest</button>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        window.onload = function () {
+            const now = new Date();
+            const pad = (n) => n.toString().padStart(2, '0');
+            const batchValue = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+            document.getElementById("Batch").value = batchValue;
+        };
+    </script>
+}

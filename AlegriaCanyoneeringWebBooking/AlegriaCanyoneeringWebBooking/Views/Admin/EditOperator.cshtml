@@ -1,0 +1,64 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Operator
+
+@{
+    ViewData["Title"] = "Edit Operator";
+}
+
+<div class="container">
+    <h2>Edit Operator</h2>
+
+    <form asp-action="EditOperator" method="post">
+        <input type="hidden" asp-for="OperatorId" />
+
+        <div class="mb-3">
+            <label asp-for="OwnerName" class="form-label"></label>
+            <input asp-for="OwnerName" class="form-control" />
+            <span asp-validation-for="OwnerName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Gender" class="form-label"></label>
+            <select asp-for="Gender" class="form-select">
+                <option value="">Select Gender</option>
+                <option selected="@(Model.Gender == "Male" ? "selected" : null)">Male</option>
+                <option selected="@(Model.Gender == "Female" ? "selected" : null)">Female</option>
+                <option selected="@(Model.Gender == "Other" ? "selected" : null)">Other</option>
+            </select>
+            <span asp-validation-for="Gender" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="BusinessName" class="form-label"></label>
+            <input asp-for="BusinessName" class="form-control" />
+            <span asp-validation-for="BusinessName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="BussPermit" class="form-label">Business Permit</label>
+            <input asp-for="BussPermit" class="form-control" />
+            <span asp-validation-for="BussPermit" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Location" class="form-label"></label>
+            <input asp-for="Location" class="form-control" />
+            <span asp-validation-for="Location" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-select">
+                <option value="1">Active</option>
+                <option value="0">Inactive</option>
+            </select>
+            <span asp-validation-for="Status" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a asp-action="Operators" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

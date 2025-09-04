@@ -1,0 +1,45 @@
+﻿@{
+    ViewData["Title"] = "Database Connection Test";
+}
+
+<div class="container">
+    <h2>Database Connection Test</h2>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">
+            <h4>Error:</h4>
+            <p>@ViewBag.Error</p>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-@(ViewBag.ConnectionStatus == "Connected" ? "success" : "warning")">
+            <h4>Connection Status: @ViewBag.ConnectionStatus</h4>
+            <p>Database: @ViewBag.DatabaseName</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Operators Table</h5>
+                        <p>Records: @ViewBag.OperatorsCount</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Bookings Table</h5>
+                        <p>Records: @ViewBag.BookingsCount</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="mt-3">
+        <a href="@Url.Action("Anticipate", "Booking")" class="btn btn-primary">Go to Booking System</a>
+    </div>
+</div>

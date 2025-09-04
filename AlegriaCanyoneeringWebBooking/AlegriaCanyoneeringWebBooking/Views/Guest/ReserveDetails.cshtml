@@ -1,0 +1,80 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Guest
+
+@{
+    ViewData["Title"] = "Booking Details";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">Booking Details</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">ID:</dt>
+                        <dd class="col-sm-8">@Model.Id</dd>
+
+                        <dt class="col-sm-4">Full Name:</dt>
+                        <dd class="col-sm-8">@Model.Fullname</dd>
+
+                        <dt class="col-sm-4">Age:</dt>
+                        <dd class="col-sm-8">@Model.Age</dd>
+
+                        <dt class="col-sm-4">Nationality:</dt>
+                        <dd class="col-sm-8">@Model.Nationality</dd>
+
+                        <dt class="col-sm-4">National Status:</dt>
+                        <dd class="col-sm-8">@Model.NatStat</dd>
+
+                        <dt class="col-sm-4">Operator ID:</dt>
+                        <dd class="col-sm-8">@Model.OperatorId</dd>
+
+                        <dt class="col-sm-4">Gender:</dt>
+                        <dd class="col-sm-8">@Model.Gender</dd>
+
+                        <dt class="col-sm-4">Date:</dt>
+                        <dd class="col-sm-8">@Model.Date</dd>
+
+                        <dt class="col-sm-4">Arrival Date:</dt>
+                        <dd class="col-sm-8">@Model.ArrivalDate</dd>
+
+                        <dt class="col-sm-4">Month:</dt>
+                        <dd class="col-sm-8">@Model.Month</dd>
+                        <dt class="col-sm-4">Batch:</dt>
+                        <dd class="col-sm-8">@Model.Batch</dd>
+
+                        <dt class="col-sm-4">No. of Guests:</dt>
+                        <dd class="col-sm-8">@Model.NumberOfGuests</dd>
+
+                        <dt class="col-sm-4">Short Date:</dt>
+                        <dd class="col-sm-8">@Model.DateShort</dd>
+
+                        <dt class="col-sm-4">RFID:</dt>
+                        <dd class="col-sm-8">@Model.RFID</dd>
+
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-@(Model.BookingStatus == "confirmed" ? "success" : Model.BookingStatus == "anticipated" ? "warning" : "info")">
+                                @Model.BookingStatus
+                            </span>
+                        </dd>
+                    </dl>
+
+                    @if (!string.IsNullOrEmpty(Model.QrCode))
+                    {
+                        <div class="text-center mt-4">
+                            <h5>QR Code</h5>
+                            <img src="@Model.QrCode" alt="QR Code" class="img-fluid" style="max-width: 200px;" />
+                        </div>
+                    }
+                </div>
+                <div class="card-footer">
+                    <a asp-action="EditReserve" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+                    <a asp-action="Reserve" class="btn btn-secondary">Back to List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
