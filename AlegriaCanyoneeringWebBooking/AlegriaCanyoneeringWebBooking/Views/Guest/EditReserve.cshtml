@@ -47,20 +47,21 @@
                                     <span asp-validation-for="Nationality" class="text-danger"></span>
                                 </div>
 
-                                <div class="form-group mb-3">
-                                    <label asp-for="NatStat" class="form-label"></label>
-                                    <input asp-for="NatStat" type="number" class="form-control" />
+                                <div class="form-group">
+                                    <label asp-for="NatStat" class="control-label"></label>
+                                    <input asp-for="NatStat" class="form-control" />
                                     <span asp-validation-for="NatStat" class="text-danger"></span>
                                 </div>
                             </div>
-
                             <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label asp-for="OperatorId" class="form-label"></label>
-                                    <input asp-for="OperatorId" class="form-control" />
+                                <!-- Dropdown for Operator -->
+                                <div class="form-group">
+                                    <label asp-for="OperatorId" class="control-label">Operator</label>
+                                    <select asp-for="OperatorId" class="form-control" asp-items="@(new SelectList(ViewBag.OperatorList, "Value", "Text"))">
+                                        <option value="">Select Operator</option>
+                                    </select>
                                     <span asp-validation-for="OperatorId" class="text-danger"></span>
                                 </div>
-
                                 <div class="form-group mb-3">
                                     <label asp-for="Date" class="form-label"></label>
                                     <input asp-for="Date" class="form-control" />

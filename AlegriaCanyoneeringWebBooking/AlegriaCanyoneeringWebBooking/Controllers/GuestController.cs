@@ -39,7 +39,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
-                    Text = o.OwnerName // or any other property you want to display
+                    Text = o.BusinessName // or any other property you want to display
                 })
                 .ToList();
 
@@ -76,7 +76,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
-                    Text = o.OwnerName
+                    Text = o.BusinessName
                 })
                 .ToList();
 
@@ -106,24 +106,58 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Guest/ReserveDetails/5
         public async Task<IActionResult> ReserveDetails(int id)
         {
-            var guest = await _context.Guests.FindAsync(id);
+            // Eagerly load the 'Operator' data along with the 'Guest' data
+            var guest = await _context.Guests
+                .Include(g => g.Operator)  // Eagerly load the related 'Operator' entity
+                .FirstOrDefaultAsync(g => g.Id == id);
+
             if (guest == null)
             {
-                return NotFound();
+                return NotFound(); // If the guest is not found, return a 404 page
             }
+
+            // Pass the guest model (which includes the 'Operator') to the view
             return View(guest);
         }
 
         // GET: Guest/EditReserve/5
         public async Task<IActionResult> EditReserve(int id)
         {
-            var guest = await _context.Guests.FindAsync(id);
+            // Retrieve the guest and eagerly load the 'Operator' data
+            var guest = await _context.Guests
+                .Include(g => g.Operator)  // Eagerly load the related 'Operator' entity
+                .FirstOrDefaultAsync(g => g.Id == id);  // Fetch the guest by its ID
+
             if (guest == null)
             {
-                return NotFound();
+                return NotFound();  // If the guest is not found, return a 404 page
             }
+
+            // Retrieve operators from the database for the dropdown list
+            var operators = await _context.Operators
+                .Select(o => new SelectListItem
+                {
+                    Value = o.OperatorId.ToString(),
+                    Text = o.BusinessName // Or use any other property you want to display
+                })
+                .ToListAsync();
+
+            // If the list is null or empty, create an empty list to avoid errors
+            if (operators == null || !operators.Any()) // Ensure `System.Linq` is imported for `.Any()`
+            {
+                operators = new List<SelectListItem>
+        {
+            new SelectListItem { Text = "No operators available", Value = "" }
+        };
+            }
+
+            // Pass the operator list to the ViewBag for use in the view
+            ViewBag.OperatorList = operators;
+
+            // Pass the guest model (which includes the 'Operator') to the view
             return View(guest);
         }
+
 
         // POST: Guest/EditReserve/5
         [HttpPost]
@@ -170,14 +204,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Guest/ScanQR/5
         public async Task<IActionResult> ScanQR(int id)
         {
-            var guest = await _context.Guests.FindAsync(id);
+            // Eagerly load the 'Operator' data along with the 'Guest' data
+            var guest = await _context.Guests
+                .Include(g => g.Operator)  // Eagerly load the related 'Operator' entity
+                .FirstOrDefaultAsync(g => g.Id == id);  // Get the specific guest by ID
+
             if (guest == null)
             {
-                return NotFound();
+                return NotFound(); // If the guest is not found, return a 404
             }
 
-            // Generate QR code data based on guest model
-            string qrData = $"GuestID:{guest.Id},Name:{guest.Fullname},Age:{guest.Age},Nationality:{guest.Nationality},RFID:{guest.RFID}";
+            // Generate QR code data based on guest model, including Operator's BusinessName
+            string qrData = $"GuestID:{guest.Id},Name:{guest.Fullname},Age:{guest.Age},Nationality:{guest.Nationality},RFID:{guest.RFID},Operator:{guest.Operator?.BusinessName ?? "No Operator Available"}";
 
             // Generate QR code image as base64
             string qrCodeImage = GenerateQRCodeBase64(qrData);
@@ -210,7 +248,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             guest.QrCode = qrCodeBase64;
             guest.BookingStatus = "confirmed";
             guest.OperatorId = GetCurrentOperatorId();
-
+            
             _context.Update(guest);
             await _context.SaveChangesAsync();
 
