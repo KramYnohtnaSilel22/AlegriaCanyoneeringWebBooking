@@ -197,9 +197,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             var reservedGuests = await _context.Guests
                 .Where(g => g.BookingStatus == "reserved")
+                .Include(g => g.Operator)  // Assuming `Operator` is a navigation property
                 .ToListAsync();
+
             return View(reservedGuests);
         }
+
 
         // GET: Guest/ScanQR/5
         public async Task<IActionResult> ScanQR(int id)
