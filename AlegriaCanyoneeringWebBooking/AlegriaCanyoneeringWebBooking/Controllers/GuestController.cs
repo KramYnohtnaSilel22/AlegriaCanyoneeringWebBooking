@@ -319,7 +319,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             // Generate final QR code data
-            string qrData = $"GuestID:{guest.Id},Name:{guest.Fullname},Age:{guest.Age},Nationality:{guest.Nationality?.NatName ?? guest.NationalityType ?? "Unknown"},RFID:{guest.RFID},Status:CONFIRMED";
+            string qrData = $"GuestID:{guest.Id},Name:{guest.Fullname},Age:{guest.Age},Nationality:{guest.Nationality?.NatName ?? guest.NationalityType ?? "Unknown"},Batch:{guest.Batch},RFID:{guest.RFID},Status:CONFIRMED";
             string qrCodeBase64 = GenerateQRCodeBase64(qrData);
 
             // Update guest with QR code and confirm status
