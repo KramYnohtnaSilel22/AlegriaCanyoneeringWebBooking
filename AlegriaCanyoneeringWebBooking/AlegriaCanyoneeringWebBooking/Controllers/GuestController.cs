@@ -292,7 +292,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             // Generate QR code data - use proper nationality reference
-            string qrData = $"GuestID:{guest.Id},Name:{guest.Fullname},Age:{guest.Age},Nationality:{guest.Nationality?.NatName ?? guest.NationalityType ?? "Unknown"},RFID:{guest.RFID},Operator:{guest.Operator?.BusinessName ?? "No Operator Available"}";
+            string qrData =
+                $"Guest Details\n" +
+                $"-----------------------------------\n" +
+                $"ID             : {guest.Id}\n" +
+                $"Full Name      : {guest.Fullname}\n" +
+                $"Age            : {guest.Age}\n" +
+                $"Gender         : {guest.Gender}\n" +
+                $"Nationality    : {guest.NationalityType}\n" +
+                $"No. of Guests  : {guest.NumberOfGuests}\n" +
+                $"Nat. Status    : {guest.NationalityId}\n" +
+                $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
+                $"Booking Date   : {guest.Date:yyyy-MM-dd}\n" +
+                $"Arrival Date   : {guest.ArrivalDate:yyyy-MM-dd}\n" +
+                $"Month          : {guest.Month}\n" +
+                $"Batch          : {guest.Batch}\n" +
+                $"RFID           : {guest.RFID}\n" +
+                $"Status         : {guest.BookingStatus?.ToUpper() ?? "N/A"}\n";
 
             string qrCodeImage = GenerateQRCodeBase64(qrData);
 
@@ -318,8 +334,24 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound();
             }
 
-            // Generate final QR code data
-            string qrData = $"GuestID:{guest.Id},Name:{guest.Fullname},Age:{guest.Age},Nationality:{guest.Nationality?.NatName ?? guest.NationalityType ?? "Unknown"},Batch:{guest.Batch},RFID:{guest.RFID},Status:CONFIRMED";
+            string qrData =
+                $"Guest Details\n" +
+                $"-----------------------------------\n" +
+                $"ID             : {guest.Id}\n" +
+                $"Full Name      : {guest.Fullname}\n" +
+                $"Age            : {guest.Age}\n" +
+                $"Gender         : {guest.Gender}\n" +
+                $"Nationality    : {guest.NationalityType}\n" +
+                $"No. of Guests  : {guest.NumberOfGuests}\n" +
+                $"Nat. Status    : {guest.NationalityId}\n" +
+                $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
+                $"Booking Date   : {guest.Date:yyyy-MM-dd}\n" +
+                $"Arrival Date   : {guest.ArrivalDate:yyyy-MM-dd}\n" +
+                $"Month          : {guest.Month}\n" +
+                $"Batch          : {guest.Batch}\n" +
+                $"RFID           : {guest.RFID}\n" +
+                $"Status         : {guest.BookingStatus?.ToUpper() ?? "N/A"}\n";
+
             string qrCodeBase64 = GenerateQRCodeBase64(qrData);
 
             // Update guest with QR code and confirm status
