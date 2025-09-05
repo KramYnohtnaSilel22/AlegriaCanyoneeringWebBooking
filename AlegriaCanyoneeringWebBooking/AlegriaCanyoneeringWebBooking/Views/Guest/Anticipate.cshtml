@@ -1,127 +1,227 @@
-﻿@model AlegriaCanyoneeringWebBooking.Models.Guest
+﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
 
 @{
-    ViewData["Title"] = "Add New Guest";
+    ViewData["Title"] = "Guest Management";
 }
 
 <div class="container mt-5">
-    <h2 class="text-center text-primary mb-4">Add New Guest</h2>
+    <h2 class="text-center text-primary mb-5 fw-bold">Guest Management</h2>
 
-    <!-- Card with shadow and rounded corners for better aesthetics -->
-    <div class="card border-0 shadow-lg rounded-4">
-        <div class="card-body p-5">
-            <form asp-action="Anticipate" method="post">
-                <div class="row g-4">
+    <div class="row g-4">
+        <!-- LEFT: Add New Guest -->
+        <div class="col-md-5">
+            <div class="card shadow-lg rounded-4 border-0">
+                <div class="card-body p-4">
+                    <h4 class="text-center text-primary mb-4 fw-semibold">Add New Guest</h4>
 
-                    <!-- Left Column -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label asp-for="Fullname" class="form-label">Full Name</label>
-                            <input asp-for="Fullname" class="form-control form-control-lg" placeholder="Enter full name" />
-                            <span asp-validation-for="Fullname" class="text-danger"></span>
+                    <form asp-action="Anticipate" method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Full Name</label>
+                            <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="Enter full name" />
+                            <span asp-validation-for="NewGuest.Fullname" class="text-danger"></span>
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="Age" class="form-label">Age</label>
-                            <input asp-for="Age" type="number" class="form-control form-control-lg" placeholder="Enter age" />
-                            <span asp-validation-for="Age" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Age" class="form-label fw-medium">Age</label>
+                            <input asp-for="NewGuest.Age" type="number" class="form-control form-control-lg" placeholder="Enter age" />
+                            <span asp-validation-for="NewGuest.Age" class="text-danger"></span>
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="Gender" class="form-label">Gender</label>
-                            <select asp-for="Gender" class="form-select form-select-lg">
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Gender" class="form-label fw-medium">Gender</label>
+                            <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
                                 <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Other</option>
                             </select>
-                            <span asp-validation-for="Gender" class="text-danger"></span>
+                            <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="Nationality" class="form-label">Nationality</label>
-                            <input asp-for="Nationality" class="form-control form-control-lg" placeholder="Enter nationality" />
-                            <span asp-validation-for="Nationality" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Nationality" class="form-label fw-medium">Nationality</label>
+                            <input asp-for="NewGuest.Nationality" class="form-control form-control-lg" placeholder="Enter nationality" />
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="NatStat" class="form-label">Nationality Status</label>
-                            <input asp-for="NatStat" class="form-control form-control-lg" placeholder="Enter nationality status" />
-                            <span asp-validation-for="NatStat" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.NatStat" class="form-label fw-medium">Nationality Status</label>
+                            <input asp-for="NewGuest.NatStat" class="form-control form-control-lg" placeholder="Enter nationality status" />
                         </div>
-                    </div>
 
-                    <!-- Right Column -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label asp-for="OperatorId" class="form-label">Operator</label>
-                            <select asp-for="OperatorId" class="form-select form-select-lg" asp-items="@(new SelectList(ViewBag.OperatorList, "Value", "Text"))">
-                                <option value="">Select Operator</option>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
+                            <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList">
+                                <option value="">-- Select Operator --</option>
                             </select>
-                            <span asp-validation-for="OperatorId" class="text-danger"></span>
+                            <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="Date" class="form-label">Booking Date</label>
-                            <input asp-for="Date" type="date" class="form-control form-control-lg" />
-                            <span asp-validation-for="Date" class="text-danger"></span>
+                        <div class="mb-3 row g-3">
+                            <div class="col">
+                                <label asp-for="NewGuest.Date" class="form-label fw-medium">Booking Date</label>
+                                <input asp-for="NewGuest.Date" type="date" class="form-control form-control-lg" />
+                            </div>
+                            <div class="col">
+                                <label asp-for="NewGuest.ArrivalDate" class="form-label fw-medium">Arrival Date</label>
+                                <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control form-control-lg" />
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="ArrivalDate" class="form-label">Arrival Date</label>
-                            <input asp-for="ArrivalDate" type="date" class="form-control form-control-lg" />
-                            <span asp-validation-for="ArrivalDate" class="text-danger"></span>
+                        <div class="mb-3 row g-3">
+                            <div class="col">
+                                <label asp-for="NewGuest.Month" class="form-label fw-medium">Month</label>
+                                <input asp-for="NewGuest.Month" type="month" class="form-control form-control-lg" />
+                            </div>
+                            <div class="col">
+                                <label asp-for="NewGuest.DateShort" class="form-label fw-medium">Short Date</label>
+                                <input asp-for="NewGuest.DateShort" type="date" class="form-control form-control-lg" />
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="Month" class="form-label">Month</label>
-                            <input asp-for="Month" type="month" class="form-control form-control-lg" />
-                            <span asp-validation-for="Month" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.NumberOfGuests" class="form-label fw-medium">Number of Guests</label>
+                            <input asp-for="NewGuest.NumberOfGuests" type="number" min="1" class="form-control form-control-lg" />
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="DateShort" class="form-label">Short Date</label>
-                            <input asp-for="DateShort" type="date" class="form-control form-control-lg" />
-                            <span asp-validation-for="DateShort" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.RFID" class="form-label fw-medium">RFID</label>
+                            <input asp-for="NewGuest.RFID" class="form-control form-control-lg" />
                         </div>
 
-                        <div class="form-group">
-                            <label asp-for="Batch" class="form-label">Batch</label>
-                            <input asp-for="Batch" class="form-control form-control-lg" readonly />
-                            <span asp-validation-for="Batch" class="text-danger"></span>
-                        </div>
+                        <!-- Hidden Auto Fields -->
+                        <input asp-for="NewGuest.Batch" type="hidden" />
 
-                        <div class="form-group">
-                            <label asp-for="NumberOfGuests" class="form-label">Number of Guests</label>
-                            <input asp-for="NumberOfGuests" type="number" class="form-control form-control-lg" min="1" />
-                            <span asp-validation-for="NumberOfGuests" class="text-danger"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label asp-for="RFID" class="form-label">RFID</label>
-                            <input asp-for="RFID" class="form-control form-control-lg" />
-                            <span asp-validation-for="RFID" class="text-danger"></span>
-                        </div>
-                    </div>
-
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Save Guest</button>
+                    </form>
                 </div>
-
-                <!-- Submit Buttons -->
-                <div class="form-group d-flex justify-content-between mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3">Save Guest</button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
+        <!-- RIGHT: Reserved Guests -->
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                    <h4 class="mb-0 fw-semibold">Reserved Guests</h4>
+                    <a asp-action="Accept" class="btn btn-success btn-sm">
+                        <i class="fas fa-check-circle"></i> View Acceptable
+                    </a>
+                </div>
 
-@section Scripts {
-    <script>
-        window.onload = function () {
-            const now = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            const batchValue = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
-            document.getElementById("Batch").value = batchValue;
-        };
-    </script>
-}
+                <div class="card-body">
+                    @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
+                    {
+                        <div class="table-responsive rounded-3" style="max-height: 600px; overflow-y: auto;">
+                            <table class="table table-striped table-hover table-bordered align-middle mb-0" style="width: 1100px;">
+                                <thead class="table-dark text-center">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Full Name</th>
+                                        <th>Age</th>
+                                        <th>Gender</th>
+                                        <th>Nationality</th>
+                                        <th>Nat. Status</th>
+                                        <th>Operator</th>
+                                        <th>Date</th>
+                                        <th>Arrival Date</th>
+                                        <th>Month</th>
+                                        <th>Date Short</th>
+                                        <th>Batch</th>
+                                        <th>No. Guests</th>
+                                        <th>RFID</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var guest in Model.ReservedGuests)
+                                    {
+                                        <tr>
+                                            <td>@guest.Id</td>
+                                            <td>@guest.Fullname</td>
+                                            <td>@guest.Age</td>
+                                            <td>@guest.Gender</td>
+                                            <td>@guest.Nationality</td>
+                                            <td>@guest.NatStat</td>
+                                            <td>@guest.Operator.BusinessName</td>
+                                            <td>@guest.Date</td>
+                                            <td>@guest.ArrivalDate</td>
+                                            <td>@guest.Month</td>
+                                            <td>@guest.DateShort</td>
+                                            <td>@guest.Batch</td>
+                                            <td>@guest.NumberOfGuests</td>
+                                            <td>@guest.RFID</td>
+                                            <td>
+                                                <span class="badge bg-@(guest.BookingStatus == "anticipated" ? "info" :
+                                                                guest.BookingStatus == "reserved" ? "warning" :
+                                                                guest.BookingStatus == "confirmed" ? "success" : "secondary")">
+                                                    @guest.BookingStatus
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a asp-action="ReserveDetails" asp-route-id="@guest.Id" class="btn btn-outline-info btn-sm me-1">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a asp-action="EditReserve" asp-route-id="@guest.Id" class="btn btn-outline-warning btn-sm me-1">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                @if (guest.BookingStatus == "anticipated")
+                                                {
+                                                    <form asp-action="UpdateStatus" method="post" style="display:inline;">
+                                                        <input type="hidden" name="id" value="@guest.Id" />
+                                                        <input type="hidden" name="status" value="reserved" />
+                                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                            <i class="fas fa-check"></i> Reserve
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center shadow-sm rounded-3 py-4 mt-3">
+                            <i class="fas fa-exclamation-triangle fa-lg me-2"></i>No Guests Found
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+
+        @section Styles {
+            <style>
+                .form-label {
+                    font-weight: 500;
+                }
+
+                .card {
+                    border-radius: 1rem;
+                }
+
+                .table th, .table td {
+                    vertical-align: middle;
+                    text-align: center;
+                }
+
+                .table-hover tbody tr:hover {
+                    background-color: #f1f1f1;
+                }
+
+                .badge {
+                    font-size: 0.85rem;
+                    padding: 0.4em 0.8em;
+                }
+
+                .btn-sm {
+                    font-size: 0.85rem;
+                    padding: 0.35rem 0.7rem;
+                }
+            </style>
+        }
+
+

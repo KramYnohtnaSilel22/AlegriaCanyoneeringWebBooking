@@ -53,7 +53,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Display(Name = "Month")]
         public string Month { get; set; }
 
-        [Required(ErrorMessage = "Short date is required")]
+    
         [StringLength(100, ErrorMessage = "Short date cannot exceed 100 characters")]
         [Display(Name = "Short Date")]
         public string DateShort { get; set; }
@@ -66,7 +66,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? QrCode { get; set; }
         [ForeignKey("Operator")]
         [Column("operatorid")]
-        public int OperatorId { get; set; }
+        public int? OperatorId { get; set; }
 
         public Operator? Operator { get; set; }  // navigation
 

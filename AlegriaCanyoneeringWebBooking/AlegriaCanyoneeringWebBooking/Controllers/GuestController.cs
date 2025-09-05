@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 
 using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using AlegriaCanyoneeringWebBooking.ViewModel;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -32,46 +33,64 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
-        public IActionResult Anticipate()
+        // GET: Anticipate (Add + Reserved Guests in one page)
+        public async Task<IActionResult> Anticipate()
         {
-            // Retrieve operators from the database
-            var operators = _context.Operators
+            var operators = await _context.Operators
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
-                    Text = o.BusinessName // or any other property you want to display
+                    Text = o.BusinessName
                 })
-                .ToList();
+                .ToListAsync();
 
-            // If the list is null or empty, create an empty list to avoid errors
-            if (operators == null || !operators.Any())  // Use Any() after importing System.Linq
+            if (!operators.Any())
             {
                 operators = new List<SelectListItem>
-            {
-                new SelectListItem { Text = "No operators available", Value = "" }
-            };
+        {
+            new SelectListItem { Text = "No operators available", Value = "" }
+        };
             }
 
-            // Pass the operator list to the ViewBag
             ViewBag.OperatorList = operators;
 
-            return View();
+            // ✅ Load Guests with Operator
+            var reservedGuests = await _context.Guests
+                .Include(g => g.Operator)
+                .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
+                .ToListAsync();
+
+            var model = new GuestListViewModel
+            {
+                NewGuest = new Guest(),
+                ReservedGuests = reservedGuests ?? new List<Guest>()
+            };
+
+            return View(model);
         }
 
-        // POST Action
+
+        // POST: Anticipate
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Anticipate(Guest guest)
+        public async Task<IActionResult> Anticipate(GuestListViewModel model)
         {
             if (ModelState.IsValid)
             {
+                var guest = model.NewGuest;
                 guest.BookingStatus = "anticipated";
+                // ✅ Assign Batch if it’s not set
+                if (string.IsNullOrEmpty(guest.Batch))
+                {
+                    guest.Batch = DateTime.Now.ToString("yyyyMMddHHmmss"); // unique batch id
+                }
                 _context.Add(guest);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Reserve));
+
+                return RedirectToAction(nameof(Anticipate));
             }
 
-            // If the model state is not valid, repopulate the operator list and return the view
+            // If validation fails, repopulate operators and guests
             var operators = _context.Operators
                 .Select(o => new SelectListItem
                 {
@@ -83,14 +102,20 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (operators == null || !operators.Any())
             {
                 operators = new List<SelectListItem>
-            {
-                new SelectListItem { Text = "No operators available", Value = "" }
-            };
+        {
+            new SelectListItem { Text = "No operators available", Value = "" }
+        };
             }
 
             ViewBag.OperatorList = operators;
-            return View(guest);
+
+            // Reload reserved guests
+            model.ReservedGuests = _context.Guests.ToList();
+
+            return View(model);
         }
+
+
 
 
         // GET: Guest/Reserve
@@ -251,7 +276,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             guest.QrCode = qrCodeBase64;
             guest.BookingStatus = "confirmed";
             guest.OperatorId = GetCurrentOperatorId();
-            
+
             _context.Update(guest);
             await _context.SaveChangesAsync();
 
@@ -283,7 +308,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context.Update(guest);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Reserve));
+            return RedirectToAction(nameof(Anticipate));
         }
 
         // Method to generate QR code as Base64 string
