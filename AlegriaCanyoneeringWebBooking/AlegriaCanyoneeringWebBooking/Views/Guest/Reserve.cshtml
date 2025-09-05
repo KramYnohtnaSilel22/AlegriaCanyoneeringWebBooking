@@ -1,4 +1,4 @@
-﻿@* @model IEnumerable<AlegriaCanyoneeringWebBooking.Models.Guest>
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.Models.Guest>
 
 @{
     ViewData["Title"] = "Reserved Guests";
@@ -49,8 +49,8 @@
                             <td>@guest.Fullname</td>
                             <td>@guest.Age</td>
                             <td>@guest.Gender</td>
-                            <td>@guest.Nationality</td>
-                            <td>@guest.NatStat</td>
+                            <td>@guest.NationalityType</td>
+                            <td>@guest.Nationality.NatName</td>
                             <td>@guest.Operator?.BusinessName</td>
                             <td>@guest.Date</td>
                             <td>@guest.ArrivalDate</td>
@@ -171,4 +171,3 @@
         });
     </script>
 }
- *@

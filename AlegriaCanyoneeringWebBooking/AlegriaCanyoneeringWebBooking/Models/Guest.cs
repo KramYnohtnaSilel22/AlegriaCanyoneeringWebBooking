@@ -26,12 +26,17 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Batch { get; set; }
         [Required(ErrorMessage = "Nationality is required")]
         [StringLength(10000, ErrorMessage = "Nationality cannot exceed 10000 characters")]
+        [Column("nationality")]
         [Display(Name = "Nationality")]
-        public string Nationality { get; set; }
+        public string NationalityType { get; set; }
 
         [Required(ErrorMessage = "National status is required")]
         [Display(Name = "National Status")]
-        public string NatStat { get; set; }
+        [Column("nat_stat")]
+        public int NationalityId { get; set; }
+
+        [ForeignKey(nameof(NationalityId))]
+        public Nationality? Nationality { get; set; }
 
         [Required(ErrorMessage = "Gender is required")]
         [StringLength(1000, ErrorMessage = "Gender cannot exceed 1000 characters")]

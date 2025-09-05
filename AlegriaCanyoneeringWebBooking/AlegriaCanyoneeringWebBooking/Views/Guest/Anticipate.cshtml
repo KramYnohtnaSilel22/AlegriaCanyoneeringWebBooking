@@ -41,16 +41,24 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="NewGuest.Nationality" class="form-label fw-medium">Nationality</label>
-                            <input asp-for="NewGuest.Nationality" class="form-control form-control-lg" placeholder="Enter nationality" />
+                            <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality</label>
+                            <select asp-for="NewGuest.NationalityType" class="form-select form-select-lg">
+                                <option value="">Select Nationality</option>
+                                <option value="Local">Local</option>
+                                <option value="Foreign">Foreign</option>
+                            </select>
+                            <span asp-validation-for="NewGuest.NationalityType" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="NewGuest.NatStat" class="form-label fw-medium">Nationality Status</label>
-                            <input asp-for="NewGuest.NatStat" class="form-control form-control-lg" placeholder="Enter nationality status" />
+                            <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Status</label>
+                            <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList">
+                                <option value="">-- Select Country --</option>
+                            </select>
+                            <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-3">  
                             <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
                             <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList">
                                 <option value="">-- Select Operator --</option>
@@ -141,8 +149,8 @@
                                             <td>@guest.Fullname</td>
                                             <td>@guest.Age</td>
                                             <td>@guest.Gender</td>
-                                            <td>@guest.Nationality</td>
-                                            <td>@guest.NatStat</td>
+                                            <td>@guest.NationalityType</td>
+                                            <td>@guest.Nationality.NatName</td>
                                             <td>@guest.Operator.BusinessName</td>
                                             <td>@guest.Date</td>
                                             <td>@guest.ArrivalDate</td>
