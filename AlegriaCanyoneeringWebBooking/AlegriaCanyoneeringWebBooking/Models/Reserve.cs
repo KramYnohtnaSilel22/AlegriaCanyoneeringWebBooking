@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AlegriaCanyoneeringWebBooking.Models
 {
-    [Table("Reserve")]  // Table name in database
+    [Table("reserve")]  // Table name in database
     public class Reserve
     {
         [Key]
