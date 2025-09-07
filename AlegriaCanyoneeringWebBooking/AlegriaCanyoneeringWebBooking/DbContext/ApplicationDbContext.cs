@@ -7,6 +7,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
         }
+        public DbSet<Batch> Batchs { get; set; }
         public DbSet<Guest> Guests { get; set; }
         public DbSet<Operator> Operators { get; set; }
         public DbSet<Reserve> Reserves { get; set; }
@@ -32,7 +33,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.Property(e => e.Fullname).HasColumnName("fullname").HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.Age).HasColumnName("age").HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.NationalityType).HasColumnName("nationality").HasMaxLength(10000).IsRequired();
-                entity.Property(e => e.NationalityId).HasColumnName("nat_stat").IsRequired();
+                entity.Property(e => e.NationalityId).HasColumnName("natstat").IsRequired();
                 entity.Property(e => e.OperatorId).HasColumnName("operatorid").IsRequired();
                 entity.Property(e => e.Gender).HasColumnName("gender").HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.Date).HasColumnName("date").HasMaxLength(1000).IsRequired();
@@ -85,6 +86,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
             });
 
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
+            modelBuilder.Entity<Batch>().ToTable("tblbatch");
         }
     }
 }
