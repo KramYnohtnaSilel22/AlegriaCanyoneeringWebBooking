@@ -1,0 +1,49 @@
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.Models.Driver>
+
+@{
+    ViewData["Title"] = "Drivers List";
+}
+
+<h2 class="mb-3">Drivers</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Add New Driver</a>
+</p>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Ref ID</th>
+            <th>First Name</th>
+            <th>Middle Name</th>
+            <th>Last Name</th>
+            <th>Phone</th>
+            <th>Contact</th>
+            <th>Address</th>
+            <th>Image</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var driver in Model)
+        {
+            <tr>
+                <td>@driver.RefId</td>
+                <td>@driver.FName</td>
+                <td>@driver.MName</td>
+                <td>@driver.LName</td>
+                <td>@driver.PNumber</td>
+                <td>@driver.CNumber</td>
+                <td>@driver.Address</td>
+                <td>
+                    <img src="@driver.Image" alt="Driver Image" width="80" height="80" class="rounded" />
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@driver.Id" class="btn btn-info btn-sm">Details</a>
+                    <a asp-action="Edit" asp-route-id="@driver.Id" class="btn btn-warning btn-sm">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@driver.Id" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

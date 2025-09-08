@@ -14,6 +14,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
        
         public DbSet<Nationality> Nationalities { get; set; }
 
+        public DbSet<Driver> Drivers { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -87,6 +89,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
+            modelBuilder.Entity<Driver>().ToTable("driver_details");
         }
     }
 }
