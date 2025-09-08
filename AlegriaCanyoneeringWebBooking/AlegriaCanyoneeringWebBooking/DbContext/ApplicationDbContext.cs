@@ -86,6 +86,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
             });
 
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
+            modelBuilder.Entity<Batch>().ToTable("tblbatch");
         }
     }
 }
