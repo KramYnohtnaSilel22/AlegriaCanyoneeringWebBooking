@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -41,8 +42,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Batchs/Create
         public IActionResult Create()
         {
+            ViewBag.OperatorId = new SelectList(_context.Operators, "OperatorId", "OwnerName");
             return View();
         }
+
 
         // POST: Batchs/Create
         [HttpPost]
@@ -58,7 +61,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(batch);
         }
 
-        // GET: Batchs/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -66,6 +68,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var batch = await _context.Batchs.FindAsync(id);
             if (batch == null) return NotFound();
 
+            ViewBag.OperatorId = new SelectList(_context.Operators, "OperatorId", "OwnerName", batch.OperatorId);
             return View(batch);
         }
 
@@ -95,21 +98,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(batch);
         }
 
-        // GET: Batchs/Delete/5
+        // GET: Batches/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
 
             var batch = await _context.Batchs
-                .Include(b => b.Operator)
+                .Include(b => b.Operator) // include Operator so OwnerName is available
                 .FirstOrDefaultAsync(m => m.BatchId == id);
 
             if (batch == null) return NotFound();
 
-            return View(batch);
+            return View(batch);  // Returns Delete.cshtml confirmation page
         }
 
-        // POST: Batchs/Delete/5
+        // POST: Batches/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

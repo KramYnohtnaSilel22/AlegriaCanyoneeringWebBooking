@@ -34,8 +34,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int TotalNoOfGuest { get; set; }
 
         // Since you used varchar(100) for date, I recommend storing it as DateTime
-        [Column("arrivaldate")]
-        public string ArrivalDate { get; set; }
+        public DateTime ArrivalDate { get; set; }
+
         // 👉 You can change this to DateTime if you want:
         // public DateTime ArrivalDate { get; set; }
     }
