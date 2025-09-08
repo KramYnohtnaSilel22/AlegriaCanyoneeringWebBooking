@@ -61,9 +61,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Display(Name = "Short Date")]
         public string DateShort { get; set; }
 
-        [Required(ErrorMessage = "RFID is required")]
-        [Display(Name = "RFID")]
-        public int RFID { get; set; }
+        //[Required(ErrorMessage = "RFID is required")]
+        //[Display(Name = "RFID")]
+        public string? RFID { get; set; }
         public string BookingStatus { get; set; } = "anticipated";
 
         public string? QrCode { get; set; }

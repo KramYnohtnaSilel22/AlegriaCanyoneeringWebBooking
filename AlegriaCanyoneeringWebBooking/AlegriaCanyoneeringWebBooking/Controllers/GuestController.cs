@@ -88,8 +88,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(model);
         }
-
-
         // POST: Anticipate
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -105,6 +103,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     guest.Batch = DateTime.Now.ToString("yyyyMMddHHmmss");
                 }
+
+                // Auto-generate RFID if not already set
+                if (string.IsNullOrEmpty(guest.RFID))
+                {
+                    guest.RFID = GenerateRFID();
+                }
+
 
                 _context.Add(guest);
                 await _context.SaveChangesAsync();
@@ -124,7 +129,49 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(model);
         }
 
-        // Helper method to populate dropdowns
+        // Helper method to auto-generate a unique RFID
+        private string GenerateRFID()
+        {
+            // Generates a 12-character unique alphanumeric RFID prefixed with "RFID"
+            return "RFID" + Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
+        }
+
+
+        //// POST: Anticipate
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Anticipate(GuestListViewModel model)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        var guest = model.NewGuest;
+        //        guest.BookingStatus = "anticipated";
+
+        //        // Assign Batch if it's not set
+        //        if (string.IsNullOrEmpty(guest.Batch))
+        //        {
+        //            guest.Batch = DateTime.Now.ToString("yyyyMMddHHmmss");
+        //        }
+
+        //        _context.Add(guest);
+        //        await _context.SaveChangesAsync();
+
+        //        return RedirectToAction(nameof(Anticipate));
+        //    }
+
+        //    // If validation fails, repopulate dropdowns
+        //    await PopulateDropdowns();
+
+        //    // Reload reserved guests
+        //    model.ReservedGuests = await _context.Guests
+        //        .Include(g => g.Operator)
+        //        .Include(g => g.Nationality)
+        //        .ToListAsync();
+
+        //    return View(model);
+        //}
+
+        //// Helper method to populate dropdowns
         private async Task PopulateDropdowns()
         {
             // Populate operators
