@@ -32,6 +32,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.ToTable("guest");
                 entity.HasKey(e => e.Id);
 
+
                 // Column mappings
                 entity.Property(e => e.Id).HasColumnName("id");
                 entity.Property(e => e.Fullname).HasColumnName("fullname").HasMaxLength(1000).IsRequired();
@@ -49,6 +50,13 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.Property(e => e.QrCode).HasColumnName("QrCode").HasMaxLength(500);
                 entity.Property(e => e.NumberOfGuests).HasColumnName("number_of_guests").IsRequired();
                 entity.Property(e => e.Batch).HasColumnName("batch").HasMaxLength(100);
+
+
+                modelBuilder.Entity<Guest>()
+      .HasOne(g => g.Driver)
+      .WithMany(d => d.Guests)
+      .HasForeignKey(g => g.DriverId);
+
 
                 // Foreign key relationships
                 entity.HasOne(g => g.Operator)

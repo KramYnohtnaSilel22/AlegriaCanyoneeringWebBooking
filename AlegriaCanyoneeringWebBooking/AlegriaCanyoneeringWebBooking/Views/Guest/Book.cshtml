@@ -1,0 +1,118 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Guest
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Book Guest";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Finalize Booking</h4>
+                </div>
+
+                <div class="card-body">
+                    <form asp-action="Book" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name</label>
+                                <p class="form-control-plaintext">@Model.Fullname</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Age</label>
+                                <p class="form-control-plaintext">@Model.Age</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Gender</label>
+                                <p class="form-control-plaintext">@Model.Gender</p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Nationality</label>
+                                <p class="form-control-plaintext">@Model.NationalityType</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">National Status</label>
+                                <p class="form-control-plaintext">@Model.Nationality?.NatName</p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Operator</label>
+                                <p class="form-control-plaintext">@Model.Operator?.BusinessName</p>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Date</label>
+                                <p class="form-control-plaintext">@Model.Date?</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Arrival Date</label>
+                                <p class="form-control-plaintext">@Model.ArrivalDate?</p>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Month</label>
+                                <p class="form-control-plaintext">@Model.Month</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Batch</label>
+                                <p class="form-control-plaintext">@Model.Batch</p>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Guests</label>
+                                <p class="form-control-plaintext">@Model.NumberOfGuests</p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">RFID</label>
+                                <p class="form-control-plaintext">@Model.RFID</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Status</label>
+                                <p class="form-control-plaintext text-capitalize">@Model.BookingStatus</p>
+                            </div>
+
+                            <div class="col-md-12 mt-2">
+                                <label class="form-label" for="driverId">Assign Driver</label>
+                                <select class="form-select" name="driverId">
+                                    <option value="">-- No Driver Assigned --</option>
+                                    @foreach (var driver in ViewBag.DriverList as List<SelectListItem>)
+                                    {
+                                        <option value="@driver.Value">@driver.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+
+                            <div class="col-md-12 mt-4 d-flex justify-content-between">
+                                <a asp-action="Accept" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to List
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check-circle"></i> Confirm Booking
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .form-control-plaintext {
+            border: 1px solid #dee2e6;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            background-color: #f8f9fa;
+        }
+    </style>
+}

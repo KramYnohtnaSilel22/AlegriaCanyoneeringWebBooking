@@ -93,7 +93,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Driver driver, IFormFile? imageFile)
         {
-            if (id != driver.Id) return NotFound();
+            if (id != driver.DriverId) return NotFound();
 
             if (ModelState.IsValid)
             {
@@ -121,7 +121,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Drivers.Any(e => e.Id == driver.Id))
+                    if (!_context.Drivers.Any(e => e.DriverId == driver.DriverId))
                         return NotFound();
                     else
                         throw;

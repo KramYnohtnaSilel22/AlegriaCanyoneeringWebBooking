@@ -129,7 +129,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
                     <h4 class="mb-0 fw-semibold">Reserved Guests</h4>
                     <a asp-action="Accept" class="btn btn-success btn-sm">
-                        <i class="fas fa-check-circle"></i> View Acceptable
+                        <i class="fas fa-check-circle"></i> View Final Bookings
                     </a>
                 </div>
 
@@ -193,14 +193,12 @@
                                                 </a>
                                                 @if (guest.BookingStatus == "anticipated")
                                                 {
-                                                    <form asp-action="UpdateStatus" method="post" style="display:inline;">
+                                                    <form asp-action="UpdateStatus" method="post">
                                                         <input type="hidden" name="id" value="@guest.Id" />
                                                         <input type="hidden" name="status" value="reserved" />
-                                                        <button type="submit" class="btn btn-outline-success btn-sm">
-                                                            <i class="fas fa-check"></i> Reserve
-                                                        </button>
-
+                                                        <button type="submit" class="btn btn-success btn-sm">Reserved</button>
                                                     </form>
+
                                                 }
                                             </td>
                                         </tr>

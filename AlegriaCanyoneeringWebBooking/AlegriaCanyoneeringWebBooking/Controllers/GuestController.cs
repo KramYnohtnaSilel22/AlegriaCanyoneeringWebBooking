@@ -217,32 +217,33 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
-        // GET: Guest/Reserve
-        public async Task<IActionResult> Reserve()
-        {
-            var anticipatedGuests = await _context.Guests
-        .Include(g => g.Operator)
-        .Where(g => g.BookingStatus == "anticipated")
-        .ToListAsync();
-            return View(anticipatedGuests);
-        }
         // GET: Guest/ReserveDetails/5
         public async Task<IActionResult> ReserveDetails(int id)
         {
-            // Eagerly load the 'Operator' data along with the 'Guest' data
+            // Eagerly load the related entities
             var guest = await _context.Guests
                 .Include(g => g.Operator)
-                .Include(g => g.Nationality) // Eagerly load the related 'Operator' entity
+                .Include(g => g.Nationality)
+                .Include(g => g.Driver) // ✅ Include Driver
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
             {
-                return NotFound(); // If the guest is not found, return a 404 page
+                return NotFound();
             }
+            // ✅ Load drivers for dropdown
+            ViewBag.DriverList = await _context.Drivers
+                .Select(d => new SelectListItem
+                {
+                    Value = d.DriverId.ToString(),
+                    Text = d.FName
+                })
+                .ToListAsync();
 
-            // Pass the guest model (which includes the 'Operator') to the view
+
             return View(guest);
         }
+
 
         // GET: Guest/EditReserve/5
         public async Task<IActionResult> EditReserve(int id)
@@ -351,17 +352,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(guest);
         }
-
         // GET: Guest/Accept
         public async Task<IActionResult> Accept()
         {
-            var reservedGuests = await _context.Guests
-                .Where(g => g.BookingStatus == "reserved")
-                .Include(g => g.Operator)
+            var confirmedGuests = await _context.Guests
                 .Include(g => g.Nationality)
+                .Include(g => g.Operator)
+                .Include(g => g.Driver)
+                .Where(g => g.BookingStatus == "reserved")
                 .ToListAsync();
 
-            return View(reservedGuests);
+            return View(confirmedGuests);
         }
 
         // GET: Guest/ScanQR/5
@@ -370,6 +371,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var guest = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
+                .Include(g => g.Driver) // ✅ Include Driver
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
@@ -377,7 +379,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound();
             }
 
-            // Generate QR code data - use proper nationality reference
+            // ✅ Load list of available drivers for dropdown in View
+            ViewBag.DriverList = await _context.Drivers
+                .Select(d => new SelectListItem
+                {
+                    Value = d.DriverId.ToString(),
+                    Text = d.FName
+                })
+                .ToListAsync();
+
+            // ✅ QR Code data with driver info
             string qrData =
                 $"Guest Details\n" +
                 $"-----------------------------------\n" +
@@ -389,6 +400,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 $"No. of Guests  : {guest.NumberOfGuests}\n" +
                 $"Nat. Status    : {guest.NationalityId}\n" +
                 $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
+               $"Driver         : {(guest.Driver != null ? guest.Driver.FName : "None")}\n" +
                 $"Booking Date   : {guest.Date:yyyy-MM-dd}\n" +
                 $"Arrival Date   : {guest.ArrivalDate:yyyy-MM-dd}\n" +
                 $"Month          : {guest.Month}\n" +
@@ -396,23 +408,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 $"RFID           : {guest.RFID}\n" +
                 $"Status         : {guest.BookingStatus?.ToUpper() ?? "N/A"}\n";
 
-            string qrCodeImage = GenerateQRCodeBase64(qrData);
-
-            ViewBag.QRCodeImage = qrCodeImage;
+            ViewBag.QRCodeImage = GenerateQRCodeBase64(qrData);
             ViewBag.QRData = qrData;
             ViewBag.Guest = guest;
 
             return View(guest);
         }
 
-        // POST: Guest/ConfirmQR/5
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmQR(int id)
+        public async Task<IActionResult> ConfirmQR(int id, int? driverId)
         {
             var guest = await _context.Guests
                 .Include(g => g.Nationality)
-                .Include(g => g.Operator) // Include operator to check existing value
+                .Include(g => g.Operator)
+                .Include(g => g.Driver) // Include Driver
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
@@ -420,6 +431,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound();
             }
 
+            // Assign Driver if provided
+            if (driverId.HasValue)
+            {
+                var driver = await _context.Drivers.FindAsync(driverId.Value);
+                if (driver != null)
+                {
+                    guest.DriverId = driverId;
+                }
+            }
+
+            // Generate QR Data
             string qrData =
                 $"Guest Details\n" +
                 $"-----------------------------------\n" +
@@ -431,40 +453,24 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 $"No. of Guests  : {guest.NumberOfGuests}\n" +
                 $"Nat. Status    : {guest.NationalityId}\n" +
                 $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
+                    $"Driver         : {(guest.Driver != null ? guest.Driver.FName : "None")}\n" +
+                $"Driver         : {guest.Driver.FName ?? "None"}\n" +
                 $"Booking Date   : {guest.Date:yyyy-MM-dd}\n" +
                 $"Arrival Date   : {guest.ArrivalDate:yyyy-MM-dd}\n" +
                 $"Month          : {guest.Month}\n" +
                 $"Batch          : {guest.Batch}\n" +
                 $"RFID           : {guest.RFID}\n" +
-                $"Status         : {guest.BookingStatus?.ToUpper() ?? "N/A"}\n";
+                $"Status         : confirmed\n";
 
-            string qrCodeBase64 = GenerateQRCodeBase64(qrData);
-
-            // Update guest with QR code and confirm status
-            guest.QrCode = qrCodeBase64;
+            guest.QrCode = GenerateQRCodeBase64(qrData);
             guest.BookingStatus = "confirmed";
-
-            // DON'T change OperatorId - keep the existing one or set to null if not needed
-            // Remove this problematic line: guest.OperatorId = GetCurrentOperatorId();
-
-            // If you really need to set an operator, do this instead:
-            if (!guest.OperatorId.HasValue)
-            {
-                // Get the first available operator or a default one
-                var firstOperator = await _context.Operators.FirstOrDefaultAsync();
-                if (firstOperator != null)
-                {
-                    guest.OperatorId = firstOperator.OperatorId;
-                }
-                // If no operators exist, leave OperatorId as null (make sure your model allows this)
-            }
 
             try
             {
                 _context.Update(guest);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Guest confirmed successfully with QR Code!";
+                TempData["SuccessMessage"] = "Guest confirmed with Driver!";
                 return RedirectToAction(nameof(Accept));
             }
             catch (DbUpdateException ex)
@@ -485,7 +491,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return 0;
         }
 
-        // POST: Guest/UpdateStatus
         [HttpPost]
         public async Task<IActionResult> UpdateStatus(int id, string status)
         {
@@ -499,8 +504,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context.Update(guest);
             await _context.SaveChangesAsync();
 
+            // ✅ Redirect to Accept if status is confirmed
+            if (status.ToLower() == "reserved")
+            {
+                return RedirectToAction(nameof(Accept));
+            }
+
+            // Otherwise, back to Anticipate list
             return RedirectToAction(nameof(Anticipate));
         }
+
 
         private string GenerateQRCodeBase64(string data)
         {
@@ -519,6 +532,84 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 _logger.LogError($"QR Code generation error: {ex.Message}");
                 return null;
             }
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmBooking(int id, int? driverId)
+        {
+            var guest = await _context.Guests.FindAsync(id);
+            if (guest == null)
+            {
+                return NotFound();
+            }
+
+            // ✅ Assign driver if selected
+            if (driverId.HasValue)
+            {
+                guest.DriverId = driverId.Value;
+            }
+
+            // ✅ Set booking status to confirmed
+            guest.BookingStatus = "reserved";
+
+            _context.Update(guest);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Accept)); // Go back to Final Bookings
+        }
+
+        public async Task<IActionResult> Book(int id)
+        {
+            var guest = await _context.Guests
+                .Include(g => g.Operator)
+                .Include(g => g.Nationality)
+                .Include(g => g.Driver)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (guest == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.DriverList = await _context.Drivers
+                .Select(d => new SelectListItem
+                {
+                    Value = d.DriverId.ToString(),
+                    Text = d.FName
+                })
+                .ToListAsync();
+
+            return View(guest); // Returns Book.cshtml
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Book(int id, int? driverId)
+        {
+            var guest = await _context.Guests.FindAsync(id);
+            if (guest == null)
+            {
+                return NotFound();
+            }
+
+            // Optional driver assignment
+            if (driverId.HasValue)
+            {
+                guest.DriverId = driverId.Value;
+            }
+            else
+            {
+                guest.DriverId = null; // explicitly clear if no selection
+            }
+  
+
+
+            // Update status
+            guest.BookingStatus = "reserved";
+
+            _context.Update(guest);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Accept));
         }
 
 

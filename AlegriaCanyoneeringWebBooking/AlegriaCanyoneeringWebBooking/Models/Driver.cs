@@ -8,8 +8,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
     {
 
         [Key]
-        [Column("id")]
-        public long Id { get; set; }  // bigint → long in C#
+ 
+        public int DriverId { get; set; }  // bigint → long in C#
 
         [Column("dposition")]
         public int DPosition { get; set; }  // int(99) → int in C#
@@ -46,5 +46,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Required]
         [Column("image")]
         public string Image { get; set; }
+
+
+
+        public ICollection<Guest> Guests { get; set; } = new List<Guest>();
     }
 }

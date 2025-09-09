@@ -1,19 +1,19 @@
 ﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.Models.Guest>
 
 @{
-    ViewData["Title"] = "Guest List";
+    ViewData["Title"] = "Final Bookings";
 }
 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Guests</h2>
-        <span class="badge bg-primary">@Model.Count() Guests Found</span>
+        <h2>Final Bookings</h2>
+        <span class="badge bg-success">@Model.Count() Reserved Guests</span>
     </div>
 
     @if (Model.Any())
     {
         <div class="table-responsive">
-           <table class="table table-striped table text-truncate ">
+            <table class="table table-striped table text-truncate">
                 <thead class="table-dark">
                     <tr>
                         <th>Guest ID</th>
@@ -22,7 +22,8 @@
                         <th>Gender</th>
                         <th>Nationality</th>
                         <th>Nat. Status</th>
-                        <th> BusinessName</th>
+                        <th>Business Name</th>
+                        <th>Driver</th> <!-- ✅ Added -->
                         <th>RFID</th>
                         <th>Arrival Date</th>
                         <th>Month</th>
@@ -31,7 +32,6 @@
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
-
                 </thead>
                 <tbody>
                     @foreach (var item in Model)
@@ -42,30 +42,32 @@
                             <td>@item.Age</td>
                             <td>@item.Gender</td>
                             <td>@item.NationalityType</td>
-                            <td>@item.Nationality.NatName</td>
-                            <td>@item.Operator.BusinessName</td>
+                            <td>@item.Nationality?.NatName</td>
+                            <td>@item.Operator?.BusinessName</td>
+                            <td>@(item.Driver?.FName ?? "No Driver")</td>
+
                             <td>@item.RFID</td>
                             <td>@item.ArrivalDate</td>
                             <td>@item.Month</td>
                             <td>@item.Batch</td>
                             <td>@item.NumberOfGuests</td>
                             <td>
-                                <span class="badge @(item.BookingStatus == "anticipated" ? "bg-warning" : "bg-success")">
+                                <span class="badge
+                                    @(item.BookingStatus == "confirmed" ? "bg-success" :
+                                      item.BookingStatus == "reserved" ? "bg-warning" : "bg-secondary")">
                                     @item.BookingStatus
                                 </span>
                             </td>
                             <td>
-
                                 <div class="btn-group" role="group">
-                                    <a asp-action="ScanQR" asp-route-id="@item.Id" class="btn btn-success btn-sm">
-                                        <i class="fas fa-qrcode"></i> Scan QR
+                                    <a asp-action="Book" asp-route-id="@item.Id" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i> Book
                                     </a>
-                                    <a asp-action="ReserveDetails" asp-route-id="@item.Id" class="btn btn-info btn-sm">
-                                        <i class="fas fa-eye"></i> Details
+                                    <a asp-action="ScanQR" asp-route-id="@item.Id" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-qrcode"></i> View QR
                                     </a>
                                 </div>
                             </td>
-
                         </tr>
                     }
                 </tbody>
@@ -76,9 +78,8 @@
     {
         <div class="alert alert-info text-center">
             <i class="fas fa-info-circle fa-3x mb-3"></i>
-            <h4>No Guests Found</h4>
-            <p>No guest records are available in the system.</p>
-            <a asp-action="CreateGuest" class="btn btn-primary">Add New Guest</a>
+            <h4>No Final Bookings Found</h4>
+            <p>No guests have been confirmed yet.</p>
         </div>
     }
 </div>
