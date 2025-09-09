@@ -113,6 +113,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 _context.Add(guest);
                 await _context.SaveChangesAsync();
+                // TempData for Toast
+                TempData["ToastMessage"] = "Guest added successfully!";
+                TempData["ToastType"] = "success"; // Can also be: info, warning, danger
 
                 return RedirectToAction(nameof(Anticipate));
             }

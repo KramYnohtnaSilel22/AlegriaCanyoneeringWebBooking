@@ -4,8 +4,24 @@
     ViewData["Title"] = "Guest Management";
 }
 
+@if (TempData["ToastMessage"] != null)
+{
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="toastMessage" class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i> @TempData["ToastMessage"]
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+}
+
+
+
 <div class="container mt-5">
-    <h2 class="text-center text-primary mb-5 fw-bold">Guest Management</h2>
+    <h2 class="text-center text-primary mb-5 fw-bold">Bookings</h2>
 
     <div class="row g-4">
         <!-- LEFT: Add New Guest -->
@@ -105,6 +121,7 @@
                     </form>
                 </div>
             </div>
+    
         </div>
         <!-- RIGHT: Reserved Guests -->
         <div class="col-md-7">
@@ -160,11 +177,12 @@
                                             <td>@guest.NumberOfGuests</td>
                                             <td>@guest.RFID</td>
                                             <td>
-                                                <span class="badge bg-@(guest.BookingStatus == "anticipated" ? "info" :
-                                                                guest.BookingStatus == "reserved" ? "warning" :
-                                                                guest.BookingStatus == "confirmed" ? "success" : "secondary")">
-                                                    @guest.BookingStatus
-                                                </span>
+                                                        <span class="badge bg-@(guest.BookingStatus == "anticipated" ? "info" :
+                       guest.BookingStatus == "reserved" ? "success" :
+                           guest.BookingStatus == "confirmed" ? "success" : "secondary")">
+                                                                @guest.BookingStatus
+                                                    </span>
+
                                             </td>
                                             <td class="text-center">
                                                 <a asp-action="ReserveDetails" asp-route-id="@guest.Id" class="btn btn-outline-info btn-sm me-1">
@@ -178,9 +196,10 @@
                                                     <form asp-action="UpdateStatus" method="post" style="display:inline;">
                                                         <input type="hidden" name="id" value="@guest.Id" />
                                                         <input type="hidden" name="status" value="reserved" />
-                                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                        <button type="submit" class="btn btn-outline-success btn-sm">
                                                             <i class="fas fa-check"></i> Reserve
                                                         </button>
+
                                                     </form>
                                                 }
                                             </td>
@@ -199,37 +218,9 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+  
 
-
-        @section Styles {
-            <style>
-                .form-label {
-                    font-weight: 500;
-                }
-
-                .card {
-                    border-radius: 1rem;
-                }
-
-                .table th, .table td {
-                    vertical-align: middle;
-                    text-align: center;
-                }
-
-                .table-hover tbody tr:hover {
-                    background-color: #f1f1f1;
-                }
-
-                .badge {
-                    font-size: 0.85rem;
-                    padding: 0.4em 0.8em;
-                }
-
-                .btn-sm {
-                    font-size: 0.85rem;
-                    padding: 0.35rem 0.7rem;
-                }
-            </style>
-        }
-
+        <script src="~/js/site.js"></script>
 
