@@ -1,0 +1,23 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Guide
+
+@{
+    ViewData["Title"] = "Guide Details";
+}
+
+<h2>Guide Details</h2>
+
+<div class="card p-3 mb-3">
+    <h4>@Model.FName @Model.MName @Model.LName</h4>
+    <p><strong>RFID:</strong> @Model.Rfid</p>
+    <p><strong>Position:</strong> @Model.TPosition</p>
+    <p><strong>Contact:</strong> @Model.CNumber</p>
+    <p><strong>Address:</strong> @Model.Address</p>
+    <p><strong>Nickname:</strong> @Model.Nickname</p>
+    @if (!string.IsNullOrEmpty(Model.Image))
+    {
+        <img src="@Model.Image" alt="Guide" width="200" class="img-thumbnail" />
+    }
+</div>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+<a asp-action="Index" class="btn btn-secondary">Back</a>

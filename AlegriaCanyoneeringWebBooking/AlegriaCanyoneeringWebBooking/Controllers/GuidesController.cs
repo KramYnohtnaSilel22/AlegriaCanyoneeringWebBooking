@@ -1,18 +1,21 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.Extensions.Hosting;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     public class GuidesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _hostEnvironment;
 
-        public GuidesController(ApplicationDbContext context)
+        public GuidesController(ApplicationDbContext context, IWebHostEnvironment hostEnvironment)
         {
             _context = context;
+            _hostEnvironment = hostEnvironment;
         }
 
         // GET: Guides
@@ -43,14 +46,37 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Guides/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Rfid,TPosition,FName,MName,LName,CNumber,Address,Nickname,Image")] Guide guide)
+        public async Task<IActionResult> Create(Guide guide, IFormFile imageFile)
         {
+            // remove Image validation so it won’t block
+            ModelState.Remove("Image");
+
             if (ModelState.IsValid)
             {
+                if (imageFile != null && imageFile.Length > 0)
+                {
+                    string wwwRootPath = _hostEnvironment.WebRootPath;
+                    string fileName = Path.GetFileNameWithoutExtension(imageFile.FileName);
+                    string extension = Path.GetExtension(imageFile.FileName);
+
+                    // unique filename with timestamp
+                    fileName = fileName + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + extension;
+                    string path = Path.Combine(wwwRootPath + "/uploads/", fileName);
+
+                    using (var stream = new FileStream(path, FileMode.Create))
+                    {
+                        await imageFile.CopyToAsync(stream);
+                    }
+
+                    // save relative path in DB
+                    guide.Image = "/uploads/" + fileName;
+                }
+
                 _context.Add(guide);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
             return View(guide);
         }
 
@@ -68,20 +94,58 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Guides/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Rfid,TPosition,FName,MName,LName,CNumber,Address,Nickname,Image")] Guide guide)
+        public async Task<IActionResult> Edit(int id, Guide guide, IFormFile? imageFile)
         {
             if (id != guide.Id) return NotFound();
+
+            // Remove Image validation because we handle it manually
+            ModelState.Remove("Image");
 
             if (ModelState.IsValid)
             {
                 try
                 {
+                    var existingGuide = await _context.Guides.AsNoTracking().FirstOrDefaultAsync(g => g.Id == id);
+                    if (existingGuide == null) return NotFound();
+
+                    if (imageFile != null && imageFile.Length > 0)
+                    {
+                        string wwwRootPath = _hostEnvironment.WebRootPath;
+                        string fileName = Path.GetFileNameWithoutExtension(imageFile.FileName);
+                        string extension = Path.GetExtension(imageFile.FileName);
+
+                        fileName = fileName + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + extension;
+                        string path = Path.Combine(wwwRootPath + "/uploads/", fileName);
+
+                        using (var stream = new FileStream(path, FileMode.Create))
+                        {
+                            await imageFile.CopyToAsync(stream);
+                        }
+
+                        // delete old image if exists
+                        if (!string.IsNullOrEmpty(existingGuide.Image))
+                        {
+                            string oldPath = Path.Combine(wwwRootPath, existingGuide.Image.TrimStart('/'));
+                            if (System.IO.File.Exists(oldPath))
+                            {
+                                System.IO.File.Delete(oldPath);
+                            }
+                        }
+
+                        guide.Image = "/uploads/" + fileName;
+                    }
+                    else
+                    {
+                        // keep existing image
+                        guide.Image = existingGuide.Image;
+                    }
+
                     _context.Update(guide);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!GuideExists(guide.Id))
+                    if (!_context.Guides.Any(e => e.Id == guide.Id))
                         return NotFound();
                     else
                         throw;
