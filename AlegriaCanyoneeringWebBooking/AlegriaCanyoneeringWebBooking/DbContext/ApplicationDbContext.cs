@@ -16,6 +16,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         public DbSet<Driver> Drivers { get; set; }
 
+        public DbSet<Guide> Guides { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -90,6 +92,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
             modelBuilder.Entity<Driver>().ToTable("driver_details");
+            modelBuilder.Entity<Guide>().ToTable("tourguide_details");
         }
     }
 }
