@@ -41,56 +41,59 @@
                                     <span asp-validation-for="Gender" class="text-danger"></span>
                                 </div>
 
-                                <div class="form-group mb-3">
-                                    <label asp-for="NationalityType" class="form-label"></label>
-                                    <input asp-for="NationalityType" class="form-control" />
+
+                                <div class="mb-3">
+                                    <label asp-for="NationalityType" class="form-label fw-medium">Nationality</label>
+                                    <select asp-for="NationalityType" class="form-select form-select-lg">
+                                        <option value="">Select Nationality</option>
+                                        <option value="Local">Local</option>
+                                        <option value="Foreign">Foreign</option>
+                                    </select>
                                     <span asp-validation-for="NationalityType" class="text-danger"></span>
                                 </div>
-
-                                <div class="form-group">
-                                    <label asp-for="Nationality.NatName" class="control-label"></label>
-                                    <input asp-for="Nationality.NatName" class="form-control" />
-                                    <span asp-validation-for="Nationality.NatName" class="text-danger"></span>
+                                <div class="mb-3">
+                                    <label asp-for="NationalityId" class="form-label fw-medium">Status</label>
+                                    <select asp-for="NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList">
+                                        <option value="">Select Country</option>
+                                    </select>
+                                    <span asp-validation-for="NationalityId" class="text-danger"></span>
                                 </div>
+
+
                             </div>
                             <div class="col-md-6">
-                                <!-- Dropdown for Operator -->
-                                <div class="form-group">
-                                    <label asp-for="OperatorId" class="control-label">Operator</label>
-                                    <select asp-for="OperatorId" class="form-control" asp-items="@(new SelectList(ViewBag.OperatorList, "Value", "Text"))">
-                                        <option value="">Select Operator</option>
+                            
+                                <div class="mb-3">
+                                    <label asp-for="OperatorId" class="form-label fw-medium">Operator</label>
+                                    <select asp-for="OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList">
+                                        <option value="">-- Select Operator --</option>
                                     </select>
                                     <span asp-validation-for="OperatorId" class="text-danger"></span>
                                 </div>
-                                <div class="form-group mb-3">
-                                    <label asp-for="Date" class="form-label"></label>
-                                    <input asp-for="Date" class="form-control" />
-                                    <span asp-validation-for="Date" class="text-danger"></span>
+                                <div class="col">
+                                    <label asp-for=Date" class="form-label fw-medium">Booking Date</label>
+                                    <input asp-for=Date" type="date" class="form-control form-control-lg" />
+                                </div>
+                                <div class="col">
+                                    <label asp-for="ArrivalDate" class="form-label fw-medium">Arrival Date</label>
+                                    <input asp-for="ArrivalDate" type="date" class="form-control form-control-lg" />
                                 </div>
 
-                                <div class="form-group mb-3">
-                                    <label asp-for="ArrivalDate" class="form-label"></label>
-                                    <input asp-for="ArrivalDate" class="form-control" />
-                                    <span asp-validation-for="ArrivalDate" class="text-danger"></span>
+                                <div class="col">
+                                    <label asp-for="Month" class="form-label fw-medium">Month</label>
+                                    <input asp-for="Month" type="month" class="form-control form-control-lg" />
                                 </div>
-
-                                <div class="form-group mb-3">
-                                    <label asp-for="Month" class="form-label"></label>
-                                    <input asp-for="Month" class="form-control" />
-                                    <span asp-validation-for="Month" class="text-danger"></span>
-                                </div>
-
-                                <div class="form-group mb-3">
-                                    <label asp-for="DateShort" class="form-label"></label>
-                                    <input asp-for="DateShort" class="form-control" />
-                                    <span asp-validation-for="DateShort" class="text-danger"></span>
+                                <div class="col">
+                                    <label asp-for="DateShort" class="form-label fw-medium">Short Date</label>
+                                    <input asp-for="DateShort" type="date" class="form-control form-control-lg" />
                                 </div>
 
                                 <div class="form-group mb-3">
                                     <label asp-for="RFID" class="form-label"></label>
-                                    <input asp-for="RFID" type="number" class="form-control" />
+                                    <input asp-for="RFID" class="form-control" readonly />
                                     <span asp-validation-for="RFID" class="text-danger"></span>
                                 </div>
+
 
                                 <div class="form-group mb-3">
                                     <label asp-for="BookingStatus" class="form-label"></label>
@@ -119,7 +122,7 @@
 
                         <div class="form-group mt-4">
                             <button type="submit" class="btn btn-primary">Save Changes</button>
-                            <a asp-action="Reserve" class="btn btn-secondary">Back to List</a>
+                            <a asp-action="Anticipate" class="btn btn-secondary">Back to List</a>
                         </div>
                     </form>
                 </div>

@@ -247,41 +247,53 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Guest/EditReserve/5
         public async Task<IActionResult> EditReserve(int id)
         {
-            // Retrieve the guest and eagerly load the 'Operator' data
             var guest = await _context.Guests
-                .Include(g => g.Operator)  // Eagerly load the related 'Operator' entity
-                .FirstOrDefaultAsync(g => g.Id == id);  // Fetch the guest by its ID
+                .Include(g => g.Operator)
+                .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
             {
-                return NotFound();  // If the guest is not found, return a 404 page
+                return NotFound();
             }
 
-            // Retrieve operators from the database for the dropdown list
+            // Operators dropdown
             var operators = await _context.Operators
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
-                    Text = o.BusinessName // Or use any other property you want to display
+                    Text = o.BusinessName
                 })
                 .ToListAsync();
 
-            // If the list is null or empty, create an empty list to avoid errors
-            if (operators == null || !operators.Any()) // Ensure `System.Linq` is imported for `.Any()`
+            if (!operators.Any())
             {
                 operators = new List<SelectListItem>
-        {
-            new SelectListItem { Text = "No operators available", Value = "" }
-        };
+            {
+                new SelectListItem { Text = "No operators available", Value = "" }
+            };
             }
-
-            // Pass the operator list to the ViewBag for use in the view
             ViewBag.OperatorList = operators;
 
-            // Pass the guest model (which includes the 'Operator') to the view
+            // Nationalities dropdown
+            var nationalities = await _context.Nationalities
+                .Select(n => new SelectListItem
+                {
+                    Value = n.Id.ToString(),     // ✅ correct property
+                    Text = n.NatName             // ✅ correct property
+                })
+                .ToListAsync();
+
+            if (!nationalities.Any())
+            {
+                nationalities = new List<SelectListItem>
+            {
+                new SelectListItem { Text = "No countries available", Value = "" }
+            };
+            }
+            ViewBag.NationalityList = nationalities;
+
             return View(guest);
         }
-
 
         // POST: Guest/EditReserve/5
         [HttpPost]
@@ -297,12 +309,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 try
                 {
+                    // ✅ Auto-generate RFID if missing
+                    if (string.IsNullOrEmpty(guest.RFID))
+                    {
+                        guest.RFID = GenerateRFID();
+                    }
+
                     _context.Update(guest);
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Reserve));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!GuestExists(guest.Id))
+                    if (!_context.Guests.Any(e => e.Id == guest.Id))
                     {
                         return NotFound();
                     }
@@ -311,8 +330,25 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Reserve));
             }
+
+            // repopulate dropdowns
+            ViewBag.OperatorList = await _context.Operators
+                .Select(o => new SelectListItem
+                {
+                    Value = o.OperatorId.ToString(),
+                    Text = o.BusinessName
+                })
+                .ToListAsync();
+
+            ViewBag.NationalityList = await _context.Nationalities
+                .Select(n => new SelectListItem
+                {
+                    Value = n.Id.ToString(),
+                    Text = n.NatName
+                })
+                .ToListAsync();
+
             return View(guest);
         }
 
