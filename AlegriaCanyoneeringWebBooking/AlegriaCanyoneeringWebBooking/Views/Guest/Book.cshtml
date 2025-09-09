@@ -89,6 +89,17 @@
                                 </select>
                             </div>
 
+                            <div class="col-md-12 mt-2">
+                                <label class="form-label" for="guideId">Assign Guide (Optional)</label>
+                                <select class="form-select" name="guideId">
+                                    <option value="">-- No Guide Assigned --</option>
+                                    @foreach (var driver in ViewBag.GuideList as List<SelectListItem>)
+                                    {
+                                        <option value="@driver.Value">@driver.Text</option>
+                                    }
+                                </select>
+                            </div>
+
 
                             <div class="col-md-12 mt-4 d-flex justify-content-between">
                                 <a asp-action="Accept" class="btn btn-outline-secondary">

@@ -77,7 +77,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int? DriverId { get; set; }
         public Driver? Driver { get; set; }
 
-
+        public int? GuideId { get; set; }
+        public Guide? Guide { get; set; }
 
 
     }

@@ -533,9 +533,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return null;
             }
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmBooking(int id, int? driverId)
+        public async Task<IActionResult> ConfirmBooking(int id, int? driverId, int? guideId)
         {
             var guest = await _context.Guests.FindAsync(id);
             if (guest == null)
@@ -548,6 +549,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 guest.DriverId = driverId.Value;
             }
+
+            // ✅ Assign guide if selected
+            if (guideId.HasValue)
+            {
+                guest.GuideId = guideId.Value;
+            }
+
 
             // ✅ Set booking status to confirmed
             guest.BookingStatus = "reserved";
@@ -564,6 +572,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver)
+                .Include(g => g.Guide)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
@@ -579,11 +588,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 })
                 .ToListAsync();
 
+            ViewBag.GuideList = await _context.Guides
+             .Select(d => new SelectListItem
+             {
+                 Value = d.Id.ToString(),
+                 Text = d.FName
+             })
+             .ToListAsync();
+
             return View(guest); // Returns Book.cshtml
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Book(int id, int? driverId)
+        public async Task<IActionResult> Book(int id, int? driverId, int? guideId)
         {
             var guest = await _context.Guests.FindAsync(id);
             if (guest == null)
@@ -600,7 +617,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 guest.DriverId = null; // explicitly clear if no selection
             }
-  
+
+            // Optional guide assignment
+            if (guideId.HasValue)
+            {
+                guest.GuideId = guideId.Value;
+            }
+            else
+            {
+                guest.GuideId = null; // explicitly clear if no selection
+            }
+
 
 
             // Update status
