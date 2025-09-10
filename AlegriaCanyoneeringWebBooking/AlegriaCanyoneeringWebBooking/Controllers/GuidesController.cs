@@ -30,7 +30,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (id == null) return NotFound();
 
             var guide = await _context.Guides
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .FirstOrDefaultAsync(m => m.GuideId == id);
 
             if (guide == null) return NotFound();
 
@@ -96,7 +96,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Guide guide, IFormFile? imageFile)
         {
-            if (id != guide.Id) return NotFound();
+            if (id != guide.GuideId) return NotFound();
 
             // Remove Image validation because we handle it manually
             ModelState.Remove("Image");
@@ -105,7 +105,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 try
                 {
-                    var existingGuide = await _context.Guides.AsNoTracking().FirstOrDefaultAsync(g => g.Id == id);
+                    var existingGuide = await _context.Guides.AsNoTracking().FirstOrDefaultAsync(g => g.GuideId == id);
                     if (existingGuide == null) return NotFound();
 
                     if (imageFile != null && imageFile.Length > 0)
@@ -145,7 +145,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Guides.Any(e => e.Id == guide.Id))
+                    if (!_context.Guides.Any(e => e.GuideId == guide.GuideId))
                         return NotFound();
                     else
                         throw;
@@ -161,7 +161,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (id == null) return NotFound();
 
             var guide = await _context.Guides
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .FirstOrDefaultAsync(m => m.GuideId == id);
 
             if (guide == null) return NotFound();
 
@@ -184,7 +184,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private bool GuideExists(int id)
         {
-            return _context.Guides.Any(e => e.Id == id);
+            return _context.Guides.Any(e => e.GuideId == id);
         }
     }
 }

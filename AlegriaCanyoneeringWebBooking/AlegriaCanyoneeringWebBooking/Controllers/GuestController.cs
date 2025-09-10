@@ -578,7 +578,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         public async Task<IActionResult> Book(int id)
         {
-            var guest = await _context.Guests
+            var guest = await _context.Guests   
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver)
@@ -601,7 +601,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             ViewBag.GuideList = await _context.Guides
              .Select(g => new SelectListItem
              {
-                 Value = g.Id.ToString(),
+                 Value = g.GuideId.ToString(),
                  Text = $"{g.FName} {g.LName}"
              })
              .ToListAsync();

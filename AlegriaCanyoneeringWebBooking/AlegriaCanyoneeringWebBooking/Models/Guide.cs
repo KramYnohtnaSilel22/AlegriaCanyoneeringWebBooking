@@ -7,8 +7,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
     public class Guide
     {
         [Key]
-        [Column("id")]
-        public int Id { get; set; }
+        [Column("GuideId")]
+        public int GuideId { get; set; }
 
         [Required]
         [Column("rfid")]

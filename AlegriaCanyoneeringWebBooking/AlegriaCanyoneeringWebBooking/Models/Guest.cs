@@ -81,7 +81,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int? DriverId { get; set; }
         public Driver? Driver { get; set; }
 
-        [Column("guideid")] // Make sure this also matches
+        [Column("GuideId")] // Make sure this also matches
         public int? GuideId { get; set; }
 
         [ForeignKey(nameof(GuideId))]
