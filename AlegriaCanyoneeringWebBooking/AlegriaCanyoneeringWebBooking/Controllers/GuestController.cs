@@ -75,10 +75,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Load Guests with Operator and Nationality
             var reservedGuests = await _context.Guests
-                .Include(g => g.Operator)
-                .Include(g => g.Nationality)  // Include nationality data
-                .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
-                .ToListAsync();
+               .Include(g => g.Operator)
+               .Include(g => g.Nationality)
+               .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
+               .ToListAsync();
+
 
             var model = new GuestListViewModel
             {
@@ -415,7 +416,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(guest);
         }
 
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmQR(int id, int? driverId)
@@ -423,7 +424,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var guest = await _context.Guests
                 .Include(g => g.Nationality)
                 .Include(g => g.Operator)
-                .Include(g => g.Driver) // Include Driver
+                .Include(g => g.Driver)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
@@ -441,7 +442,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
             }
 
-            // Generate QR Data
+            // ✅ FIXED: Load driver after potential assignment
+            if (guest.DriverId.HasValue)
+            {
+                guest.Driver = await _context.Drivers.FindAsync(guest.DriverId.Value);
+            }
+
+            // ✅ FIXED: Generate QR Data with proper driver display
             string qrData =
                 $"Guest Details\n" +
                 $"-----------------------------------\n" +
@@ -453,10 +460,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 $"No. of Guests  : {guest.NumberOfGuests}\n" +
                 $"Nat. Status    : {guest.NationalityId}\n" +
                 $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
-                    $"Driver         : {(guest.Driver != null ? guest.Driver.FName : "None")}\n" +
-                $"Driver         : {guest.Driver.FName ?? "None"}\n" +
-                $"Booking Date   : {guest.Date:yyyy-MM-dd}\n" +
-                $"Arrival Date   : {guest.ArrivalDate:yyyy-MM-dd}\n" +
+                $"Driver         : {(guest.Driver != null ? $"{guest.Driver.RefId} - {guest.Driver.FName} {guest.Driver.LName}" : "None")}\n" +
+                $"Booking Date   : {guest.Date}\n" +
+                $"Arrival Date   : {guest.ArrivalDate}\n" +
                 $"Month          : {guest.Month}\n" +
                 $"Batch          : {guest.Batch}\n" +
                 $"RFID           : {guest.RFID}\n" +
@@ -602,42 +608,66 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Book(int id, int? driverId, int? guideId)
         {
-            var guest = await _context.Guests.FindAsync(id);
+            var guest = await _context.Guests
+                .Include(g => g.Operator)
+                .Include(g => g.Nationality)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
             if (guest == null)
-            {
                 return NotFound();
-            }
 
-            // Optional driver assignment
-            if (driverId.HasValue)
-            {
-                guest.DriverId = driverId.Value;
-            }
-            else
-            {
-                guest.DriverId = null; // explicitly clear if no selection
-            }
-
-            // Optional guide assignment
-            if (guideId.HasValue)
-            {
-                guest.GuideId = guideId.Value;
-            }
-            else
-            {
-                guest.GuideId = null; // explicitly clear if no selection
-            }
-
-
-
-            // Update status
-            guest.BookingStatus = "reserved";
+            // Assign driver and guide
+            guest.DriverId = driverId;
+            guest.GuideId = guideId;
+            guest.BookingStatus = "confirmed";
 
             _context.Update(guest);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Accept));
+            // Count Local vs Foreign
+            int localCount = 0, foreignCount = 0;
+            if (guest.Nationality?.NatName?.ToLower() == "local")
+                localCount = guest.NumberOfGuests;
+            else
+                foreignCount = guest.NumberOfGuests;
+
+            // Create Batch
+            var batch = new Batch
+            {
+                OperatorId = guest.OperatorId ?? 0,
+                NoOfLocalGuest = localCount,
+                NoOfForeignGuest = foreignCount,
+                NoOfTGuide = guideId.HasValue ? 1 : 0,
+                NoOfMDriver = driverId.HasValue ? 1 : 0,
+                TotalNoOfGuest = guest.NumberOfGuests,
+                ArrivalDate = DateTime.Parse(guest.ArrivalDate)
+            };
+
+            // ✅ FIXED: Use correct Driver properties
+            ViewBag.DriverList = await _context.Drivers
+                .Select(d => new SelectListItem
+                {
+                    Value = d.DriverId.ToString(), 
+                    Text = $"{d.RefId} - {d.FName} {d.LName}" 
+                })
+                .ToListAsync();
+
+            // ✅ FIXED: Use correct Guide properties (assuming similar structure)
+            ViewBag.GuideList = await _context.Guides
+                .Select(g => new SelectListItem
+                {
+                    Value = g.Id.ToString(), 
+                    Text = $"{g.FName} {g.LName}" 
+                })
+                .ToListAsync();
+
+            _context.Batches.Add(batch);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Accept"); // back to list
         }
+
+
 
 
         private bool GuestExists(int id)

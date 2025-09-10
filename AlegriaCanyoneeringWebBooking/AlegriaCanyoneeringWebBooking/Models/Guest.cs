@@ -19,19 +19,20 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string Age { get; set; }
 
         [Display(Name = "Number of Guests")]
+        [Column("number_of_guests")]
         public int NumberOfGuests { get; set; }
 
         [Display(Name = "Batch")]
         [StringLength(100)]
         public string? Batch { get; set; }
-        [Required(ErrorMessage = "Nationality is required")]
+
         [StringLength(10000, ErrorMessage = "Nationality cannot exceed 10000 characters")]
         [Display(Name = "Nationality")]
-        public string NationalityType { get; set; }
+        public string? NationalityType { get; set; } // This maps to 'nationality' column
 
-        [Required(ErrorMessage = "National status is required")]
         [Display(Name = "National Status")]
-        public int NationalityId { get; set; }
+        [Column("natstat")] // This is the key fix - map to the correct database column
+        public int? NationalityId { get; set; } // Make this nullable to handle NULL values
 
         [ForeignKey(nameof(NationalityId))]
         public Nationality? Nationality { get; set; }
@@ -49,6 +50,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Required(ErrorMessage = "Arrival date is required")]
         [StringLength(100, ErrorMessage = "Arrival date cannot exceed 100 characters")]
         [Display(Name = "Arrival Date")]
+        [Column("arrivaldate")]
         public string ArrivalDate { get; set; }
 
         [Required(ErrorMessage = "Month is required")]
@@ -56,30 +58,31 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Display(Name = "Month")]
         public string Month { get; set; }
 
-    
         [StringLength(100, ErrorMessage = "Short date cannot exceed 100 characters")]
         [Display(Name = "Short Date")]
-        public string DateShort { get; set; }
+        [Column("dateshort")]
+        public string? DateShort { get; set; }
 
-        //[Required(ErrorMessage = "RFID is required")]
-        //[Display(Name = "RFID")]
+        [Column("rfid")]
         public string? RFID { get; set; }
+
+        [StringLength(50)]
+        [Column("bookingstatus")]
         public string BookingStatus { get; set; } = "anticipated";
 
+        [Column("qrcode")]
         public string? QrCode { get; set; }
-        [ForeignKey("Operator")]
+
         [Column("operatorid")]
         public int? OperatorId { get; set; }
+        public Operator? Operator { get; set; }
 
-        public Operator? Operator { get; set; }  // navigation
-
-
+        [Column("DriverId")] // Make sure this matches your database column name
         public int? DriverId { get; set; }
         public Driver? Driver { get; set; }
 
+        [Column("guideid")]
         public int? GuideId { get; set; }
         public Guide? Guide { get; set; }
-
-
     }
 }

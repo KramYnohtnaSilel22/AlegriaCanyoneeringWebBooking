@@ -19,7 +19,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Batchs
         public async Task<IActionResult> Index()
         {
-            var batches = await _context.Batchs
+            var batches = await _context.Batches
                 .Include(b => b.Operator)
                 .ToListAsync();
             return View(batches);
@@ -30,7 +30,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             if (id == null) return NotFound();
 
-            var batch = await _context.Batchs
+            var batch = await _context.Batches
                 .Include(b => b.Operator)
                 .FirstOrDefaultAsync(m => m.BatchId == id);
 
@@ -65,7 +65,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             if (id == null) return NotFound();
 
-            var batch = await _context.Batchs.FindAsync(id);
+            var batch = await _context.Batches.FindAsync(id);
             if (batch == null) return NotFound();
 
             ViewBag.OperatorId = new SelectList(_context.Operators, "OperatorId", "OwnerName", batch.OperatorId);
@@ -103,7 +103,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             if (id == null) return NotFound();
 
-            var batch = await _context.Batchs
+            var batch = await _context.Batches
                 .Include(b => b.Operator) // include Operator so OwnerName is available
                 .FirstOrDefaultAsync(m => m.BatchId == id);
 
@@ -117,10 +117,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var batch = await _context.Batchs.FindAsync(id);
+            var batch = await _context.Batches.FindAsync(id);
             if (batch != null)
             {
-                _context.Batchs.Remove(batch);
+                _context.Batches.Remove(batch);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
@@ -128,7 +128,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private bool BatchExists(int id)
         {
-            return _context.Batchs.Any(e => e.BatchId == id);
+            return _context.Batches.Any(e => e.BatchId == id);
         }
     }
 }

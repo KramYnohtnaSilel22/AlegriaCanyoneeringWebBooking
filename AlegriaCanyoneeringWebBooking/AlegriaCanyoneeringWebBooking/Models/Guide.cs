@@ -50,5 +50,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Column("image")]
         [StringLength(255)]
         public string? Image { get; set; }
+
+        // ✅ Add this navigation property
+        public ICollection<Guest> Guests { get; set; } = new List<Guest>();
+
     }
 }
