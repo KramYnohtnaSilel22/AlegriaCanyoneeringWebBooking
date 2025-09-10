@@ -550,9 +550,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound();
             }
 
-            // ✅ Store selected driver and guide IDs (you might need to modify your Guest model)
-            // For now, we'll store the first selected IDs for backward compatibility
-            if (driverIds != null && driverIds.Count > 0)
+           // ✅ Store selected driver and guide IDs(you might need to modify your Guest model)
+           // For now, we'll store the first selected IDs for backward compatibility
+           if (driverIds != null && driverIds.Count > 0)
             {
                 guest.DriverId = driverIds.First();
                 // If you want to store all selected drivers, you'll need a separate relationship table
@@ -572,6 +572,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return RedirectToAction(nameof(Accept)); // Go back to Final Bookings
         }
+
+
 
         public async Task<IActionResult> Book(int id)
         {
@@ -612,52 +614,25 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Book(int id, List<int> driverIds, List<int> guideIds)
         {
-            // Add debugging
-            Console.WriteLine($"Received Guest ID: {id}");
-            Console.WriteLine($"Driver IDs received: {string.Join(", ", driverIds ?? new List<int>())}");
-            Console.WriteLine($"Guide IDs received: {string.Join(", ", guideIds ?? new List<int>())}");
-
             var guest = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
-                .Include(g => g.Driver)
-                .Include(g => g.Guide)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
                 return NotFound();
 
-            Console.WriteLine($"Guest found: {guest.Fullname}");
-            Console.WriteLine($"Current DriverId: {guest.DriverId}");
-
             // For backward compatibility, assign the first selected driver and guide
-            var selectedDriverId = driverIds?.FirstOrDefault();
-            var selectedGuideId = guideIds?.FirstOrDefault();
-
-            Console.WriteLine($"Selected Driver ID: {selectedDriverId}");
-            Console.WriteLine($"Selected Guide ID: {selectedGuideId}");
-
-            // Update the guest
-            guest.DriverId = selectedDriverId == 0 ? null : selectedDriverId;
-            guest.GuideId = selectedGuideId == 0 ? null : selectedGuideId;
+            guest.DriverId = driverIds?.FirstOrDefault();
+            guest.GuideId = guideIds?.FirstOrDefault();
             guest.BookingStatus = "confirmed";
 
-            Console.WriteLine($"After assignment - DriverId: {guest.DriverId}, GuideId: {guest.GuideId}");
-
-            // Mark the entity as modified explicitly
-            _context.Entry(guest).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-
-            // Save changes and check result
-            var saveResult = await _context.SaveChangesAsync();
-            Console.WriteLine($"Save result: {saveResult} rows affected");
-
-            // Verify the save worked
-            var verifyGuest = await _context.Guests.FindAsync(id);
-            Console.WriteLine($"After save verification - DriverId: {verifyGuest?.DriverId}, GuideId: {verifyGuest?.GuideId}");
+            _context.Update(guest);
+            await _context.SaveChangesAsync();
 
             // Count Local vs Foreign
             int localCount = 0, foreignCount = 0;
-            if (guest.Nationality?.NatName?.ToLower() == "local")
+            if (guest.NationalityType?.ToLower() == "local")
                 localCount = guest.NumberOfGuests;
             else
                 foreignCount = guest.NumberOfGuests;
@@ -679,7 +654,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return RedirectToAction("Accept"); // back to list
         }
-
 
 
         private bool GuestExists(int id)
