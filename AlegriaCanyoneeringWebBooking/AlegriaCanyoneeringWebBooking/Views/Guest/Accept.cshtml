@@ -24,6 +24,7 @@
                         <th>Nat. Status</th>
                         <th>Business Name</th>
                         <th>Driver</th> <!-- ✅ Added -->
+                        <th>Guide</th> <!-- ✅ Added -->
                         <th>RFID</th>
                         <th>Arrival Date</th>
                         <th>Month</th>
@@ -45,7 +46,7 @@
                             <td>@item.Nationality?.NatName</td>
                             <td>@item.Operator?.BusinessName</td>
                             <td>@(item.Driver?.FName ?? "No Driver")</td>
-
+                            <td>@(item.Guide?.FName ?? "No Guide")</td>
                             <td>@item.RFID</td>
                             <td>@item.ArrivalDate</td>
                             <td>@item.Month</td>

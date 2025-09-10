@@ -360,6 +360,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Nationality)
                 .Include(g => g.Operator)
                 .Include(g => g.Driver)
+                .Include(g => g.Guide)
                 .Where(g => g.BookingStatus == "reserved")
                 .ToListAsync();
 
@@ -466,10 +467,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 $"Month          : {guest.Month}\n" +
                 $"Batch          : {guest.Batch}\n" +
                 $"RFID           : {guest.RFID}\n" +
-                $"Status         : confirmed\n";
+                $"Status         : confirm\n";
 
             guest.QrCode = GenerateQRCodeBase64(qrData);
-            guest.BookingStatus = "confirmed";
+            guest.BookingStatus = "confirm";
 
             try
             {
