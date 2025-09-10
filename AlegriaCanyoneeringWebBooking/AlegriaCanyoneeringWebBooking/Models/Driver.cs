@@ -49,6 +49,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
 
 
+        // ✅ Add this navigation property
         public ICollection<Guest> Guests { get; set; } = new List<Guest>();
     }
 }

@@ -79,27 +79,36 @@
                             </div>
 
                             <div class="col-md-12 mt-2">
-                                <label class="form-label" for="driverId">Assign Driver</label>
-                                <select class="form-select" name="driverId">
-                                    <option value="">-- No Driver Assigned --</option>
+                                <label class="form-label" for="driverIds">Assign Drivers</label>
+                                <select class="form-select multi-select" name="driverIds" multiple size="8" id="driverSelect">
                                     @foreach (var driver in ViewBag.DriverList as List<SelectListItem>)
                                     {
                                         <option value="@driver.Value">@driver.Text</option>
                                     }
                                 </select>
+                                <small class="form-text text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple drivers</small>
                             </div>
 
                             <div class="col-md-12 mt-2">
-                                <label class="form-label" for="guideId">Assign Guide (Optional)</label>
-                                <select class="form-select" name="guideId">
-                                    <option value="">-- No Guide Assigned --</option>
-                                    @foreach (var driver in ViewBag.GuideList as List<SelectListItem>)
+                                <label class="form-label" for="guideIds">Assign Guides</label>
+                                <select class="form-select multi-select" name="guideIds" multiple size="8" id="guideSelect">
+                                    @foreach (var guide in ViewBag.GuideList as List<SelectListItem>)
                                     {
-                                        <option value="@driver.Value">@driver.Text</option>
+                                        <option value="@guide.Value">@guide.Text</option>
                                     }
                                 </select>
+                                <small class="form-text text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple guides</small>
                             </div>
 
+                            <!-- Selected Items Display -->
+                            <div class="col-md-6 mt-3">
+                                <label class="form-label">Selected Drivers:</label>
+                                <div id="selectedDrivers" class="selected-items"></div>
+                            </div>
+                            <div class="col-md-6 mt-3">
+                                <label class="form-label">Selected Guides:</label>
+                                <div id="selectedGuides" class="selected-items"></div>
+                            </div>
 
                             <div class="col-md-12 mt-4 d-flex justify-content-between">
                                 <a asp-action="Accept" class="btn btn-outline-secondary">
@@ -125,5 +134,112 @@
             border-radius: 0.375rem;
             background-color: #f8f9fa;
         }
+
+        .multi-select {
+            min-height: 200px;
+        }
+
+            .multi-select option {
+                padding: 8px 12px;
+                margin: 2px 0;
+                border-radius: 4px;
+            }
+
+                .multi-select option:hover {
+                    background-color: #e3f2fd;
+                }
+
+                .multi-select option:checked {
+                    background-color: #2196f3;
+                    color: white;
+                }
+
+        .selected-items {
+            min-height: 40px;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+
+        .selected-item {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 15px;
+            font-size: 0.875rem;
+        }
+
+        .remove-item {
+            margin-left: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+            .remove-item:hover {
+                color: #ffcccc;
+            }
     </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const driverSelect = document.getElementById('driverSelect');
+            const guideSelect = document.getElementById('guideSelect');
+            const selectedDriversDiv = document.getElementById('selectedDrivers');
+            const selectedGuidesDiv = document.getElementById('selectedGuides');
+
+            function updateSelectedItems(selectElement, displayDiv) {
+                const selectedOptions = Array.from(selectElement.selectedOptions);
+                displayDiv.innerHTML = '';
+
+                if (selectedOptions.length === 0) {
+                    displayDiv.innerHTML = '<em class="text-muted">None selected</em>';
+                    return;
+                }
+
+                selectedOptions.forEach(option => {
+                    const item = document.createElement('span');
+                    item.className = 'selected-item';
+                    item.innerHTML = `${option.text} <span class="remove-item" data-value="${option.value}">×</span>`;
+                    displayDiv.appendChild(item);
+
+                    // Add remove functionality
+                    item.querySelector('.remove-item').addEventListener('click', function() {
+                        option.selected = false;
+                        updateSelectedItems(selectElement, displayDiv);
+                    });
+                });
+            }
+
+            // Update display when selections change
+            driverSelect.addEventListener('change', function() {
+                updateSelectedItems(this, selectedDriversDiv);
+            });
+
+            guideSelect.addEventListener('change', function() {
+                updateSelectedItems(this, selectedGuidesDiv);
+            });
+
+            // Initialize display
+            updateSelectedItems(driverSelect, selectedDriversDiv);
+            updateSelectedItems(guideSelect, selectedGuidesDiv);
+
+            // Add double-click to select/deselect
+            function addDoubleClickHandler(selectElement, displayDiv) {
+                selectElement.addEventListener('dblclick', function(e) {
+                    if (e.target.tagName === 'OPTION') {
+                        e.target.selected = !e.target.selected;
+                        updateSelectedItems(selectElement, displayDiv);
+                    }
+                });
+            }
+
+            addDoubleClickHandler(driverSelect, selectedDriversDiv);
+            addDoubleClickHandler(guideSelect, selectedGuidesDiv);
+        });
+    </script>
 }

@@ -542,7 +542,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmBooking(int id, int? driverId, int? guideId)
+        public async Task<IActionResult> ConfirmBooking(int id, List<int> driverIds, List<int> guideIds)
         {
             var guest = await _context.Guests.FindAsync(id);
             if (guest == null)
@@ -550,18 +550,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound();
             }
 
-            // ✅ Assign driver if selected
-            if (driverId.HasValue)
+            // ✅ Store selected driver and guide IDs (you might need to modify your Guest model)
+            // For now, we'll store the first selected IDs for backward compatibility
+            if (driverIds != null && driverIds.Count > 0)
             {
-                guest.DriverId = driverId.Value;
+                guest.DriverId = driverIds.First();
+                // If you want to store all selected drivers, you'll need a separate relationship table
             }
 
-            // ✅ Assign guide if selected
-            if (guideId.HasValue)
+            if (guideIds != null && guideIds.Count > 0)
             {
-                guest.GuideId = guideId.Value;
+                guest.GuideId = guideIds.First();
+                // If you want to store all selected guides, you'll need a separate relationship table
             }
-
 
             // ✅ Set booking status to confirmed
             guest.BookingStatus = "reserved";
@@ -590,39 +591,69 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Select(d => new SelectListItem
                 {
                     Value = d.DriverId.ToString(),
-                    Text = d.FName
+                    Text = $"{d.RefId} - {d.FName} {d.LName}"
                 })
                 .ToListAsync();
 
             ViewBag.GuideList = await _context.Guides
-             .Select(d => new SelectListItem
+             .Select(g => new SelectListItem
              {
-                 Value = d.Id.ToString(),
-                 Text = d.FName
+                 Value = g.Id.ToString(),
+                 Text = $"{g.FName} {g.LName}"
              })
              .ToListAsync();
 
             return View(guest); // Returns Book.cshtml
         }
+
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Book(int id, int? driverId, int? guideId)
+        public async Task<IActionResult> Book(int id, List<int> driverIds, List<int> guideIds)
         {
+            // Add debugging
+            Console.WriteLine($"Received Guest ID: {id}");
+            Console.WriteLine($"Driver IDs received: {string.Join(", ", driverIds ?? new List<int>())}");
+            Console.WriteLine($"Guide IDs received: {string.Join(", ", guideIds ?? new List<int>())}");
+
             var guest = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
+                .Include(g => g.Driver)
+                .Include(g => g.Guide)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
                 return NotFound();
 
-            // Assign driver and guide
-            guest.DriverId = driverId;
-            guest.GuideId = guideId;
+            Console.WriteLine($"Guest found: {guest.Fullname}");
+            Console.WriteLine($"Current DriverId: {guest.DriverId}");
+
+            // For backward compatibility, assign the first selected driver and guide
+            var selectedDriverId = driverIds?.FirstOrDefault();
+            var selectedGuideId = guideIds?.FirstOrDefault();
+
+            Console.WriteLine($"Selected Driver ID: {selectedDriverId}");
+            Console.WriteLine($"Selected Guide ID: {selectedGuideId}");
+
+            // Update the guest
+            guest.DriverId = selectedDriverId == 0 ? null : selectedDriverId;
+            guest.GuideId = selectedGuideId == 0 ? null : selectedGuideId;
             guest.BookingStatus = "confirmed";
 
-            _context.Update(guest);
-            await _context.SaveChangesAsync();
+            Console.WriteLine($"After assignment - DriverId: {guest.DriverId}, GuideId: {guest.GuideId}");
+
+            // Mark the entity as modified explicitly
+            _context.Entry(guest).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+
+            // Save changes and check result
+            var saveResult = await _context.SaveChangesAsync();
+            Console.WriteLine($"Save result: {saveResult} rows affected");
+
+            // Verify the save worked
+            var verifyGuest = await _context.Guests.FindAsync(id);
+            Console.WriteLine($"After save verification - DriverId: {verifyGuest?.DriverId}, GuideId: {verifyGuest?.GuideId}");
 
             // Count Local vs Foreign
             int localCount = 0, foreignCount = 0;
@@ -631,42 +662,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             else
                 foreignCount = guest.NumberOfGuests;
 
-            // Create Batch
+            // Create Batch with multiple drivers/guides count
             var batch = new Batch
             {
                 OperatorId = guest.OperatorId ?? 0,
                 NoOfLocalGuest = localCount,
                 NoOfForeignGuest = foreignCount,
-                NoOfTGuide = guideId.HasValue ? 1 : 0,
-                NoOfMDriver = driverId.HasValue ? 1 : 0,
+                NoOfTGuide = guideIds?.Count ?? 0,
+                NoOfMDriver = driverIds?.Count ?? 0,
                 TotalNoOfGuest = guest.NumberOfGuests,
                 ArrivalDate = DateTime.Parse(guest.ArrivalDate)
             };
-
-            // ✅ FIXED: Use correct Driver properties
-            ViewBag.DriverList = await _context.Drivers
-                .Select(d => new SelectListItem
-                {
-                    Value = d.DriverId.ToString(), 
-                    Text = $"{d.RefId} - {d.FName} {d.LName}" 
-                })
-                .ToListAsync();
-
-            // ✅ FIXED: Use correct Guide properties (assuming similar structure)
-            ViewBag.GuideList = await _context.Guides
-                .Select(g => new SelectListItem
-                {
-                    Value = g.Id.ToString(), 
-                    Text = $"{g.FName} {g.LName}" 
-                })
-                .ToListAsync();
 
             _context.Batches.Add(batch);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Accept"); // back to list
         }
-
 
 
 
