@@ -53,10 +53,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Column("arrivaldate")]
         public string ArrivalDate { get; set; }
 
-        [Required(ErrorMessage = "Month is required")]
-        [StringLength(500, ErrorMessage = "Month cannot exceed 500 characters")]
-        [Display(Name = "Month")]
-        public string Month { get; set; }
+
+    
+        public string? Month { get; set; }
 
         [StringLength(100, ErrorMessage = "Short date cannot exceed 100 characters")]
         [Display(Name = "Short Date")]

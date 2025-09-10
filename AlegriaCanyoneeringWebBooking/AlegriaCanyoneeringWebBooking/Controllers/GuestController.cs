@@ -363,7 +363,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Operator)
                 .Include(g => g.Driver)
                 .Include(g => g.Guide)
-                .Where(g => g.BookingStatus == "confirmed")
+                .Where(g => g.BookingStatus == "reserved")
                 .ToListAsync();
 
             return View(confirmedGuests);
@@ -628,7 +628,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // For backward compatibility, assign the first selected driver and guide
             guest.DriverId = driverIds?.FirstOrDefault();
             guest.GuideId = guideIds?.FirstOrDefault();
-            guest.BookingStatus = "confirmed";
+            guest.BookingStatus = "reserved";
 
             _context.Update(guest);
             await _context.SaveChangesAsync();
