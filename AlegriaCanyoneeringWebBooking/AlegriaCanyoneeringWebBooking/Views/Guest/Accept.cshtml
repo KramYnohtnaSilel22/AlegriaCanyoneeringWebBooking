@@ -53,11 +53,12 @@
                             <td>@item.Batch</td>
                             <td>@item.NumberOfGuests</td>
                             <td>
-                                <span class="badge
-                                    @(item.BookingStatus == "confirmed" ? "bg-secondary" :
-                                      item.BookingStatus == "reserved" ? "bg-success" : "bg-secondary")">
-                                    @item.BookingStatus
-                                </span>
+                                                         <span class="badge
+                                @(item.BookingStatus == "confirmed" ? "bg-primary" :
+                                  item.BookingStatus == "reserved" ? "bg-success" : "bg-secondary")">
+                                @item.BookingStatus
+                            </span>
+
                             </td>
                             <td>
                                 <div class="btn-group" role="group">

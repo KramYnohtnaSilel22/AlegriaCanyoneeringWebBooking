@@ -89,7 +89,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(model);
         }
-        // POST: Anticipate
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Anticipate(GuestListViewModel model)
@@ -98,35 +97,36 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 var guest = model.NewGuest;
                 guest.BookingStatus = "anticipated";
-                var now = DateTime.Now;
-                guest.Month = now.ToString("yyyy-MM");
-                guest.DateShort = now.ToString("MMM dd, yyyy");
-                // Assign Batch if it's not set
-                if (string.IsNullOrEmpty(guest.Batch))
-                {
-                    guest.Batch = DateTime.Now.ToString("yyyyMMddHHmmss");
-                }
 
-                // Auto-generate RFID if not already set
-                if (string.IsNullOrEmpty(guest.RFID))
-                {
-                    guest.RFID = GenerateRFID();
-                }
-
+                // Generate Batch, RFID, Month, DateShort
+                guest.Batch = DateTime.Now.ToString("yyyyMMddHHmmss");
+                guest.RFID = GenerateRFID();
+                guest.Month = DateTime.Today.ToString("yyyy-MM");
+                guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
 
                 _context.Add(guest);
                 await _context.SaveChangesAsync();
-                // TempData for Toast
-                TempData["ToastMessage"] = "Guest added successfully!";
-                TempData["ToastType"] = "success"; // Can also be: info, warning, danger
 
-                return RedirectToAction(nameof(Anticipate));
+                TempData["ToastMessage"] = "Guest added successfully!";
+                TempData["ToastType"] = "success";
+
+                // ❗ Do not redirect, just reload ReservedGuests and stay in view
+                model.ReservedGuests = await _context.Guests
+                    .Include(g => g.Operator)
+                    .Include(g => g.Nationality)
+                    .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
+                    .ToListAsync();
+
+                // Dropdowns
+                await PopulateDropdowns();
+
+                // ✅ Keep the same form input values
+                return View(model);
             }
 
-            // If validation fails, repopulate dropdowns
+            // If validation fails, reload data
             await PopulateDropdowns();
 
-            // Reload reserved guests
             model.ReservedGuests = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
@@ -176,46 +176,29 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         //    return View(model);
         //}
-
-        //// Helper method to populate dropdowns
         private async Task PopulateDropdowns()
         {
-            // Populate operators
             var operators = await _context.Operators
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
                     Text = o.BusinessName
-                })
-                .ToListAsync();
+                }).ToListAsync();
 
-            if (!operators.Any())
-            {
-                operators = new List<SelectListItem>
-        {
-            new SelectListItem { Text = "No operators available", Value = "" }
-        };
-            }
-
-            // Populate nationalities
             var nationalities = await _context.Nationalities
                 .Select(n => new SelectListItem
                 {
                     Value = n.Id.ToString(),
                     Text = n.NatName
-                })
-                .ToListAsync();
+                }).ToListAsync();
 
-            if (!nationalities.Any())
-            {
-                nationalities = new List<SelectListItem>
-        {
-            new SelectListItem { Text = "No nationalities available", Value = "" }
-        };
-            }
+            ViewBag.OperatorList = operators.Any()
+                ? operators
+                : new List<SelectListItem> { new SelectListItem { Text = "No operators available", Value = "" } };
 
-            ViewBag.OperatorList = operators;
-            ViewBag.NationalityList = nationalities;
+            ViewBag.NationalityList = nationalities.Any()
+                ? nationalities
+                : new List<SelectListItem> { new SelectListItem { Text = "No nationalities available", Value = "" } };
         }
 
 
@@ -358,16 +341,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Guest/Accept
         public async Task<IActionResult> Accept()
         {
-            var confirmedGuests = await _context.Guests
-                .Include(g => g.Nationality)
+            var guests = await _context.Guests
                 .Include(g => g.Operator)
-                .Include(g => g.Driver)
                 .Include(g => g.Guide)
-                .Where(g => g.BookingStatus == "reserved")
+                  .Include(g => g.Nationality)
+                .Include(g => g.Driver)
+                     .Where(g => g.BookingStatus == "confirmed" || g.BookingStatus == "reserved") // 👈 Show both if needed
+                .GroupBy(g => g.Id)               // Group by Guest ID
+                .Select(g => g.First())           // Select only the first per group
                 .ToListAsync();
 
-            return View(confirmedGuests);
+            return View(guests);
         }
+
 
         // GET: Guest/ScanQR/5
         public async Task<IActionResult> ScanQR(int id)
@@ -610,9 +596,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(guest); // Returns Book.cshtml
         }
-
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Book(int id, List<int> driverIds, List<int> guideIds)
@@ -625,10 +608,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (guest == null)
                 return NotFound();
 
-            // For backward compatibility, assign the first selected driver and guide
+            // Assign driver and guide
             guest.DriverId = driverIds?.FirstOrDefault();
             guest.GuideId = guideIds?.FirstOrDefault();
-            guest.BookingStatus = "reserved";
+            guest.BookingStatus = "confirmed";
 
             _context.Update(guest);
             await _context.SaveChangesAsync();
@@ -640,23 +623,80 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             else
                 foreignCount = guest.NumberOfGuests;
 
-            // Create Batch with multiple drivers/guides count
-            var batch = new Batch
+            var arrivalDate = DateTime.Parse(guest.ArrivalDate);
+
+            // 🔐 Check if Batch already exists
+            var existingBatch = await _context.Batches.FirstOrDefaultAsync(b =>
+                b.OperatorId == guest.OperatorId &&
+                b.ArrivalDate == arrivalDate);
+
+            if (existingBatch == null)
             {
-                OperatorId = guest.OperatorId ?? 0,
-                NoOfLocalGuest = localCount,
-                NoOfForeignGuest = foreignCount,
-                NoOfTGuide = guideIds?.Count ?? 0,
-                NoOfMDriver = driverIds?.Count ?? 0,
-                TotalNoOfGuest = guest.NumberOfGuests,
-                ArrivalDate = DateTime.Parse(guest.ArrivalDate)
-            };
+                // Only add if not existing
+                var batch = new Batch
+                {
+                    OperatorId = guest.OperatorId ?? 0,
+                    NoOfLocalGuest = localCount,
+                    NoOfForeignGuest = foreignCount,
+                    NoOfTGuide = guideIds?.Count ?? 0,
+                    NoOfMDriver = driverIds?.Count ?? 0,
+                    TotalNoOfGuest = guest.NumberOfGuests,
+                    ArrivalDate = arrivalDate
+                };
 
-            _context.Batches.Add(batch);
-            await _context.SaveChangesAsync();
+                _context.Batches.Add(batch);
+                await _context.SaveChangesAsync();
+            }
 
-            return RedirectToAction("Accept"); // back to list
+            return RedirectToAction("Accept");
         }
+
+
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Book(int id, List<int> driverIds, List<int> guideIds)
+        //{
+        //    var guest = await _context.Guests
+        //        .Include(g => g.Operator)
+        //        .Include(g => g.Nationality)
+        //        .FirstOrDefaultAsync(g => g.Id == id);
+
+        //    if (guest == null)
+        //        return NotFound();
+
+        //    // For backward compatibility, assign the first selected driver and guide
+        //    guest.DriverId = driverIds?.FirstOrDefault();
+        //    guest.GuideId = guideIds?.FirstOrDefault();
+        //    if (guest.BookingStatus == "confirmed")
+        //    {
+        //        _context.Update(guest);
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    // Count Local vs Foreign
+        //    int localCount = 0, foreignCount = 0;
+        //    if (guest.NationalityType?.ToLower() == "local")
+        //        localCount = guest.NumberOfGuests;
+        //    else
+        //        foreignCount = guest.NumberOfGuests;
+
+        //    // Create Batch with multiple drivers/guides count
+        //    var batch = new Batch
+        //    {
+        //        OperatorId = guest.OperatorId ?? 0,
+        //        NoOfLocalGuest = localCount,
+        //        NoOfForeignGuest = foreignCount,
+        //        NoOfTGuide = guideIds?.Count ?? 0,
+        //        NoOfMDriver = driverIds?.Count ?? 0,
+        //        TotalNoOfGuest = guest.NumberOfGuests,
+        //        ArrivalDate = DateTime.Parse(guest.ArrivalDate)
+        //    };
+
+        //    _context.Batches.Add(batch);
+        //    await _context.SaveChangesAsync();
+
+        //    return RedirectToAction("Accept"); // back to list
+        //}
 
 
         private bool GuestExists(int id)
