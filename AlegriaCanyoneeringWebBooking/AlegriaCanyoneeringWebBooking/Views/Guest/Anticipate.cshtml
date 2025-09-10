@@ -20,7 +20,7 @@
 
 
 
-<div class="container mt-5">
+<div class="container">
     <h2 class="text-center text-primary mb-5 fw-bold">Bookings</h2>
 
     <div class="row g-4">
@@ -32,11 +32,11 @@
 
                     <form asp-action="Anticipate" method="post">
                         <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
                         <div class="mb-3">
                             <label asp-for="NewGuest.NumberOfGuests" class="form-label fw-medium">Number of Guests</label>
                             <input asp-for="NewGuest.NumberOfGuests" type="number" min="1" class="form-control form-control-lg" />
                         </div>
-
                         <div class="mb-3">
                             <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Full Name</label>
                             <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="Enter full name" />
@@ -52,10 +52,10 @@
                         <div class="mb-3">
                             <label asp-for="NewGuest.Gender" class="form-label fw-medium">Gender</label>
                             <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
-                         
+                          
                                 <option>Male</option>
                                 <option>Female</option>
-                         
+                            
                             </select>
                             <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
                         </div>
@@ -63,7 +63,7 @@
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality</label>
                             <select asp-for="NewGuest.NationalityType" class="form-select form-select-lg">
-                                <option value="">Select Nationality</option>
+                           
                                 <option value="Local">Local</option>
                                 <option value="Foreign">Foreign</option>
                             </select>
@@ -73,7 +73,7 @@
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Status</label>
                             <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList">
-                                <option value="">-- Select Country --</option>
+                            
                             </select>
                             <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
                         </div>
@@ -81,7 +81,7 @@
                         <div class="mb-3">  
                             <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
                             <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList">
-                                <option value="">-- Select Operator --</option>
+                            
                             </select>
                             <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
                         </div>
@@ -97,7 +97,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-3 row g-3">
+                 @*        <div class="mb-3 row g-3">
                             <div class="col">
                                 <label asp-for="NewGuest.Month" class="form-label fw-medium">Month</label>
                                 <input asp-for="NewGuest.Month" type="month" class="form-control form-control-lg" />
@@ -107,8 +107,8 @@
                                 <input asp-for="NewGuest.DateShort" type="date" class="form-control form-control-lg" />
                             </div>
                         </div>
+ *@
 
-                  
                   @*       <div class="mb-3">
                             <label asp-for="NewGuest.RFID" class="form-label fw-medium">RFID</label>
                             <input asp-for="NewGuest.RFID" class="form-control form-control-lg" />

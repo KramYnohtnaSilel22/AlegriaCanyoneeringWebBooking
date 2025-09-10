@@ -98,7 +98,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 var guest = model.NewGuest;
                 guest.BookingStatus = "anticipated";
-
+                var now = DateTime.Now;
+                guest.Month = now.ToString("yyyy-MM");
+                guest.DateShort = now.ToString("MMM dd, yyyy");
                 // Assign Batch if it's not set
                 if (string.IsNullOrEmpty(guest.Batch))
                 {
@@ -361,7 +363,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Operator)
                 .Include(g => g.Driver)
                 .Include(g => g.Guide)
-                .Where(g => g.BookingStatus == "reserved")
+                .Where(g => g.BookingStatus == "confirmed")
                 .ToListAsync();
 
             return View(confirmedGuests);
@@ -578,7 +580,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         public async Task<IActionResult> Book(int id)
         {
-            var guest = await _context.Guests   
+            var guest = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver)
