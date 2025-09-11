@@ -33,7 +33,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
-  
+
         // GET: Anticipate(Add + Reserved Guests in one page)
         public async Task<IActionResult> Anticipate()
         {
@@ -774,7 +774,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return RedirectToAction("Accept");
         }
-    
+
 
         private bool GuestExists(int id)
         {
@@ -782,3 +782,5 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
     }
 }
+
+
