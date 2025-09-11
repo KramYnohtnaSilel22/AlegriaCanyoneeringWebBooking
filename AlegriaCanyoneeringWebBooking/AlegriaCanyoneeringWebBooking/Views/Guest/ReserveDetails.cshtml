@@ -14,7 +14,7 @@
                 <div class="card-body">
                     <dl class="row">
                         <dt class="col-sm-4">ID:</dt>
-                        <dd class="col-sm-8">@Model.Id</dd>
+                        <dd class="col-sm-8">@Model.GuestId</dd>
 
                         <dt class="col-sm-4">Full Name:</dt>
                         <dd class="col-sm-8">@Model.Fullname</dd>
@@ -72,7 +72,7 @@
                     }
                 </div>
                 <div class="card-footer">
-                    <a asp-action="EditReserve" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+                    <a asp-action="EditReserve" asp-route-id="@Model.GuestId" class="btn btn-warning">Edit</a>
                     <a asp-action="Reserve" class="btn btn-secondary">Back to List</a>
                 </div>
             </div>

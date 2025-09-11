@@ -21,7 +21,7 @@
                                 <h5>Guest Details</h5>
                                 <dl class="row">
                                     <dt class="col-sm-4">ID:</dt>
-                                    <dd class="col-sm-8">@Model.Id</dd>
+                                    <dd class="col-sm-8">@Model.GuestId</dd>
 
                                     <dt class="col-sm-4">Full Name:</dt>
                                     <dd class="col-sm-8">@Model.Fullname</dd>
@@ -73,7 +73,7 @@
 
                                 <form asp-action="ConfirmQR" method="post">
                                     @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <input type="hidden" name="id" value="@Model.GuestId" />
                                     <button type="submit" class="btn btn-success btn-lg">
                                         <i class="fas fa-check-circle me-2"></i>Confirm Reservation
                                     </button>

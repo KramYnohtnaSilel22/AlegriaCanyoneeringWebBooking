@@ -16,7 +16,7 @@
                 <div class="card-body">
                     <form asp-action="Book" method="post">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="id" value="@Model.GuestId" />
 
                         <div class="row g-3">
                             <div class="col-md-6">

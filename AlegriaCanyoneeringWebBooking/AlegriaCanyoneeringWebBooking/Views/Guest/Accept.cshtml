@@ -40,7 +40,7 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>@item.Id</td>
+                            <td>@item.GuestId</td>
                             <td>@item.Fullname</td>
                             <td>@item.Age</td>
                             <td>@item.Gender</td>
@@ -66,10 +66,10 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a asp-action="Book" asp-route-id="@item.Id" class="btn btn-info btn-sm">
+                                    <a asp-action="Book" asp-route-id="@item.GuestId" class="btn btn-info btn-sm">
                                         <i class="fas fa-eye"></i> Book
                                     </a>
-                                    <a asp-action="ScanQR" asp-route-id="@item.Id" class="btn btn-secondary btn-sm">
+                                    <a asp-action="ScanQR" asp-route-id="@item.GuestId" class="btn btn-secondary btn-sm">
                                         <i class="fas fa-qrcode"></i> View QR
                                     </a>
                                 </div>

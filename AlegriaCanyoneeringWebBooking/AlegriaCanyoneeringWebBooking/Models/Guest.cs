@@ -6,7 +6,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
     public class Guest
     {
         [Key]
-        public int Id { get; set; }
+        public int GuestId { get; set; }
 
         [Required(ErrorMessage = "Full name is required")]
         [StringLength(1000, ErrorMessage = "Full name cannot exceed 1000 characters")]
@@ -74,7 +74,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Area { get; set; }
 
         [Column("ContactNum")]
-        public string? ContactNumber { get; set; }
+        public string? ContactNumber { get; set; }  
 
 
         [Column("operatorid")]

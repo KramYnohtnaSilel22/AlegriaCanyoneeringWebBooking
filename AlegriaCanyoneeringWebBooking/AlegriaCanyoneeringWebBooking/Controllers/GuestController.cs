@@ -211,7 +211,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver) // ✅ Include Driver
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (guest == null)
             {
@@ -236,7 +236,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             var guest = await _context.Guests
                 .Include(g => g.Operator)
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (guest == null)
             {
@@ -287,7 +287,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditReserve(int id, Guest guest)
         {
-            if (id != guest.Id)
+            if (id != guest.GuestId)
             {
                 return NotFound();
             }
@@ -308,7 +308,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Guests.Any(e => e.Id == guest.Id))
+                    if (!_context.Guests.Any(e => e.GuestId == guest.GuestId))
                     {
                         return NotFound();
                     }
@@ -347,7 +347,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                   .Include(g => g.Nationality)
                 .Include(g => g.Driver)
                      .Where(g => g.BookingStatus == "confirmed" || g.BookingStatus == "reserved") // 👈 Show both if needed
-                .GroupBy(g => g.Id)               // Group by Guest ID
+                .GroupBy(g => g.GuestId)               // Group by Guest ID
                 .Select(g => g.First())           // Select only the first per group
                 .ToListAsync();
 
@@ -362,7 +362,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver) // ✅ Include Driver
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (guest == null)
             {
@@ -382,7 +382,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             string qrData =
                 $"Guest Details\n" +
                 $"-----------------------------------\n" +
-                $"ID             : {guest.Id}\n" +
+                $"ID             : {guest.GuestId}\n" +
                 $"Full Name      : {guest.Fullname}\n" +
                 $"Age            : {guest.Age}\n" +
                 $"Gender         : {guest.Gender}\n" +
@@ -414,7 +414,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Nationality)
                 .Include(g => g.Operator)
                 .Include(g => g.Driver)
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (guest == null)
             {
@@ -441,7 +441,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             string qrData =
                 $"Guest Details\n" +
                 $"-----------------------------------\n" +
-                $"ID             : {guest.Id}\n" +
+                $"ID             : {guest.GuestId}\n" +
                 $"Full Name      : {guest.Fullname}\n" +
                 $"Age            : {guest.Age}\n" +
                 $"Gender         : {guest.Gender}\n" +
@@ -496,10 +496,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             guest.BookingStatus = status;
-            _context.Update(guest);
-            await _context.SaveChangesAsync();
 
-            // ✅ Redirect to Accept if status is confirmed
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Something changed in the DB since we loaded the entity
+                return Conflict("Concurrency conflict: guest may have been modified by another process.");
+            }
+
+            // ✅ Redirect to Accept if status is reserved
             if (status.ToLower() == "reserved")
             {
                 return RedirectToAction(nameof(Accept));
@@ -508,6 +516,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Otherwise, back to Anticipate list
             return RedirectToAction(nameof(Anticipate));
         }
+
 
 
         private string GenerateQRCodeBase64(string data)
@@ -571,7 +580,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver)
                 .Include(g => g.Guide)
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (guest == null)
             {
@@ -603,7 +612,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var guest = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (guest == null)
                 return NotFound();
@@ -701,7 +710,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private bool GuestExists(int id)
         {
-            return _context.Guests.Any(e => e.Id == id);
+            return _context.Guests.Any(e => e.GuestId == id);
         }
     }
 }

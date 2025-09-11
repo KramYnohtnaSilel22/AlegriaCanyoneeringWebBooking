@@ -28,9 +28,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
             modelBuilder.Entity<Guest>(entity =>
             {
                 entity.ToTable("guest");
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e => e.GuestId);
 
-                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.GuestId).HasColumnName("GuestId");
                 entity.Property(e => e.Fullname).HasColumnName("fullname").HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.Age).HasColumnName("age").HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.NationalityType).HasColumnName("nationality").HasMaxLength(10000).IsRequired(false); // Changed to not required
