@@ -43,6 +43,14 @@
                             <!-- ✅ Actions column first -->
                             <td>
                                 <div class="btn-group" role="group">
+                                    <a href="javascript:void(0);"
+                                       class="btn btn-outline-dark btn-sm"
+                                       data-qr="@Html.Raw(item.QRBase64)"
+                                       onclick="showFullQRDetails(this)">
+                                        <i class="bi bi-qr-code-scan"></i> QR CODE
+                                    </a>
+
+
                                     <a asp-action="Book" asp-route-id="@item.GuestId" class="btn btn-primary btn-sm">
                                         <i class="fas fa-eye"></i> Book
                                     </a>
@@ -92,7 +100,7 @@
     }
 </div>
 
-<!-- QR Modal -->
+<!-- Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -102,11 +110,11 @@
             </div>
             <div class="modal-body text-center">
                 <img id="modalQRImage" src="" alt="QR Code" class="img-fluid" />
-                <p id="modalQRGuest" class="mt-2"></p>
             </div>
         </div>
     </div>
 </div>
+
 
 @section Styles {
     <style>
@@ -127,9 +135,20 @@
 }
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384..." crossorigin="anonymous"></script>
+
     <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
     <script>
-        function showQRCode(qrCode, guestName) {
+
+           function showFullQRDetails(element) {
+            const qrCode = element.getAttribute('data-qr');
+            if (qrCode) {
+                const img = document.getElementById('modalQRImage');
+                img.src = qrCode;
+                new bootstrap.Modal(document.getElementById('qrModal')).show();
+            }
+        }
+          function showQRCode(qrCode, guestName) {
             document.getElementById('modalQRImage').src = qrCode;
             document.getElementById('modalQRGuest').textContent = guestName;
             new bootstrap.Modal(document.getElementById('qrModal')).show();
@@ -144,5 +163,10 @@
                 order: [[0, 'asc']] // Sort by Guest ID
             });
         });
+
+
+      
+
+
     </script>
 }

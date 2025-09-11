@@ -90,5 +90,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [ForeignKey(nameof(GuideId))]
         public Guide? Guide { get; set; }
+
+        [NotMapped]
+        public string QRBase64 { get; set; }
     }
 }

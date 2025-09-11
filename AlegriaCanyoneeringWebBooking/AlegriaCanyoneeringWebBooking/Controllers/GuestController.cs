@@ -143,39 +143,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        //// POST: Anticipate
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Anticipate(GuestListViewModel model)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        var guest = model.NewGuest;
-        //        guest.BookingStatus = "anticipated";
-
-        //        // Assign Batch if it's not set
-        //        if (string.IsNullOrEmpty(guest.Batch))
-        //        {
-        //            guest.Batch = DateTime.Now.ToString("yyyyMMddHHmmss");
-        //        }
-
-        //        _context.Add(guest);
-        //        await _context.SaveChangesAsync();
-
-        //        return RedirectToAction(nameof(Anticipate));
-        //    }
-
-        //    // If validation fails, repopulate dropdowns
-        //    await PopulateDropdowns();
-
-        //    // Reload reserved guests
-        //    model.ReservedGuests = await _context.Guests
-        //        .Include(g => g.Operator)
-        //        .Include(g => g.Nationality)
-        //        .ToListAsync();
-
-        //    return View(model);
-        //}
+  
         private async Task PopulateDropdowns()
         {
             var operators = await _context.Operators
@@ -344,16 +312,45 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var guests = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Guide)
-                  .Include(g => g.Nationality)
+                .Include(g => g.Nationality)
                 .Include(g => g.Driver)
-                     .Where(g => g.BookingStatus == "confirmed" || g.BookingStatus == "reserved") // 👈 Show both if needed
-                .GroupBy(g => g.GuestId)               // Group by Guest ID
-                .Select(g => g.First())           // Select only the first per group
+                .Where(g => g.BookingStatus == "confirmed" || g.BookingStatus == "reserved")
+                .GroupBy(g => g.GuestId)
+                .Select(g => g.First())
                 .ToListAsync();
+
+            // ✅ Generate QR code for each guest
+            foreach (var guest in guests)
+            {
+                string qrText = GenerateQRText(guest);
+                guest.QRBase64 = GenerateQRCodeBase64(qrText);
+            }
 
             return View(guests);
         }
 
+        private string GenerateQRText(Guest guest)
+        {
+            return
+        $"Guest Details\n" +
+        $"------------------------\n" +
+        $"ID           : {guest.GuestId}\n" +
+        $"Full Name    : {guest.Fullname}\n" +
+        $"Age          : {guest.Age}\n" +
+        $"Gender       : {guest.Gender}\n" +
+        $"Nationality  : {guest.NationalityType}\n" +
+        $"Guests Count : {guest.NumberOfGuests}\n" +
+        $"Nationality Status : {guest.Nationality?.NatName}\n" +
+        $"Operator     : {guest.Operator?.BusinessName ?? "N/A"}\n" +
+        $"Driver       : {guest.Driver?.FName ?? "None"}\n" +
+        $"Guide        : {guest.Guide?.FName ?? "None"}\n" +
+        $"Booking Date : {guest.Date:yyyy-MM-dd}\n" +
+        $"Arrival Date : {guest.ArrivalDate:yyyy-MM-dd}\n" +
+        $"Month        : {guest.Month}\n" +
+        $"Batch        : {guest.Batch}\n" +
+        $"RFID         : {guest.RFID}\n" +
+        $"Status       : {guest.BookingStatus?.ToUpper() ?? "N/A"}";
+        }
 
         // GET: Guest/ScanQR/5
         public async Task<IActionResult> ScanQR(int id)
