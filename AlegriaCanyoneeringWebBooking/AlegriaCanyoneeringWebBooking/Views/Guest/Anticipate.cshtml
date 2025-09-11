@@ -61,13 +61,13 @@
                         <div class="mb-3">
                             <label asp-for="NewGuest.Gender" class="form-label fw-medium">Gender</label>
                             <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
-                          
-                                <option>Male</option>
-                                <option>Female</option>
-                            
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
                             </select>
                             <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
                         </div>
+
+                    
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.ContactNumber" class="form-label fw-medium">Contact #</label>
@@ -88,10 +88,7 @@
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Status</label>
-                            <select asp-for="NewGuest.NationalityId"
-                                    class="form-select form-select-lg"
-                                    id="NationalityId">
-                                <option value=""></option>
+                            <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList">
                             </select>
                             <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
                         </div>
@@ -260,37 +257,3 @@
 
         <script src="~/js/site.js"></script>
 
-@section Scripts {
-    <script>
-        $(function () {
-            const $type = $('#NationalityType');
-            const $list = $('#NationalityId');
-
-            $type.on('change', function () {
-                const choice = $(this).val();
-                $list.empty();
-
-                if (choice === 'Local') {
-                  
-                    $list.append(new Option('Within Cebu Province', 'Within Cebu Province'));
-                    $list.append(new Option('Outside Cebu Province', 'Outside Cebu Province'));
-                }
-                else if (choice === 'Foreign') {
-                    $list.append(new Option('Loading...', ''));
-                    $.getJSON('@Url.Action("GetNationalities", "Guest")')
-                     .done(function (data) {
-                         data.forEach(function (name) {
-                             $list.append(new Option(name, name));
-                         });
-                     })
-                     .fail(function () {
-                         $list.empty().append(new Option('Error loading', ''));
-                     });
-                }
-                else {
-                    $list.append(new Option('-- Select --', ''));
-                }
-            });
-        });
-    </script>
-}

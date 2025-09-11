@@ -707,27 +707,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         //}
 
 
-        [HttpGet]
-        public async Task<IActionResult> GetNationalities()
-        {
-            try
-            {
-                // fetch all except the local ones
-                var nationalities = await _context.Nationalities
-                    .Where(n => n.NatName != "Within Cebu Province" &&
-                                n.NatName != "Outside Cebu Province")
-                    .OrderBy(n => n.NatName)
-                    .Select(n => n.NatName)
-                    .ToListAsync();
-
-                return Json(nationalities);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
+  
 
         private bool GuestExists(int id)
         {
