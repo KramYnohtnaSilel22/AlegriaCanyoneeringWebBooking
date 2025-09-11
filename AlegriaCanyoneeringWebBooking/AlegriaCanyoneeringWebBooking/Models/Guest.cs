@@ -92,6 +92,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public Guide? Guide { get; set; }
 
         [NotMapped]
-        public string QRBase64 { get; set; }
+        public string? QRBase64 { get; set; }
     }
 }
