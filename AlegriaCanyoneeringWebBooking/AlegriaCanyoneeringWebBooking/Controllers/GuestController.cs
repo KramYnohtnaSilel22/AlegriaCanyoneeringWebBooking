@@ -361,6 +361,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var guest = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
+                   .Include(g => g.Guide) // ✅ Include Guide
                 .Include(g => g.Driver) // ✅ Include Driver
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 
@@ -391,6 +392,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 $"Nat. Status    : {guest.NationalityId}\n" +
                 $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
                $"Driver         : {(guest.Driver != null ? guest.Driver.FName : "None")}\n" +
+                $"Guide          : {(guest.Guide != null ? guest.Guide.FName : "None")}\n" + // ✅ Added
                 $"Booking Date   : {guest.Date:yyyy-MM-dd}\n" +
                 $"Arrival Date   : {guest.ArrivalDate:yyyy-MM-dd}\n" +
                 $"Month          : {guest.Month}\n" +

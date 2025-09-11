@@ -43,8 +43,9 @@
                                     <dt class="col-sm-4">Operator:</dt>
                                     <dd class="col-sm-8">@Model.Operator.BusinessName</dd>
                                     <dt class="col-sm-4">Driver</dt>
-                                    <dd class="col-sm-8">@Model.Driver.FName</dd>
-
+                                    <dd class="col-sm-8">@Model.Driver?.FName</dd>
+                                    <dt class="col-sm-4">Guide</dt>
+                                    <dd class="col-sm-8">@Model.Guide?.FName</dd>
                                     <dt class="col-sm-4">Arrival Date:</dt>
                                     <dd class="col-sm-8">@Model.ArrivalDate</dd>
 
