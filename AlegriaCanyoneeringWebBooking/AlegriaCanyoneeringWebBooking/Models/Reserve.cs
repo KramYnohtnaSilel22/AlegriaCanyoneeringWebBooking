@@ -8,7 +8,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
     public class Reserve
     {
         [Key]
-        public int Id { get; set; }
+        public int ReserveId { get; set; }
 
         [Required]
         [StringLength(100)]
