@@ -37,9 +37,18 @@
                             <label asp-for="NewGuest.NumberOfGuests" class="form-label fw-medium">Number of Guests</label>
                             <input asp-for="NewGuest.NumberOfGuests" type="number" min="1" class="form-control form-control-lg" />
                         </div>
+
                         <div class="mb-3">
-                            <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Full Name</label>
-                            <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="Enter full name" />
+                            <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
+                            <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList">
+                            </select>
+                            <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
+                        </div>
+
+
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Guest Name</label>
+                            <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="Enter Guest Name" />
                             <span asp-validation-for="NewGuest.Fullname" class="text-danger"></span>
                         </div>
 
@@ -61,6 +70,12 @@
                         </div>
 
                         <div class="mb-3">
+                            <label asp-for="NewGuest.ContactNumber" class="form-label fw-medium">Contact #</label>
+                            <input asp-for="NewGuest.ContactNumber" type="number" min="1" class="form-control form-control-lg" />
+                        </div>
+
+
+                        <div class="mb-3">
                             <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality</label>
                             <select asp-for="NewGuest.NationalityType" class="form-select form-select-lg">
                            
@@ -78,13 +93,7 @@
                             <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
                         </div>
 
-                        <div class="mb-3">  
-                            <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
-                            <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList">
-                            
-                            </select>
-                            <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
-                        </div>
+                 
 
                         <div class="mb-3 row g-3">
                             <div class="col">
@@ -113,6 +122,18 @@
                             <label asp-for="NewGuest.RFID" class="form-label fw-medium">RFID</label>
                             <input asp-for="NewGuest.RFID" class="form-control form-control-lg" />
                         </div> *@
+
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Area" class="form-label fw-medium">Area</label>
+                            <select asp-for="NewGuest.Area" class="form-select form-select-lg">
+
+                                <option>Wonder Falls</option>
+                                <option>Kanlaob</option>
+                                <option>Kawasan Exit</option>
+
+                            </select>
+                            <span asp-validation-for="NewGuest.Area" class="text-danger"></span>
+                        </div>
 
                         <!-- Hidden Auto Fields -->
                         <input asp-for="NewGuest.Batch" type="hidden" />
@@ -144,6 +165,7 @@
                                         <th>Full Name</th>
                                         <th>Age</th>
                                         <th>Gender</th>
+                                        <th>Contact #</th>
                                         <th>Nationality</th>
                                         <th>Nat. Status</th>
                                         <th>Operator</th>
@@ -154,6 +176,7 @@
                                         <th>Batch</th>
                                         <th>No. Guests</th>
                                         <th>RFID</th>
+                                        <th>Area</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -166,6 +189,7 @@
                                             <td>@guest.Fullname</td>
                                             <td>@guest.Age</td>
                                             <td>@guest.Gender</td>
+                                            <td>@guest.ContactNumber</td>
                                             <td>@guest.NationalityType</td>
                                             <td>@guest.Nationality.NatName</td>
                                             <td>@guest.Operator.BusinessName</td>
@@ -176,6 +200,7 @@
                                             <td>@guest.Batch</td>
                                             <td>@guest.NumberOfGuests</td>
                                             <td>@guest.RFID</td>
+                                            <td>@guest.Area</td>
                                             <td>
                                                         <span class="badge bg-@(guest.BookingStatus == "anticipated" ? "info" :
                        guest.BookingStatus == "reserved" ? "success" :

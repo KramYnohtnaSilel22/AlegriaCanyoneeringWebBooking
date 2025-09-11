@@ -53,6 +53,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.Property(e => e.QrCode).HasColumnName("qrcode").HasMaxLength(500); // Fixed column name
 
                 entity.Property(e => e.NumberOfGuests).HasColumnName("number_of_guests").IsRequired();
+                entity.Property(e => e.Area).HasColumnName("Area").HasMaxLength(500).IsRequired();
+                entity.Property(e => e.ContactNumber).HasColumnName("ContactNum").HasMaxLength(500).IsRequired();
                 entity.Property(e => e.Batch).HasColumnName("batch").HasMaxLength(100);
 
                 // Configure foreign key relationships with proper cascade behavior for nullable FKs

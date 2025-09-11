@@ -53,8 +53,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Column("arrivaldate")]
         public string ArrivalDate { get; set; }
 
-
-    
         public string? Month { get; set; }
 
         [StringLength(100, ErrorMessage = "Short date cannot exceed 100 characters")]
@@ -71,6 +69,13 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Column("qrcode")]
         public string? QrCode { get; set; }
+
+        [Column("Area")]
+        public string? Area { get; set; }
+
+        [Column("ContactNum")]
+        public string? ContactNumber { get; set; }
+
 
         [Column("operatorid")]
         public int? OperatorId { get; set; }
