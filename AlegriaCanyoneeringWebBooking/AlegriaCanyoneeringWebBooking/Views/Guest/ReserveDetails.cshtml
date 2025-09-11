@@ -1,81 +1,97 @@
-﻿@model AlegriaCanyoneeringWebBooking.Models.Guest
+﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestDetailsViewModel
 
 @{
     ViewData["Title"] = "Booking Details";
 }
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title">Booking Details</h3>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Main Guest Info -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Booking Details</h5>
+                    <span class="badge bg-@(Model.Guest.BookingStatus == "confirmed" ? "success" :
+                                            Model.Guest.BookingStatus == "anticipated" ? "warning" : "info")">
+                        @Model.Guest.BookingStatus
+                    </span>
                 </div>
                 <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">ID:</dt>
-                        <dd class="col-sm-8">@Model.GuestId</dd>
+                    <h4 class="fw-bold text-dark">@Model.Guest.Fullname</h4>
+                    <hr />
+                    <div class="row g-3">
+                        <div class="col-md-6"><strong>Guest ID:</strong> @Model.Guest.GuestId</div>
+                        <div class="col-md-6"><strong>Gender:</strong> @Model.Guest.Gender</div>
+                        <div class="col-md-6"><strong>Age:</strong> @Model.Guest.Age</div>
+                        <div class="col-md-6"><strong>Contact:</strong> @Model.Guest.ContactNumber</div>
+                        <div class="col-md-6"><strong>Nationality:</strong> @Model.Guest.NationalityType</div>
+                        <div class="col-md-6"><strong>National Status:</strong> @Model.Guest.Nationality?.NatName</div>
+                        <div class="col-md-6"><strong>Operator:</strong> @Model.Guest.Operator?.BusinessName</div>
+                        <div class="col-md-6"><strong>Booking Date:</strong> @Model.Guest.Date</div>
+                        <div class="col-md-6"><strong>Arrival Date:</strong> @Model.Guest.ArrivalDate</div>
+                        <div class="col-md-6"><strong>Month:</strong> @Model.Guest.Month</div>
+                        <div class="col-md-6"><strong>Batch:</strong> @Model.Guest.Batch</div>
+                        <div class="col-md-6"><strong>No. of Guests:</strong> @Model.Guest.NumberOfGuests</div>
+                        <div class="col-md-6"><strong>Short Date:</strong> @Model.Guest.DateShort</div>
+                        <div class="col-md-6"><strong>RFID:</strong> @Model.Guest.RFID</div>
+                    </div>
 
-                        <dt class="col-sm-4">Full Name:</dt>
-                        <dd class="col-sm-8">@Model.Fullname</dd>
-
-                        <dt class="col-sm-4">Age:</dt>
-                        <dd class="col-sm-8">@Model.Age</dd>
-
-                        <dt class="col-sm-4">Nationality:</dt>
-                        <dd class="col-sm-8">@Model.NationalityType</dd>
-
-                        <dt class="col-sm-4">National Status:</dt>
-                        <dd class="col-sm-8">@Model.Nationality?.NatName</dd>
-
-                        <dt class="col-sm-4">Operator:</dt>
-                        <dd class="col-sm-8">@Model.Operator?.BusinessName</dd>
-
-                        <dt class="col-sm-4">Gender:</dt>
-                        <dd class="col-sm-8">@Model.Gender</dd>
-
-                        <dt class="col-sm-4">Date:</dt>
-                        <dd class="col-sm-8">@Model.Date</dd>
-
-                        <dt class="col-sm-4">Arrival Date:</dt>
-                        <dd class="col-sm-8">@Model.ArrivalDate</dd>
-
-                        <dt class="col-sm-4">Month:</dt>
-                        <dd class="col-sm-8">@Model.Month</dd>
-                        <dt class="col-sm-4">Batch:</dt>
-                        <dd class="col-sm-8">@Model.Batch</dd>
-
-                        <dt class="col-sm-4">No. of Guests:</dt>
-                        <dd class="col-sm-8">@Model.NumberOfGuests</dd>
-
-                        <dt class="col-sm-4">Short Date:</dt>
-                        <dd class="col-sm-8">@Model.DateShort</dd>
-
-                        <dt class="col-sm-4">RFID:</dt>
-                        <dd class="col-sm-8">@Model.RFID</dd>
-                    
-
-                        <dt class="col-sm-4">Status:</dt>
-                        <dd class="col-sm-8">
-                            <span class="badge bg-@(Model.BookingStatus == "confirmed" ? "success" : Model.BookingStatus == "anticipated" ? "warning" : "info")">
-                                @Model.BookingStatus
-                            </span>
-                        </dd>
-                    </dl>
-
-                    @if (!string.IsNullOrEmpty(Model.QrCode))
+                    @if (!string.IsNullOrEmpty(Model.Guest.QrCode))
                     {
-                        <div class="text-center mt-4">
-                            <h5>QR Code</h5>
-                            <img src="@Model.QrCode" alt="QR Code" class="img-fluid" style="max-width: 200px;" />
+                        <hr />
+                        <div class="text-center mt-3">
+                            <h6>QR Code</h6>
+                            <img src="@Model.Guest.QrCode" alt="QR Code" class="img-thumbnail" style="max-width: 200px;" />
                         </div>
                     }
                 </div>
-                <div class="card-footer">
-                    <a asp-action="EditReserve" asp-route-id="@Model.GuestId" class="btn btn-warning">Edit</a>
-                    <a asp-action="Reserve" class="btn btn-secondary">Back to List</a>
+                <div class="card-footer bg-light d-flex justify-content-between">
+                    <a asp-action="EditReserve" asp-route-id="@Model.Guest.GuestId" class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </a>
+                    <a asp-action="Anticipate" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    </a>
                 </div>
             </div>
+
+            <!-- Guests in Same Booking -->
+            <div class="mb-3">
+                <h5 class="text-primary border-bottom pb-2">Other Guests in Booking (@Model.GuestsInBatch?.Count)</h5>
+            </div>
+
+            @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any())
+            {
+                <div class="row g-4">
+                    @foreach (var guest in Model.GuestsInBatch)
+                    {
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-dark">@guest.Fullname</h6>
+                                    <div class="small text-muted mb-2">
+                                        <span class="badge bg-@(guest.BookingStatus == "confirmed" ? "success" :
+                                                            guest.BookingStatus == "anticipated" ? "warning" : "info")">
+                                            @guest.BookingStatus
+                                        </span>
+                                    </div>
+                                    <p class="mb-1"><strong>Age:</strong> @guest.Age</p>
+                                    <p class="mb-1"><strong>Gender:</strong> @guest.Gender</p>
+                                    <p class="mb-1"><strong>Nationality:</strong> @guest.NationalityType</p>
+                                    <p class="mb-1"><strong>Contact:</strong> @guest.ContactNumber</p>
+                                    <p class="mb-1"><strong>Arrival:</strong> @guest.ArrivalDate</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    No other guests found in this booking.
+                </div>
+            }
         </div>
     </div>
 </div>
