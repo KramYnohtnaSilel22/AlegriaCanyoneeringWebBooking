@@ -54,9 +54,15 @@
                             <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
                                 <option>Male</option>
                                 <option>Female</option>
+                                <option>Female</option>
+                            
+                                <option>Female</option>
+                            
                             </select>
                             <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
                         </div>
+
+                    
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.ContactNumber" class="form-label fw-medium">Contact #</label>
@@ -73,7 +79,11 @@
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Status</label>
-                            <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList"></select>
+                            <select asp-for="NewGuest.NationalityId"
+                                    class="form-select form-select-lg"
+                                    id="NationalityId">
+                                <option value=""></option>
+                            </select>
                             <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
                         </div>
 
@@ -169,52 +179,60 @@
                             </div>
                         </div>
 
-                        @* Show group only once per batch *@
-                        @if (guest.NumberOfGuests >= 5 &&
-                       guest.GuestId == Model.ReservedGuests
-                       .Where(g => g.Batch == guest.Batch)
-                       .OrderBy(g => g.GuestId)
-                       .Select(g => g.GuestId)
-                       .FirstOrDefault())
-                        {
-                            var relatedGuests = Model.ReservedGuests
-                            .Where(g => g.Batch == guest.Batch && g.GuestId != guest.GuestId)
-                            .ToList();
-
-                            if (relatedGuests.Any())
-                            {
-                              @*   <div class="ms-4 mb-3">
-                                    <h6>Other guests in this group:</h6>
-                                    <ul class="list-group">
-                                        @foreach (var relatedGuest in relatedGuests)
-                                        {
-                                            <li class="list-group-item">
-                                                @relatedGuest.Fullname - @relatedGuest.Age years old - @relatedGuest.Gender
-                                            </li>
-                                        }
-                                    </ul>
-                                </div> *@
-                            }
-                        }
+                                            </td>
+                                      
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center shadow-sm rounded-3 py-4 mt-3">
+                            <i class="fas fa-exclamation-triangle fa-lg me-2"></i>No Guests Found
+                        </div>
                     }
                 </div>
-            }
-            else
-            {
-                <div class="alert alert-warning text-center shadow-sm rounded-3 py-4 mt-3">
-                    <i class="fas fa-exclamation-triangle fa-lg me-2"></i>No Guests Found
-                </div>
-            }
+            </div>
         </div>
     </div>
 </div>
+  
 
-<script src="~/js/site.js"></script>
-<script>
-    window.onload = function () {
-        const section = document.getElementById('savedGuestsSection');
-        if (section) {
-            section.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
-</script>
+        <script src="~/js/site.js"></script>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const $type = $('#NationalityType');
+            const $list = $('#NationalityId');
+
+            $type.on('change', function () {
+                const choice = $(this).val();
+                $list.empty();
+
+                if (choice === 'Local') {
+                  
+                    $list.append(new Option('Within Cebu Province', 'Within Cebu Province'));
+                    $list.append(new Option('Outside Cebu Province', 'Outside Cebu Province'));
+                }
+                else if (choice === 'Foreign') {
+                    $list.append(new Option('Loading...', ''));
+                    $.getJSON('@Url.Action("GetNationalities", "Guest")')
+                     .done(function (data) {
+                         data.forEach(function (name) {
+                             $list.append(new Option(name, name));
+                         });
+                     })
+                     .fail(function () {
+                         $list.empty().append(new Option('Error loading', ''));
+                     });
+                }
+                else {
+                    $list.append(new Option('-- Select --', ''));
+                }
+            });
+        });
+    </script>
+}
