@@ -77,8 +77,9 @@
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality</label>
-                            <select asp-for="NewGuest.NationalityType" class="form-select form-select-lg" id="NationalityType">
-                            
+                            <select asp-for="NewGuest.NationalityType"
+                                    class="form-select form-select-lg"
+                                    id="NationalityType">
                                 <option value="Local">Local</option>
                                 <option value="Foreign">Foreign</option>
                             </select>
@@ -87,12 +88,13 @@
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Status</label>
-                            <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" id="NationalityId">
-                                <!-- options will be swapped with JS -->
+                            <select asp-for="NewGuest.NationalityId"
+                                    class="form-select form-select-lg"
+                                    id="NationalityId">
+                                <option value=""></option>
                             </select>
                             <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
                         </div>
-
                  
 
                         <div class="mb-3 row g-3">
@@ -260,39 +262,35 @@
 
 @section Scripts {
     <script>
-        const localOptions = [
-            { value: 'Within Cebu Province', text: 'Within Cebu Province' },
-            { value: 'Outside Cebu Province', text: 'Outside Cebu Province' }
-        ];
-        const foreignOptions = [
-            { value: 'Korean', text: 'Korean' },
-            { value: 'Japanese', text: 'Japanese' },
-            { value: 'Chinese', text: 'Chinese' },
-            { value: 'American', text: 'American' },
-            { value: 'African', text: 'African' },
-            { value: 'German', text: 'German' },
-            { value: 'Australian', text: 'Australian' },
-            { value: 'Dutch', text: 'Dutch' },
-            { value: 'Thailander', text: 'Thailander' },
-            { value: 'Taiwanese', text: 'Taiwanese' },
-            { value: 'Lebanese', text: 'Lebanese' },
-            { value: 'Algerian', text: 'Algerian' }
-        ];
+        $(function () {
+            const $type = $('#NationalityType');
+            const $list = $('#NationalityId');
 
-        function populateNationalityOptions(list) {
-            const select = $('#NationalityId');
-            select.empty();
-            list.forEach(o => select.append(new Option(o.text, o.value)));
-        }
+            $type.on('change', function () {
+                const choice = $(this).val();
+                $list.empty();
 
-        $('#NationalityType').on('change', function () {
-            if (this.value === 'Local') {
-                populateNationalityOptions(localOptions);
-            } else if (this.value === 'Foreign') {
-                populateNationalityOptions(foreignOptions);
-            } else {
-                $('#NationalityId').empty();
-            }
+                if (choice === 'Local') {
+                  
+                    $list.append(new Option('Within Cebu Province', 'Within Cebu Province'));
+                    $list.append(new Option('Outside Cebu Province', 'Outside Cebu Province'));
+                }
+                else if (choice === 'Foreign') {
+                    $list.append(new Option('Loading...', ''));
+                    $.getJSON('@Url.Action("GetNationalities", "Guest")')
+                     .done(function (data) {
+                         data.forEach(function (name) {
+                             $list.append(new Option(name, name));
+                         });
+                     })
+                     .fail(function () {
+                         $list.empty().append(new Option('Error loading', ''));
+                     });
+                }
+                else {
+                    $list.append(new Option('-- Select --', ''));
+                }
+            });
         });
     </script>
 }
