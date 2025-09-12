@@ -22,6 +22,7 @@ body {
 }
 
 
+/*loading screen notifications */
 .overlay {
     position: fixed;
     top: 0;
@@ -74,6 +75,7 @@ body {
 
 
 
+/* table */
 
 
 .form-label {
@@ -101,4 +103,40 @@ body {
 .btn-sm {
     font-size: 0.85rem;
     padding: 0.35rem 0.7rem;
+}
+
+
+
+/* navbar*/
+.navbar-nav .nav-link {
+    transition: all 0.2s ease-in-out;
+}
+
+    .navbar-nav .nav-link:hover {
+        color: #ffc107 !important;
+        transform: translateY(-1px);
+    }
+
+.dropdown-menu .dropdown-item {
+    padding: 0.75rem 1.2rem;
+    transition: background-color 0.2s;
+}
+
+    .dropdown-menu .dropdown-item:hover {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+    }
+
+
+
+/* about us  */
+article h3 {
+    border-left: 4px solid #0d6efd;
+    padding-left: 12px;
+    margin-bottom: 10px;
+}
+
+article p {
+    text-align: justify;
+    line-height: 1.7;
 }

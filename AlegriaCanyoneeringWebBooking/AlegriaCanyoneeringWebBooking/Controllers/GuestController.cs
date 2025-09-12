@@ -34,62 +34,58 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-        // GET: Anticipate(Add + Reserved Guests in one page)
+        // GET: Anticipate (Display only 1 guest per batch)
         public async Task<IActionResult> Anticipate()
         {
-            // Load operators
-            var operators = await _context.Operators
-                .Select(o => new SelectListItem
-                {
-                    Value = o.OperatorId.ToString(),
-                    Text = o.BusinessName
-                })
+            await PopulateDropdowns(); // Load dropdowns for operators/nationalities
+
+            // Load all anticipated/reserved guests
+            var allGuests = await _context.Guests
+                .Include(g => g.Operator)
+                .Include(g => g.Nationality)
+                .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
                 .ToListAsync();
 
-            if (!operators.Any())
-            {
-                operators = new List<SelectListItem>
-        {
-            new SelectListItem { Text = "No operators available", Value = "" }
-        };
-            }
+            // Group by batch and only take 1 guest (leader) per batch
+            var grouped = allGuests.GroupBy(g => g.Batch);
 
-            // Load nationalities for dropdown
-            var nationalities = await _context.Nationalities // Assuming you have a Nationalities DbSet
-                .Select(n => new SelectListItem
-                {
-                    Value = n.Id.ToString(), // or whatever your primary key is
-                    Text = n.NatName
-                })
-                .ToListAsync();
-
-            if (!nationalities.Any())
-            {
-                nationalities = new List<SelectListItem>
-        {
-            new SelectListItem { Text = "No nationalities available", Value = "" }
-        };
-            }
-
-            ViewBag.OperatorList = operators;
-            ViewBag.NationalityList = nationalities;
-
-            // Load Guests with Operator and Nationality
-            var reservedGuests = await _context.Guests
-               .Include(g => g.Operator)
-               .Include(g => g.Nationality)
-               .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
-               .ToListAsync();
-
+            var filteredGuests = grouped
+                .Select(group => group
+                    .OrderBy(g => g.GuestId) // Ensure the leader is the first guest (smallest ID)
+                    .First()) // Only the first guest per batch
+                .ToList();
 
             var model = new GuestListViewModel
             {
                 NewGuest = new Guest(),
-                ReservedGuests = reservedGuests ?? new List<Guest>()
+                ReservedGuests = filteredGuests // Only batch leaders will be here
             };
 
             return View(model);
         }
+
+
+
+        // Controller action to get batch guests
+        [HttpGet]
+        public async Task<IActionResult> GetBatchGuests(string batch)
+        {
+            if (string.IsNullOrEmpty(batch))
+                return BadRequest("Batch ID is required.");
+
+            var groupMembers = await _context.Guests
+                .Where(g => g.Batch == batch) // Get all guests in the same batch
+                .OrderBy(g => g.GuestId) // Sort by GuestId or another field
+                .ToListAsync();
+
+            return PartialView("_BatchGroupMembers", groupMembers); // Return a partial view with the group members
+        }
+
+
+
+
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Anticipate(GuestListViewModel model)
@@ -102,31 +98,28 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 guest.Month = DateTime.Today.ToString("yyyy-MM");
                 guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
 
-                // 🔍 Fetch all anticipated/reserved guests to group by batch in memory
-                var existingGuests = await _context.Guests
+                // ✅ Correct way to find available batch
+                var batchToJoin = await _context.Guests
                     .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
-                    .ToListAsync(); // force SQL execution
-
-                // Group by Batch, find the latest batch with < 5 guests
-                var batchToJoin = existingGuests
                     .GroupBy(g => g.Batch)
+                    .Where(g => g.Count() < 5)
                     .OrderByDescending(g => g.Max(x => x.GuestId))
-                    .FirstOrDefault(g => g.Count() < 5);
+                    .Select(g => g.Key)
+                    .FirstOrDefaultAsync();
 
                 string newBatchId = DateTime.Now.ToString("yyyyMMddHHmmss");
 
-                guest.Batch = batchToJoin != null ? batchToJoin.Key : newBatchId;
+                guest.Batch = !string.IsNullOrEmpty(batchToJoin) ? batchToJoin : newBatchId;
 
-                // Save the new guest
+                // Save guest
                 _context.Add(guest);
                 await _context.SaveChangesAsync();
 
-                // Re-fetch all guests after insert
+                // Recalculate NumberOfGuests per batch
                 var allGuests = await _context.Guests
                     .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
                     .ToListAsync();
 
-                // 🔁 Update NumberOfGuests in each batch
                 var grouped = allGuests.GroupBy(g => g.Batch);
                 foreach (var group in grouped)
                 {
@@ -138,13 +131,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
                 await _context.SaveChangesAsync();
 
-                // 📦 Filter guests: 1 visible per 5 guests
+                // Display 1 guest per batch only
                 var filteredGuests = grouped
                     .SelectMany(group =>
                         group
                             .OrderBy(g => g.GuestId)
                             .Select((g, index) => new { Guest = g, Index = index })
-                            .Where(x => x.Index % 5 == 0) // 1 per 5
+                            .Where(x => x.Index == 0) // batch leader only
                             .Select(x => x.Guest)
                     )
                     .ToList();
@@ -158,7 +151,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return View(model);
             }
 
-            // ❌ On validation failure
+            // On error
             await PopulateDropdowns();
 
             model.ReservedGuests = await _context.Guests
