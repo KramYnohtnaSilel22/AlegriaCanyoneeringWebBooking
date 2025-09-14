@@ -7,23 +7,28 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-10">
+
             <!-- Main Guest Info -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="card shadow-sm border-0 mb-5 rounded-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
                     <h5 class="mb-0">Booking Details</h5>
-                    <span class="badge bg-@(Model.Guest.BookingStatus == "confirmed" ? "success" :
-                                            Model.Guest.BookingStatus == "anticipated" ? "warning" : "info")">
+                    <span class="badge
+                        @(Model.Guest.BookingStatus == "confirmed" ? "bg-success" :
+                          Model.Guest.BookingStatus == "anticipated" ? "bg-warning text-dark" :
+                          "bg-info text-dark")
+                          text-capitalize fw-semibold px-3 py-2">
                         @Model.Guest.BookingStatus
                     </span>
                 </div>
+
                 <div class="card-body">
-                    <h4 class="fw-bold text-dark">@Model.Guest.Fullname</h4>
-                    <hr />
-                    <div class="row g-3">
+                    <h3 class="fw-bold text-dark mb-4">@Model.Guest.Fullname</h3>
+
+                    <div class="row g-3 mb-4">
                         <div class="col-md-6"><strong>Guest ID:</strong> @Model.Guest.GuestId</div>
                         <div class="col-md-6"><strong>Gender:</strong> @Model.Guest.Gender</div>
                         <div class="col-md-6"><strong>Age:</strong> @Model.Guest.Age</div>
-                        <div class="col-md-6"><strong>Contact:</strong> @Model.Guest.ContactNumber</div>
+                        <div class="col-md-6"><strong>Contact #:</strong> @Model.Guest.ContactNumber</div>
                         <div class="col-md-6"><strong>Nationality:</strong> @Model.Guest.NationalityType</div>
                         <div class="col-md-6"><strong>National Status:</strong> @Model.Guest.Nationality?.NatName</div>
                         <div class="col-md-6"><strong>Operator:</strong> @Model.Guest.Operator?.BusinessName</div>
@@ -40,24 +45,25 @@
                     {
                         <hr />
                         <div class="text-center mt-3">
-                            <h6>QR Code</h6>
-                            <img src="@Model.Guest.QrCode" alt="QR Code" class="img-thumbnail" style="max-width: 200px;" />
+                            <h6 class="mb-2">QR Code</h6>
+                            <img src="@Model.Guest.QrCode" alt="QR code for @Model.Guest.Fullname" class="img-thumbnail shadow-sm" style="max-width: 200px;" />
                         </div>
                     }
                 </div>
-                <div class="card-footer bg-light d-flex justify-content-between">
-                    <a asp-action="EditReserve" asp-route-id="@Model.Guest.GuestId" class="btn btn-warning">
-                        <i class="fas fa-edit me-1"></i> Edit
+
+                <div class="card-footer bg-light d-flex justify-content-between rounded-bottom-4">
+                    <a asp-action="EditReserve" asp-route-id="@Model.Guest.GuestId" class="btn btn-warning shadow-sm px-4">
+                        <i class="fas fa-edit me-2"></i> Edit
                     </a>
-                    <a asp-action="Anticipate" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    <a asp-action="Anticipate" class="btn btn-secondary shadow-sm px-4">
+                        <i class="fas fa-arrow-left me-2"></i> Back to List
                     </a>
                 </div>
             </div>
 
             <!-- Guests in Same Booking -->
-            <div class="mb-3">
-                <h5 class="text-primary border-bottom pb-2">Other Guests in Booking (@Model.GuestsInBatch?.Count)</h5>
+            <div class="mb-4">
+                <h5 class="text-primary border-bottom pb-2 fw-semibold">Other Guests in Booking (@Model.GuestsInBatch?.Count ?? 0)</h5>
             </div>
 
             @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any())
@@ -66,12 +72,15 @@
                     @foreach (var guest in Model.GuestsInBatch)
                     {
                         <div class="col-md-6">
-                            <div class="card h-100 shadow-sm border-0">
+                            <div class="card h-100 shadow-sm border-0 rounded-3">
                                 <div class="card-body">
                                     <h6 class="fw-bold text-dark">@guest.Fullname</h6>
-                                    <div class="small text-muted mb-2">
-                                        <span class="badge bg-@(guest.BookingStatus == "confirmed" ? "success" :
-                                                            guest.BookingStatus == "anticipated" ? "warning" : "info")">
+                                    <div class="mb-3">
+                                        <span class="badge
+                                            @(guest.BookingStatus == "confirmed" ? "bg-success" :
+                                              guest.BookingStatus == "anticipated" ? "bg-warning text-dark" :
+                                              "bg-info text-dark")
+                                            fw-semibold text-capitalize px-3 py-1">
                                             @guest.BookingStatus
                                         </span>
                                     </div>
@@ -88,10 +97,15 @@
             }
             else
             {
-                <div class="alert alert-info text-center">
-                    No other guests found in this booking.
+                <div class="alert alert-info text-center rounded-3">
+                    <i class="fas fa-info-circle me-2"></i>No other guests found in this booking.
                 </div>
             }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <!-- Font Awesome (optional if already in _Layout) -->
+    <script src="https://kit.fontawesome.com/a2d0507b9c.js" crossorigin="anonymous"></script>
+}

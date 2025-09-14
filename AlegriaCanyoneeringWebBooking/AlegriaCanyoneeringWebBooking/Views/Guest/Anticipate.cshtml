@@ -18,97 +18,119 @@
     </div>
 }
 
-<div class="container">
-    <div class="row g-4">
-        <!-- LEFT: Add New Guest Form -->
-        <div class="col-md-5">
+<div class="container py-4">
+    <ul class="nav nav-tabs mb-4" id="guestTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="add-tab" data-bs-toggle="tab" data-bs-target="#addGuestTab" type="button">Add Guest</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#guestListTab" type="button">View Guests</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- TAB 1: Add Guest -->
+        <div class="tab-pane fade show active" id="addGuestTab" role="tabpanel">
             <div class="card shadow-lg rounded-4 border-0">
                 <div class="card-body p-4">
-                    <h4 class="text-center text-primary mb-4 fw-semibold" id="btnAddGuest">Add New Guest</h4>
+                    <h4 class="text-center text-primary mb-4 fw-semibold">Add New Guest</h4>
 
                     <form asp-action="Anticipate" method="post" id="guestForm" enctype="multipart/form-data">
                         <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
+                        <fieldset class="mb-4">
+                            <legend class="h5">Guest Info</legend>
 
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
-                            <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList"></select>
-                            <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Guest Name</label>
-                            <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="Enter Guest Name" />
-                            <span asp-validation-for="NewGuest.Fullname" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Age" class="form-label fw-medium">Age</label>
-                            <input asp-for="NewGuest.Age" type="number" class="form-control form-control-lg" placeholder="Enter age" />
-                            <span asp-validation-for="NewGuest.Age" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Gender" class="form-label fw-medium">Gender</label>
-                            <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
-                                <option>Male</option>
-                                <option>Female</option>
-                            </select>
-                            <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.ContactNumber" class="form-label fw-medium">Contact #</label>
-                            <input asp-for="NewGuest.ContactNumber" type="number" min="1" class="form-control form-control-lg" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality</label>
-                            <select asp-for="NewGuest.NationalityType" class="form-select form-select-lg" id="NationalityType">
-                                <option value="Local">Local</option>
-                                <option value="Foreign">Foreign</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Status</label>
-                            <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList"></select>
-                            <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3 row g-3">
-                            <div class="col">
-                                <label asp-for="NewGuest.Date" class="form-label fw-medium">Booking Date</label>
-                                <input asp-for="NewGuest.Date" type="date" class="form-control form-control-lg" />
+                            <div class="mb-3">
+                                <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
+                                <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList"></select>
+                                <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
                             </div>
-                            <div class="col">
-                                <label asp-for="NewGuest.ArrivalDate" class="form-label fw-medium">Arrival Date</label>
-                                <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control form-control-lg" />
+
+                            <div class="mb-3">
+                                <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Full Name (as on ID)</label>
+                                <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="e.g., Juan Dela Cruz" />
+                                <span asp-validation-for="NewGuest.Fullname" class="text-danger"></span>
                             </div>
-                        </div>
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Area" class="form-label fw-medium">Area</label>
-                            <select asp-for="NewGuest.Area" class="form-select form-select-lg">
-                                <option>Wonder Falls</option>
-                                <option>Kanlaob</option>
-                                <option>Kawasan Exit</option>
-                            </select>
-                            <span asp-validation-for="NewGuest.Area" class="text-danger"></span>
-                        </div>
+                            <div class="mb-3 row">
+                                <div class="col-md-6">
+                                    <label asp-for="NewGuest.Age" class="form-label fw-medium">Age</label>
+                                    <input asp-for="NewGuest.Age" type="number" class="form-control form-control-lg" placeholder="e.g., 25" />
+                                    <span asp-validation-for="NewGuest.Age" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="NewGuest.Gender" class="form-label fw-medium">Gender</label>
+                                    <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
+                                        <option disabled selected>Select Gender</option>
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                    </select>
+                                    <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
+                                </div>
+                            </div>
 
-                        <!-- Hidden Auto Fields -->
+                            <div class="mb-3">
+                                <label asp-for="NewGuest.ContactNumber" class="form-label fw-medium">Mobile Number</label>
+                                <input asp-for="NewGuest.ContactNumber" type="tel" class="form-control form-control-lg" placeholder="e.g., 09171234567" />
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="mb-4">
+                            <legend class="h5">Nationality & Booking</legend>
+
+                            <div class="mb-3 row">
+                                <div class="col-md-6">
+                                    <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality</label>
+                                    <select asp-for="NewGuest.NationalityType" class="form-select form-select-lg">
+                                        <option value="Local">Local</option>
+                                        <option value="Foreign">Foreign</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Nationality Status</label>
+                                    <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList"></select>
+                                    <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 row">
+                                <div class="col-md-6">
+                                    <label asp-for="NewGuest.Date" class="form-label fw-medium">Booking Date</label>
+                                    <input asp-for="NewGuest.Date" type="date" class="form-control form-control-lg" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="NewGuest.ArrivalDate" class="form-label fw-medium">Arrival Date</label>
+                                    <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control form-control-lg" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="NewGuest.Area" class="form-label fw-medium">Tour Area</label>
+                                <select asp-for="NewGuest.Area" class="form-select form-select-lg">
+                                    <option disabled selected>Select Area</option>
+                                    <option>Wonder Falls</option>
+                                    <option>Kanlaob</option>
+                                    <option>Kawasan Exit</option>
+                                </select>
+                                <span asp-validation-for="NewGuest.Area" class="text-danger"></span>
+                            </div>
+                        </fieldset>
+
                         <input asp-for="NewGuest.Batch" type="hidden" />
 
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Save Guest</button>
+                        <button type="submit" id="saveBtn" class="btn btn-primary w-100 py-2 fw-semibold" >
+                            <span class="spinner-border spinner-border-sm d-none" id="loadingSpinner" role="status" aria-hidden="true"></span>
+                            <span id="btnText">Save Guest</span>
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT: Reserved Guests List -->
-        <div class="col-md-7">
+        <!-- TAB 2: Saved Guests -->
+        <div class="tab-pane fade" id="guestListTab" role="tabpanel">
             <h4 class="text-primary fw-semibold mb-3">Saved Guests</h4>
 
             @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
@@ -116,15 +138,19 @@
                 <div id="savedGuestsSection" class="d-flex flex-column gap-3" style="max-height: 600px; overflow-y: auto;">
                     @foreach (var guest in Model.ReservedGuests)
                     {
+                        var badgeClass = guest.BookingStatus switch
+                        {
+                            "anticipated" => "info",
+                            "reserved" => "success",
+                            "confirmed" => "success",
+                            _ => "secondary"
+                        };
+
                         <div class="card shadow-sm border-0">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <h5 class="fw-bold text-primary mb-2">@guest.Fullname</h5>
-                                    <span class="badge bg-@(guest.BookingStatus == "anticipated" ? "info" :
-                                        guest.BookingStatus == "reserved" ? "success" :
-                                        guest.BookingStatus == "confirmed" ? "success" : "secondary")">
-                                        @guest.BookingStatus
-                                    </span>
+                                    <span class="badge bg-@badgeClass">@guest.BookingStatus</span>
                                 </div>
 
                                 <div class="row g-2">
@@ -134,7 +160,7 @@
                                     <div class="col-md-6"><strong>Nationality:</strong> @guest.NationalityType</div>
                                     <div class="col-md-6"><strong>Operator:</strong> @(guest.Operator?.BusinessName ?? "N/A")</div>
                                     <div class="col-md-6"><strong>Status:</strong> @(guest.Nationality?.NatName ?? "N/A")</div>
-                                    <div class="col-md-6"><strong>Booking Date:</strong> @guest.Date</div>
+                                    <div class="col-md-6"><strong>Booking Date:</strong> @guest.Date)</div>
                                     <div class="col-md-6"><strong>Arrival Date:</strong> @guest.ArrivalDate</div>
                                     <div class="col-md-6"><strong>Area:</strong> @guest.Area</div>
                                     <div class="col-md-6"><strong>Batch:</strong> @guest.Batch</div>
@@ -168,34 +194,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @* Show group only once per batch *@
-                        @if (guest.NumberOfGuests >= 5 &&
-                       guest.GuestId == Model.ReservedGuests
-                       .Where(g => g.Batch == guest.Batch)
-                       .OrderBy(g => g.GuestId)
-                       .Select(g => g.GuestId)
-                       .FirstOrDefault())
-                        {
-                            var relatedGuests = Model.ReservedGuests
-                            .Where(g => g.Batch == guest.Batch && g.GuestId != guest.GuestId)
-                            .ToList();
-
-                            if (relatedGuests.Any())
-                            {
-                                @*   <div class="ms-4 mb-3">
-                                    <h6>Other guests in this group:</h6>
-                                    <ul class="list-group">
-                                        @foreach (var relatedGuest in relatedGuests)
-                                        {
-                                            <li class="list-group-item">
-                                                @relatedGuest.Fullname - @relatedGuest.Age years old - @relatedGuest.Gender
-                                            </li>
-                                        }
-                                    </ul>
-                                </div> *@
-                            }
-                        }
                     }
                 </div>
             }
@@ -209,15 +207,17 @@
     </div>
 </div>
 
-<script src="~/js/site.js"></script>
 <script>
-    window.onload = function () {
-        const section = document.getElementById('savedGuestsSection');
-        if (section) {
-            section.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
+            window.onload = () => {
+                const form = document.getElementById("guestForm");
+                const spinner = document.getElementById("loadingSpinner");
+                const btn = document.getElementById("saveBtn");
+                const btnText = document.getElementById("btnText");
+
+                form.addEventListener("submit", () => {
+                    btn.disabled = true;
+                    spinner.classList.remove("d-none");
+                    btnText.textContent = "Saving...";
+                });
+            };
 </script>
-
-
-

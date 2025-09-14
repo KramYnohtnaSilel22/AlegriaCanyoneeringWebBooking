@@ -26,57 +26,62 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
             <div class="container">
                 <!-- Brand -->
-                <a class="navbar-brand fw-bold d-flex align-items-center" asp-area="" asp-controller="Guest" asp-action="Anticipate">
-                    <i class="fas fa-hotel fa-lg me-2"></i> AlegriaCanyoneeringWebBooking
-                    </a>
+                <a class="navbar-brand fw-bold d-flex align-items-center gap-2" asp-area="" asp-controller="Guest" asp-action="Anticipate">
+                    <i class="fas fa-water"></i>
+                    <span class="d-none d-sm-inline">Alegria Canyoneering</span>
+                </a>
+
                 <!-- Toggler for mobile -->
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
                 <!-- Collapsible content -->
                 <div class="collapse navbar-collapse" id="mainNavbar">
-                    <ul class="navbar-nav ms-auto gap-lg-3">
+                    <ul class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
+
                         <!-- New Booking -->
                         <li class="nav-item">
                             <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="Anticipate">
-                                <i class="fas fa-plus-circle me-1"></i>New Booking
+                                <i class="bi bi-plus-circle me-1"></i>New Booking
                             </a>
                         </li>
 
                         <!-- Reserve Bookings -->
                         <li class="nav-item">
                             <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="Accept">
-                                <i class="fas fa-check-circle me-1"></i>Reserve Bookings
+                                <i class="bi bi-journal-check me-1"></i>Reserve Bookings
                             </a>
                         </li>
-                       
+
                         <!-- Settings Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white fw-semibold" href="#" id="navSettings" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-cogs me-1"></i>Settings
+                            <a class="nav-link dropdown-toggle text-white fw-semibold" href="#" id="navSettings"
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-gear-fill me-1"></i>Settings
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow rounded" aria-labelledby="navSettings">
-                                <li><a class="dropdown-item" asp-controller="Batches" asp-action="Index"><i class="fas fa-layer-group me-2"></i>Batch</a></li>
-                                <li><a class="dropdown-item" asp-controller="Guides" asp-action="Index"><i class="fas fa-user-tie me-2"></i>Guide Details</a></li>
-                                <li><a class="dropdown-item" asp-controller="Drivers" asp-action="Index"><i class="fas fa-id-badge me-2"></i>Driver Details</a></li>
-                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Operators"><i class="fas fa-users-cog me-2"></i>Operators</a></li>
-                                <li><a class="dropdown-item" asp-controller="Nationalities" asp-action="Index"><i class="fas fa-flag me-2"></i>Nationality</a></li>
+                                <li><a class="dropdown-item" asp-controller="Batches" asp-action="Index"><i class="bi bi-layers me-2"></i>Batch</a></li>
+                                <li><a class="dropdown-item" asp-controller="Guides" asp-action="Index"><i class="bi bi-person-vcard me-2"></i>Guide Details</a></li>
+                                <li><a class="dropdown-item" asp-controller="Drivers" asp-action="Index"><i class="bi bi-truck me-2"></i>Driver Details</a></li>
+                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Operators"><i class="bi bi-people-gear me-2"></i>Operators</a></li>
+                                <li><a class="dropdown-item" asp-controller="Nationalities" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Nationality</a></li>
                             </ul>
                         </li>
 
+                        <!-- About -->
                         <li class="nav-item">
                             <a class="nav-link text-white fw-semibold" asp-controller="Home" asp-action="About">
-                                <i class="fas fa-info-circle me-1"></i>About Us
+                                <i class="bi bi-info-circle-fill me-1"></i>About Us
                             </a>
                         </li>
-
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
+
 
 
     <div class="container">

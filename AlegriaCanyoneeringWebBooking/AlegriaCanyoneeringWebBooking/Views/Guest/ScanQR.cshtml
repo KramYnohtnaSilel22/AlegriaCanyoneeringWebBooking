@@ -1,4 +1,4 @@
-﻿@model AlegriaCanyoneeringWebBooking.Models.Guest
+﻿@* @model AlegriaCanyoneeringWebBooking.Models.Guest
 
 @{
     ViewData["Title"] = "Scan QR Code";
@@ -100,4 +100,110 @@
             </div>
         </div>
     </div>
+</div> *@
+
+
+                                    @model AlegriaCanyoneeringWebBooking.Models.Guest
+
+@{
+    ViewData["Title"] = "Confirm Guest Scan";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3>Confirm Guest Scan & Check-In</h3>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead">Scan the QR code below to check-in the guest.</p>
+
+                    <img id="qrCodeImage" src="@ViewBag.QRCodeImage" class="img-fluid rounded border mb-4" alt="Guest QR Code" />
+
+                    <div class="alert alert-info">
+                        <strong>Guest:</strong> @Model.Fullname <br />
+                        <strong>Arrival:</strong> @Model.ArrivalDate <br />
+                        <strong>Operator:</strong> @(Model.Operator?.BusinessName ?? "N/A")
+                    </div>
+
+                    @Html.AntiForgeryToken()
+
+                    <button id="confirmButton" class="btn btn-success btn-lg w-100">
+                        <i class="bi bi-check-circle-fill me-2"></i> Confirm Scan, Download & Delete Record
+                    </button>
+
+                    <a asp-action="Accept" class="btn btn-secondary w-100 mt-2">
+                        Cancel
+                    </a>
+
+               
+                </div>
+                <div class="card-footer text-muted text-center">
+                    <small>After confirming, the record will be permanently removed.</small>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Find the button by its ID
+            $('#confirmButton').on('click', function () {
+
+                // Get the guest ID and QR image data from the view
+                const guestId = @Model.GuestId;
+                const qrImageSrc = $('#qrCodeImage').attr('src');
+                const guestName = "@Model.Fullname.Replace(" ", "_")";
+
+                // === STEP 1: AUTOMATICALLY DOWNLOAD THE QR CODE IMAGE ===
+                // Create a temporary link element
+                const link = document.createElement('a');
+                link.href = qrImageSrc;
+
+                // Set the download filename
+                link.download = `QRCode_${guestName}_${new Date().toISOString().slice(0,10)}.png`;
+
+                // Trigger the download programmatically
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+
+                // === STEP 2: DELETE THE RECORD FROM THE TABLE VIA AJAX ===
+                // Get the anti-forgery token from the hidden input field
+                const token = $('input[name="__RequestVerificationToken"]').val();
+
+                // Disable the button to prevent multiple clicks
+                $(this).prop('disabled', true).text('Processing...');
+
+                // Send a POST request to our new Delete action
+                $.ajax({
+                    url: '/Guest/Delete/' + guestId, // The URL to your new delete action
+                    type: 'POST',
+                    headers: {
+                        "RequestVerificationToken": token
+                    },
+                    success: function (response) {
+                        // If the server responds with success=true...
+                        if (response.success) {
+                            // Redirect the user back to the main list page
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            // If something went wrong, show an error
+                            alert("Error: Could not delete the record.");
+                            $('#confirmButton').prop('disabled', false).text('Confirm Scan, Download & Delete Record');
+                        }
+                    },
+                    error: function () {
+                        // Handle network or server errors
+                        alert("A server error occurred. Please try again.");
+                        $('#confirmButton').prop('disabled', false).text('Confirm Scan, Download & Delete Record');
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -310,12 +310,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(guest);
         }
 
-        // POST: Guest/EditReserve/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditReserve(int id, Guest guest)
+        public async Task<IActionResult> EditReserve(int id, Guest formGuest)
         {
-            if (id != guest.GuestId)
+            if (id != formGuest.GuestId)
             {
                 return NotFound();
             }
@@ -324,19 +323,40 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 try
                 {
-                    // ✅ Auto-generate RFID if missing
-                    if (string.IsNullOrEmpty(guest.RFID))
+                    // ✅ Fetch the original guest from DB
+                    var guest = await _context.Guests.FindAsync(id);
+                    if (guest == null)
                     {
-                        guest.RFID = GenerateRFID();
+                        return NotFound();
                     }
 
-                    _context.Update(guest);
+                    // ✅ Update only editable fields
+                    guest.Fullname = formGuest.Fullname;
+                    guest.Age = formGuest.Age;
+                    guest.Gender = formGuest.Gender;
+                    guest.NationalityType = formGuest.NationalityType;
+                    guest.NationalityId = formGuest.NationalityId;
+                    guest.OperatorId = formGuest.OperatorId;
+                    guest.Date = formGuest.Date;
+                    guest.ArrivalDate = formGuest.ArrivalDate;
+                    guest.Month = formGuest.Month;
+                    guest.DateShort = formGuest.DateShort;
+                    guest.BookingStatus = formGuest.BookingStatus;
+                    guest.NumberOfGuests = formGuest.NumberOfGuests;
+                    // Keep RFID or regenerate if needed
+                    guest.RFID = string.IsNullOrEmpty(formGuest.RFID) ? GenerateRFID() : formGuest.RFID;
+
+                    // Note: You probably want to skip Batch or RFID if they are system-generated
+
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Reserve));
+
+                    TempData["ToastMessage"] = "Guest updated successfully!";
+                    TempData["ToastType"] = "success";
+                    return RedirectToAction("Anticipate");
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Guests.Any(e => e.GuestId == guest.GuestId))
+                    if (!_context.Guests.Any(e => e.GuestId == formGuest.GuestId))
                     {
                         return NotFound();
                     }
@@ -347,7 +367,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
             }
 
-            // repopulate dropdowns
+            // Repopulate dropdowns in case of validation failure
             ViewBag.OperatorList = await _context.Operators
                 .Select(o => new SelectListItem
                 {
@@ -364,8 +384,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 })
                 .ToListAsync();
 
-            return View(guest);
+            return View(formGuest);
         }
+
+
         // GET: Guest/Accept
         public async Task<IActionResult> Accept()
         {
@@ -412,58 +434,63 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         $"Status       : {guest.BookingStatus?.ToUpper() ?? "N/A"}";
         }
 
-        // GET: Guest/ScanQR/5
         public async Task<IActionResult> ScanQR(int id)
         {
             var guest = await _context.Guests
                 .Include(g => g.Operator)
                 .Include(g => g.Nationality)
-                   .Include(g => g.Guide) // ✅ Include Guide
-                .Include(g => g.Driver) // ✅ Include Driver
+                .Include(g => g.Guide)
+                .Include(g => g.Driver)
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 
+            if (guest == null) return NotFound();
+
+            // generate QR text + QR image (base64)
+            string qrText = GenerateQRText(guest);
+            string qrBase64 = GenerateQRCodeBase64(qrText);
+
+            ViewBag.QRCodeImage = qrBase64;
+            ViewBag.QRData = qrText;
+
+            return View(guest);
+        }
+
+
+        public IActionResult DownloadQr(int id)
+        {
+            var guest = _context.Guests.FirstOrDefault(g => g.GuestId == id);
+            if (guest == null) return NotFound();
+
+            // Generate QR image content for download
+            string qrBase64 = GenerateQRCodeBase64($"GuestID:{guest.GuestId}, Name:{guest.Fullname}");
+            if (qrBase64.StartsWith("data:"))
+                qrBase64 = qrBase64.Substring(qrBase64.IndexOf(",") + 1);
+
+            var bytes = Convert.FromBase64String(qrBase64);
+
+            // This will trigger a file download on mobile once the QR link is opened
+            return File(bytes, "image/png", $"{guest.Fullname}_QRCode.png");
+        }
+
+
+
+        // POST: Guest/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var guest = await _context.Guests.FindAsync(id);
             if (guest == null)
             {
                 return NotFound();
             }
 
-            // ✅ Load list of available drivers for dropdown in View
-            ViewBag.DriverList = await _context.Drivers
-                .Select(d => new SelectListItem
-                {
-                    Value = d.DriverId.ToString(),
-                    Text = d.FName
-                })
-                .ToListAsync();
+            _context.Guests.Remove(guest);
+            await _context.SaveChangesAsync();
 
-            // ✅ QR Code data with driver info
-            string qrData =
-                $"Guest Details\n" +
-                $"-----------------------------------\n" +
-                $"ID             : {guest.GuestId}\n" +
-                $"Full Name      : {guest.Fullname}\n" +
-                $"Age            : {guest.Age}\n" +
-                $"Gender         : {guest.Gender}\n" +
-                $"Nationality    : {guest.NationalityType}\n" +
-                $"No. of Guests  : {guest.NumberOfGuests}\n" +
-                $"Nat. Status    : {guest.NationalityId}\n" +
-                $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
-               $"Driver         : {(guest.Driver != null ? guest.Driver.FName : "None")}\n" +
-                $"Guide          : {(guest.Guide != null ? guest.Guide.FName : "None")}\n" + // ✅ Added
-                $"Booking Date   : {guest.Date:yyyy-MM-dd}\n" +
-                $"Arrival Date   : {guest.ArrivalDate:yyyy-MM-dd}\n" +
-                $"Month          : {guest.Month}\n" +
-                $"Batch          : {guest.Batch}\n" +
-                $"RFID           : {guest.RFID}\n" +
-                $"Status         : {guest.BookingStatus?.ToUpper() ?? "N/A"}\n";
-
-            ViewBag.QRCodeImage = GenerateQRCodeBase64(qrData);
-            ViewBag.QRData = qrData;
-            ViewBag.Guest = guest;
-
-            return View(guest);
+            // Return a JSON response to let the JavaScript know it was successful
+            return Json(new { success = true, redirectUrl = Url.Action(nameof(Accept)) });
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
