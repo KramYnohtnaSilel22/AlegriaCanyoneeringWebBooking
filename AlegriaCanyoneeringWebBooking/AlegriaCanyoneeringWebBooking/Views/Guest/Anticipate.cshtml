@@ -120,6 +120,10 @@
 
                         <input asp-for="NewGuest.Batch" type="hidden" />
 
+                        <button id="addGuestBtn" class="btn btn-primary mb-3">
+                            <i class="fas fa-user-plus me-1"></i> Add Guest
+                        </button>
+
                         <button type="submit" id="saveBtn" class="btn btn-primary w-100 py-2 fw-semibold" >
                             <span class="spinner-border spinner-border-sm d-none" id="loadingSpinner" role="status" aria-hidden="true"></span>
                             <span id="btnText">Save Guest</span>
@@ -220,4 +224,15 @@
                     btnText.textContent = "Saving...";
                 });
             };
+</script>
+<script>
+    $(document).ready(function() {
+        $('#addGuestBtn').click(function() {
+            $('#add-tab').tab('show');
+            // Optionally scroll to the Add Guest form
+            $('html, body').animate({
+                scrollTop: $('#addGuestTab').offset().top - 70 // adjust as needed
+            }, 500);
+        });
+    });
 </script>
