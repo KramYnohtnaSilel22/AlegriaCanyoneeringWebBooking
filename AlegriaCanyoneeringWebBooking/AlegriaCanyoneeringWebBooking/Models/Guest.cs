@@ -79,7 +79,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Column("operatorid")]
         public int? OperatorId { get; set; }
-        public Operator? Operator { get; set; }
+        public OperatorList? OperatorList { get; set; }
 
         [Column("DriverId")] // Make sure this matches your database column name
         public int? DriverId { get; set; }

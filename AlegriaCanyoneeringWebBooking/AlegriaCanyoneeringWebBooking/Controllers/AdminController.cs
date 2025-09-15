@@ -18,7 +18,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Admin/Operators
         public async Task<IActionResult> Operators()
         {
-            var operators = await _context.Operators.ToListAsync();
+            var operators = await _context.OperatorLists.ToListAsync();
             return View(operators);
         }
 
@@ -31,7 +31,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Admin/CreateOperator
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateOperator(Operator operatorModel)
+        public async Task<IActionResult> CreateOperator(OperatorList operatorModel)
         {
             if (ModelState.IsValid)
             {
@@ -47,7 +47,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Admin/EditOperator/5
         public async Task<IActionResult> EditOperator(int id)
         {
-            var operatorModel = await _context.Operators.FindAsync(id);
+            var operatorModel = await _context.OperatorLists.FindAsync(id);
             if (operatorModel == null)
             {
                 return NotFound();
@@ -58,7 +58,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Admin/EditOperator/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditOperator(int id, Operator operatorModel)
+        public async Task<IActionResult> EditOperator(int id, OperatorList operatorModel)
         {
             if (id != operatorModel.OperatorId)
             {
@@ -90,7 +90,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private bool OperatorExists(int id)
         {
-            return _context.Operators.Any(e => e.OperatorId == id);
+            return _context.OperatorLists.Any(e => e.OperatorId == id);
         }
     }
 }

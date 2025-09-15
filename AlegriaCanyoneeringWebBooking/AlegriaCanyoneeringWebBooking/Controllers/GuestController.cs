@@ -41,7 +41,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Load all anticipated/reserved guests
             var allGuests = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
                 .ToListAsync();
@@ -155,7 +155,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await PopulateDropdowns();
 
             model.ReservedGuests = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
                 .ToListAsync();
@@ -175,7 +175,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private async Task PopulateDropdowns()
         {
-            var operators = await _context.Operators
+            var operators = await _context.OperatorLists
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
@@ -231,7 +231,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             // Get the main guest
             var mainGuest = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 
@@ -242,7 +242,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Get 4 other guests in the same batch, excluding main guest
             var guestsInBatch = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .Where(g => g.Batch == mainGuest.Batch && g.GuestId != mainGuest.GuestId)
                 .OrderBy(g => g.GuestId)
@@ -263,7 +263,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> EditReserve(int id)
         {
             var guest = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (guest == null)
@@ -272,7 +272,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             // Operators dropdown
-            var operators = await _context.Operators
+            var operators = await _context.OperatorLists
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
@@ -368,7 +368,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             // Repopulate dropdowns in case of validation failure
-            ViewBag.OperatorList = await _context.Operators
+            ViewBag.OperatorList = await _context.OperatorLists
                 .Select(o => new SelectListItem
                 {
                     Value = o.OperatorId.ToString(),
@@ -392,7 +392,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Accept()
         {
             var guests = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Guide)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver)
@@ -423,7 +423,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         $"Nationality  : {guest.NationalityType}\n" +
         $"Guests Count : {guest.NumberOfGuests}\n" +
         $"Nationality Status : {guest.Nationality?.NatName}\n" +
-        $"Operator     : {guest.Operator?.BusinessName ?? "N/A"}\n" +
+        $"Operator     : {guest.OperatorList?.BusinessName ?? "N/A"}\n" +
         $"Driver       : {guest.Driver?.FName ?? "None"}\n" +
         $"Guide        : {guest.Guide?.FName ?? "None"}\n" +
         $"Booking Date : {guest.Date:yyyy-MM-dd}\n" +
@@ -437,7 +437,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> ScanQR(int id)
         {
             var guest = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .Include(g => g.Guide)
                 .Include(g => g.Driver)
@@ -498,7 +498,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             var guest = await _context.Guests
                 .Include(g => g.Nationality)
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Driver)
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 
@@ -534,7 +534,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 $"Nationality    : {guest.NationalityType}\n" +
                 $"No. of Guests  : {guest.NumberOfGuests}\n" +
                 $"Nat. Status    : {guest.NationalityId}\n" +
-                $"Operator       : {guest.Operator?.BusinessName ?? "N/A"}\n" +
+                $"Operator       : {guest.OperatorList?.BusinessName ?? "N/A"}\n" +
                 $"Driver         : {(guest.Driver != null ? $"{guest.Driver.RefId} - {guest.Driver.FName} {guest.Driver.LName}" : "None")}\n" +
                 $"Booking Date   : {guest.Date}\n" +
                 $"Arrival Date   : {guest.ArrivalDate}\n" +
@@ -711,7 +711,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Book(int id)
         {
             var guest = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver)
                 .Include(g => g.Guide)
@@ -745,7 +745,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Book(int id, List<int> driverIds, List<int> guideIds)
         {
             var guest = await _context.Guests
-                .Include(g => g.Operator)
+                .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 

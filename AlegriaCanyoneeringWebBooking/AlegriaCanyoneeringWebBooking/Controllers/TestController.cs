@@ -23,7 +23,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 // Test database connection
                 var canConnect = _context.Database.CanConnect();
-                var operatorsCount = _context.Operators.Count();
+                var operatorsCount = _context.OperatorLists.Count();
                 var bookingsCount = _context.Guests.Count();
 
                 ViewBag.ConnectionStatus = canConnect ? "Connected" : "Disconnected";

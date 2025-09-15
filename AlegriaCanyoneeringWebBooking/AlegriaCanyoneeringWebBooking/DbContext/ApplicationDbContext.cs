@@ -9,7 +9,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         }
         public DbSet<Batch> Batches { get; set; }
         public DbSet<Guest> Guests { get; set; }
-        public DbSet<Operator> Operators { get; set; }
+        public DbSet<OperatorList> OperatorLists { get; set; }
         public DbSet<Reserve> Reserves { get; set; }
 
         public DbSet<Nationality> Nationalities { get; set; }
@@ -62,7 +62,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.Property(e => e.Batch).HasColumnName("batch").HasMaxLength(100);
 
                 // Configure foreign key relationships with proper cascade behavior for nullable FKs
-                entity.HasOne(g => g.Operator)
+                entity.HasOne(g => g.OperatorList)
                       .WithMany(o => o.Guests)
                       .HasForeignKey(g => g.OperatorId)
                       .HasConstraintName("FK_Guest_Operator")
@@ -98,7 +98,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
             });
 
             // OperatorList entity configuration
-            modelBuilder.Entity<Operator>(entity =>
+            modelBuilder.Entity<OperatorList>(entity =>
             {
                 entity.ToTable("operator_list");
                 entity.HasKey(e => e.OperatorId);

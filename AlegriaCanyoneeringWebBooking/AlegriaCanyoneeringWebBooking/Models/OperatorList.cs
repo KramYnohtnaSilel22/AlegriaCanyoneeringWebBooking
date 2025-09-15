@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace AlegriaCanyoneeringWebBooking.Models
 {
     [Table("operator_list")]
-    public class Operator
+    public class OperatorList
     {
         [Key]
         [Column("operatorid")]

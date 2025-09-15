@@ -124,7 +124,7 @@
                     <div class="alert alert-info">
                         <strong>Guest:</strong> @Model.Fullname <br />
                         <strong>Arrival:</strong> @Model.ArrivalDate <br />
-                        <strong>Operator:</strong> @(Model.Operator?.BusinessName ?? "N/A")
+                        <strong>Operator:</strong> @(Model.OperatorList?.BusinessName ?? "N/A")
                     </div>
 
                     @Html.AntiForgeryToken()

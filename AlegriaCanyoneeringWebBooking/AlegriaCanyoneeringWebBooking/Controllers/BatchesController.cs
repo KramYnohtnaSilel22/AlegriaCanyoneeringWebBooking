@@ -20,7 +20,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Index()
         {
             var batches = await _context.Batches
-                .Include(b => b.Operator)
+                .Include(b => b.OperatorList)
                 .ToListAsync();
             return View(batches);
         }
@@ -31,7 +31,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (id == null) return NotFound();
 
             var batch = await _context.Batches
-                .Include(b => b.Operator)
+                .Include(b => b.OperatorList)
                 .FirstOrDefaultAsync(m => m.BatchId == id);
 
             if (batch == null) return NotFound();
@@ -42,7 +42,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Batchs/Create
         public IActionResult Create()
         {
-            ViewBag.OperatorId = new SelectList(_context.Operators, "OperatorId", "OwnerName");
+            ViewBag.OperatorId = new SelectList(_context.OperatorLists, "OperatorId", "OwnerName");
             return View();
         }
 
@@ -68,7 +68,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var batch = await _context.Batches.FindAsync(id);
             if (batch == null) return NotFound();
 
-            ViewBag.OperatorId = new SelectList(_context.Operators, "OperatorId", "OwnerName", batch.OperatorId);
+            ViewBag.OperatorId = new SelectList(_context.OperatorLists, "OperatorId", "OwnerName", batch.OperatorId);
             return View(batch);
         }
 
@@ -104,7 +104,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (id == null) return NotFound();
 
             var batch = await _context.Batches
-                .Include(b => b.Operator) // include Operator so OwnerName is available
+                .Include(b => b.OperatorList) // include Operator so OwnerName is available
                 .FirstOrDefaultAsync(m => m.BatchId == id);
 
             if (batch == null) return NotFound();

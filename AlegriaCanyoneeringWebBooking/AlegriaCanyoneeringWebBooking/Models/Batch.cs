@@ -16,7 +16,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int OperatorId { get; set; }
 
         [ForeignKey(nameof(OperatorId))]
-        public Operator? Operator { get; set; }
+        public OperatorList? OperatorList { get; set; }
 
         [Column("no_of_localguest")]
         public int NoOfLocalGuest { get; set; }
