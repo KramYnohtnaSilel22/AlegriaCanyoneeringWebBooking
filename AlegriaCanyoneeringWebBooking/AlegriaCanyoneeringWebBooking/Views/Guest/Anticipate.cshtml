@@ -228,8 +228,57 @@
 
 <script>
 
+    const bookingDateInput = document.getElementById("BookingDate");
+     const arrivalDateInput = document.getElementById("ArrivalDate");
 
- 
+     let guestCount = localStorage.getItem("guestCount") ? parseInt(localStorage.getItem("guestCount")) : 0;
+
+     function loadSavedDates() {
+         const savedBookingDate = localStorage.getItem("savedBookingDate");
+         const savedArrivalDate = localStorage.getItem("savedArrivalDate");
+
+         if (savedBookingDate) bookingDateInput.value = savedBookingDate;
+         if (savedArrivalDate) arrivalDateInput.value = savedArrivalDate;
+     }
+
+     function handleDateFields() {
+         if (guestCount % 5 === 0) {
+             // Start of batch — allow editing
+             bookingDateInput.readOnly = false;
+             arrivalDateInput.readOnly = false;
+
+             localStorage.removeItem("savedBookingDate");
+             localStorage.removeItem("savedArrivalDate");
+         } else {
+             // Lock the values
+             bookingDateInput.readOnly = true;
+             arrivalDateInput.readOnly = true;
+
+             loadSavedDates();
+         }
+     }
+
+     document.addEventListener("DOMContentLoaded", function () {
+         handleDateFields();
+
+         const form = document.getElementById("guestForm");
+         form.addEventListener("submit", function () {
+             if (guestCount % 5 === 0) {
+                 localStorage.setItem("savedBookingDate", bookingDateInput.value);
+                 localStorage.setItem("savedArrivalDate", arrivalDateInput.value);
+             }
+
+             guestCount++;
+             localStorage.setItem("guestCount", guestCount);
+         });
+     });
+
+     function resetGuestBatch() {
+         localStorage.removeItem("guestCount");
+         localStorage.removeItem("savedBookingDate");
+         localStorage.removeItem("savedArrivalDate");
+         location.reload();
+     }
      $(function () {
         const $type = $('#NationalityType');
         const $list = $('#NationalityId');
