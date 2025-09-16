@@ -35,9 +35,9 @@
                 <td>@item.Password</td>
                 <td>@item.Roles?.Name</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline;">
+                    <a asp-action="Edit" asp-route-id="@item.OperatorId" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.OperatorId" class="btn btn-sm btn-info">Details</a>
+                    <form asp-action="Delete" asp-route-id="@item.OperatorId" method="post" style="display:inline;">
                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
                     </form>
 
