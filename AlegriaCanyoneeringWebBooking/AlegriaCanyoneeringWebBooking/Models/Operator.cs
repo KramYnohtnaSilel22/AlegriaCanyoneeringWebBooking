@@ -7,8 +7,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
     public class Operator
     {
         [Key]
-        [Column("Id")]
-        public int Id { get; set; }
+        [Column("OperatorId")]
+        public int OperatorId { get; set; }
 
         [Required, StringLength(255)]
         [Column("Name")]

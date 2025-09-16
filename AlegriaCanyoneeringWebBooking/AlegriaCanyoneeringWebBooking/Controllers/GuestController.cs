@@ -164,12 +164,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        // Helper method to auto-generate a unique RFID
+
+
+        // Your existing RFID generator helper
         private string GenerateRFID()
         {
-            // Generates a 12-character unique alphanumeric RFID prefixed with "RFID"
             return "RFID" + Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
         }
+
 
 
 
@@ -571,37 +573,26 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
             return 0;
         }
+        [HttpGet]
+        public async Task<IActionResult> GetNationalities()
+        {
+            try
+            {
+                var nationalities = await _context.Nationalities
+                    .Where(n => n.NatName != "Within Cebu Province" &&
+                                n.NatName != "Outside Cebu Province")
+                    .OrderBy(n => n.NatName)
+                    .Select(n => n.NatName)
+                    .ToListAsync();
 
-        //[HttpPost]
-        //public async Task<IActionResult> UpdateStatus(int id, string status)
-        //{
-        //    var guest = await _context.Guests.FindAsync(id);
-        //    if (guest == null)
-        //    {
-        //        return NotFound();
-        //    }
+                return Json(nationalities);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
 
-        //    guest.BookingStatus = status;
-
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    catch (DbUpdateConcurrencyException)
-        //    {
-        //        // Something changed in the DB since we loaded the entity
-        //        return Conflict("Concurrency conflict: guest may have been modified by another process.");
-        //    }
-
-        //    // ✅ Redirect to Accept if status is reserved
-        //    if (status.ToLower() == "reserved")
-        //    {
-        //        return RedirectToAction(nameof(Accept));
-        //    }
-
-        //    // Otherwise, back to Anticipate list
-        //    return RedirectToAction(nameof(Anticipate));
-        //}
 
         [HttpPost]
         public async Task<IActionResult> UpdateStatus(int id, string status)

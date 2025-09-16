@@ -75,36 +75,50 @@
                                 <input asp-for="NewGuest.ContactNumber" type="tel" class="form-control form-control-lg" placeholder="e.g., 09171234567" />
                             </div>
                         </fieldset>
-
+                   
                         <fieldset class="mb-4">
                             <legend class="h5">Nationality & Booking</legend>
 
                             <div class="mb-3 row">
                                 <div class="col-md-6">
                                     <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality</label>
-                                    <select asp-for="NewGuest.NationalityType" class="form-select form-select-lg">
+                                    <select asp-for="NewGuest.NationalityType"
+                                            class="form-select form-select-lg"
+                                            id="NationalityType">
                                         <option value="Local">Local</option>
                                         <option value="Foreign">Foreign</option>
                                     </select>
+
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Nationality Status</label>
-                                    <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" asp-items="ViewBag.NationalityList"></select>
+                                    <label asp-for="NewGuest.NationalityId" class="form-label fw-medium">Status</label>
+                                    <select asp-for="NewGuest.Nationality.NatName"
+                                            class="form-select form-select-lg"
+                                            id="NationalityId">
+                                        <option value="">-- Select --</option>
+                                    </select>
+
                                     <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
                                 </div>
+
                             </div>
 
-                            <div class="mb-3 row">
+                  
+
+                            <div class="mb-3 row guest-date-fields">
                                 <div class="col-md-6">
                                     <label asp-for="NewGuest.Date" class="form-label fw-medium">Booking Date</label>
-                                    <input asp-for="NewGuest.Date" type="date" class="form-control form-control-lg" />
+                                    <input asp-for="NewGuest.Date" type="date" class="form-control form-control-lg" id="BookingDate" />
+                                    <span asp-validation-for="NewGuest.Date" class="text-danger"></span>
                                 </div>
                                 <div class="col-md-6">
                                     <label asp-for="NewGuest.ArrivalDate" class="form-label fw-medium">Arrival Date</label>
-                                    <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control form-control-lg" />
+                                    <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control form-control-lg" id="ArrivalDate" />
+                                    <span asp-validation-for="NewGuest.ArrivalDate" class="text-danger"></span>
                                 </div>
                             </div>
+
 
                             <div class="mb-3">
                                 <label asp-for="NewGuest.Area" class="form-label fw-medium">Tour Area</label>
@@ -210,8 +224,51 @@
         </div>
     </div>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+
+
+ 
+     $(function () {
+        const $type = $('#NationalityType');
+        const $list = $('#NationalityId');
+        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+
+        function updateNationalityIdOptions(choice) {
+            $list.empty();
+
+            if (choice === 'Local') {
+                $list.append(new Option('Within Cebu Province', 'Within Cebu Province'));
+                $list.append(new Option('Outside Cebu Province', 'Outside Cebu Province'));
+            } else if (choice === 'Foreign') {
+                $list.append(new Option('Loading...', ''));
+                $.getJSON(getNationalitiesUrl)
+                    .done(function (data) {
+                        $list.empty();
+                        data.forEach(function (name) {
+                            $list.append(new Option(name, name));
+                        });
+                    })
+                    .fail(function () {
+                        $list.empty().append(new Option('Error loading', ''));
+                    });
+            } else {
+                $list.append(new Option('-- Select --', ''));
+            }
+        }
+
+        // Bind change event
+        $type.on('change', function () {
+            const selected = $(this).val();
+            updateNationalityIdOptions(selected);
+        });
+
+        // Trigger on load if value exists (like in Edit)
+        if ($type.val()) {
+            updateNationalityIdOptions($type.val());
+        }
+    });
             window.onload = () => {
                 const form = document.getElementById("guestForm");
                 const spinner = document.getElementById("loadingSpinner");
@@ -224,8 +281,7 @@
                     btnText.textContent = "Saving...";
                 });
             };
-</script>
-<script>
+
     $(document).ready(function() {
         $('#addGuestBtn').click(function() {
             $('#add-tab').tab('show');

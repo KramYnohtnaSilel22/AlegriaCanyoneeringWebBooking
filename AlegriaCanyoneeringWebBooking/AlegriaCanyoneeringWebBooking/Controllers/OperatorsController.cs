@@ -29,7 +29,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var op = await _context.Operators
                                    .Include(o => o.Roles)
-                                   .FirstOrDefaultAsync(m => m.Id == id);
+                                   .FirstOrDefaultAsync(m => m.OperatorId == id);
             if (op == null) return NotFound();
 
             return View(op);
@@ -84,7 +84,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             [Bind("Id,Name,BusinessName,Age,Gender,Username,RoleId")] Operator op,
             string? NewPassword)
         {
-            if (id != op.Id) return NotFound();
+            if (id != op.OperatorId) return NotFound();
             if (!ModelState.IsValid)
             {
                 ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
@@ -117,7 +117,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var op = await _context.Operators
                                    .Include(o => o.Roles)
-                                   .FirstOrDefaultAsync(m => m.Id == id);
+                                   .FirstOrDefaultAsync(m => m.OperatorId == id);
             if (op == null) return NotFound();
 
             return View(op);

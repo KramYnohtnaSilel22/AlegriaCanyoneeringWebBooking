@@ -49,7 +49,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, op.Username!),
-            new Claim(ClaimTypes.NameIdentifier, op.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, op.OperatorId.ToString()),
             new Claim(ClaimTypes.Role, op.Roles?.Name ?? "User")
         };
 
@@ -58,7 +58,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(identity));
 
-            return RedirectToAction(nameof(Login));
+            return RedirectToAction("Anticipate", "Guest");
+
+
         }
 
         public async Task<IActionResult> Logout()
