@@ -1,4 +1,5 @@
-﻿using AlegriaCanyoneeringWebBooking.Models;
+﻿using AlegriaCanyoneeringWebBooking.Helpers;
+using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public IActionResult Create()
         {
             ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name");
+            ViewBag.GenderList = new SelectList(new[] { "Male", "Female" });
             return View();
         }
 
@@ -46,13 +48,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Name,BusinessName,Age,Gender,Username,Password,RoleId")] Operator op)
         {
+
             if (ModelState.IsValid)
             {
+                // Set a default role for Operator Only
+                op.RoleId = 3;
+
+                op.Password = PasswordHelper.HashPassword(op.Password); // Unified password hashing
                 _context.Add(op);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
+            ViewBag.GenderList = new SelectList(new[] { "Male", "Female" });
             return View(op);
         }
 
@@ -60,39 +68,47 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
-
             var op = await _context.Operators.FindAsync(id);
             if (op == null) return NotFound();
 
             ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
+            ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
             return View(op);
         }
 
         // POST: Operators/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,BusinessName,Age,Gender,Username,Password,RoleId")] Operator op)
+        public async Task<IActionResult> Edit(
+            int id,
+            [Bind("Id,Name,BusinessName,Age,Gender,Username,RoleId")] Operator op,
+            string? NewPassword)
         {
             if (id != op.Id) return NotFound();
-
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(op);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Operators.Any(e => e.Id == id))
-                        return NotFound();
-                    throw;
-                }
-                return RedirectToAction(nameof(Index));
+                ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
+                ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
+                return View(op);
             }
-            ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
-            return View(op);
+
+            var existing = await _context.Operators.FindAsync(id);
+            if (existing == null) return NotFound();
+
+            existing.Name = op.Name;
+            existing.BusinessName = op.BusinessName;
+            existing.Age = op.Age;
+            existing.Gender = op.Gender;
+            existing.Username = op.Username;
+            existing.RoleId = op.RoleId;
+
+            if (!string.IsNullOrWhiteSpace(NewPassword))
+                existing.Password = PasswordHelper.HashPassword(NewPassword);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
+
 
         // GET: Operators/Delete/5
         public async Task<IActionResult> Delete(int? id)
