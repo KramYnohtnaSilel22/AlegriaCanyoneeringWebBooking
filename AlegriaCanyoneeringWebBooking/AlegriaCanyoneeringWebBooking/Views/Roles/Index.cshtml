@@ -1,0 +1,35 @@
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.Models.Role>
+
+@{
+    ViewData["Title"] = "Roles";
+}
+
+<h1 class="mb-3">Roles</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Role</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(m => m.RoleId)</th>
+            <th>@Html.DisplayNameFor(m => m.Name)</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.RoleId</td>
+                <td>@item.Name</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.RoleId" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.RoleId" class="btn btn-sm btn-info">Details</a>
+                    <a asp-action="Delete" asp-route-id="@item.RoleId" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -18,6 +18,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         public DbSet<Guide> Guides { get; set; }
 
+        public DbSet<Role> Roles { get; set; }
+
+        public DbSet<Operator> Operators { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -117,6 +120,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
             modelBuilder.Entity<Driver>().ToTable("driver_details");
             modelBuilder.Entity<Guide>().ToTable("tourguide_details");
+            modelBuilder.Entity<Role>().ToTable("role");
+            modelBuilder.Entity<Operator>().ToTable("operator");
         }
     }
 }
