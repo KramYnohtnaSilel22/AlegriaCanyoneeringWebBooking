@@ -4,6 +4,13 @@
     ViewData["Title"] = "Guest Management";
 }
 
+
+<div class="overlay" id="loadingOverlay">
+    <div class="spinner"></div> <!-- Spinner for loading effect -->
+    <div class="success-message" id="successMessage"></div>
+</div>
+
+
 @if (TempData["ToastMessage"] != null)
 {
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
@@ -226,7 +233,21 @@
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<!-- Include Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <script>
+          $(document).ready(function () {
+            // Show loading overlay and success message
+            const successMessage = '@TempData["LoginSuccess"]'; // Get success message
+            $('#successMessage').text(successMessage); // Set the success message
+            $('#loadingOverlay').addClass('active'); // Show overlay
+
+            // Automatically close the loading overlay and redirect after a few seconds (e.g., 2 seconds)
+            setTimeout(function () {
+                $('#loadingOverlay').removeClass('active'); // Hide overlay
+
+            }, 2000); // 3000 milliseconds = 3 seconds
+        });
 
     const bookingDateInput = document.getElementById("BookingDate");
      const arrivalDateInput = document.getElementById("ArrivalDate");

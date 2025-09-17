@@ -295,3 +295,54 @@ body {
         background-color: #005cbf;
         border-color: #004a9f;
     }
+
+
+/* loading screen */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050; /* Ensure it's above all other content */
+    visibility: hidden; /* Start hidden */
+    opacity: 0; /* Start invisible */
+    transition: visibility 0s, opacity 0.5s ease; /* Smooth transition */
+}
+
+    .overlay.active {
+        visibility: visible; /* Show overlay */
+        opacity: 1; /* Make visible */
+    }
+
+.spinner {
+    border: 5px solid rgba(255, 255, 255, 0.2);
+    border-top: 5px solid white; /* White top for contrast */
+    border-radius: 50%;
+    width: 50px; /* Size of the spinner */
+    height: 50px;
+    animation: spin 1s linear infinite; /* Spin animation */
+    margin-bottom: 20px; /* Space between spinner and text */
+}
+
+@@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.success-message {
+    color: white; /* Ensure text is white for visibility */
+    font-size: 1.25rem; /* Adjust font size as needed */
+    text-align: center;
+    margin-top: 10px; /* Space between spinner and text */
+}
