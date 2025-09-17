@@ -68,6 +68,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
+
             var op = await _context.Operators.FindAsync(id);
             if (op == null) return NotFound();
 
@@ -81,10 +82,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Id,Name,BusinessName,Age,Gender,Username,RoleId")] Operator op,
+            // 👉 Bind the correct key name
+            [Bind("OperatorId,Name,BusinessName,Age,Gender,Username,RoleId")] Operator op,
             string? NewPassword)
         {
             if (id != op.OperatorId) return NotFound();
+
             if (!ModelState.IsValid)
             {
                 ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
@@ -95,6 +98,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var existing = await _context.Operators.FindAsync(id);
             if (existing == null) return NotFound();
 
+            // Update fields
             existing.Name = op.Name;
             existing.BusinessName = op.BusinessName;
             existing.Age = op.Age;
@@ -102,8 +106,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             existing.Username = op.Username;
             existing.RoleId = op.RoleId;
 
+            // 🔑 Password hashing logic
             if (!string.IsNullOrWhiteSpace(NewPassword))
+            {
+                // User supplied a new password – hash and replace
                 existing.Password = PasswordHelper.HashPassword(NewPassword);
+            }
+            else
+            {
+                // No new password provided – ensure the stored password is still hashed
+                // (optional extra safety if some older rows were saved as plain text)
+                if (!PasswordHelper.IsHashed(existing.Password))
+                {
+                    existing.Password = PasswordHelper.HashPassword(existing.Password);
+                }
+            }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));

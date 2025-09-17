@@ -21,6 +21,13 @@ namespace AlegriaCanyoneeringWebBooking.Helpers
                 Console.WriteLine($"Error verifying password: {ex.Message}");
                 return false; // Return false if there is an issue with the salt
             }
+
+        }
+
+        public static bool IsHashed(string value)
+        {
+            // quick heuristic: BCrypt hashes start with "$2"
+            return !string.IsNullOrEmpty(value) && value.StartsWith("$2");
         }
     }
 }
