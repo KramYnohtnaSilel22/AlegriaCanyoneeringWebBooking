@@ -785,6 +785,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return RedirectToAction("Accept");
         }
+        public async Task<IActionResult> Reserve()
+        {
+            var reservedGuests = await _context.Guests
+                .Include(g => g.OperatorList)
+                .Include(g => g.Nationality)
+                .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "anticipated")
+                .OrderBy(g => g.GuestId)
+                .ToListAsync();
+
+            var model = new GuestListViewModel
+            {
+                ReservedGuests = reservedGuests
+            };
+
+            return View("reserve", model);
+        }
+
 
 
         private bool GuestExists(int id)
