@@ -10,7 +10,7 @@
         {
             var badgeClass = guest.BookingStatus switch
             {
-                "anticipated" => "info",
+                "anticipated" => "info", 
                 "reserved" => "success",
                 "confirmed" => "success",
                 _ => "secondary"
@@ -18,13 +18,13 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
-                        <h5 class="fw-bold text-primary mb-2">@guest.Fullname</h5>
+                       @*  <h5 class="fw-bold text-primary mb-2">@guest.Fullname</h5> *@
                         <span class="badge bg-@badgeClass">@guest.BookingStatus</span>
                     </div>
                     <div class="row g-2">
-                        <div class="col-md-6"><strong>Age:</strong> @guest.Age</div>
+              @*           <div class="col-md-6"><strong>Age:</strong> @guest.Age</div>
                         <div class="col-md-6"><strong>Gender:</strong> @guest.Gender</div>
-                        <div class="col-md-6"><strong>Contact #:</strong> @guest.ContactNumber</div>
+                        <div class="col-md-6"><strong>Contact #:</strong> @guest.ContactNumber</div> *@
                         <div class="col-md-6"><strong>Nationality:</strong> @guest.NationalityType</div>
                         <div class="col-md-6"><strong>Operator:</strong> @(guest.OperatorList?.BusinessName ?? "N/A")</div>
                         <div class="col-md-6"><strong>Status:</strong> @(guest.Nationality?.NatName ?? "N/A")</div>
