@@ -52,9 +52,10 @@
                                         </button>
                                         <ul class="dropdown-menu">
                                             <li>
-                                                <a class="dropdown-item" asp-action="Book" asp-route-id="@item.GuestId">
+                                                <!--Diri kay dapat every time mo QR code ko automatic ang details reflect sa final Booking -->
+                                               @*  <a class="dropdown-item" asp-action="Book" asp-route-id="@item.GuestId">
                                                     <i class="bi bi-pencil-square me-2"></i>Booking
-                                                </a>
+                                                </a> *@
                                                 <a class="dropdown-item" asp-action="ScanQR" asp-route-id="@item.GuestId" class="btn btn-secondary btn-sm">
                                                     <i class="fas fa-qrcode"></i> View QR
                                                 </a>

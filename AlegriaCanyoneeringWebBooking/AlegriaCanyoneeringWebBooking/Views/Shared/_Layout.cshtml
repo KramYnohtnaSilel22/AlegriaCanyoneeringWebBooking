@@ -23,50 +23,52 @@
 </head>
 <body>
     <header>
+
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
             <div class="container">
                 <!-- Brand -->
-                <a class="navbar-brand fw-bold d-flex align-items-center gap-2" asp-area="" asp-controller="Guest" asp-action="Anticipate">
+                <a class="navbar-brand fw-bold d-flex align-items-center gap-2" asp-area="" asp-controller="Guest" asp-action="NewBooking">
                     <i class="fas fa-water"></i>
                     <span class="d-none d-sm-inline">Alegria Canyoneering</span>
                 </a>
-
                 <!-- Toggler for mobile -->
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
                         aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
                 <!-- Collapsible content -->
                 <div class="collapse navbar-collapse" id="mainNavbar">
-                    <ul class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
-
+                    <ul class="navbar-nav ms-auto gap-lg-3 align-items-lg-center" style="white-space:nowrap;">
                         <!-- New Booking -->
                         <li class="nav-item">
-                            <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="Anticipate">
+                            <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="NewBooking">
                                 <i class="bi bi-plus-circle me-1"></i>New Booking
                             </a>
                         </li>
+                        <!-- Save Guest -->
                         <li class="nav-item">
-                            <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="Reserve">
+                            <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="saveguest">
                                 <i class="bi bi-plus-circle me-1"></i>Save Guest
                             </a>
                         </li>
                         <!-- Reserve Bookings -->
                         <li class="nav-item">
-                            <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="Accept">
+                            <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="reservebooking">
+                                <i class="bi bi-journal-check me-1"></i>Reserve Bookings
+                            </a>
+                        </li>
+                        <!-- Final Bookings -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="FinalBooking">
                                 <i class="bi bi-journal-check me-1"></i>Final Bookings
                             </a>
                         </li>
-
-                
-                        <!-- Roles -->
+                        <!-- Role -->
                         <li class="nav-item">
                             <a class="nav-link text-white fw-semibold" asp-controller="Roles" asp-action="Index">
                                 <i class="bi bi-info-circle-fill me-1"></i>Role
                             </a>
                         </li>
-
                         <!-- Operator -->
                         <li class="nav-item">
                             <a class="nav-link text-white fw-semibold" asp-controller="Operators" asp-action="Index">
@@ -87,9 +89,6 @@
                                 <li><a class="dropdown-item" asp-controller="Nationalities" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Nationality</a></li>
                             </ul>
                         </li>
-
-
-
                         <!-- About -->
                         <li class="nav-item">
                             <a class="nav-link text-white fw-semibold" asp-controller="Home" asp-action="About">
@@ -102,11 +101,11 @@
                                 <i class="bi bi-door-closed-fill me-1"></i> Logout
                             </a>
                         </li>
-
                     </ul>
                 </div>
             </div>
         </nav>
+
     </header>
 
 

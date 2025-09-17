@@ -35,7 +35,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // GET: Anticipate (Display only 1 guest per batch)
-        public async Task<IActionResult> Anticipate()
+        public async Task<IActionResult> NewBooking()
         {
             await PopulateDropdowns(); // Load dropdowns for operators/nationalities
 
@@ -88,7 +88,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Anticipate(GuestListViewModel model)
+        public async Task<IActionResult> NewBooking(GuestListViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -391,7 +391,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // GET: Guest/Accept
-        public async Task<IActionResult> Accept()
+        public async Task<IActionResult> reservebooking()
         {
             var guests = await _context.Guests
                 .Include(g => g.OperatorList)
@@ -491,7 +491,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await _context.SaveChangesAsync();
 
             // Return a JSON response to let the JavaScript know it was successful
-            return Json(new { success = true, redirectUrl = Url.Action(nameof(Accept)) });
+            return Json(new { success = true, redirectUrl = Url.Action(nameof(reservebooking)) });
         }
 
         [HttpPost]
@@ -554,7 +554,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = "Guest confirmed with Driver!";
-                return RedirectToAction(nameof(Accept));
+                return RedirectToAction(nameof(reservebooking));
             }
             catch (DbUpdateException ex)
             {
@@ -628,20 +628,20 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (index == -1)
                 {
                     // Fallback: just redirect without page param if guest not found (should not happen)
-                    return RedirectToAction(nameof(Anticipate), new { id });
+                    return RedirectToAction(nameof(saveguest), new { id });
                 }
 
                 int groupIndex = index / 5;
 
-                return RedirectToAction(nameof(Anticipate), new { id, page = groupIndex });
+                return RedirectToAction(nameof(saveguest), new { id, page = groupIndex });
             }
 
             if (status.Equals("accepted", StringComparison.OrdinalIgnoreCase))
             {
-                return RedirectToAction(nameof(Anticipate));
+                return RedirectToAction(nameof(saveguest));
             }
 
-            return RedirectToAction(nameof(Anticipate));
+            return RedirectToAction(nameof(saveguest));
         }
 
 
@@ -694,12 +694,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context.Update(guest);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Accept)); // Go back to Final Bookings
+            return RedirectToAction(nameof(reservebooking)); // Go back to Final Bookings
         }
 
 
 
-        public async Task<IActionResult> Book(int id)
+        public async Task<IActionResult> FinalBooking(int id)
         {
             var guest = await _context.Guests
                 .Include(g => g.OperatorList)
@@ -733,7 +733,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Book(int id, List<int> driverIds, List<int> guideIds)
+        public async Task<IActionResult> FinalBooking(int id, List<int> driverIds, List<int> guideIds)
         {
             var guest = await _context.Guests
                 .Include(g => g.OperatorList)
@@ -783,9 +783,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Accept");
+            return RedirectToAction("reservebooking");
         }
-        public async Task<IActionResult> Reserve()
+        public async Task<IActionResult> saveguest()
         {
             var reservedGuests = await _context.Guests
                 .Include(g => g.OperatorList)
@@ -799,7 +799,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ReservedGuests = reservedGuests
             };
 
-            return View("reserve", model);
+            return View("saveguest", model);
         }
 
 
