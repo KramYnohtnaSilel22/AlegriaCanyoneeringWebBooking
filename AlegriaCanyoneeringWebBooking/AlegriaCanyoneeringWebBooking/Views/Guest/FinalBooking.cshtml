@@ -1,0 +1,60 @@
+﻿@* @model AlegriaCanyoneeringWebBooking.ViewModel.FinalBookingViewModel
+
+@{
+    ViewData["Title"] = "Final Booking";
+}
+
+<section class="container py-5">
+    <div class="card shadow-lg border-0 mx-auto" style="max-width:600px;">
+        <div class="card-body">
+            <h2 class="text-success fw-bold mb-3">
+                <i class="fas fa-check-circle me-2"></i> Booking Confirmed!
+            </h2>
+            <hr />
+            <div class="mb-4">
+                <h4 class="mb-2">@Model.Guest.Fullname</h4>
+                <div class="badge bg-success mb-2">@Model.Guest.BookingStatus</div>
+            </div>
+            <div class="mb-2"><strong>Operator:</strong> @(Model.Guest.OperatorList?.BusinessName ?? "N/A")</div>
+            <div class="mb-2"><strong>Nationality:</strong> @(Model.Guest.Nationality?.NatName ?? "N/A")</div>
+            <div class="mb-2"><strong>Batch:</strong> @Model.Guest.Batch</div>
+            <div class="mb-2"><strong>Number of Guests:</strong> @Model.Guest.NumberOfGuests</div>
+            <div class="mb-2"><strong>Date:</strong> @Model.Guest.Date</div>
+            <hr />
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle me-2"></i>
+                Please proceed to payment or print this confirmation for your records.
+            </div>
+        </div>
+    </div>
+</section>
+ *@
+
+@model AlegriaCanyoneeringWebBooking.ViewModel.FinalBookingViewModel
+@{
+    ViewData["Title"] = "Final Booking";
+}
+<section class="container py-5">
+    <div class="card shadow-lg border-0 mx-auto" style="max-width:600px;">
+        <div class="card-body">
+            <h2 class="text-success fw-bold mb-3">
+                <i class="fas fa-check-circle me-2"></i> Booking Confirmed!
+            </h2>
+            <hr />
+            <div class="mb-4">
+                <h4 class="mb-2">@Model.Fullname</h4>
+                <div class="badge bg-success mb-2">@Model.BookingStatus</div>
+            </div>
+            <div class="mb-2"><strong>Operator:</strong> @Model.OperatorName</div>
+            <div class="mb-2"><strong>Nationality:</strong> @Model.Nationality</div>
+            <div class="mb-2"><strong>Batch:</strong> @Model.Batch</div>
+            <div class="mb-2"><strong>Number of Guests:</strong> @Model.NumberOfGuests</div>
+            <div class="mb-2"><strong>Date:</strong> @Model.BookingDate</div>
+            <hr />
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle me-2"></i>
+                Please proceed to payment or print this confirmation for your records.
+            </div>
+        </div>
+    </div>
+</section>

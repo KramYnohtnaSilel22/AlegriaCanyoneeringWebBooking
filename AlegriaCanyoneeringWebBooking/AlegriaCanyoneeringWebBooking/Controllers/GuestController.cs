@@ -7,11 +7,18 @@ using Microsoft.Azure.Amqp.Framing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using QRCoder;
-using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+
+
+
 using System.Linq;
 using System.Linq;
 using System.Security.Policy;
+using System.Text;
 using System.Threading.Tasks;
+using ZXing.QrCode.Internal;    
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -390,89 +397,150 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        // GET: Guest/Accept
+        //public async Task<IActionResult> reservebooking()
+        //{
+        //    var savedGuests = await _context.Guests
+        //        .Include(g => g.OperatorList)
+        //        .Include(g => g.Nationality)
+        //        .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "confirmed")
+        //        .ToListAsync();
+
+        //    // Debug: Output the count
+        //    System.Diagnostics.Debug.WriteLine($"Guest count: {savedGuests.Count}");
+
+        //    var model = new GuestListViewModel
+        //    {
+        //        ReservedGuests = savedGuests
+        //    };
+        //    return View(model);
+        //}
+        // Controller: BookingController.cs
+
+        // === Show all reserved/confirmed guests and a single Batch QR ===
         public async Task<IActionResult> reservebooking()
+        {
+            // pull all reserved/confirmed guests
+            var reservedGuests = await _context.Guests
+                .Include(g => g.OperatorList)
+                .Include(g => g.Nationality)
+                .Include(g => g.Driver)
+                .Include(g => g.Guide)
+                .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "confirmed")
+                .OrderBy(g => g.GuestId)
+                .ToListAsync();
+
+            if (!reservedGuests.Any())
+                return View(new GuestListViewModel());   // nothing to show
+
+            // individual guest QR codes
+            foreach (var guest in reservedGuests)
+            {
+                guest.QRText = GenerateQRText(guest);
+                guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
+            }
+
+            // assume they all share the same batch
+            string batchCode = reservedGuests.First().Batch;
+            string batchQrBase64 = GenerateQRCodeBase64($"BATCH:{batchCode}");
+
+            var vm = new GuestListViewModel
+            {
+                ReservedGuests = reservedGuests,
+                BatchQrBase64 = batchQrBase64
+            };
+            return View(vm);
+        }
+
+        // === Scan URL: /Guests/ByBatch/{batch} ===
+        [HttpGet("Guests/ByBatch/{batch}")]
+        public async Task<IActionResult> ByBatch(string batch)
         {
             var guests = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Guide)
                 .Include(g => g.Nationality)
                 .Include(g => g.Driver)
-                .Where(g => g.BookingStatus == "confirmed" || g.BookingStatus == "reserved")
-                .GroupBy(g => g.GuestId)
-                .Select(g => g.First())
+                .Include(g => g.Guide)
+                .Where(g => g.Batch == batch)
+                .OrderBy(g => g.GuestId)
                 .ToListAsync();
 
-            // ✅ Generate QR code for each guest
-            foreach (var guest in guests)
-            {
-                string qrText = GenerateQRText(guest);
-                guest.QRBase64 = GenerateQRCodeBase64(qrText);
-            }
-
-            return View(guests);
+            return View("BatchGuests", guests);
         }
+
+        // ---------- QR Helpers ----------
 
         private string GenerateQRText(Guest guest)
         {
-            return
-        $"Guest Details\n" +
-        $"------------------------\n" +
-        $"ID           : {guest.GuestId}\n" +
-        $"Full Name    : {guest.Fullname}\n" +
-        $"Age          : {guest.Age}\n" +
-        $"Gender       : {guest.Gender}\n" +
-        $"Nationality  : {guest.NationalityType}\n" +
-        $"Guests Count : {guest.NumberOfGuests}\n" +
-        $"Nationality Status : {guest.Nationality?.NatName}\n" +
-        $"Operator     : {guest.OperatorList?.BusinessName ?? "N/A"}\n" +
-        $"Driver       : {guest.Driver?.FName ?? "None"}\n" +
-        $"Guide        : {guest.Guide?.FName ?? "None"}\n" +
-        $"Booking Date : {guest.Date:yyyy-MM-dd}\n" +
-        $"Arrival Date : {guest.ArrivalDate:yyyy-MM-dd}\n" +
-        $"Month        : {guest.Month}\n" +
-        $"Batch        : {guest.Batch}\n" +
-        $"RFID         : {guest.RFID}\n" +
-        $"Status       : {guest.BookingStatus?.ToUpper() ?? "N/A"}";
+            var sb = new StringBuilder();
+            sb.AppendLine("Guest Details");
+            sb.AppendLine("------------------------");
+            sb.AppendLine($"ID           : {guest.GuestId}");
+            sb.AppendLine($"Full Name    : {guest.Fullname}");
+            sb.AppendLine($"Age          : {guest.Age}");
+            sb.AppendLine($"Gender       : {guest.Gender}");
+            sb.AppendLine($"Nationality  : {guest.NationalityType}");
+            sb.AppendLine($"Guests Count : {guest.NumberOfGuests}");
+            sb.AppendLine($"Nationality Status : {guest.Nationality?.NatName}");
+            sb.AppendLine($"Operator     : {guest.OperatorList?.BusinessName ?? "N/A"}");
+            sb.AppendLine($"Driver       : {guest.Driver?.FName ?? "None"}");
+            sb.AppendLine($"Guide        : {guest.Guide?.FName ?? "None"}");
+            sb.AppendLine($"Booking Date : {guest.Date:yyyy-MM-dd}");
+            sb.AppendLine($"Arrival Date : {guest.ArrivalDate:yyyy-MM-dd}");
+            sb.AppendLine($"Month        : {guest.Month}");
+            sb.AppendLine($"Batch        : {guest.Batch}");
+            sb.AppendLine($"RFID         : {guest.RFID}");
+            sb.AppendLine($"Status       : {guest.BookingStatus?.ToUpper() ?? "N/A"}");
+            return sb.ToString();
         }
 
-        public async Task<IActionResult> ScanQR(int id)
+        private string GenerateQRCodeBase64(string data)
         {
-            var guest = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .Include(g => g.Guide)
-                .Include(g => g.Driver)
-                .FirstOrDefaultAsync(g => g.GuestId == id);
-
-            if (guest == null) return NotFound();
-
-            // generate QR text + QR image (base64)
-            string qrText = GenerateQRText(guest);
-            string qrBase64 = GenerateQRCodeBase64(qrText);
-
-            ViewBag.QRCodeImage = qrBase64;
-            ViewBag.QRData = qrText;
-
-            return View(guest);
+            var qrGenerator = new QRCodeGenerator();
+            var qrCodeData = qrGenerator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q);
+            var qrCode = new PngByteQRCode(qrCodeData);
+            var qrBytes = qrCode.GetGraphic(20);
+            return "data:image/png;base64," + Convert.ToBase64String(qrBytes);
         }
 
 
-        public IActionResult DownloadQr(int id)
-        {
-            var guest = _context.Guests.FirstOrDefault(g => g.GuestId == id);
-            if (guest == null) return NotFound();
+        //public async Task<IActionResult> ScanQR(int id)
+        //{
+        //    var guest = await _context.Guests
+        //        .Include(g => g.OperatorList)
+        //        .Include(g => g.Nationality)
+        //        .Include(g => g.Guide)
+        //        .Include(g => g.Driver)
+        //        .FirstOrDefaultAsync(g => g.GuestId == id);
 
-            // Generate QR image content for download
-            string qrBase64 = GenerateQRCodeBase64($"GuestID:{guest.GuestId}, Name:{guest.Fullname}");
-            if (qrBase64.StartsWith("data:"))
-                qrBase64 = qrBase64.Substring(qrBase64.IndexOf(",") + 1);
+        //    if (guest == null) return NotFound();
 
-            var bytes = Convert.FromBase64String(qrBase64);
+        //    // generate QR text + QR image (base64)
+        //    string qrText = GenerateQRText(guest);
+        //    string qrBase64 = GenerateQRCodeBase64(qrText);
 
-            // This will trigger a file download on mobile once the QR link is opened
-            return File(bytes, "image/png", $"{guest.Fullname}_QRCode.png");
-        }
+        //    ViewBag.QRCodeImage = qrBase64;
+        //    ViewBag.QRData = qrText;
+
+        //    return View(guest);
+        //}
+
+
+        //public IActionResult DownloadQr(int id)
+        //{
+        //    var guest = _context.Guests.FirstOrDefault(g => g.GuestId == id);
+        //    if (guest == null) return NotFound();
+
+        //    // Generate QR image content for download
+        //    string qrBase64 = GenerateQRCodeBase64($"GuestID:{guest.GuestId}, Name:{guest.Fullname}");
+        //    if (qrBase64.StartsWith("data:"))
+        //        qrBase64 = qrBase64.Substring(qrBase64.IndexOf(",") + 1);
+
+        //    var bytes = Convert.FromBase64String(qrBase64);
+
+        //    // This will trigger a file download on mobile once the QR link is opened
+        //    return File(bytes, "image/png", $"{guest.Fullname}_QRCode.png");
+        //}
+
 
 
 
@@ -494,75 +562,75 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return Json(new { success = true, redirectUrl = Url.Action(nameof(reservebooking)) });
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmQR(int id, int? driverId)
-        {
-            var guest = await _context.Guests
-                .Include(g => g.Nationality)
-                .Include(g => g.OperatorList)
-                .Include(g => g.Driver)
-                .FirstOrDefaultAsync(g => g.GuestId == id);
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> ConfirmQR(int id, int? driverId)
+        //{
+        //    var guest = await _context.Guests
+        //        .Include(g => g.Nationality)
+        //        .Include(g => g.OperatorList)
+        //        .Include(g => g.Driver)
+        //        .FirstOrDefaultAsync(g => g.GuestId == id);
 
-            if (guest == null)
-            {
-                return NotFound();
-            }
+        //    if (guest == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            // Assign Driver if provided
-            if (driverId.HasValue)
-            {
-                var driver = await _context.Drivers.FindAsync(driverId.Value);
-                if (driver != null)
-                {
-                    guest.DriverId = driverId;
-                }
-            }
+        //    // Assign Driver if provided
+        //    if (driverId.HasValue)
+        //    {
+        //        var driver = await _context.Drivers.FindAsync(driverId.Value);
+        //        if (driver != null)
+        //        {
+        //            guest.DriverId = driverId;
+        //        }
+        //    }
 
-            // ✅ FIXED: Load driver after potential assignment
-            if (guest.DriverId.HasValue)
-            {
-                guest.Driver = await _context.Drivers.FindAsync(guest.DriverId.Value);
-            }
+        //    // ✅ FIXED: Load driver after potential assignment
+        //    if (guest.DriverId.HasValue)
+        //    {
+        //        guest.Driver = await _context.Drivers.FindAsync(guest.DriverId.Value);
+        //    }
 
-            // ✅ FIXED: Generate QR Data with proper driver display
-            string qrData =
-                $"Guest Details\n" +
-                $"-----------------------------------\n" +
-                $"ID             : {guest.GuestId}\n" +
-                $"Full Name      : {guest.Fullname}\n" +
-                $"Age            : {guest.Age}\n" +
-                $"Gender         : {guest.Gender}\n" +
-                $"Nationality    : {guest.NationalityType}\n" +
-                $"No. of Guests  : {guest.NumberOfGuests}\n" +
-                $"Nat. Status    : {guest.NationalityId}\n" +
-                $"Operator       : {guest.OperatorList?.BusinessName ?? "N/A"}\n" +
-                $"Driver         : {(guest.Driver != null ? $"{guest.Driver.RefId} - {guest.Driver.FName} {guest.Driver.LName}" : "None")}\n" +
-                $"Booking Date   : {guest.Date}\n" +
-                $"Arrival Date   : {guest.ArrivalDate}\n" +
-                $"Month          : {guest.Month}\n" +
-                $"Batch          : {guest.Batch}\n" +
-                $"RFID           : {guest.RFID}\n" +
-                $"Status         : confirm\n";
+        //    // ✅ FIXED: Generate QR Data with proper driver display
+        //    string qrData =
+        //        $"Guest Details\n" +
+        //        $"-----------------------------------\n" +
+        //        $"ID             : {guest.GuestId}\n" +
+        //        $"Full Name      : {guest.Fullname}\n" +
+        //        $"Age            : {guest.Age}\n" +
+        //        $"Gender         : {guest.Gender}\n" +
+        //        $"Nationality    : {guest.NationalityType}\n" +
+        //        $"No. of Guests  : {guest.NumberOfGuests}\n" +
+        //        $"Nat. Status    : {guest.NationalityId}\n" +
+        //        $"Operator       : {guest.OperatorList?.BusinessName ?? "N/A"}\n" +
+        //        $"Driver         : {(guest.Driver != null ? $"{guest.Driver.RefId} - {guest.Driver.FName} {guest.Driver.LName}" : "None")}\n" +
+        //        $"Booking Date   : {guest.Date}\n" +
+        //        $"Arrival Date   : {guest.ArrivalDate}\n" +
+        //        $"Month          : {guest.Month}\n" +
+        //        $"Batch          : {guest.Batch}\n" +
+        //        $"RFID           : {guest.RFID}\n" +
+        //        $"Status         : confirm\n";
 
-            guest.QrCode = GenerateQRCodeBase64(qrData);
-            guest.BookingStatus = "confirm";
+        //    guest.QrCode = GenerateQRCodeBase64(qrData);
+        //    guest.BookingStatus = "confirm";
 
-            try
-            {
-                _context.Update(guest);
-                await _context.SaveChangesAsync();
+        //    try
+        //    {
+        //        _context.Update(guest);
+        //        await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Guest confirmed with Driver!";
-                return RedirectToAction(nameof(reservebooking));
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError(ex, "Error confirming guest with ID: {GuestId}", id);
-                TempData["ErrorMessage"] = "Error confirming guest. Please try again.";
-                return RedirectToAction(nameof(ScanQR), new { id = id });
-            }
-        }
+        //        TempData["SuccessMessage"] = "Guest confirmed with Driver!";
+        //        return RedirectToAction(nameof(reservebooking));
+        //    }
+        //    catch (DbUpdateException ex)
+        //    {
+        //        _logger.LogError(ex, "Error confirming guest with ID: {GuestId}", id);
+        //        TempData["ErrorMessage"] = "Error confirming guest. Please try again.";
+        //        return RedirectToAction(nameof(ScanQR), new { id = id });
+        //    }
+        //}
 
         private int GetCurrentOperatorId()
         {
@@ -645,25 +713,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        private string GenerateQRCodeBase64(string data)
-        {
-            try
-            {
-                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-                using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q))
-                using (Base64QRCode qrCode = new Base64QRCode(qrCodeData))
-                {
-                    string qrCodeImageAsBase64 = qrCode.GetGraphic(20, "#000000", "#FFFFFF", true);
-                    return $"data:image/png;base64,{qrCodeImageAsBase64}";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"QR Code generation error: {ex.Message}");
-                return null;
-            }
-        }
-
+ 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmBooking(int id, List<int> driverIds, List<int> guideIds)
@@ -697,94 +747,39 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return RedirectToAction(nameof(reservebooking)); // Go back to Final Bookings
         }
 
-
-
-        public async Task<IActionResult> FinalBooking(int id)
-        {
-            var guest = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .Include(g => g.Driver)
-                .Include(g => g.Guide)
-                .FirstOrDefaultAsync(g => g.GuestId == id);
-
-            if (guest == null)
-            {
-                return NotFound();
-            }
-
-            ViewBag.DriverList = await _context.Drivers
-                .Select(d => new SelectListItem
-                {
-                    Value = d.DriverId.ToString(),
-                    Text = $"{d.RefId} - {d.FName} {d.LName}"
-                })
-                .ToListAsync();
-
-            ViewBag.GuideList = await _context.Guides
-             .Select(g => new SelectListItem
-             {
-                 Value = g.GuideId.ToString(),
-                 Text = $"{g.FName} {g.LName}"
-             })
-             .ToListAsync();
-
-            return View(guest); // Returns Book.cshtml
-        }
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> FinalBooking(int id, List<int> driverIds, List<int> guideIds)
+        public async Task<IActionResult> FinalBooking(int GuestId)
         {
             var guest = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
-                .FirstOrDefaultAsync(g => g.GuestId == id);
-
+                .FirstOrDefaultAsync(g => g.GuestId == GuestId);
             if (guest == null)
                 return NotFound();
 
-            // Assign driver and guide
-            guest.DriverId = driverIds?.FirstOrDefault();
-            guest.GuideId = guideIds?.FirstOrDefault();
-            guest.BookingStatus = "confirmed";
-
-            _context.Update(guest);
+            guest.BookingStatus = "finalized";
             await _context.SaveChangesAsync();
 
-            // Count Local vs Foreign
-            int localCount = 0, foreignCount = 0;
-            if (guest.NationalityType?.ToLower() == "local")
-                localCount = guest.NumberOfGuests;
-            else
-                foreignCount = guest.NumberOfGuests;
-
-            var arrivalDate = DateTime.Parse(guest.ArrivalDate);
-
-            // 🔐 Check if Batch already exists
-            var existingBatch = await _context.Batches.FirstOrDefaultAsync(b =>
-                b.OperatorId == guest.OperatorId &&
-                b.ArrivalDate == arrivalDate);
-
-            if (existingBatch == null)
+            var model = new FinalBookingViewModel
             {
-                // Only add if not existing
-                var batch = new Batch
-                {
-                    OperatorId = guest.OperatorId ?? 0,
-                    NoOfLocalGuest = localCount,
-                    NoOfForeignGuest = foreignCount,
-                    NoOfTGuide = guideIds?.Count ?? 0,
-                    NoOfMDriver = driverIds?.Count ?? 0,
-                    TotalNoOfGuest = guest.NumberOfGuests,
-                    ArrivalDate = arrivalDate
-                };
-
-                _context.Batches.Add(batch);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction("reservebooking");
+                Guest = guest,
+                Fullname = guest.Fullname,
+                BookingStatus = guest.BookingStatus,
+                OperatorName = guest.OperatorList?.BusinessName,
+                Nationality = guest.Nationality?.NatName,
+                Batch = guest.Batch,
+                NumberOfGuests = guest.NumberOfGuests,
+                BookingDate = guest.Date,
+                ArrivalDate = guest.ArrivalDate,
+                ContactNumber = guest.ContactNumber,
+                QRCodeBase64 = guest.QRBase64,
+               
+            };
+            return View(model);
         }
+
+
+
         public async Task<IActionResult> saveguest()
         {
             var reservedGuests = await _context.Guests
