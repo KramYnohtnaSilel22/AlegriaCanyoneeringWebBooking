@@ -1,6 +1,8 @@
-﻿@* @model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+
 <section class="container py-4">
-    <h2 class="fw-bold mb-4 text-success">Final Booking - Finalized Guests</h2>
+    <h2 class="fw-bold mb-4 text-success">Final Booking Batch - Finalized Guests</h2>
+
     @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
     {
         <div class="table-responsive">
@@ -43,4 +45,3 @@
         </div>
     }
 </section>
- *@

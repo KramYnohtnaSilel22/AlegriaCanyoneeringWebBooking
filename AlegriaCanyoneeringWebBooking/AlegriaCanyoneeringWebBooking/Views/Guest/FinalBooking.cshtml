@@ -1,45 +1,23 @@
-﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+﻿@model AlegriaCanyoneeringWebBooking.ViewModel.FinalBookingViewModel
+
 <section class="container py-4">
-    <h2 class="fw-bold mb-4 text-success">Final Booking - Finalized Guests</h2>
-    @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
-    {
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped align-middle shadow-sm">
-                <thead class="table-success">
-                    <tr>
-                        <th>Full Name</th>
-                        <th>Status</th>
-                        <th>Operator</th>
-                        <th>Nationality</th>
-                        <th>Batch</th>
-                        <th>No. Guests</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var guest in Model.ReservedGuests)
-                    {
-                        <tr>
-                            <td>@guest.Fullname</td>
-                            <td>
-                                <span class="badge bg-success text-uppercase px-2 py-1">
-                                    @guest.BookingStatus
-                                </span>
-                            </td>
-                            <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
-                            <td>@(guest.Nationality?.NatName ?? "N/A")</td>
-                            <td>@guest.Batch</td>
-                            <td>@guest.NumberOfGuests</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-info text-center mt-5">
-            <i class="fas fa-info-circle me-2"></i>
-            No finalized guests found!
-        </div>
-    }
+    <h2 class="fw-bold mb-4 text-success">Final Booking Details</h2>
+    <div class="card shadow-sm p-3">
+        <h3>@Model.Fullname</h3>
+        <p><strong>Status:</strong> @Model.BookingStatus</p>
+        <p><strong>Operator:</strong> @Model.OperatorName</p>
+        <p><strong>Nationality:</strong> @Model.Nationality</p>
+        <p><strong>Batch:</strong> @Model.Batch</p>
+        <p><strong>Number of Guests:</strong> @Model.NumberOfGuests</p>
+        <p><strong>Booking Date:</strong> @Model.BookingDate</p>
+        <p><strong>Arrival Date:</strong> @Model.ArrivalDate</p>
+        <p><strong>Contact Number:</strong> @Model.ContactNumber</p>
+
+        @if (!string.IsNullOrEmpty(Model.QRCodeBase64))
+        {
+            <img src="data:image/png;base64,@Model.QRCodeBase64" alt="QR Code" />
+        }
+
+        <a asp-action="List" asp-controller="Guest" class="btn btn-primary mt-3">Back to Guest List</a>
+    </div>
 </section>

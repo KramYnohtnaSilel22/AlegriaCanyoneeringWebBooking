@@ -18,7 +18,7 @@ using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
-using ZXing.QrCode.Internal;    
+   
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -748,36 +748,34 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> FinalBooking(int GuestId)
+        public async Task<IActionResult> FinalBookingBatch(string BatchCode)
         {
-            var guest = await _context.Guests
+            // Get all guests in the batch
+            var guests = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
-                .FirstOrDefaultAsync(g => g.GuestId == GuestId);
-            if (guest == null)
+                .Where(g => g.Batch == BatchCode)
+                .ToListAsync();
+
+            if (guests == null || !guests.Any())
                 return NotFound();
 
-            guest.BookingStatus = "finalized";
+            // Finalize all guests by setting BookingStatus
+            foreach (var guest in guests)
+            {
+                guest.BookingStatus = "finalized";
+            }
             await _context.SaveChangesAsync();
 
-            var model = new FinalBookingViewModel
+            // Prepare a view model listing all finalized guests in the batch
+            var model = new GuestListViewModel
             {
-                Guest = guest,
-                Fullname = guest.Fullname,
-                BookingStatus = guest.BookingStatus,
-                OperatorName = guest.OperatorList?.BusinessName,
-                Nationality = guest.Nationality?.NatName,
-                Batch = guest.Batch,
-                NumberOfGuests = guest.NumberOfGuests,
-                BookingDate = guest.Date,
-                ArrivalDate = guest.ArrivalDate,
-                ContactNumber = guest.ContactNumber,
-                QRCodeBase64 = guest.QRBase64,
-               
+                ReservedGuests = guests
             };
-            return View(model);
-        }
 
+            // Return a view that shows the finalized guest list for this batch
+            return View("FinalBookingBatch", model);
+        }
 
 
         public async Task<IActionResult> saveguest()
