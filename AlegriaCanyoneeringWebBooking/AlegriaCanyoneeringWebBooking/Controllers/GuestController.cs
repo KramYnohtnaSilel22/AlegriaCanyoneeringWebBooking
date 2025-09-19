@@ -712,68 +712,41 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return RedirectToAction(nameof(saveguest));
         }
 
-
- 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmBooking(int id, List<int> driverIds, List<int> guideIds)
+        // GuestController.cs
+        [HttpGet]
+        public IActionResult FinalBookingBatch()
         {
-            var guest = await _context.Guests.FindAsync(id);
-            if (guest == null)
-            {
-                return NotFound();
-            }
-
-            // ✅ Store selected driver and guide IDs(you might need to modify your Guest model)
-            // For now, we'll store the first selected IDs for backward compatibility
-            if (driverIds != null && driverIds.Count > 0)
-            {
-                guest.DriverId = driverIds.First();
-                // If you want to store all selected drivers, you'll need a separate relationship table
-            }
-
-            if (guideIds != null && guideIds.Count > 0)
-            {
-                guest.GuideId = guideIds.First();
-                // If you want to store all selected guides, you'll need a separate relationship table
-            }
-
-            // ✅ Set booking status to confirmed
-            guest.BookingStatus = "reserved";
-
-            _context.Update(guest);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(reservebooking)); // Go back to Final Bookings
+            return View();
         }
+
+
 
         [HttpPost]
         public async Task<IActionResult> FinalBookingBatch(string BatchCode)
         {
-            // Get all guests in the batch
+            // Fetch guests in the batch, or empty list if none
             var guests = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
                 .Where(g => g.Batch == BatchCode)
                 .ToListAsync();
 
-            if (guests == null || !guests.Any())
-                return NotFound();
-
-            // Finalize all guests by setting BookingStatus
-            foreach (var guest in guests)
+            // Finalize all guests in the batch
+            if (guests.Any())
             {
-                guest.BookingStatus = "finalized";
+                foreach (var guest in guests)
+                {
+                    guest.BookingStatus = "finalized";
+                }
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
 
-            // Prepare a view model listing all finalized guests in the batch
+            // Prepare model - always pass GuestListViewModel with ReservedGuests initialized
             var model = new GuestListViewModel
             {
                 ReservedGuests = guests
             };
 
-            // Return a view that shows the finalized guest list for this batch
             return View("FinalBookingBatch", model);
         }
 

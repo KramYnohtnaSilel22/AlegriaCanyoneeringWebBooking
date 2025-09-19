@@ -3,7 +3,7 @@
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Final Booking Batch - Finalized Guests</h2>
 
-    @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
+    @if (Model?.ReservedGuests != null && Model.ReservedGuests.Any())
     {
         <div class="table-responsive">
             <table class="table table-bordered table-striped align-middle shadow-sm">
@@ -21,16 +21,16 @@
                     @foreach (var guest in Model.ReservedGuests)
                     {
                         <tr>
-                            <td>@guest.Fullname</td>
+                            <td>@guest?.Fullname</td>
                             <td>
                                 <span class="badge bg-success text-uppercase px-2 py-1">
-                                    @guest.BookingStatus
+                                    @guest?.BookingStatus
                                 </span>
                             </td>
-                            <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
-                            <td>@(guest.Nationality?.NatName ?? "N/A")</td>
-                            <td>@guest.Batch</td>
-                            <td>@guest.NumberOfGuests</td>
+                            <td>@(guest?.OperatorList?.BusinessName ?? "N/A")</td>
+                            <td>@(guest?.Nationality?.NatName ?? "N/A")</td>
+                            <td>@guest?.Batch</td>
+                            <td>@guest?.NumberOfGuests</td>
                         </tr>
                     }
                 </tbody>
