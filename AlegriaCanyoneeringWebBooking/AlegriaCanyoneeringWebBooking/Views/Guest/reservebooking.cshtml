@@ -4,84 +4,113 @@
 }
 <section class="container py-4">
     <h2 class="fw-bold mb-4">Reserved Booking</h2>
+@*     @if (!string.IsNullOrEmpty(Model.BatchQrBase64))
+    {
+        <div class="mb-4 d-flex align-items-center gap-3">
+            <div>
+                <strong>Batch QR Code:</strong><br />
+                <img src="@Model.BatchQrBase64" alt="Batch QR" style="width:120px;" />
+            </div>
+        </div>
+    } *@
     @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
     {
-        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-            @foreach (var guest in Model.ReservedGuests)
-            {
-                var badgeClass = guest.BookingStatus switch
-                {
-                    "anticipated" => "info",
-                    "reserved" => "success",
-                    "confirmed" => "success",
-                    _ => "secondary"
-                };
-                <div class="col">
-                    <div class="card shadow-lg border-0 h-100 guest-card transition-all" style="background: linear-gradient(135deg, #f8fafc 0%, #e0eaef 100%);">
-                        <div class="card-body d-flex flex-column justify-content-between">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="rounded-circle bg-secondary me-3 d-flex justify-content-center align-items-center" style="width:48px; height:48px;"><i class="fas fa-user text-white"></i></div>
-                                <div>
-                                    <h5 class="fw-bold mb-0 text-dark">@guest.Fullname</h5>
-                                    <span class="badge bg-@badgeClass ms-1 text-uppercase px-2 py-1" style="font-size:0.85em;">@guest.BookingStatus</span>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="row g-2 small">
-                                    <div class="col-6"><strong>Operator:</strong> @(guest.OperatorList?.BusinessName ?? "N/A")</div>
-                                    <div class="col-6"><strong>Nationality:</strong> @(guest.Nationality?.NatName ?? "N/A")</div>
-                                    <div class="col-6"><strong>Batch:</strong> @guest.Batch</div>
-                                    <div class="col-6">
-                                        <strong>No. Guests:</strong> @guest.NumberOfGuests
-                                        @if (guest.NumberOfGuests >= 5)
-                                        {
-                                            <span class="badge bg-warning text-dark ms-1">Group of @guest.NumberOfGuests</span>
-                                        }
-                                    </div>
-                                    <div class="col-12 mt-2">
-                                        <strong>QR Code:</strong><br>
-                                        @if (!string.IsNullOrEmpty(guest.QRBase64))
-                                        {
-                                            <img src="@guest.QRBase64" alt="QR Code for @guest.Fullname"
-                                                 style="width:150px;height:150px;" />
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">No QR generated</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2 mt-2">
-                                <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-light btn-sm shadow-sm border"><i class="fas fa-eye me-1"></i> View</a>
-                                <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-warning btn-sm text-dark shadow-sm border"><i class="fas fa-edit me-1"></i> Edit</a>
-                                <button type="button" class="btn btn-success btn-sm" onclick="showScanner('@guest.GuestId')"><i class="fas fa-qrcode me-1"></i> Scan QR</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Modal for QR Scanner (keep if needed for scan workflow) -->
-                    <div class="modal fade" id="qrModal-@guest.GuestId" tabindex="-1" aria-labelledby="qrModalLabel-@guest.GuestId" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Scan QR for @guest.Fullname</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div id="qr-reader-@guest.GuestId" style="width:300px; margin:auto;"></div>
-                                    <form id="finalBookingForm-@guest.GuestId" method="post" asp-action="FinalBooking">
-                                        <input type="hidden" id="guestIdInput-@guest.GuestId" name="GuestId" value="" />
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle shadow-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Status</th>
+                        <th>Operator</th>
+                        <th>Nationality</th>
+                        <th>Batch</th>
+                        <th>No. Guests</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var guest in Model.ReservedGuests)
+                    {
+                        var badgeClass = guest.BookingStatus switch
+                        {
+                            "anticipated" => "info",
+                            "reserved" => "success",
+                            "confirmed" => "success",
+                            _ => "secondary"
+                        };
+                        <tr>
+                            <td class="fw-semibold">@guest.Fullname</td>
+                            <td><span class="badge bg-@badgeClass text-uppercase px-2 py-1">@guest.BookingStatus</span></td>
+                            <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
+                            <td>@(guest.Nationality?.NatName ?? "N/A")</td>
+                            <td>@guest.Batch</td>
+                            <td>
+                                @guest.NumberOfGuests
+                                @if (guest.NumberOfGuests >= 5)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">Group of @guest.NumberOfGuests</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-light btn-sm border"><i class="fas fa-eye"></i></a>
+                                <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-warning btn-sm text-dark border"><i class="fas fa-edit"></i></a>
+                                <!-- View QR Button -->
+                                <button type="button" class="btn btn-info btn-sm"
+                                        onclick="showQrModal('@guest.GuestId')">
+                                    <i class="fas fa-qrcode"></i> View QR
+                                </button>
+                                <form method="post" asp-action="FinalBookingBatch">
+                                    <input type="hidden" name="BatchCode" value="@Model.ReservedGuests.First().Batch" />
+                                    <button type="submit" class="btn btn-success mb-3">
+                                        <i class="fas fa-check"></i> Finalize & Show All Guests
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     }
     else
     {
-        <div class="d-flex flex-column align-items-center justify-content-center py-5"><i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i><p class="lead fw-semibold text-muted">No reserved or confirmed guests yet.</p></div>
+        <div class="d-flex flex-column align-items-center justify-content-center py-5">
+            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+            <p class="lead fw-semibold text-muted">No reserved or confirmed guests yet.</p>
+        </div>
     }
 </section>
+
+@section Scripts {
+    <script>
+        function showQrModal(guestId) {
+            const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
+            modal.show();
+        }
+    </script>
+    <!-- QR View Modal for each guest -->
+    @foreach (var guest in Model.ReservedGuests ?? Enumerable.Empty<dynamic>())
+    {
+        <div class="modal fade" id="qrViewModal-@guest.GuestId" tabindex="-1"
+             aria-labelledby="qrViewModalLabel-@guest.GuestId" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content text-center">
+                    <div class="modal-header">
+                        <h5 class="modal-title">QR Code for @guest.Fullname</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if (!string.IsNullOrEmpty(guest.QRBase64))
+                        {
+                            <img src="@guest.QRBase64" alt="QR for @guest.Fullname" style="width:180px;height:180px;" />
+                        }
+                        else
+                        {
+                            <div class="text-muted">No QR image generated.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
