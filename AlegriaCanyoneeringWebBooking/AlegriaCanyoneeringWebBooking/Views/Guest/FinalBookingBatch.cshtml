@@ -8,7 +8,7 @@
 }
 
 <section class="container py-4">
-    <h2 class="fw-bold mb-4 text-success">Final Booking Batch - Finalized Guests</h2>
+    <h2 class="fw-bold mb-4 text-success">Final Booking</h2>
     @if (allBatches.Any())
     {
         <div class="table-responsive mb-4">
@@ -33,12 +33,13 @@
                             var guests = batchGuestsDict.ContainsKey(batch.BatchCode)
                             ? batchGuestsDict[batch.BatchCode] : new List<AlegriaCanyoneeringWebBooking.Models.Guest>();
                             var operatorName = guests.Any() && guests.FirstOrDefault()?.OperatorList != null
-                            ? guests.FirstOrDefault().OperatorList.BusinessName
+                            ? guests.FirstOrDefault().OperatorList?.BusinessName
                             : "N/A";
+
                             <tr>
                                 <td>@batch.BatchCode</td>
                                 <td>@batch.TotalGuests</td>
-                                <td>@operatorName</td>
+                              <td>@operatorName</td>
                                 <td>@batch.ArrivalDate</td>
                                 <td>
                                     <span class="badge bg-success text-uppercase px-2 py-1">@batch.Status</span>
@@ -54,7 +55,55 @@
                         }
                     }
                 </tbody>
+
             </table>
+                @foreach (var batch in allBatches)
+                {
+                          
+                    if (!string.IsNullOrEmpty(batch.BatchCode) && batchGuestsDict.ContainsKey(batch.BatchCode))
+                    {
+                        var guests = batchGuestsDict[batch.BatchCode];
+                        <div class="modal fade" id="allGuestsModal-@batch.BatchCode" tabindex="-1" aria-labelledby="guestModalLabel-@batch.BatchCode" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Guests for Batch: @batch.BatchCode</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                       
+                                        @if (guests.Any())
+                                        {
+                                            <div class="row">
+                                                @foreach (var guest in guests)
+                                                {
+                                                    <div class="col-md-4 mb-4">
+                                                        <div class="card text-center shadow-sm">
+
+                                                            <div class="card-header bg-success text-white">
+                                                                <strong>@guest.Fullname</strong>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <p><strong>Operator:</strong> @(guest.OperatorList?.BusinessName ?? "N/A")</p>
+                                                                <p><strong>Total Guests:</strong> @guest.NumberOfGuests</p>
+                                                            <p><strong> Age:</strong> @guest.Age</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <p class="text-muted">No guests found for this batch.</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
         </div>
     }
     else
