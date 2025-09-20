@@ -1,72 +1,223 @@
-﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+﻿@* @model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
 @{
     ViewData["Title"] = "Guest List";
 }
+
 <h4 class="text-primary fw-semibold mb-3">Saved Guests</h4>
+
 @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
 {
-    <div id="savedGuestsSection" class="d-flex flex-column gap-3" style="max-height: 600px; overflow-y: auto;">
-        @foreach (var guest in Model.ReservedGuests)
-        {
-            var badgeClass = guest.BookingStatus switch
-            {
-                "anticipated" => "info", 
-                "reserved" => "success",
-                "confirmed" => "success",
-                _ => "secondary"
-            };
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                       @*  <h5 class="fw-bold text-primary mb-2">@guest.Fullname</h5> *@
-                        <span class="badge bg-@badgeClass">@guest.BookingStatus</span>
-                    </div>
-                    <div class="row g-2">
-              @*           <div class="col-md-6"><strong>Age:</strong> @guest.Age</div>
-                        <div class="col-md-6"><strong>Gender:</strong> @guest.Gender</div>
-                        <div class="col-md-6"><strong>Contact #:</strong> @guest.ContactNumber</div> *@
-                       @*  <div class="col-md-6"><strong>Nationality:</strong> @guest.NationalityType</div> *@
-                        <div class="col-md-6"><strong>Operator:</strong> @(guest.OperatorList?.BusinessName ?? "N/A")</div>
-      @*                   <div class="col-md-6"><strong>Status:</strong> @(guest.Nationality?.NatName ?? "N/A")</div> *@
-               @*          <div class="col-md-6"><strong>Booking Date:</strong> @guest.Date</div>
-                        <div class="col-md-6"><strong>Arrival Date:</strong> @guest.ArrivalDate</div> *@
-              @*           <div class="col-md-6"><strong>Area:</strong> @guest.Area</div> *@
-                        <div class="col-md-6"><strong>Batch:</strong> @guest.Batch</div>
-                        <div class="col-md-6">
-                            <strong>No. Guests:</strong> @guest.NumberOfGuests
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input id="guestSearch" type="text" class="form-control" placeholder="Search guests..." />
+        </div>
+        <div class="col-md-6 text-end">
+            <label for="sortDateFilter" class="form-label me-2">Sort by Arrival Date:</label>
+            <select id="sortDateFilter" class="form-select w-auto d-inline-block" style="min-width:120px;">
+                <option value="all">All</option>
+                <option value="latest">Latest</option>
+                <option value="oldest">Oldest</option>
+            </select>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle" id="guestsTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Operator</th>
+                    <th>Arrival Date</th>
+                    <th>Total Guests</th>
+                    <th>Booking Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="guestsTableBody">
+                @foreach (var guest in Model.ReservedGuests)
+                {
+                    var badgeClass = guest.BookingStatus switch
+                    {
+                        "anticipated" => "info",
+                        "reserved" => "success",
+                        "confirmed" => "success",
+                        _ => "secondary"
+                    };
+                    <tr>
+                        <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
+                        <td data-date="@guest.ArrivalDate">@guest.ArrivalDate</td>
+                        <td>
+                            @guest.NumberOfGuests
                             @if (guest.NumberOfGuests >= 5)
                             {
-                                <span class="badge bg-warning text-dark ms-1">Group of @guest.NumberOfGuests guests</span>
+                                <span class="badge bg-warning text-dark ms-1">Group</span>
                             }
-                        </div>
-     @*                    <div class="col-md-6"><strong>RFID:</strong> @guest.RFID</div> *@
-                    </div>
-                    <div class="mt-3 d-flex gap-2">
-                        <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-secondary">
-                            <i class="fas fa-eye me-1"></i> View
+                        </td>
+                        <td>
+                            <span class="badge bg-@badgeClass">@guest.BookingStatus</span>
+                        </td>
+                        <td>
+                            <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-secondary" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-sm btn-warning text-dark" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            @if (guest.BookingStatus == "anticipated")
+                            {
+                                <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@guest.GuestId" />
+                                    <input type="hidden" name="status" value="reserved" />
+                                    <button type="submit" class="btn btn-sm btn-success" title="Submit">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <nav>
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+    </nav>
+}
+else
+{
+    <div class="alert alert-warning text-center shadow-sm rounded-3 py-4 mt-3">
+        <i class="fas fa-exclamation-triangle fa-lg me-2"></i>No saved guests
+    </div>
+}
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // --- Client-side search, sort, and pagination ---
+        const rowsPerPage = 10;
+        let currentPage = 1;
+
+        function filterGuests() {
+            const search = $('#guestSearch').val().toLowerCase();
+            $('#guestsTableBody tr').each(function () {
+                const rowText = $(this).text().toLowerCase();
+                $(this).toggle(rowText.indexOf(search) > -1);
+            });
+            paginateGuests();
+        }
+
+        function sortGuestsByDate() {
+            const filter = $('#sortDateFilter').val();
+            const rows = $('#guestsTableBody tr').get();
+            rows.sort(function (a, b) {
+                const dateA = new Date($(a).find('td[data-date]').data('date'));
+                const dateB = new Date($(b).find('td[data-date]').data('date'));
+                if (filter === 'latest') {
+                    return dateB - dateA;
+                } else if (filter === 'oldest') {
+                    return dateA - dateB;
+                }
+                return 0;
+            });
+            $.each(rows, function (idx, row) {
+                $('#guestsTableBody').append(row);
+            });
+            paginateGuests();
+        }
+
+        function paginateGuests() {
+            const rows = $('#guestsTableBody tr:visible');
+            const totalRows = rows.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            rows.hide();
+            rows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).show();
+
+            // Pagination controls
+            let pagHtml = '';
+            for (let i = 1; i <= totalPages; i++) {
+                pagHtml += `<li class="page-item${i === currentPage ? ' active' : ''}">
+                    <a class="page-link" href="#">${i}</a></li>`;
+            }
+            $('#pagination').html(pagHtml);
+
+            $('#pagination a').click(function (e) {
+                e.preventDefault();
+                currentPage = parseInt($(this).text());
+                paginateGuests();
+            });
+        }
+
+        $(document).ready(function () {
+            $('#guestSearch').on('input', function () {
+                currentPage = 1;
+                filterGuests();
+            });
+
+            $('#sortDateFilter').on('change', function () {
+                sortGuestsByDate();
+            });
+
+            // Initial setup
+            filterGuests();
+        });
+    </script>
+} *@
+
+
+@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+@{
+    ViewData["Title"] = "Saved Batch Leaders";
+}
+
+@if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Batch</th>
+                <th>Operator</th>
+                <th>Arrival Date</th>
+                <th>Booking Status</th>
+                @*     <th>Full Name</th> *@
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var guest in Model.ReservedGuests)
+            {
+                <tr>
+                    <td>@guest.Batch</td>
+                    <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
+                    <td>@guest.ArrivalDate</td>
+                    <td>
+                        <span class="badge bg-@(guest.BookingStatus == "reserved" ? "success" : "info")">
+                            @guest.BookingStatus
+                        </span>
+                    </td>
+                    @*        <td>@guest.Fullname</td> *@
+                    <td>
+                        <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-secondary" title="View">
+                            <i class="fas fa-eye"></i>
                         </a>
-                        <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-sm btn-warning text-dark">
-                            <i class="fas fa-edit me-1"></i> Edit
+                        <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-sm btn-warning text-dark" title="Edit">
+                            <i class="fas fa-edit"></i>
                         </a>
                         @if (guest.BookingStatus == "anticipated")
                         {
                             <form asp-action="UpdateStatus" method="post" class="d-inline">
                                 <input type="hidden" name="id" value="@guest.GuestId" />
                                 <input type="hidden" name="status" value="reserved" />
-                                <button type="submit" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check me-1"></i> Submit
+                                <button type="submit" class="btn btn-sm btn-success" title="Submit">
+                                    <i class="fas fa-check"></i>
                                 </button>
                             </form>
                         }
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 else
 {
-    <div class="alert alert-warning text-center shadow-sm rounded-3 py-4 mt-3">
-        <i class="fas fa-exclamation-triangle fa-lg me-2"></i>No save guests
-    </div>
+    <div>No saved batch leaders</div>
 }

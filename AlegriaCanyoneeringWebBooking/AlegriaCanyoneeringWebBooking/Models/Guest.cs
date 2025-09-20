@@ -8,15 +8,13 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Key]
         public int GuestId { get; set; }
 
-        [Required(ErrorMessage = "Full name is required")]
         [StringLength(1000, ErrorMessage = "Full name cannot exceed 1000 characters")]
         [Display(Name = "Full Name")]
-        public string Fullname { get; set; }
+        public string? Fullname { get; set; }   // <-- Remove [Required] for batch
 
-        [Required(ErrorMessage = "Age is required")]
         [StringLength(1000, ErrorMessage = "Age cannot exceed 1000 characters")]
         [Display(Name = "Age")]
-        public string Age { get; set; }
+        public string? Age { get; set; }        // <-- Remove [Required] for batch
 
         [Display(Name = "Number of Guests")]
         [Column("number_of_guests")]
@@ -28,30 +26,26 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [StringLength(10000, ErrorMessage = "Nationality cannot exceed 10000 characters")]
         [Display(Name = "Nationality")]
-        public string? NationalityType { get; set; } // This maps to 'nationality' column
+        public string? NationalityType { get; set; }
 
         [Display(Name = "National Status")]
-        [Column("natstat")] // This is the key fix - map to the correct database column
-        public int? NationalityId { get; set; } // Make this nullable to handle NULL values
-
+        [Column("natstat")]
+        public int? NationalityId { get; set; }
         [ForeignKey(nameof(NationalityId))]
         public Nationality? Nationality { get; set; }
 
-        [Required(ErrorMessage = "Gender is required")]
         [StringLength(1000, ErrorMessage = "Gender cannot exceed 1000 characters")]
         [Display(Name = "Gender")]
-        public string Gender { get; set; }
+        public string? Gender { get; set; }     // <-- Remove [Required] for batch
 
-        [Required(ErrorMessage = "Date is required")]
         [StringLength(1000, ErrorMessage = "Date cannot exceed 1000 characters")]
         [Display(Name = "Date")]
-        public string Date { get; set; }
+        public string? Date { get; set; }       // <-- Remove [Required] for batch
 
-        [Required(ErrorMessage = "Arrival date is required")]
         [StringLength(100, ErrorMessage = "Arrival date cannot exceed 100 characters")]
         [Display(Name = "Arrival Date")]
         [Column("arrivaldate")]
-        public string ArrivalDate { get; set; }
+        public string? ArrivalDate { get; set; } // <-- Remove [Required] for batch
 
         public string? Month { get; set; }
 
@@ -74,27 +68,22 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Area { get; set; }
 
         [Column("ContactNum")]
-        public string? ContactNumber { get; set; }  
-
+        public string? ContactNumber { get; set; }
 
         [Column("operatorid")]
         public int? OperatorId { get; set; }
         public OperatorList? OperatorList { get; set; }
 
-        [Column("DriverId")] // Make sure this matches your database column name
+        [Column("DriverId")]
         public int? DriverId { get; set; }
         public Driver? Driver { get; set; }
 
-        [Column("GuideId")] // Make sure this also matches
+        [Column("GuideId")]
         public int? GuideId { get; set; }
-
         [ForeignKey(nameof(GuideId))]
         public Guide? Guide { get; set; }
 
         [NotMapped] public string? QRBase64 { get; set; }
         [NotMapped] public string? QRText { get; set; }
-
-
-
     }
 }

@@ -1,47 +1,97 @@
 ﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
-
+@{
+    var leader = Model.ReservedGuests.FirstOrDefault();
+    var batchGuests = Model.BatchGuests?.Values.FirstOrDefault() ?? new List<Guest>();
+}
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Final Booking Batch - Finalized Guests</h2>
-
-    @if (Model?.ReservedGuests != null && Model.ReservedGuests.Any())
+    @if (leader != null)
     {
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped align-middle shadow-sm">
-                <thead class="table-success">
+        <div class="table-responsive mb-4">
+            <div class="card-header bg-primary text-white mb-2">
+            </div>
+            <table class="table table-bordered table-hover align-middle shadow-sm">
+                <thead>
                     <tr>
-                        <th>Full Name</th>
-                        <th>Status</th>
-                        <th>Operator</th>
-                        <th>Nationality</th>
                         <th>Batch</th>
-                        <th>No. Guests</th>
+                        <th>Total Guest</th>
+                        <th>Operator</th>
+                        <th>Arrival Date</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var guest in Model.ReservedGuests)
-                    {
-                        <tr>
-                            <td>@guest?.Fullname</td>
-                            <td>
-                                <span class="badge bg-success text-uppercase px-2 py-1">
-                                    @guest?.BookingStatus
-                                </span>
-                            </td>
-                            <td>@(guest?.OperatorList?.BusinessName ?? "N/A")</td>
-                            <td>@(guest?.Nationality?.NatName ?? "N/A")</td>
-                            <td>@guest?.Batch</td>
-                            <td>@guest?.NumberOfGuests</td>
-                        </tr>
-                    }
+                    <tr>
+                        <td>@leader.Batch</td>
+                        <td>@batchGuests.Count()</td>
+                        <td>@(leader.OperatorList?.BusinessName ?? "N/A")</td>
+                        <td>@leader.ArrivalDate</td>
+                        <td>
+                            <span class="badge bg-success text-uppercase px-2 py-1">
+                                Finalize
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-info btn-sm" onclick="showAllGuests()">
+                                <i class="fas fa-eye"></i> View Guests
+                            </button>
+                        </td>
+                    </tr>
                 </tbody>
+
             </table>
         </div>
+        <!-- Modal or expandable section for viewing all guests in batch -->
+        <div class="modal fade" id="allGuestsModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">All Guests for Batch @leader.Batch</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Operator</th>
+                                    <th>Arrival Date</th>
+                                    <th>Nationality</th>
+
+                                    @*     <th>No. Guests</th> *@
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var guest in batchGuests)
+                                {
+                                    <tr>
+                                        <td>@guest.Fullname</td>
+                                        <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
+                                        <td>@guest.ArrivalDate</td>
+
+                                        <td>@(guest.Nationality?.NatName ?? "N/A")</td>
+                                        @*      <td>@guest.NumberOfGuests</td> *@
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            function showAllGuests() {
+                const modal = new bootstrap.Modal(document.getElementById('allGuestsModal'));
+                modal.show();
+            }
+        </script>
     }
     else
     {
-        <div class="alert alert-info text-center mt-5">
-            <i class="fas fa-info-circle me-2"></i>
-            No finalized guests found!
+        <div class="d-flex flex-column align-items-center justify-content-center py-5">
+            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+            <p class="lead fw-semibold text-muted">No finalized guests found!</p>
         </div>
     }
 </section>

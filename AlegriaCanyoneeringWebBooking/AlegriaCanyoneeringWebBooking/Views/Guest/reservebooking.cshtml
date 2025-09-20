@@ -4,7 +4,7 @@
 }
 <section class="container py-4">
     <h2 class="fw-bold mb-4">Reserved Booking</h2>
-@*     @if (!string.IsNullOrEmpty(Model.BatchQrBase64))
+    @*     @if (!string.IsNullOrEmpty(Model.BatchQrBase64))
     {
         <div class="mb-4 d-flex align-items-center gap-3">
             <div>
@@ -19,7 +19,7 @@
             <table class="table table-bordered table-striped align-middle shadow-sm">
                 <thead class="table-dark">
                     <tr>
-                        <th>Full Name</th>
+                        @*    <th>Full Name</th> *@
                         <th>Status</th>
                         <th>Operator</th>
                         <th>Nationality</th>
@@ -39,8 +39,12 @@
                             _ => "secondary"
                         };
                         <tr>
-                            <td class="fw-semibold">@guest.Fullname</td>
-                            <td><span class="badge bg-@badgeClass text-uppercase px-2 py-1">@guest.BookingStatus</span></td>
+                            @*        <td class="fw-semibold">@guest.Fullname</td> *@
+                            <td>
+                                <span class="badge bg-@badgeClass text-uppercase px-2 py-1">
+                                    @guest.BookingStatus
+                                </span>
+                            </td>
                             <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
                             <td>@(guest.Nationality?.NatName ?? "N/A")</td>
                             <td>@guest.Batch</td>
@@ -59,14 +63,6 @@
                                         onclick="showQrModal('@guest.GuestId')">
                                     <i class="fas fa-qrcode"></i> View QR
                                 </button>
-                                <form method="post" asp-action="FinalBookingBatch" asp-controller="Guest">
-                                    <input type="hidden" name="BatchCode" value="@Model.ReservedGuests.First().Batch" />
-                                    <button type="submit" class="btn btn-success mb-3">
-                                        <i class="fas fa-check"></i> Finalize & Show All Guests
-                                    </button>
-                                </form>
-
-
                             </td>
                         </tr>
                     }
@@ -82,7 +78,6 @@
         </div>
     }
 </section>
-
 @section Scripts {
     <script>
         function showQrModal(guestId) {
@@ -90,7 +85,7 @@
             modal.show();
         }
     </script>
-    <!-- QR View Modal for each guest -->
+    <!-- QR View Modal for each guest, now includes CONFIRM button inside -->
     @foreach (var guest in Model.ReservedGuests ?? Enumerable.Empty<dynamic>())
     {
         <div class="modal fade" id="qrViewModal-@guest.GuestId" tabindex="-1"
@@ -98,8 +93,13 @@
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content text-center">
                     <div class="modal-header">
-                        <h5 class="modal-title">QR Code for @guest.Fullname</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <h5 class="modal-title">
+                            Operator: @(guest.OperatorList?.BusinessName ?? "N/A")
+                        </h5>
+                        <h5 class="modal-title">
+                            Total Guests: @guest.NumberOfGuests
+                        </h5>
+
                     </div>
                     <div class="modal-body">
                         @if (!string.IsNullOrEmpty(guest.QRBase64))
@@ -110,6 +110,12 @@
                         {
                             <div class="text-muted">No QR image generated.</div>
                         }
+                        <form method="post" asp-action="FinalBookingBatch" asp-controller="Guest" class="mt-3">
+                            <input type="hidden" name="BatchCode" value="@guest.Batch" />
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Confirm
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
