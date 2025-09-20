@@ -10,7 +10,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public DbSet<Batch> Batches { get; set; }
         public DbSet<Guest> Guests { get; set; }
         public DbSet<OperatorList> OperatorLists { get; set; }
-        public DbSet<Reserve> Reserves { get; set; }
+        public DbSet<Reserve> reserve{ get; set; }
 
         public DbSet<Nationality> Nationalities { get; set; }
 
@@ -122,6 +122,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
             modelBuilder.Entity<Guide>().ToTable("tourguide_details");
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<Operator>().ToTable("operator");
+            modelBuilder.Entity<Reserve>().ToTable("reserve");
         }
     }
 }

@@ -13,5 +13,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Required, MaxLength(1000)]
         [Column("nat_name")]
         public string NatName { get; set; }
+      
     }
 }

@@ -1,15 +1,17 @@
-﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+﻿@using System.Linq
+@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+
 @{
-    var leader = Model.ReservedGuests.FirstOrDefault();
-    var batchGuests = Model.BatchGuests?.Values.FirstOrDefault() ?? new List<Guest>();
+    // All batches from Reserve table (every row has BatchCode)
+    var allBatches = ViewBag.AllBatches as List<AlegriaCanyoneeringWebBooking.Models.Reserve> ?? new List<AlegriaCanyoneeringWebBooking.Models.Reserve>();
+    var batchGuestsDict = Model?.BatchGuests ?? new Dictionary<string, List<AlegriaCanyoneeringWebBooking.Models.Guest>>();
 }
+
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Final Booking Batch - Finalized Guests</h2>
-    @if (leader != null)
+    @if (allBatches.Any())
     {
         <div class="table-responsive mb-4">
-            <div class="card-header bg-primary text-white mb-2">
-            </div>
             <table class="table table-bordered table-hover align-middle shadow-sm">
                 <thead>
                     <tr>
@@ -18,74 +20,42 @@
                         <th>Operator</th>
                         <th>Arrival Date</th>
                         <th>Status</th>
+                        <th>Created Date</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>@leader.Batch</td>
-                        <td>@batchGuests.Count()</td>
-                        <td>@(leader.OperatorList?.BusinessName ?? "N/A")</td>
-                        <td>@leader.ArrivalDate</td>
-                        <td>
-                            <span class="badge bg-success text-uppercase px-2 py-1">
-                                Finalize
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-info btn-sm" onclick="showAllGuests()">
-                                <i class="fas fa-eye"></i> View Guests
-                            </button>
-                        </td>
-                    </tr>
+                    @foreach (var batch in allBatches)
+                    {
+                        // Only show if BatchCode exists (which is always non-null for Reserve table)
+                        if (!string.IsNullOrEmpty(batch.BatchCode))
+                        {
+                            var guests = batchGuestsDict.ContainsKey(batch.BatchCode)
+                            ? batchGuestsDict[batch.BatchCode] : new List<AlegriaCanyoneeringWebBooking.Models.Guest>();
+                            var operatorName = guests.Any() && guests.FirstOrDefault()?.OperatorList != null
+                            ? guests.FirstOrDefault().OperatorList.BusinessName
+                            : "N/A";
+                            <tr>
+                                <td>@batch.BatchCode</td>
+                                <td>@batch.TotalGuests</td>
+                                <td>@operatorName</td>
+                                <td>@batch.ArrivalDate</td>
+                                <td>
+                                    <span class="badge bg-success text-uppercase px-2 py-1">@batch.Status</span>
+                                </td>
+                                <td>@batch.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#allGuestsModal-@batch.BatchCode">
+                                        <i class="fas fa-eye"></i> View Guests
+                                    </button>
+                                </td>
+                            </tr>
+                        
+                        }
+                    }
                 </tbody>
-
             </table>
         </div>
-        <!-- Modal or expandable section for viewing all guests in batch -->
-        <div class="modal fade" id="allGuestsModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">All Guests for Batch @leader.Batch</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Full Name</th>
-                                    <th>Operator</th>
-                                    <th>Arrival Date</th>
-                                    <th>Nationality</th>
-
-                                    @*     <th>No. Guests</th> *@
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var guest in batchGuests)
-                                {
-                                    <tr>
-                                        <td>@guest.Fullname</td>
-                                        <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
-                                        <td>@guest.ArrivalDate</td>
-
-                                        <td>@(guest.Nationality?.NatName ?? "N/A")</td>
-                                        @*      <td>@guest.NumberOfGuests</td> *@
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <script>
-            function showAllGuests() {
-                const modal = new bootstrap.Modal(document.getElementById('allGuestsModal'));
-                modal.show();
-            }
-        </script>
     }
     else
     {

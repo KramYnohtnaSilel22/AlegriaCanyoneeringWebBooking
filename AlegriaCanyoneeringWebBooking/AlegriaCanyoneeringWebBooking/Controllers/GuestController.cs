@@ -426,8 +426,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
-
-
         // POST: Guest/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -456,8 +454,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return operatorId;
             }
             return 0;
-        }
-        [HttpGet]
+        }   [HttpGet]
         public async Task<IActionResult> GetNationalities()
         {
             try
@@ -476,6 +473,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+     
 
 
         [HttpPost]
@@ -528,11 +526,80 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return RedirectToAction(nameof(saveguest));
         }
 
-        // GET: FinalBookingBatch - Renders empty view (optional)
-        [HttpGet]
-        public IActionResult FinalBookingBatch()
+
+        //// GET: FinalBookingBatch - Renders empty view (optional)
+        //[HttpGet]
+        //public IActionResult FinalBookingBatch()
+        //{
+        //    return View(new GuestListViewModel { ReservedGuests = new List<Guest>() });
+        //}
+
+        //[HttpPost]
+        //public async Task<IActionResult> FinalBookingBatch(string BatchCode)
+        //{
+        //    if (string.IsNullOrEmpty(BatchCode))
+        //    {
+        //        return BadRequest("BatchCode is required.");
+        //    }
+
+        //    // Finalize guests in batch if not already finalized
+        //    var guestsToFinalize = await _context.Guests
+        //        .Where(g => g.Batch == BatchCode && g.BookingStatus != "finalized")
+        //        .ToListAsync();
+
+        //    if (guestsToFinalize.Any())
+        //    {
+        //        foreach (var guest in guestsToFinalize)
+        //        {
+        //            guest.BookingStatus = "finalized";
+        //        }
+        //        await _context.SaveChangesAsync();
+        //    }
+
+        //    // Select only the batch leader (first entered guest)
+        //    var batchLeader = await _context.Guests
+        //        .Include(g => g.OperatorList)
+        //        .Include(g => g.Nationality)
+        //        .Where(g => g.Batch == BatchCode)
+        //        .OrderBy(g => g.GuestId)
+        //        .FirstOrDefaultAsync();
+
+        //    // Load all guests for view/detail/modal purposes
+        //    var allGuests = await _context.Guests
+        //        .Include(g => g.OperatorList)
+        //        .Include(g => g.Nationality)
+        //        .Where(g => g.Batch == BatchCode)
+        //        .OrderBy(g => g.GuestId)
+        //        .ToListAsync();
+
+        //    var model = new GuestListViewModel
+        //    {
+        //        ReservedGuests = batchLeader != null ? new List<Guest> { batchLeader } : new List<Guest>(),
+        //        BatchGuests = new Dictionary<string, List<Guest>> { { BatchCode, allGuests } }
+        //    };
+        //    return View("FinalBookingBatch", model);
+        //}
+        // In your controller (adjust namespaces as needed)
+        public async Task<IActionResult> FinalBookingBatch()
         {
-            return View(new GuestListViewModel { ReservedGuests = new List<Guest>() });
+            // Get all Reserve batches, order by CreatedDate DESC
+            var allBatches = await _context.reserve.OrderByDescending(r => r.CreatedDate).ToListAsync();
+            ViewBag.AllBatches = allBatches;
+
+            // Gather all guests for each batch for the modal detail
+            var batchGuestsDict = new Dictionary<string, List<Guest>>();
+            foreach (var batch in allBatches)
+            {
+                var guests = await _context.Guests
+                    .Include(g => g.OperatorList)
+                    .Include(g => g.Nationality)
+                    .Where(g => g.Batch == batch.BatchCode && g.BookingStatus == "finalized")
+                    .ToListAsync();
+                batchGuestsDict[batch.BatchCode] = guests;
+            }
+
+            var model = new GuestListViewModel { BatchGuests = batchGuestsDict };
+            return View(model);
         }
 
         [HttpPost]
@@ -543,7 +610,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return BadRequest("BatchCode is required.");
             }
 
-            // Finalize guests in batch if not already finalized
+            // Finalize guests for this batch
             var guestsToFinalize = await _context.Guests
                 .Where(g => g.Batch == BatchCode && g.BookingStatus != "finalized")
                 .ToListAsync();
@@ -557,29 +624,34 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // Select only the batch leader (first entered guest)
-            var batchLeader = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
+            // Add Reserve row for batch if it doesn't exist
+            var batchGuests = await _context.Guests
                 .Where(g => g.Batch == BatchCode)
-                .OrderBy(g => g.GuestId)
-                .FirstOrDefaultAsync();
-
-            // Load all guests for view/detail/modal purposes
-            var allGuests = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .Where(g => g.Batch == BatchCode)
-                .OrderBy(g => g.GuestId)
                 .ToListAsync();
 
-            var model = new GuestListViewModel
+            if (batchGuests.Count > 0 && !await _context.reserve.AnyAsync(r => r.BatchCode == BatchCode))
             {
-                ReservedGuests = batchLeader != null ? new List<Guest> { batchLeader } : new List<Guest>(),
-                BatchGuests = new Dictionary<string, List<Guest>> { { BatchCode, allGuests } }
-            };
-            return View("FinalBookingBatch", model);
+                var first = batchGuests.First();
+                DateTime arrivalDate;
+                try { arrivalDate = Convert.ToDateTime(first.ArrivalDate); }
+                catch { arrivalDate = DateTime.Now; }
+
+                _context.reserve.Add(new Reserve
+                {
+                    BatchCode = BatchCode,
+                    OperatorId = first.OperatorId,
+                    TotalGuests = batchGuests.Count,
+                    ArrivalDate = arrivalDate,
+                    Status = "finalized",
+                    CreatedDate = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            // Reload all batch summaries and guests for view, as in GET
+            return await FinalBookingBatch();
         }
+
 
         [HttpGet]
         public async Task<IActionResult> BookingDetails(int id)
