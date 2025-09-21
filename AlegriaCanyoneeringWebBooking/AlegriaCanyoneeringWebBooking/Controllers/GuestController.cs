@@ -97,7 +97,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     TempData["ToastMessage"] = "Guests added successfully!";
                     TempData["ToastType"] = "success";
-                    return RedirectToAction("saveguest");
+
+                    return RedirectToAction("NewBooking");
                 }
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
                 TempData["ToastType"] = "danger";

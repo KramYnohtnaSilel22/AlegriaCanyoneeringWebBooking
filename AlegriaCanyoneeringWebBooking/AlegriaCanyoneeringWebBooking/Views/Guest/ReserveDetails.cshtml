@@ -4,37 +4,38 @@
     ViewData["Title"] = "Booking Details";
 }
 
-<div class="container py-4">
+<div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10">
 
             <!-- Main Guest Info -->
-            <div class="card shadow-sm border-0 mb-5 rounded-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
-                    <h5 class="mb-0">Booking Details</h5>
+            <div class="card shadow-lg border-0 mb-5 rounded-4 overflow-hidden">
+                <div class="card-header text-white d-flex justify-content-between align-items-center rounded-top-4"
+                     style="background: linear-gradient(135deg, #007bff, #00c6ff);">
+                    <h5 class="mb-0 fw-semibold">Booking Details</h5>
                     <span class="badge
                         @(Model.Guest.BookingStatus == "confirmed" ? "bg-success" :
                           Model.Guest.BookingStatus == "anticipated" ? "bg-warning text-dark" :
                           "bg-info text-dark")
-                          text-capitalize fw-semibold px-3 py-2">
+                          text-capitalize fw-semibold px-3 py-2 shadow-sm rounded-pill">
                         @Model.Guest.BookingStatus
                     </span>
                 </div>
 
-                <div class="card-body">
-                    <h3 class="fw-bold text-dark mb-4">@Model.Guest.Fullname</h3>
+                <div class="card-body p-4">
+                    <h2 class="fw-bold text-dark mb-4">@Model.Guest.Fullname</h2>
 
                     <div class="row g-3 mb-4">
-                      @*   <div class="col-md-6"><strong>Guest ID:</strong> @Model.Guest.GuestId</div> *@
-                        <div class="col-md-6"><strong>Gender:</strong> @Model.Guest.Gender</div>
-                        <div class="col-md-6"><strong>Age:</strong> @Model.Guest.Age</div>
-                        <div class="col-md-6"><strong>Contact #:</strong> @Model.Guest.ContactNumber</div>
-                        <div class="col-md-6"><strong>Nationality:</strong> @Model.Guest.NationalityType</div>
-                        <div class="col-md-6"><strong>National Status:</strong> @(Model.Guest.Nationality?.NatName?? "N/A")</div>
-                   @*      <div class="col-md-6"><strong>Operator:</strong> @Model.Guest.OperatorList?.BusinessName</div>
+                        @*   <div class="col-md-6"><strong>Guest ID:</strong> @Model.Guest.GuestId</div> *@
+                        <div class="col-md-6"><i class="fas fa-venus-mars me-2 text-muted"></i><strong>Gender:</strong> @Model.Guest.Gender</div>
+                        <div class="col-md-6"><i class="fas fa-user-clock me-2 text-muted"></i><strong>Age:</strong> @Model.Guest.Age</div>
+                        <div class="col-md-6"><i class="fas fa-phone me-2 text-muted"></i><strong>Contact #:</strong> @Model.Guest.ContactNumber</div>
+                        <div class="col-md-6"><i class="fas fa-flag me-2 text-muted"></i><strong>Nationality:</strong> @Model.Guest.NationalityType</div>
+                        <div class="col-md-6"><i class="fas fa-passport me-2 text-muted"></i><strong>National Status:</strong> @Model.Guest.Nationality?.NatName?? "N/A"</div>
+                        @*      <div class="col-md-6"><strong>Operator:</strong> @Model.Guest.OperatorList?.BusinessName</div>
                         <div class="col-md-6"><strong>Booking Date:</strong> @Model.Guest.Date</div> *@
-                        <div class="col-md-6"><strong>Arrival Date:</strong> @Model.Guest.ArrivalDate</div>
-                       @*  <div class="col-md-6"><strong>Month:</strong> @Model.Guest.Month</div>
+                        <div class="col-md-6"><i class="fas fa-calendar-alt me-2 text-muted"></i><strong>Arrival Date:</strong> @Model.Guest.ArrivalDate</div>
+                        @*  <div class="col-md-6"><strong>Month:</strong> @Model.Guest.Month</div>
                         <div class="col-md-6"><strong>Batch:</strong> @Model.Guest.Batch</div>
                         <div class="col-md-6"><strong>No. of Guests:</strong> @Model.Guest.NumberOfGuests</div>
                         <div class="col-md-6"><strong>Short Date:</strong> @Model.Guest.DateShort</div>
@@ -44,26 +45,31 @@
                     @if (!string.IsNullOrEmpty(Model.Guest.QrCode))
                     {
                         <hr />
-                        <div class="text-center mt-3">
-                            <h6 class="mb-2">QR Code</h6>
-                            <img src="@Model.Guest.QrCode" alt="QR code for @Model.Guest.Fullname" class="img-thumbnail shadow-sm" style="max-width: 200px;" />
+                        <div class="text-center mt-4">
+                            <h6 class="fw-semibold text-secondary mb-3">QR Code</h6>
+                            <img src="@Model.Guest.QrCode" alt="QR code for @Model.Guest.Fullname"
+                                 class="img-fluid shadow rounded-3" style="max-width: 200px;" />
                         </div>
                     }
                 </div>
 
-                <div class="card-footer bg-light d-flex justify-content-between rounded-bottom-4">
-                    <a asp-action="EditReserve" asp-route-id="@Model.Guest.GuestId" class="btn btn-warning shadow-sm px-4">
+                <div class="card-footer bg-white d-flex justify-content-between rounded-bottom-4 p-3">
+                    <a asp-action="EditReserve" asp-route-id="@Model.Guest.GuestId"
+                       class="btn btn-warning shadow-sm rounded-pill px-4">
                         <i class="fas fa-edit me-2"></i> Edit
                     </a>
-                    <a asp-action="reservebooking" class="btn btn-secondary shadow-sm px-4">
-                        <i class="fas fa-arrow-left me-2"></i> Back 
+                    <a asp-action="reservebooking"
+                       class="btn btn-outline-secondary shadow-sm rounded-pill px-4">
+                        <i class="fas fa-arrow-left me-2"></i> Back
                     </a>
                 </div>
             </div>
 
             <!-- Guests in Same Booking -->
             <div class="mb-4">
-                <h5 class="text-primary border-bottom pb-2 fw-semibold">Other Guests in Booking (@Model.GuestsInBatch?.Count ?? 0)</h5>
+                <h5 class="text-primary border-bottom pb-2 fw-semibold">
+                    Other Guests in Booking (@Model.GuestsInBatch?.Count ?? 0)
+                </h5>
             </div>
 
             @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any())
@@ -72,22 +78,22 @@
                     @foreach (var guest in Model.GuestsInBatch)
                     {
                         <div class="col-md-6">
-                            <div class="card h-100 shadow-sm border-0 rounded-3">
-                                <div class="card-body">
-                                    <h6 class="fw-bold text-dark">@guest.Fullname</h6>
+                            <div class="card h-100 shadow-sm border-0 rounded-4 hover-shadow transition">
+                                <div class="card-body p-4">
+                                    <h6 class="fw-bold text-dark mb-1">@guest.Fullname</h6>
                                     <div class="mb-3">
                                         <span class="badge
                                             @(guest.BookingStatus == "confirmed" ? "bg-success" :
                                               guest.BookingStatus == "anticipated" ? "bg-warning text-dark" :
                                               "bg-info text-dark")
-                                            fw-semibold text-capitalize px-3 py-1">
+                                            fw-semibold text-capitalize px-3 py-1 rounded-pill shadow-sm">
                                             @guest.BookingStatus
                                         </span>
                                     </div>
-                                    <p class="mb-1"><strong>Age:</strong> @guest.Age</p>
-                                    <p class="mb-1"><strong>Gender:</strong> @guest.Gender</p>
-                                    <p class="mb-1"><strong>Nationality:</strong> @guest.NationalityType</p>
-                                @*     <p class="mb-1"><strong>Contact:</strong> @guest.ContactNumber</p>
+                                    <p class="mb-1"><i class="fas fa-user me-2 text-muted"></i><strong>Age:</strong> @guest.Age</p>
+                                    <p class="mb-1"><i class="fas fa-venus-mars me-2 text-muted"></i><strong>Gender:</strong> @guest.Gender</p>
+                                    <p class="mb-1"><i class="fas fa-flag me-2 text-muted"></i><strong>Nationality:</strong> @guest.NationalityType</p>
+                                    @*     <p class="mb-1"><strong>Contact:</strong> @guest.ContactNumber</p>
                                     <p class="mb-1"><strong>Arrival:</strong> @guest.ArrivalDate</p> *@
                                 </div>
                             </div>
@@ -97,7 +103,7 @@
             }
             else
             {
-                <div class="alert alert-info text-center rounded-3">
+                <div class="alert alert-info text-center rounded-3 shadow-sm">
                     <i class="fas fa-info-circle me-2"></i>No other guests found in this booking.
                 </div>
             }
@@ -108,4 +114,11 @@
 @section Scripts {
     <!-- Font Awesome (optional if already in _Layout) -->
     <script src="https://kit.fontawesome.com/a2d0507b9c.js" crossorigin="anonymous"></script>
+    <style>
+        .hover-shadow:hover {
+            transform: translateY(-5px);
+            transition: 0.3s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+        }
+    </style>
 }

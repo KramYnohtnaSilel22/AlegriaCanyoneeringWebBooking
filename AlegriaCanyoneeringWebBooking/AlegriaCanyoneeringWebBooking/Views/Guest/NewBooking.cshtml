@@ -1,5 +1,4 @@
-﻿@* @model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
-
+﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
 @{
     ViewData["Title"] = "Guest Management";
 }
@@ -22,472 +21,111 @@
     </div>
 }
 
-<div class="tab-content">
-    <div class="tab-pane fade show active" id="addGuestTab" role="tabpanel">
-        <div class="card shadow-lg rounded-4 border-0">
-            <div class="card-body p-4">
-                <h4 class="text-center text-primary mb-4 fw-semibold">Add New Guest</h4>
-                <div class="mb-3">
-                    <h5 class="text-primary">
-                        <i class="fas fa-users me-2"></i>
-                        Total Guests: <span id="totalGuestsCount">0</span>
-                    </h5>
-                </div>
-                <form asp-action="NewBooking" method="post" id="guestForm">
-                    <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="" />
-                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-                    <fieldset class="mb-4">
-                        <legend class="h5">Guest Info</legend>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
-                            <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList"></select>
-                            <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Full Name (as on ID)</label>
-                            <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="e.g., Juan Dela Cruz" />
-                            <span asp-validation-for="NewGuest.Fullname" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3 row">
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.Age" class="form-label fw-medium">Age</label>
-                                <input asp-for="NewGuest.Age" type="number" class="form-control form-control-lg" placeholder="e.g., 25" />
-                                <span asp-validation-for="NewGuest.Age" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.Gender" class="form-label fw-medium">Gender</label>
-                                <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
-                                    <option disabled selected>Select Gender</option>
-                                    <option>Male</option>
-                                    <option>Female</option>
-                                </select>
-                                <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.ContactNumber" class="form-label fw-medium">Mobile Number</label>
-                            <input asp-for="NewGuest.ContactNumber" type="tel" class="form-control form-control-lg" placeholder="e.g., 09171234567" />
-                        </div>
-                    </fieldset>
-                    <fieldset class="mb-4">
-                        <legend class="h5">Nationality & Booking</legend>
-                        <div class="mb-3 row">
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality Type</label>
-                                <select name="NewGuest.Natop">
-                                    <option value="">Select Operator</option>
-                                    <option value="1">WAH Tours</option>
-                                    <option value="2">Aree Travel & Tours</option>
-                                </select>
-
-                            </div>
-                            <div class="col-md-6">
-                                <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" id="NationalityId">
-                                    <option value="">-- Select --</option>
-                                </select>
-                                <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
-
-                            </div>
-                        </div>
-                        <div class="mb-3 row guest-date-fields">
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.Date" class="form-label fw-medium">Booking Date</label>
-                                <input asp-for="NewGuest.Date" type="date" class="form-control form-control-lg" id="BookingDate" />
-                                <span asp-validation-for="NewGuest.Date" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.ArrivalDate" class="form-label fw-medium">Arrival Date</label>
-                                <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control form-control-lg" id="ArrivalDate" />
-                                <span asp-validation-for="NewGuest.ArrivalDate" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Area" class="form-label fw-medium">Tour Area</label>
-                            <select asp-for="NewGuest.Area" class="form-select form-select-lg">
-                                <option disabled selected>Select Area</option>
-                                <option>Wonder Falls</option>
-                                <option>Kanlaob</option>
-                                <option>Kawasan Exit</option>
-                            </select>
-                            <span asp-validation-for="NewGuest.Area" class="text-danger"></span>
-                        </div>
-                    </fieldset>
-                    <button id="addGuestBtn" type="button">Add Guest</button>
-                    <button type="submit" id="saveBtn" disabled>Save All Guests</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-<script>
-        let guestsBatch = [];
-    function updateTotalGuestsDisplay() {
-        $('#totalGuestsCount').text(guestsBatch.length);
-        $('#saveBtn').prop('disabled', guestsBatch.length === 0);
-    }
-    $('#addGuestBtn').click(function () {
-        const guest = {
-        OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
-
-            Fullname: $('[name="NewGuest.Fullname"]').val(),
-            Age: $('[name="NewGuest.Age"]').val(),
-            Gender: $('[name="NewGuest.Gender"]').val(),
-            ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
-            NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-            NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
-            Area: $('[name="NewGuest.Area"]').val(),
-            Date: $('[name="NewGuest.Date"]').val(),
-            ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
-        };
-        // Validation only when adding guest
-        if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
-            !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate) {
-            alert('Please fill in all required fields.');
-            return;
-        }
-        guestsBatch.push(guest);
-        updateTotalGuestsDisplay();
-        $('#guestForm')[0].reset();
-    });
-    $('#guestForm').on('submit', function () {
-        $('#BatchGuestsJson').val(JSON.stringify(guestsBatch));
-    });
-    updateTotalGuestsDisplay();
-
-
-        $(function () {
-        const $type = $('#NationalityType');
-        const $list = $('#NationalityId');
-        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-
-        function updateNationalityIdOptions(choice) {
-            $list.empty();
-            if (choice === 'Local') {
-                $list.append(new Option('Within Cebu Province', 'Within Cebu Province'));
-                $list.append(new Option('Outside Cebu Province', 'Outside Cebu Province'));
-            } else if (choice === 'Foreign') {
-                $list.append(new Option('Loading...', ''));
-                $.getJSON(getNationalitiesUrl)
-                    .done(function (data) {
-                        $list.empty();
-                        if (data.length === 0) {
-                            $list.append(new Option('No nationalities found', ''));
-                        } else {
-                            data.forEach(function (name) {
-                                $list.append(new Option(name, name));
-                            });
-                        }
-                    })
-                    .fail(function () {
-                        $list.empty().append(new Option('Error loading', ''));
-                    });
-            } else {
-                $list.append(new Option('-- Select --', ''));
-            }
-        }
-
-        $type.on('change', function () {
-            updateNationalityIdOptions($(this).val());
-        });
-        if ($type.val()) {
-            updateNationalityIdOptions($type.val());
-        }
-    });
-
-</script> *@
-
-@* @model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
-
-@{
-    ViewData["Title"] = "Guest Management";
-}
-<div class="overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="success-message" id="successMessage"></div>
-</div>
-
-@if (TempData["ToastMessage"] != null)
-{
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-        <div id="toastMessage" class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-check-circle me-2"></i> @TempData["ToastMessage"]
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-}
-
-<div class="tab-content">
-    <div class="tab-pane fade show active" id="addGuestTab" role="tabpanel">
-        <div class="card shadow-lg rounded-4 border-0">
-            <div class="card-body p-4">
-                <h4 class="text-center text-primary mb-4 fw-semibold">Add New Guest</h4>
-                <div class="mb-3">
-                    <h5 class="text-primary">
-                        <i class="fas fa-users me-2"></i>
-                        Total Guests: <span id="totalGuestsCount">0</span>
-                    </h5>
-                </div>
-                <form asp-action="NewBooking" method="post" id="guestForm">
-                    <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="" />
-                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-                    <fieldset class="mb-4">
-                        <legend class="h5">Guest Info</legend>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.OperatorId" class="form-label fw-medium">Operator</label>
-                            <select asp-for="NewGuest.OperatorId" class="form-select form-select-lg" asp-items="ViewBag.OperatorList"></select>
-                            <span asp-validation-for="NewGuest.OperatorId" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Fullname" class="form-label fw-medium">Full Name (as on ID)</label>
-                            <input asp-for="NewGuest.Fullname" class="form-control form-control-lg" placeholder="e.g., Juan Dela Cruz" />
-                            <span asp-validation-for="NewGuest.Fullname" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3 row">
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.Age" class="form-label fw-medium">Age</label>
-                                <input asp-for="NewGuest.Age" type="number" class="form-control form-control-lg" placeholder="e.g., 25" />
-                                <span asp-validation-for="NewGuest.Age" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.Gender" class="form-label fw-medium">Gender</label>
-                                <select asp-for="NewGuest.Gender" class="form-select form-select-lg">
-                                    <option disabled selected>Select Gender</option>
-                                    <option>Male</option>
-                                    <option>Female</option>
-                                </select>
-                                <span asp-validation-for="NewGuest.Gender" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.ContactNumber" class="form-label fw-medium">Mobile Number</label>
-                            <input asp-for="NewGuest.ContactNumber" type="tel" class="form-control form-control-lg" placeholder="e.g., 09171234567" />
-                        </div>
-                    </fieldset>
-                    <fieldset class="mb-4">
-                        <legend class="h5">Nationality & Booking</legend>
-                        <div class="mb-3 row">
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.NationalityType" class="form-label fw-medium">Nationality Type</label>
-                                <select name="NewGuest.Natop">
-                                    <option value="">Select Operator</option>
-                                    <option value="1">WAH Tours</option>
-                                    <option value="2">Aree Travel & Tours</option>
-                                </select>
-
-                            </div>
-                            <div class="col-md-6">
-                                <select asp-for="NewGuest.NationalityId" class="form-select form-select-lg" id="NationalityId">
-                                    <option value="">-- Select --</option>
-                                </select>
-                                <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
-
-                            </div>
-                        </div>
-                        <div class="mb-3 row guest-date-fields">
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.Date" class="form-label fw-medium">Booking Date</label>
-                                <input asp-for="NewGuest.Date" type="date" class="form-control form-control-lg" id="BookingDate" />
-                                <span asp-validation-for="NewGuest.Date" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="NewGuest.ArrivalDate" class="form-label fw-medium">Arrival Date</label>
-                                <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control form-control-lg" id="ArrivalDate" />
-                                <span asp-validation-for="NewGuest.ArrivalDate" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Area" class="form-label fw-medium">Tour Area</label>
-                            <select asp-for="NewGuest.Area" class="form-select form-select-lg">
-                                <option disabled selected>Select Area</option>
-                                <option>Wonder Falls</option>
-                                <option>Kanlaob</option>
-                                <option>Kawasan Exit</option>
-                            </select>
-                            <span asp-validation-for="NewGuest.Area" class="text-danger"></span>
-                        </div>
-                    </fieldset>
-                    <button id="addGuestBtn" type="button">Add Guest</button>
-                    <button type="submit" id="saveBtn" disabled>Save All Guests</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-<script>
-        let guestsBatch = [];
-    function updateTotalGuestsDisplay() {
-        $('#totalGuestsCount').text(guestsBatch.length);
-        $('#saveBtn').prop('disabled', guestsBatch.length === 0);
-    }
-    $('#addGuestBtn').click(function () {
-        const guest = {
-        OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
-
-            Fullname: $('[name="NewGuest.Fullname"]').val(),
-            Age: $('[name="NewGuest.Age"]').val(),
-            Gender: $('[name="NewGuest.Gender"]').val(),
-            ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
-            NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-            NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
-            Area: $('[name="NewGuest.Area"]').val(),
-            Date: $('[name="NewGuest.Date"]').val(),
-            ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
-        };
-        // Validation only when adding guest
-        if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
-            !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate) {
-            alert('Please fill in all required fields.');
-            return;
-        }
-        guestsBatch.push(guest);
-        updateTotalGuestsDisplay();
-        $('#guestForm')[0].reset();
-    });
-    $('#guestForm').on('submit', function () {
-        $('#BatchGuestsJson').val(JSON.stringify(guestsBatch));
-    });
-    updateTotalGuestsDisplay();
-
-
-        $(function () {
-        const $type = $('#NationalityType');
-        const $list = $('#NationalityId');
-        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-
-        function updateNationalityIdOptions(choice) {
-            $list.empty();
-            if (choice === 'Local') {
-                $list.append(new Option('Within Cebu Province', 'Within Cebu Province'));
-                $list.append(new Option('Outside Cebu Province', 'Outside Cebu Province'));
-            } else if (choice === 'Foreign') {
-                $list.append(new Option('Loading...', ''));
-                $.getJSON(getNationalitiesUrl)
-                    .done(function (data) {
-                        $list.empty();
-                        if (data.length === 0) {
-                            $list.append(new Option('No nationalities found', ''));
-                        } else {
-                            data.forEach(function (name) {
-                                $list.append(new Option(name, name));
-                            });
-                        }
-                    })
-                    .fail(function () {
-                        $list.empty().append(new Option('Error loading', ''));
-                    });
-            } else {
-                $list.append(new Option('-- Select --', ''));
-            }
-        }
-
-        $type.on('change', function () {
-            updateNationalityIdOptions($(this).val());
-        });
-        if ($type.val()) {
-            updateNationalityIdOptions($type.val());
-        }
-    });
-
-</script> *@
-
-
-@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
-@{
-    ViewData["Title"] = "Guest Management";
-}
-@if (TempData["ToastMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["ToastMessage"]</div>
-}
 <div class="card shadow-lg rounded-4 border-0">
     <div class="card-body p-4">
-        <h4 class="text-center text-primary mb-4 fw-semibold">Add New Guest</h4>
-        <div class="mb-3">
+        <h4 class=" text-primary mb-4 fw-semibold">Add New Guest</h4>
+
+        <!-- Guest Info Header -->
+        <div class="mb-3 ">
             <h5 class="text-primary">
                 <i class="fas fa-users me-2"></i>
                 Total Guests: <span id="totalGuestsCount">0</span>
             </h5>
         </div>
+
+        <!-- Form for Guest Info -->
         <form asp-action="NewBooking" method="post" id="guestForm">
             <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="" />
-            <fieldset>
-                <legend>Guest Info</legend>
-                <div>
-                    <label asp-for="NewGuest.OperatorId">Operator</label>
-                    <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"></select>
+
+            <div class="row">
+                <!-- Guest Info Section -->
+                <div class="col-md-6">
+                    <fieldset>
+                        <legend>Guest Info</legend>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
+                            <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Fullname" class="form-label">Full Name</label>
+                            <input asp-for="NewGuest.Fullname" class="form-control" placeholder="e.g., Juan Dela Cruz" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Age" class="form-label">Age</label>
+                            <input asp-for="NewGuest.Age" type="number" class="form-control" placeholder="e.g., 25" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Gender" class="form-label">Gender</label>
+                            <select asp-for="NewGuest.Gender" class="form-select">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.ContactNumber" class="form-label">Mobile Number</label>
+                            <input asp-for="NewGuest.ContactNumber" type="tel" class="form-control" placeholder="e.g., 09171234567" />
+                        </div>
+                    </fieldset>
                 </div>
-                <div>
-                    <label asp-for="NewGuest.Fullname">Full Name</label>
-                    <input asp-for="NewGuest.Fullname" class="form-control" placeholder="e.g., Juan Dela Cruz" />
+
+                <!-- Nationality & Booking Section -->
+                <div class="col-md-6">
+                    <fieldset>
+                        <legend>Nationality & Booking</legend>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.NationalityType" class="form-label">Nationality Type</label>
+                            <select asp-for="NewGuest.NationalityType" class="form-select">
+                                <option value="Local">Local</option>
+                                <option value="Foreign">Foreign</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.NationalityId" class="form-label">Nationality</label>
+                            <select asp-for="NewGuest.NationalityId" asp-items="ViewBag.NationalityList" class="form-select"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Date" class="form-label">Booking Date</label>
+                            <input asp-for="NewGuest.Date" type="date" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.ArrivalDate" class="form-label">Arrival Date</label>
+                            <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewGuest.Area" class="form-label">Tour Area</label>
+                            <select asp-for="NewGuest.Area" class="form-select">
+                                <option value="">Select Area</option>
+                                <option value="Wonder Falls">Wonder Falls</option>
+                                <option value="Kanlaob">Kanlaob</option>
+                                <option value="Kawasan Exit">Kawasan Exit</option>
+                            </select>
+                        </div>
+                    </fieldset>
                 </div>
-                <div>
-                    <label asp-for="NewGuest.Age">Age</label>
-                    <input asp-for="NewGuest.Age" type="number" class="form-control" placeholder="e.g., 25" />
-                </div>
-                <div>
-                    <label asp-for="NewGuest.Gender">Gender</label>
-                    <select asp-for="NewGuest.Gender" class="form-select">
-                        <option value="">Select Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                </div>
-                <div>
-                    <label asp-for="NewGuest.ContactNumber">Mobile Number</label>
-                    <input asp-for="NewGuest.ContactNumber" type="tel" class="form-control" placeholder="e.g., 09171234567" />
-                </div>
-            </fieldset>
-            <fieldset>
-                <legend>Nationality & Booking</legend>
-                <div>
-                    <label asp-for="NewGuest.NationalityType">Nationality Type</label>
-                    <select asp-for="NewGuest.NationalityType" class="form-select">
-                        <option value="Local">Local</option>
-                        <option value="Foreign">Foreign</option>
-                    </select>
-                </div>
-                <div>
-                    <label asp-for="NewGuest.NationalityId">Nationality</label>
-                    <select asp-for="NewGuest.NationalityId" asp-items="ViewBag.NationalityList" class="form-select"></select>
-                </div>
-                <div>
-                    <label asp-for="NewGuest.Date">Booking Date</label>
-                    <input asp-for="NewGuest.Date" type="date" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="NewGuest.ArrivalDate">Arrival Date</label>
-                    <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="NewGuest.Area">Tour Area</label>
-                    <select asp-for="NewGuest.Area" class="form-select">
-                        <option value="">Select Area</option>
-                        <option value="Wonder Falls">Wonder Falls</option>
-                        <option value="Kanlaob">Kanlaob</option>
-                        <option value="Kawasan Exit">Kawasan Exit</option>
-                    </select>
-                </div>
-            </fieldset>
-            <button id="addGuestBtn" type="button" class="btn btn-primary">Add Guest</button>
-            <button type="submit" id="saveBtn" class="btn btn-success" disabled>Save All Guests</button>
+            </div>
+
+            <!-- Buttons Section -->
+            <div class="d-flex justify-content-between mt-4">
+                <button id="addGuestBtn" type="button" class="btn btn-primary">Add Guest</button>
+                <button type="submit" id="saveBtn" class="btn btn-success" disabled>Save All Guests</button>
+            </div>
         </form>
     </div>
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <script>
-
-
-        $(function () {
+     // Trigger the toast when the page loads and TempData has a message
+    $(document).ready(function () {
+        // Check if the toast element exists
+        var toastElement = document.getElementById('toastMessage');
+        if (toastElement) {
+            var toast = new bootstrap.Toast(toastElement);
+            toast.show(); // Show the toast message
+        }
+    });
+    $(function () {
         const $type = $('#NationalityType');
         const $list = $('#NationalityId');
         const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
@@ -525,11 +163,13 @@
             updateNationalityIdOptions($type.val());
         }
     });
+
     let guestsBatch = [];
     function updateTotalGuestsDisplay() {
         $('#totalGuestsCount').text(guestsBatch.length);
         $('#saveBtn').prop('disabled', guestsBatch.length === 0);
     }
+
     $('#addGuestBtn').click(function () {
         const guest = {
             OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
@@ -553,14 +193,10 @@
         updateTotalGuestsDisplay();
         $('#guestForm')[0].reset();
     });
+
     $('#guestForm').on('submit', function () {
         $('#BatchGuestsJson').val(JSON.stringify(guestsBatch));
     });
+
     updateTotalGuestsDisplay();
-
-
-
-
-
-
 </script>
