@@ -25,20 +25,20 @@
                     <h3 class="fw-bold text-dark mb-4">@Model.Guest.Fullname</h3>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-md-6"><strong>Guest ID:</strong> @Model.Guest.GuestId</div>
+                      @*   <div class="col-md-6"><strong>Guest ID:</strong> @Model.Guest.GuestId</div> *@
                         <div class="col-md-6"><strong>Gender:</strong> @Model.Guest.Gender</div>
                         <div class="col-md-6"><strong>Age:</strong> @Model.Guest.Age</div>
                         <div class="col-md-6"><strong>Contact #:</strong> @Model.Guest.ContactNumber</div>
                         <div class="col-md-6"><strong>Nationality:</strong> @Model.Guest.NationalityType</div>
-                        <div class="col-md-6"><strong>National Status:</strong> @Model.Guest.Nationality?.NatName</div>
-                        <div class="col-md-6"><strong>Operator:</strong> @Model.Guest.OperatorList?.BusinessName</div>
-                        <div class="col-md-6"><strong>Booking Date:</strong> @Model.Guest.Date</div>
+                        <div class="col-md-6"><strong>National Status:</strong> @(Model.Guest.Nationality?.NatName?? "N/A")</div>
+                   @*      <div class="col-md-6"><strong>Operator:</strong> @Model.Guest.OperatorList?.BusinessName</div>
+                        <div class="col-md-6"><strong>Booking Date:</strong> @Model.Guest.Date</div> *@
                         <div class="col-md-6"><strong>Arrival Date:</strong> @Model.Guest.ArrivalDate</div>
-                        <div class="col-md-6"><strong>Month:</strong> @Model.Guest.Month</div>
+                       @*  <div class="col-md-6"><strong>Month:</strong> @Model.Guest.Month</div>
                         <div class="col-md-6"><strong>Batch:</strong> @Model.Guest.Batch</div>
                         <div class="col-md-6"><strong>No. of Guests:</strong> @Model.Guest.NumberOfGuests</div>
                         <div class="col-md-6"><strong>Short Date:</strong> @Model.Guest.DateShort</div>
-                        <div class="col-md-6"><strong>RFID:</strong> @Model.Guest.RFID</div>
+                        <div class="col-md-6"><strong>RFID:</strong> @Model.Guest.RFID</div> *@
                     </div>
 
                     @if (!string.IsNullOrEmpty(Model.Guest.QrCode))
@@ -56,7 +56,7 @@
                         <i class="fas fa-edit me-2"></i> Edit
                     </a>
                     <a asp-action="reservebooking" class="btn btn-secondary shadow-sm px-4">
-                        <i class="fas fa-arrow-left me-2"></i> Back to List
+                        <i class="fas fa-arrow-left me-2"></i> Back 
                     </a>
                 </div>
             </div>
@@ -87,8 +87,8 @@
                                     <p class="mb-1"><strong>Age:</strong> @guest.Age</p>
                                     <p class="mb-1"><strong>Gender:</strong> @guest.Gender</p>
                                     <p class="mb-1"><strong>Nationality:</strong> @guest.NationalityType</p>
-                                    <p class="mb-1"><strong>Contact:</strong> @guest.ContactNumber</p>
-                                    <p class="mb-1"><strong>Arrival:</strong> @guest.ArrivalDate</p>
+                                @*     <p class="mb-1"><strong>Contact:</strong> @guest.ContactNumber</p>
+                                    <p class="mb-1"><strong>Arrival:</strong> @guest.ArrivalDate</p> *@
                                 </div>
                             </div>
                         </div>

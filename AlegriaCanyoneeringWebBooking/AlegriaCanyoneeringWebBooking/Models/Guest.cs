@@ -28,11 +28,12 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Display(Name = "Nationality")]
         public string? NationalityType { get; set; }
 
-        [Display(Name = "National Status")]
-        [Column("natstat")]
+        // Foreign Key to Nationality
         public int? NationalityId { get; set; }
-        [ForeignKey(nameof(NationalityId))]
-        public Nationality? Nationality { get; set; }
+
+        // Navigation property for related Nationality
+        public Nationality Nationality { get; set; } // Ensure this navigation property is added
+
 
         [StringLength(1000, ErrorMessage = "Gender cannot exceed 1000 characters")]
         [Display(Name = "Gender")]

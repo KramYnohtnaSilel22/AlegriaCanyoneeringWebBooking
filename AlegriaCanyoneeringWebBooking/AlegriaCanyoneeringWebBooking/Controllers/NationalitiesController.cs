@@ -63,7 +63,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Nationality nationality)
         {
-            if (id != nationality.Id) return NotFound();
+            if (id != nationality.NationalityId) return NotFound();
 
             if (ModelState.IsValid)
             {
@@ -74,7 +74,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Nationalities.Any(e => e.Id == nationality.Id))
+                    if (!_context.Nationalities.Any(e => e.NationalityId == nationality.NationalityId))
                         return NotFound();
                     else
                         throw;

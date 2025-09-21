@@ -169,12 +169,14 @@ else
 
 @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
 {
-    <table class="table">
-        <thead>
+    <h2 class="fw-bold mb-4 text-success">Save Guests</h2>
+    <table class="table table-bordered table-striped align-middle shadow-sm">
+        <thead class="table-dark">
             <tr>
-                <th>Batch</th>
+             @*    <th>Batch</th> *@
                 <th>Operator</th>
                 <th>Arrival Date</th>
+                <th>Total of Guests</th>
                 <th>Booking Status</th>
                 @*     <th>Full Name</th> *@
                 <th>Actions</th>
@@ -184,14 +186,16 @@ else
             @foreach (var guest in Model.ReservedGuests)
             {
                 <tr>
-                    <td>@guest.Batch</td>
+              @*       <td>@guest.Batch</td> *@
                     <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
                     <td>@guest.ArrivalDate</td>
+                    <td>@guest.NumberOfGuests</td>
                     <td>
                         <span class="badge bg-@(guest.BookingStatus == "reserved" ? "success" : "info")">
                             @guest.BookingStatus
                         </span>
                     </td>
+
                     @*        <td>@guest.Fullname</td> *@
                     <td>
                         <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-secondary" title="View">

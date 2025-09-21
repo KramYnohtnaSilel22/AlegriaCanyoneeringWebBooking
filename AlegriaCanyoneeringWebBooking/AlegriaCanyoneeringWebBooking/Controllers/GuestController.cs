@@ -43,19 +43,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
         private async Task PopulateDropdowns()
         {
-            ViewBag.OperatorList = await _context.OperatorLists
-                .Select(o => new SelectListItem
-                {
-                    Value = o.OperatorId.ToString(),   // always int as string
-                    Text = o.BusinessName
-                }).ToListAsync();
-
-            ViewBag.NationalityList = await _context.Nationalities
-                .Select(n => new SelectListItem
-                {
-                    Value = n.Id.ToString(),            // always int as string
-                    Text = n.NatName
-                }).ToListAsync();
+            
+            ViewBag.OperatorList = new SelectList(await _context.OperatorLists.ToListAsync(), "OperatorId", "BusinessName");
+            ViewBag.NationalityList = new SelectList(await _context.Nationalities.ToListAsync(), "NationalityId", "NatName"); // Populate Nationality dropdown
         }
 
         private string GenerateRFID() => "RFID" + Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
@@ -92,6 +82,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     {
                         guest.BookingStatus = "anticipated";
                         guest.Batch = batchId;
+                     
                         guest.RFID = GenerateRFID();
                         guest.Month = DateTime.Today.ToString("yyyy-MM");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
@@ -155,25 +146,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             };
             return View(model);
         }
-
-
         public async Task<IActionResult> ReserveDetails(int id)
         {
-            // Get the main guest
+            // Get the main guest, including the nationality (make sure to include Nationality)
             var mainGuest = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
+                .Include(g => g.Nationality)  // Ensure Nationality is loaded
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (mainGuest == null)
             {
-                return NotFound();
+                return NotFound(); // Return if no guest found
             }
 
-            // Get 4 other guests in the same batch, excluding main guest
+            // Get other guests in the same batch, excluding the main guest
             var guestsInBatch = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
+                .Include(g => g.Nationality)  // Ensure Nationality is included
                 .Where(g => g.Batch == mainGuest.Batch && g.GuestId != mainGuest.GuestId)
                 .OrderBy(g => g.GuestId)
                 .Take(4)
@@ -187,6 +176,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(model);
         }
+
 
 
         // GET: Guest/EditReserve/5
@@ -223,7 +213,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var nationalities = await _context.Nationalities
                 .Select(n => new SelectListItem
                 {
-                    Value = n.Id.ToString(),     // ✅ correct property
+                    Value = n.NationalityId.ToString(),     // ✅ correct property
                     Text = n.NatName             // ✅ correct property
                 })
                 .ToListAsync();
@@ -309,7 +299,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             ViewBag.NationalityList = await _context.Nationalities
                 .Select(n => new SelectListItem
                 {
-                    Value = n.Id.ToString(),
+                    Value = n.NationalityId.ToString(),
                     Text = n.NatName
                 })
                 .ToListAsync();
@@ -318,29 +308,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        //public async Task<IActionResult> reservebooking()
-        //{
-        //    var savedGuests = await _context.Guests
-        //        .Include(g => g.OperatorList)
-        //        .Include(g => g.Nationality)
-        //        .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "confirmed")
-        //        .ToListAsync();
 
-        //    // Debug: Output the count
-        //    System.Diagnostics.Debug.WriteLine($"Guest count: {savedGuests.Count}");
-
-        //    var model = new GuestListViewModel
-        //    {
-        //        ReservedGuests = savedGuests
-        //    };
-        //    return View(model);
-        //}
-        // Controller: BookingController.cs
-
-        // === Show all reserved/confirmed guests and a single Batch QR ===
         public async Task<IActionResult> reservebooking()
         {
-            // pull all reserved/confirmed guests
+            // Get all reserved/confirmed guests
             var reservedGuests = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Include(g => g.Nationality)
@@ -353,39 +324,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (!reservedGuests.Any())
                 return View(new GuestListViewModel());   // nothing to show
 
-            // individual guest QR codes
+            // Generate individual guest QR codes (already exists, but you can modify for batch QR)
             foreach (var guest in reservedGuests)
             {
                 guest.QRText = GenerateQRText(guest);
                 guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
             }
 
-            // assume they all share the same batch
+            // Generate Batch QR code for batchCode (for modal display)
             string batchCode = reservedGuests.First().Batch;
-            string batchQrBase64 = GenerateQRCodeBase64($"BATCH:{batchCode}");
+            string batchQrBase64 = GenerateQRCodeBase64(batchCode); // Only BatchCode in QR
 
             var vm = new GuestListViewModel
             {
                 ReservedGuests = reservedGuests,
-                BatchQrBase64 = batchQrBase64
+                BatchQrBase64 = batchQrBase64 // Batch QR Code to be used in modal
             };
             return View(vm);
-        }
-
-        // === Scan URL: /Guests/ByBatch/{batch} ===
-        [HttpGet("Guests/ByBatch/{batch}")]
-        public async Task<IActionResult> ByBatch(string batch)
-        {
-            var guests = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .Include(g => g.Driver)
-                .Include(g => g.Guide)
-                .Where(g => g.Batch == batch)
-                .OrderBy(g => g.GuestId)
-                .ToListAsync();
-
-            return View("BatchGuests", guests);
         }
 
         // ---------- QR Helpers ----------
@@ -393,24 +348,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         private string GenerateQRText(Guest guest)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Guest Details");
-            sb.AppendLine("------------------------");
-            sb.AppendLine($"ID           : {guest.GuestId}");
-            sb.AppendLine($"Full Name    : {guest.Fullname}");
-            sb.AppendLine($"Age          : {guest.Age}");
-            sb.AppendLine($"Gender       : {guest.Gender}");
-            sb.AppendLine($"Nationality  : {guest.NationalityType}");
-            sb.AppendLine($"Guests Count : {guest.NumberOfGuests}");
-            sb.AppendLine($"Nationality Status : {guest.Nationality?.NatName}");
-            sb.AppendLine($"Operator     : {guest.OperatorList?.BusinessName ?? "N/A"}");
-            sb.AppendLine($"Driver       : {guest.Driver?.FName ?? "None"}");
-            sb.AppendLine($"Guide        : {guest.Guide?.FName ?? "None"}");
-            sb.AppendLine($"Booking Date : {guest.Date:yyyy-MM-dd}");
-            sb.AppendLine($"Arrival Date : {guest.ArrivalDate:yyyy-MM-dd}");
-            sb.AppendLine($"Month        : {guest.Month}");
+         
             sb.AppendLine($"Batch        : {guest.Batch}");
-            sb.AppendLine($"RFID         : {guest.RFID}");
-            sb.AppendLine($"Status       : {guest.BookingStatus?.ToUpper() ?? "N/A"}");
+         
             return sb.ToString();
         }
 
@@ -454,7 +394,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return operatorId;
             }
             return 0;
-        }   [HttpGet]
+        }
+
         public async Task<IActionResult> GetNationalities()
         {
             try
@@ -463,20 +404,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .Where(n => n.NatName != "Within Cebu Province" &&
                                 n.NatName != "Outside Cebu Province")
                     .OrderBy(n => n.NatName)
-                    .Select(n => n.NatName)
+                    .Select(n => new {
+                        n.NationalityId,      // Return Id
+                        n.NatName  // Return Name
+                    })
                     .ToListAsync();
 
-                return Json(nationalities);
+                return Json(nationalities);  // Return the list of nationalities as JSON
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = ex.Message });  // Return error if something goes wrong
             }
         }
-     
 
 
-        [HttpPost]
+
         public async Task<IActionResult> UpdateStatus(int id, string status)
         {
             var guest = await _context.Guests.FindAsync(id);
@@ -527,59 +470,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        //// GET: FinalBookingBatch - Renders empty view (optional)
-        //[HttpGet]
-        //public IActionResult FinalBookingBatch()
-        //{
-        //    return View(new GuestListViewModel { ReservedGuests = new List<Guest>() });
-        //}
-
-        //[HttpPost]
-        //public async Task<IActionResult> FinalBookingBatch(string BatchCode)
-        //{
-        //    if (string.IsNullOrEmpty(BatchCode))
-        //    {
-        //        return BadRequest("BatchCode is required.");
-        //    }
-
-        //    // Finalize guests in batch if not already finalized
-        //    var guestsToFinalize = await _context.Guests
-        //        .Where(g => g.Batch == BatchCode && g.BookingStatus != "finalized")
-        //        .ToListAsync();
-
-        //    if (guestsToFinalize.Any())
-        //    {
-        //        foreach (var guest in guestsToFinalize)
-        //        {
-        //            guest.BookingStatus = "finalized";
-        //        }
-        //        await _context.SaveChangesAsync();
-        //    }
-
-        //    // Select only the batch leader (first entered guest)
-        //    var batchLeader = await _context.Guests
-        //        .Include(g => g.OperatorList)
-        //        .Include(g => g.Nationality)
-        //        .Where(g => g.Batch == BatchCode)
-        //        .OrderBy(g => g.GuestId)
-        //        .FirstOrDefaultAsync();
-
-        //    // Load all guests for view/detail/modal purposes
-        //    var allGuests = await _context.Guests
-        //        .Include(g => g.OperatorList)
-        //        .Include(g => g.Nationality)
-        //        .Where(g => g.Batch == BatchCode)
-        //        .OrderBy(g => g.GuestId)
-        //        .ToListAsync();
-
-        //    var model = new GuestListViewModel
-        //    {
-        //        ReservedGuests = batchLeader != null ? new List<Guest> { batchLeader } : new List<Guest>(),
-        //        BatchGuests = new Dictionary<string, List<Guest>> { { BatchCode, allGuests } }
-        //    };
-        //    return View("FinalBookingBatch", model);
-        //}
-        // In your controller (adjust namespaces as needed)
         public async Task<IActionResult> FinalBookingBatch()
         {
             // Get all Reserve batches, order by CreatedDate DESC
@@ -601,6 +491,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var model = new GuestListViewModel { BatchGuests = batchGuestsDict };
             return View(model);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> FinalBookingBatch(string BatchCode)

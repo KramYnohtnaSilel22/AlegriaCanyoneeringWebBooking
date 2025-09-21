@@ -4,10 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container.
+builder.Services.AddControllers();
+
 // 1️⃣ Add services BEFORE Build
 builder.Services.AddControllersWithViews();
 
-// Database
+// Database Connection
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
@@ -16,7 +19,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         mysqlOptions => mysqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null)
     ));
 
-// 🔑 Authentication/Authorization must be here
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+
+
+// 🔑 Authentication/Authorization
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -28,7 +43,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // 2️⃣ Now build the app
 var app = builder.Build();
 
-// 3️⃣ Optional: test DB connection AFTER Build
+// 3️⃣ Optional: Test DB Connection AFTER Build
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -49,12 +64,15 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// 4️⃣ Pipeline
+// 4️⃣ Configure the middleware pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+
+app.UseCors("AllowAll");  // Apply the CORS policy
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -62,6 +80,9 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// API routes (Controller mappings)
+app.MapControllers();  // This maps the controllers to the routes.
 
 app.MapControllerRoute(
     name: "default",

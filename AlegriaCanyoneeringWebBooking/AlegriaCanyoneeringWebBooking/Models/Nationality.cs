@@ -7,12 +7,12 @@ namespace AlegriaCanyoneeringWebBooking.Models
     public class Nationality
     {
         [Key]
-        [Column("id")]
-        public int Id { get; set; }
+        [Column("NationalityId")]
+        public int NationalityId { get; set; }
 
         [Required, MaxLength(1000)]
         [Column("nat_name")]
         public string NatName { get; set; }
-      
+
     }
 }
