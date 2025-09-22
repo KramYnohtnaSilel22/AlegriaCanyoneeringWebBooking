@@ -1,10 +1,12 @@
 ﻿using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
+    [Authorize(Roles = "Super Admin")]
     public class DriversController : Controller
     {
         private readonly ApplicationDbContext _context;

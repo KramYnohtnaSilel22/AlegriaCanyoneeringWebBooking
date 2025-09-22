@@ -1,11 +1,13 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AlegriaCanyoneeringWebBooking.Models;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
+    [Authorize(Roles = "Super Admin")]
     public class RolesController : Controller
     {
         private readonly ApplicationDbContext _context;

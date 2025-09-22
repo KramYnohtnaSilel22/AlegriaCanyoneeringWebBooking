@@ -1,9 +1,11 @@
 ﻿using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
+    [Authorize(Roles = "Super Admin")]
     public class NationalitiesController : Controller
     {
         private readonly ApplicationDbContext _context;

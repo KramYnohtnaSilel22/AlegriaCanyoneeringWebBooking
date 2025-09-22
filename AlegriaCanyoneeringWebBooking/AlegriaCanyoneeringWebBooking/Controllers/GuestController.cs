@@ -1,5 +1,6 @@
 ﻿using AlegriaCanyoneeringWebBooking.Models;
 using AlegriaCanyoneeringWebBooking.ViewModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -23,6 +24,7 @@ using System.Threading.Tasks;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
+    [Authorize(Roles = "Super Admin,Admin,Operator")]
     public class GuestController : Controller
     {
         private readonly ApplicationDbContext _context;
