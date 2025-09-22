@@ -31,6 +31,14 @@ builder.Services.AddCors(options =>
 });
 
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("SuperAdmin", policy => policy.RequireRole("Super Admin"));
+    options.AddPolicy("Operator", policy => policy.RequireRole("Operator"));
+});
+
+
 // 🔑 Authentication/Authorization
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
