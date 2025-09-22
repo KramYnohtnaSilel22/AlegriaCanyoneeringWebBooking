@@ -579,7 +579,28 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
+        public IActionResult DownloadQRCode(string base64Image, string fileName)
+        {
+            if (string.IsNullOrEmpty(base64Image))
+            {
+                return BadRequest("No image data provided.");
+            }
 
+            try
+            {
+                // Remove the "data:image/png;base64," prefix if it exists
+                var base64Data = base64Image.Substring(base64Image.IndexOf(",") + 1);
+                var imageBytes = Convert.FromBase64String(base64Data);
+
+                // Return the image as a downloadable file
+                return File(imageBytes, "image/png", fileName);
+            }
+            catch (Exception ex)
+            {
+                // Handle any errors
+                return BadRequest($"Error downloading QR code: {ex.Message}");
+            }
+        }
 
         private bool GuestExists(int id)
         {

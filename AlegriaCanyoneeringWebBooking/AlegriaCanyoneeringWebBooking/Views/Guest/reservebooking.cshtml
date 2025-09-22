@@ -23,7 +23,8 @@
                         <th>Status</th>
                         <th>Operator</th>
                         <th>Nationality</th>
-                     @*    <th>Batch</th> *@
+                        @*    <th>Batch</th> *@
+
                         <th>Total of Guests</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -47,7 +48,7 @@
                             </td>
                             <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
                             <td>@(guest.Nationality?.NatName ?? "N/A")</td>
-                        @*     <td>@guest.Batch</td> *@
+                            @*     <td>@guest.Batch</td> *@
                             <td>
                                 @guest.NumberOfGuests
                                 @if (guest.NumberOfGuests >= 5)
@@ -93,18 +94,23 @@
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content text-center">
                     <div class="modal-header">
-                        <h5 class="modal-title">
+                        <h6 class="modal-title">
                             Operator: @(guest.OperatorList?.BusinessName ?? "N/A")
-                        </h5>
-                        <h5 class="modal-title">
+                        </h6>
+                        <h6 class="modal-title">
                             Total Guests: @guest.NumberOfGuests
-                        </h5>
+                        </h6>
 
                     </div>
                     <div class="modal-body">
                         @if (!string.IsNullOrEmpty(guest.QRBase64))
                         {
-                            <img src="@guest.QRBase64" alt="QR for @guest.Fullname" style="width:180px;height:180px;" />
+                            <div>
+                                <img src="@guest.QRBase64" alt="QR for @guest.Fullname" style="width:180px;height:180px;" />
+                                <a href="@Url.Action("DownloadQRCode", "Guest", new { base64Image = guest.QRBase64, fileName = "QR_Code_" + guest.Fullname + ".png" })" class="btn btn-primary mt-2">
+                                    <i class="fas fa-download"></i> Download QR Code
+                                </a>
+                            </div>
                         }
                         else
                         {
@@ -117,8 +123,12 @@
                             </button>
                         </form>
                     </div>
+
+
                 </div>
             </div>
         </div>
     }
 }
+
+
