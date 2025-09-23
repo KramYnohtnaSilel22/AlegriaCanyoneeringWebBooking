@@ -88,6 +88,7 @@
                                     <li><a class="dropdown-item" asp-controller="Admin" asp-action="Operators"><i class="bi bi-people-gear me-2"></i>Operators</a></li>
                                     <li><a class="dropdown-item" asp-controller="Nationalities" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Nationality</a></li>
                                     <li><a class="dropdown-item" asp-controller="Roles" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Roles</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Auth" asp-action="ChangePassword"><i class="bi-shield-lock-fill"></i>Change Password</a></li>
                                 </ul>
                             </li>
                             <!-- About -->
@@ -169,6 +170,7 @@
                                     <li><a class="dropdown-item" asp-controller="Admin" asp-action="Operators"><i class="bi bi-people-gear me-2"></i>Operators</a></li>
                                     <li><a class="dropdown-item" asp-controller="Nationalities" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Nationality</a></li>
                                     <li><a class="dropdown-item" asp-controller="Roles" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Roles</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Auth" asp-action="ChangePassword"><i class="bi-shield-lock-fill"></i>Change Password</a></li>
                                 </ul>
                             </li>
                             <!-- About -->
@@ -231,33 +233,22 @@
                                 </a>
                             </li>
 
-                            @*     <!-- Operator -->
-                            <li class="nav-item">
-                                <a class="nav-link text-white fw-semibold" asp-controller="Operators" asp-action="Index">
-                                    <i class="bi bi-person-gear me-1"></i>Operator
-                                </a>
-                            </li> *@
-                            @* <!-- Settings Dropdown -->
+                            <!-- Settings Dropdown -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-white fw-semibold" href="#" id="navSettings"
                                    role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-gear-fill me-1"></i>Settings
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow rounded" aria-labelledby="navSettings">
-                                    <li><a class="dropdown-item" asp-controller="Batches" asp-action="Index"><i class="bi bi-layers me-2"></i>Batch</a></li>
+                      @*               <li><a class="dropdown-item" asp-controller="Batches" asp-action="Index"><i class="bi bi-layers me-2"></i>Batch</a></li>
                                     <li><a class="dropdown-item" asp-controller="Guides" asp-action="Index"><i class="bi bi-person-vcard me-2"></i>Guide Details</a></li>
                                     <li><a class="dropdown-item" asp-controller="Drivers" asp-action="Index"><i class="bi bi-truck me-2"></i>Driver Details</a></li>
                                     <li><a class="dropdown-item" asp-controller="Admin" asp-action="Operators"><i class="bi bi-people-gear me-2"></i>Operators</a></li>
                                     <li><a class="dropdown-item" asp-controller="Nationalities" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Nationality</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Roles" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Roles</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Roles" asp-action="Index"><i class="bi bi-flag-fill me-2"></i>Roles</a></li> *@
+                                    <li><a class="dropdown-item" asp-controller="Auth" asp-action="ChangePassword"><i class="bi-shield-lock-fill"></i>Change Password</a></li>
                                 </ul>
-                            </li> *@
-                            <!-- About -->
-                            @*    <li class="nav-item">
-                                <a class="nav-link text-white fw-semibold" asp-controller="Home" asp-action="About">
-                                    <i class="bi bi-info-circle-fill me-1"></i>About Us
-                                </a>
-                            </li> *@
+                            </li>
                             <!-- Logout -->
                             <li class="nav-item">
                                 <a class="nav-link text-white fw-semibold" asp-controller="Auth" asp-action="Logout">
