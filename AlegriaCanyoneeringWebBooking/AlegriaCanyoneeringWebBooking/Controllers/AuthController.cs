@@ -3,6 +3,7 @@ using AlegriaCanyoneeringWebBooking.Models;
 using AlegriaCanyoneeringWebBooking.ViewModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -69,6 +70,53 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction(nameof(Login));
         }
+
+
+        // GET: Change Password
+        [HttpGet]
+        [Authorize(Roles = "Super Admin,Admin,Operator")]
+        public IActionResult ChangePassword()
+        {
+            return View(new ChangePasswordViewModel());
+        }
+
+        // POST: Change Password
+        [Authorize(Roles = "Super Admin,Admin,Operator")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            // Get current logged-in user
+            var username = User.Identity?.Name;
+            if (username == null)
+            {
+                return RedirectToAction("Login", "Authentication");
+            }
+
+            var op = await _context.Operators.FirstOrDefaultAsync(o => o.Username == username);
+            if (op == null)
+            {
+                return RedirectToAction("Login", "Authentication");
+            }
+
+            // Verify current password
+            if (!PasswordHelper.VerifyPassword(model.CurrentPassword, op.Password))
+            {
+                ModelState.AddModelError("", "Current password is incorrect.");
+                return View(model);
+            }
+
+            // Update password
+            op.Password = PasswordHelper.HashPassword(model.NewPassword);
+            _context.Update(op);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Password changed successfully!";
+            return RedirectToAction("NewBooking", "Guest"); // Redirect wherever appropriate
+        }
+
         public IActionResult AccessDenied()
         {
             return View();
