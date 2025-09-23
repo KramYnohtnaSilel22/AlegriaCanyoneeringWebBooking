@@ -37,9 +37,9 @@
                         <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-primary" title="View">View
                             <i class="fas fa-users me-2"></i>
                         </a>
-                        <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-sm btn-warning text-dark" title="Edit">
+                  @*       <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-sm btn-warning text-dark" title="Edit">
                             <i class="fas fa-edit"></i>
-                        </a>
+                        </a> *@
                         @if (guest.BookingStatus == "anticipated")
                         {
                             <form asp-action="UpdateStatus" method="post" class="d-inline">
