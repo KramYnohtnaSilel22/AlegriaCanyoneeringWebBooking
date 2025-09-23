@@ -552,11 +552,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> FinalBookingBatch(string BatchCode)
         {
             if (string.IsNullOrEmpty(BatchCode))
             {
-                return BadRequest("BatchCode is required.");
+                TempData["ToastMessage"] = "BatchCode is required.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction("reservebooking");
             }
 
             // Finalize guests for this batch
@@ -597,12 +600,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // Reload all batch summaries and guests for view, as in GET
-            return await FinalBookingBatch();
+            // Add Toast, then redirect to GET version of same page to show toast message
+            TempData["ToastMessage"] = "FinalBook Successfully!";
+            TempData["ToastType"] = "success";
+            return RedirectToAction("reservebooking", new { BatchCode }); // Adjust if your GET takes no param
         }
 
 
-   
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -636,12 +640,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Redirect back to the BookingDetails
             return RedirectToAction("saveguest", new { batch = guest.Batch });
         }
-   
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
             if (string.IsNullOrEmpty(base64Image))
             {
-                return BadRequest("No image data provided.");
+                TempData["ToastMessage"] = "No image data provided.";
+                TempData["ToastType"] = "danger"; // can be 'success', 'danger', etc.
+                return RedirectToAction("ReserveBookings"); // or whatever action/page, update as needed
             }
 
             try
@@ -650,13 +655,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 var base64Data = base64Image.Substring(base64Image.IndexOf(",") + 1);
                 var imageBytes = Convert.FromBase64String(base64Data);
 
-                // Return the image as a downloadable file
                 return File(imageBytes, "image/png", fileName);
             }
             catch (Exception ex)
             {
-                // Handle any errors
-                return BadRequest($"Error downloading QR code: {ex.Message}");
+                TempData["ToastMessage"] = $"Error downloading QR code: {ex.Message}";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction("reservebooking"); // fallback action
             }
         }
 

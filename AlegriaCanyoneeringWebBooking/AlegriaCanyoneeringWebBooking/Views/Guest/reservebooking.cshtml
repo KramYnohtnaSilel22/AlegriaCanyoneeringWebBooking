@@ -4,15 +4,19 @@
 }
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Reserved Booking</h2>
-    @*     @if (!string.IsNullOrEmpty(Model.BatchQrBase64))
+    @if (TempData["ToastMessage"] != null)
     {
-        <div class="mb-4 d-flex align-items-center gap-3">
-            <div>
-                <strong>Batch QR Code:</strong><br />
-                <img src="@Model.BatchQrBase64" alt="Batch QR" style="width:120px;" />
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+            <div class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true" id="toastMessage">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-info-circle me-2"></i> @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
             </div>
         </div>
-    } *@
+    }
     @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
     {
         <div class="table-responsive">
@@ -49,13 +53,7 @@
                             <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
                             <td>@(guest.Nationality?.NatName ?? "N/A")</td>
                             @*     <td>@guest.Batch</td> *@
-                            <td>
-                                @guest.NumberOfGuests
-                                @if (guest.NumberOfGuests >= 5)
-                                {
-                                    <span class="badge bg-warning text-dark ms-1">Group of @guest.NumberOfGuests</span>
-                                }
-                            </td>
+                            <td>@guest.NumberOfGuests</td>
                             <td class="text-center">
                                 <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-primary btn-sm border">View <i class="fas fa-users me-2"></i></a>
                                 <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-warning btn-sm text-dark border"><i class="fas fa-edit"></i></a>
@@ -132,3 +130,12 @@
 }
 
 
+    <script>
+        $(document).ready(function () {
+            var toastElement = document.getElementById('toastMessage');
+            if (toastElement) {
+                var toast = new bootstrap.Toast(toastElement);
+                toast.show();
+            }
+        });
+    </script>

@@ -36,7 +36,7 @@
         <!-- Form for Guest Info -->
         <form asp-action="NewBooking" method="post" id="guestForm">
             <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
-            <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" />
+            <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
             <input type="hidden" id="MainGuestId" name="id" value="@ViewBag.MainGuestId" />
 
 
@@ -47,7 +47,7 @@
                         <legend>Guest Info</legend>
                         <div class="mb-3">
                             <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
-                            <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"></select>
+                            <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select" id="OperatorInput"></select>
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Fullname" class="form-label">Full Name</label>
@@ -89,15 +89,15 @@
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Date" class="form-label">Booking Date</label>
-                            <input asp-for="NewGuest.Date" type="date" class="form-control" />
+                            <input asp-for="NewGuest.Date" type="date" class="form-control" id="BookingDateInput" />
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.ArrivalDate" class="form-label">Arrival Date</label>
-                            <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control" />
+                            <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control" id="ArrivalDateInput" />
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Area" class="form-label">Tour Area</label>
-                            <select asp-for="NewGuest.Area" class="form-select">
+                            <select asp-for="NewGuest.Area" class="form-select" id="TourAreaInput">
                                 <option value="">Select Area</option>
                                 <option value="Wonder Falls">Wonder Falls</option>
                                 <option value="Kanlaob">Kanlaob</option>
@@ -194,7 +194,21 @@
         }
         guestsBatch.push(guest);
         updateTotalGuestsDisplay();
-        $('#guestForm')[0].reset();
+          // Set Batch field to readonly, but DO NOT clear value!
+
+    // Apply readonly to required fields, but don't reset
+      $('#BookingDateInput').prop('readonly', true);
+      $('#ArrivalDateInput').prop('readonly', true);
+      $('#OperatorInput').on('mousedown', function (e) { e.preventDefault(); });
+      $('#TourAreaInput').on('mousedown', function (e) { e.preventDefault(); });
+
+      $('#OperatorInput, #TourAreaInput, #BookingDateInput, #ArrivalDateInput').css({
+          'background-color': '#f5f5f5',
+          'color': '#888'
+      });
+
+    $('#CurrentBatch').prop('readonly', true).css({'background-color':'#f5f5f5','color':'#888'});
+    $('#CurrentBatch').css({'background-color':'#f5f5f5','color':'#888'});
     });
 
     $('#guestForm').on('submit', function () {
