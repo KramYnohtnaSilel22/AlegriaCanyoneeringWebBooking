@@ -9,5 +9,6 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public List<Guest> GuestsInBatch { get; set; }
         // Add this:
         public string CurrentBatch { get; set; }
+
     }
 }

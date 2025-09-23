@@ -86,20 +86,32 @@
                                         <table class="table table-bordered table-striped">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th>Full Name</th>
                                                     <th>Operator</th>
-                                                    <th>Total Guests</th>
+                                                    <th>Full Name</th>
                                                     <th>Age</th>
+                                                    <th>Contact No.:</th>
+                                                    <th>Gender</th>
+                                                    <th>Nationality</th>
+                                                    <th>Area</th>
+
+                                                    <th>Arrival Date</th>
+                                                 
+                                                 
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @if (primaryGuest != null)
                                                 {
                                                     <tr class="table-success">
-                                                        <td>@primaryGuest.Fullname</td>
+                                                    
                                                         <td>@(primaryGuest.OperatorList?.BusinessName ?? "N/A")</td>
-                                                        <td>@primaryGuest.NumberOfGuests</td>
+                                                        <td>@primaryGuest.Fullname</td>
                                                         <td>@primaryGuest.Age</td>
+                                                        <td>@primaryGuest.ContactNumber</td>
+                                                        <td>@primaryGuest.Gender</td>
+                                                        <td>@(primaryGuest.Nationality?.NatName ?? "N/A")</td>
+                                                        <td>@primaryGuest.Area</td>
+                                                        <td>@primaryGuest.ArrivalDate</td>
                                                     </tr>
                                                 }
                                             </tbody>
@@ -113,8 +125,10 @@
                                                 <thead class="table-light">
                                                     <tr>
                                                         <th>Full Name</th>
-                                                        <th>Operator</th>
                                                         <th>Age</th>
+                                                            <th>Contact No.:</th>
+                                                        <th>Gender</th>
+                                                        <th>Nationality</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -122,8 +136,11 @@
                                                     {
                                                         <tr>
                                                             <td>@guest.Fullname</td>
-                                                            <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
+                                                      
                                                             <td>@guest.Age</td>
+                                                            <td>@guest.ContactNumber</td>
+                                                            <td>@guest.Gender</td>
+                                                            <td>@(guest.Nationality?.NatName ?? "N/A")</td>
                                                         </tr>
                                                     }
                                                 </tbody>

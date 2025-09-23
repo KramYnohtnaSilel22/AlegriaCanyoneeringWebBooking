@@ -52,9 +52,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private string GenerateRFID() => "RFID" + Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
 
-        public async Task<IActionResult> NewBooking()
+        public async Task<IActionResult> NewBooking(string batch, int? id)
         {
             await PopulateDropdowns();
+
+            // Prepare the list of reserved guests as before
             var filteredGuests = await _context.Guests
                 .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
                 .GroupBy(g => g.Batch)
@@ -66,25 +68,28 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 NewGuest = new Guest(),
                 ReservedGuests = filteredGuests
             };
+
+            // These make sure your form handles the current batch and main guest ID
+            ViewBag.CurrentBatch = batch;
+            ViewBag.MainGuestId = id;
+
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> NewBooking(GuestListViewModel model)
+        public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
         {
-            // Handle valid batch only
+            string batchId = !string.IsNullOrEmpty(batch) ? batch : DateTime.Now.ToString("yyyyMMddHHmmss");
             if (!string.IsNullOrWhiteSpace(model.BatchGuestsJson))
             {
                 var batchGuests = JsonSerializer.Deserialize<List<Guest>>(model.BatchGuestsJson);
                 if (batchGuests != null && batchGuests.Count > 0)
                 {
-                    string batchId = DateTime.Now.ToString("yyyyMMddHHmmss");
                     foreach (var guest in batchGuests)
                     {
                         guest.BookingStatus = "anticipated";
                         guest.Batch = batchId;
-                     
                         guest.RFID = GenerateRFID();
                         guest.Month = DateTime.Today.ToString("yyyy-MM");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
@@ -100,81 +105,131 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     TempData["ToastMessage"] = "Guests added successfully!";
                     TempData["ToastType"] = "success";
 
-                    return RedirectToAction("NewBooking");
+                    // Distinguish between normal new booking and batch add
+                    if (id.HasValue && id.Value > 0)
+                    {
+                        // Batch Add: redirect to ReserveDetails with main guest id
+                        int redirectId = id.Value;
+                        return RedirectToAction("ReserveDetails", new { id = redirectId });
+                    }
+                    else
+                    {
+                        // Normal New Booking: redirect back to itself (reset for new batch)
+                        return RedirectToAction("NewBooking");
+                    }
                 }
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
                 TempData["ToastType"] = "danger";
             }
-
             await PopulateDropdowns();
             return View(model);
         }
 
-        //public async Task<IActionResult> saveguest()
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
         //{
-        //    var reservedGuests = await _context.Guests
-        //        .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "anticipated")
-        //        .OrderBy(g => g.GuestId)
-        //        .ToListAsync();
-
-        //    // Only include one (the first) guest per batch
-        //    var batchLeaders = reservedGuests
-        //        .GroupBy(g => g.Batch)
-        //        .Select(batch => batch.OrderBy(x => x.GuestId).First()) // Only first guest in batch
-        //        .ToList();
-
-        //    var model = new GuestListViewModel
+        //    string batchId = !string.IsNullOrEmpty(batch) ? batch : DateTime.Now.ToString("yyyyMMddHHmmss");
+        //    if (!string.IsNullOrWhiteSpace(model.BatchGuestsJson))
         //    {
-        //        ReservedGuests = batchLeaders
-        //    };
+        //        var batchGuests = JsonSerializer.Deserialize<List<Guest>>(model.BatchGuestsJson);
+        //        if (batchGuests != null && batchGuests.Count > 0)
+        //        {
+        //            foreach (var guest in batchGuests)
+        //            {
+        //                guest.BookingStatus = "anticipated";
+        //                guest.Batch = batchId;
+        //                guest.RFID = GenerateRFID();
+        //                guest.Month = DateTime.Today.ToString("yyyy-MM");
+        //                guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
+        //                _context.Guests.Add(guest);
+        //            }
+        //            await _context.SaveChangesAsync();
+
+        //            var guestsInBatch = await _context.Guests.Where(g => g.Batch == batchId).ToListAsync();
+        //            int count = guestsInBatch.Count;
+        //            guestsInBatch.ForEach(g => g.NumberOfGuests = count);
+        //            await _context.SaveChangesAsync();
+
+        //            TempData["ToastMessage"] = "Guests added successfully!";
+        //            TempData["ToastType"] = "success";
+
+        //            int redirectId = id ?? guestsInBatch.OrderBy(g => g.GuestId).First().GuestId;
+        //            return RedirectToAction("ReserveDetails", new { id = redirectId });
+        //        }
+        //        TempData["ToastMessage"] = "Please add at least one guest before saving!";
+        //        TempData["ToastType"] = "danger";
+        //    }
+        //    await PopulateDropdowns();
         //    return View(model);
         //}
 
+
+
         public async Task<IActionResult> saveguest()
         {
+            // Step 1: Get all guests that are batch leaders or have valid status
             var reservedGuests = await _context.Guests
-                .Include(g => g.OperatorList) // <-- THIS IS CRUCIAL
+                .Include(g => g.OperatorList)
                 .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "anticipated")
                 .OrderBy(g => g.GuestId)
                 .ToListAsync();
 
+            // Step 2: Group them by batch and pick the batch leader (first guest)
             var batchLeaders = reservedGuests
                 .GroupBy(g => g.Batch)
                 .Select(batch => batch.OrderBy(x => x.GuestId).First())
                 .ToList();
 
+            // Step 3: For each batch, recalculate guest count (excluding canceled)
+            foreach (var leader in batchLeaders)
+            {
+                var count = await _context.Guests
+                    .Where(g => g.Batch == leader.Batch && g.BookingStatus != "canceled")
+                    .CountAsync();
+
+                leader.NumberOfGuests = count;
+            }
+
+            // Step 4: Build the view model
             var model = new GuestListViewModel
             {
                 ReservedGuests = batchLeaders
             };
+
             return View(model);
         }
+
         public async Task<IActionResult> ReserveDetails(int id)
         {
-            // Get the main guest, including the nationality (make sure to include Nationality)
+            // Retrieve main guest, including related entities
             var mainGuest = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)  // Ensure Nationality is loaded
+                .Include(g => g.Nationality)
                 .FirstOrDefaultAsync(g => g.GuestId == id);
 
             if (mainGuest == null)
             {
-                return NotFound(); // Return if no guest found
+                return NotFound();
             }
 
-            // Get other guests in the same batch, excluding the main guest
+            // Get all active (non-canceled) guests in the same batch
             var guestsInBatch = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)  // Ensure Nationality is included
-                .Where(g => g.Batch == mainGuest.Batch && g.GuestId != mainGuest.GuestId)
+                .Include(g => g.Nationality)
+                .Where(g => g.Batch == mainGuest.Batch && g.BookingStatus != "canceled")
                 .OrderBy(g => g.GuestId)
-                .Take(4)
                 .ToListAsync();
+
+            // Optionally, display main guest (current record) as companion or not
+            // If you want to exclude main guest from companion list:
+            guestsInBatch = guestsInBatch.Where(g => g.GuestId != mainGuest.GuestId).ToList();
 
             var model = new GuestDetailsViewModel
             {
                 Guest = mainGuest,
                 GuestsInBatch = guestsInBatch
+                // Add other view properties as needed
             };
 
             return View(model);
@@ -547,38 +602,41 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> BookingDetails(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest("Invalid guest id.");
-            }
+   
 
-            var guest = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .FirstOrDefaultAsync(g => g.GuestId == id);
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelGuest(int GuestId)
+        {
+            var guest = await _context.Guests.FindAsync(GuestId);
 
             if (guest == null)
-            {
-                return NotFound();
-            }
+                return NotFound("Guest not found.");
 
+            guest.BookingStatus = "canceled";
+            await _context.SaveChangesAsync();
+
+            // Recalculate number of active (non-canceled) guests in the same batch
+            var updatedGuestCount = await _context.Guests
+                .Where(g => g.Batch == guest.Batch && g.BookingStatus != "canceled")
+                .CountAsync();
+
+            // Update NumberOfGuests for all guests in the batch
             var guestsInBatch = await _context.Guests
-                .Where(g => g.Batch == guest.Batch && g.GuestId != guest.GuestId)
+                .Where(g => g.Batch == guest.Batch)
                 .ToListAsync();
 
-            var model = new GuestDetailsViewModel
+            foreach (var g in guestsInBatch)
             {
-                Guest = guest,
-                GuestsInBatch = guestsInBatch
-            };
+                g.NumberOfGuests = updatedGuestCount;
+            }
 
-            return View(model);
+            await _context.SaveChangesAsync();
+
+            // Redirect back to the BookingDetails
+            return RedirectToAction("saveguest", new { batch = guest.Batch });
         }
-
-
+   
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
             if (string.IsNullOrEmpty(base64Image))

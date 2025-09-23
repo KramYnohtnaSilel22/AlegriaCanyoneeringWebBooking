@@ -35,7 +35,10 @@
 
         <!-- Form for Guest Info -->
         <form asp-action="NewBooking" method="post" id="guestForm">
-            <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="" />
+            <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
+            <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" />
+            <input type="hidden" id="MainGuestId" name="id" value="@ViewBag.MainGuestId" />
+
 
             <div class="row">
                 <!-- Guest Info Section -->
@@ -199,4 +202,6 @@
     });
 
     updateTotalGuestsDisplay();
+
+
 </script>
