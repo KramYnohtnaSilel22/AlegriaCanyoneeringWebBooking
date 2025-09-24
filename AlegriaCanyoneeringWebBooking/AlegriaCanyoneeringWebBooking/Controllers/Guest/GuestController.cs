@@ -23,7 +23,6 @@ using System.Threading.Tasks;
 
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
-
 {
     [Authorize(Roles = "Super Admin,Admin,Operator")]
     public class GuestController : Controller

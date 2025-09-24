@@ -14,7 +14,8 @@
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap5.min.css">
-
+    <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" />
     <!-- Your custom styles -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
@@ -58,17 +59,16 @@
                             </li>
                             <!-- Reserve Bookings -->
                             <li class="nav-item">
-                                <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="reservebooking">
+                                <a class="nav-link text-white fw-semibold" asp-controller="Reserve" asp-action="reservebooking">
                                     <i class="bi bi-journal-check me-1"></i>Reserve Bookings
                                 </a>
                             </li>
                             <!-- Final Bookings -->
                             <li class="nav-item">
-                                <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="FinalBookingBatch">
+                                <a class="nav-link text-white fw-semibold" asp-controller="Reserve" asp-action="FinalBookingBatch">
                                     <i class="bi bi-journal-check me-1"></i>Final Bookings
                                 </a>
                             </li>
-
                             <!-- Operator -->
                             <li class="nav-item">
                                 <a class="nav-link text-white fw-semibold" asp-controller="Operators" asp-action="Index">
@@ -140,17 +140,16 @@
                             </li>
                             <!-- Reserve Bookings -->
                             <li class="nav-item">
-                                <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="reservebooking">
+                                <a class="nav-link text-white fw-semibold" asp-controller="Reserve" asp-action="reservebooking">
                                     <i class="bi bi-journal-check me-1"></i>Reserve Bookings
                                 </a>
                             </li>
                             <!-- Final Bookings -->
                             <li class="nav-item">
-                                <a class="nav-link text-white fw-semibold" asp-controller="Guest" asp-action="FinalBookingBatch">
+                                <a class="nav-link text-white fw-semibold" asp-controller="Reserve" asp-action="FinalBookingBatch">
                                     <i class="bi bi-journal-check me-1"></i>Final Bookings
                                 </a>
                             </li>
-
                             <!-- Operator -->
                             <li class="nav-item">
                                 <a class="nav-link text-white fw-semibold" asp-controller="Operators" asp-action="Index">
@@ -289,33 +288,28 @@
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.1/js/dataTables.bootstrap5.min.js"></script>
-
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
     <!-- Your custom scripts -->
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <!-- Validation scripts -->
     <partial name="_ValidationScriptsPartial" />
     <script>
-               $(function () {
+        $(function () {
             $("#example1").DataTable({
                 "responsive": true,
-                "lengthChange": false,
+                "lengthChange": true, // Allow dropdown for changing page size
                 "autoWidth": false,
-
+                "pageLength": 10, // Default rows per page
+                "lengthMenu": [ [10, 20, 30, 40, 50, 60], [10, 20, 30, 40, 50, 60,70,80,90,100] ] // Dropdown options
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-
-            // $('#example2').DataTable({
-            //     "paging": true,
-            //     "lengthChange": false,
-            //     "searching": false,
-            //     "ordering": true,
-            //     "info": true,
-            //     "autoWidth": false,
-            //     "responsive": true,
-            // });
         });
-
     </script>
+
+
+
     <!-- Render additional scripts from views -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>

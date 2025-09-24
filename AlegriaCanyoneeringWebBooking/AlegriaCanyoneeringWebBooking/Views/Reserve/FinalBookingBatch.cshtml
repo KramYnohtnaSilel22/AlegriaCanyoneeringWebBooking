@@ -9,12 +9,21 @@
 
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Final Booking</h2>
+    <!-- Filter Section -->
 
+    <div class="col-md-6 mb-3">
+            <label for="sortFilter" class="form-label">Sort by Date:</label>
+            <select id="sortFilter" class="form-select" onchange="BookingfilterByDate()">
+                <option value="all">All</option>
+                <option value="latest">Latest</option>
+                <option value="oldest">Oldest</option>
+            </select>
+        </div>
     @if (allBatches.Any())
     {
         <div class="table-responsive">
             <table id="example1" class="table text-truncate">
-                <thead class="table-dark">
+                <thead class="table-dark" >
                     <tr>
                         <th>Batch</th>
                         <th>Total Guest</th>
@@ -25,7 +34,7 @@
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="BookingTableBody">
                     @foreach (var batch in allBatches)
                     {
                         // Only show if BatchCode exists (which is always non-null for Reserve table)
@@ -83,7 +92,7 @@
 
                                         <!-- Primary Guest Section -->
                                         <h6 class="text-primary mb-3"><i class="fas fa-user"></i> Primary Guest</h6>
-                                        <table class="table table-bordered table-striped">
+                                           <table class="table table-bordered table-striped ">
                                             <thead class="table-light">
                                                 <tr>
                                                     <th>Operator</th>
@@ -172,3 +181,26 @@
         </div>
     }
 </section>
+        <script>
+            function BookingfilterByDate() {
+                var filter = $('#sortFilter').val();
+                var rows = $('#BookingTableBody tr').get();
+
+                rows.sort(function (a, b) {
+                    var dateA = new Date($(a).find('td').eq(3).text());
+                    var dateB = new Date($(b).find('td').eq(3).text());
+
+                    if (filter === 'latest') {
+                        return dateB - dateA;
+                    } else if (filter === 'oldest') {
+                        return dateA - dateB;
+                    } else {
+                        return 0; // No sorting for "all"
+                    }
+                });
+
+                $.each(rows, function (index, row) {
+                    $('#BookingTableBody').append(row);
+                });
+            }
+        </script>
