@@ -9,7 +9,7 @@
 
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Final Booking</h2>
-  
+
     @if (allBatches.Any())
     {
         <div class="table-responsive">
@@ -21,7 +21,7 @@
                         <th>Operator</th>
                         <th>Arrival Date</th>
                         <th>Status</th>
-                  
+
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -40,24 +40,24 @@
                             <tr>
                                 <td>@batch.BatchCode</td>
                                 <td>@batch.TotalGuests</td>
-                              <td>@operatorName</td>
+                                <td>@operatorName</td>
                                 <td>@batch.ArrivalDate</td>
                                 <td>
                                     <span class="badge bg-primary text-uppercase px-2 py-1">@batch.Status</span>
                                 </td>
-                          
+
                                 <td class="text-center">
                                     <button type="button"
                                             class="btn btn-primary btn-sm d-inline-flex align-items-center rounded-pill shadow-sm px-3 py-1"
                                             data-bs-toggle="modal"
                                             data-bs-target="#allGuestsModal-@batch.BatchCode">
                                         View
-                                        <i class="fas fa-users me-2"></i> 
+                                        <i class="fas fa-users me-2"></i>
                                     </button>
 
                                 </td>
                             </tr>
-                        
+
                         }
                     }
                 </tbody>
@@ -95,15 +95,15 @@
                                                     <th>Area</th>
 
                                                     <th>Arrival Date</th>
-                                                 
-                                                 
+
+
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @if (primaryGuest != null)
                                                 {
                                                     <tr class="table-success">
-                                                    
+
                                                         <td>@(primaryGuest.OperatorList?.BusinessName ?? "N/A")</td>
                                                         <td>@primaryGuest.Fullname</td>
                                                         <td>@primaryGuest.Age</td>
@@ -126,7 +126,7 @@
                                                     <tr>
                                                         <th>Full Name</th>
                                                         <th>Age</th>
-                                                            <th>Contact No.:</th>
+                                                        <th>Contact No.:</th>
                                                         <th>Gender</th>
                                                         <th>Nationality</th>
                                                     </tr>
@@ -136,7 +136,7 @@
                                                     {
                                                         <tr>
                                                             <td>@guest.Fullname</td>
-                                                      
+
                                                             <td>@guest.Age</td>
                                                             <td>@guest.ContactNumber</td>
                                                             <td>@guest.Gender</td>

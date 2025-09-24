@@ -3,6 +3,19 @@
     ViewData["Title"] = "Saved Batch Leaders";
 }
 
+@if (TempData["ToastMessage"] != null)
+{
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="toastMessage" class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i> @TempData["ToastMessage"]
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+}
 @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
 {
     <h2 class="fw-bold mb-4 text-success">Save Guests</h2>
@@ -34,9 +47,10 @@
 
                     @*        <td>@guest.Fullname</td> *@
                     <td>
-                        <a asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-primary" title="View">View
-                            <i class="fas fa-users me-2"></i>
+                        <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-primary" title="View">
+                            View <i class="fas fa-users me-2"></i>
                         </a>
+
                   @*       <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-sm btn-warning text-dark" title="Edit">
                             <i class="fas fa-edit"></i>
                         </a> *@
@@ -45,7 +59,7 @@
                             <form asp-action="UpdateStatus" method="post" class="d-inline">
                                 <input type="hidden" name="id" value="@guest.GuestId" />
                                 <input type="hidden" name="status" value="reserved" />
-                                <button type="submit" class="btn btn-sm btn-success" title="Submit">
+                                <button type="submit" class="btn btn-sm btn-success" title="Submit">Submit
                                     <i class="fas fa-check"></i>
                                 </button>
                             </form>
@@ -61,3 +75,15 @@ else
 {
     <div>No saved batch leaders</div>
 }
+
+ <script>
+        // Trigger the toast when the page loads and TempData has a message
+    $(document).ready(function () {
+        // Check if the toast element exists
+        var toastElement = document.getElementById('toastMessage');
+        if (toastElement) {
+            var toast = new bootstrap.Toast(toastElement);
+            toast.show(); // Show the toast message
+        }
+    });
+ </script>

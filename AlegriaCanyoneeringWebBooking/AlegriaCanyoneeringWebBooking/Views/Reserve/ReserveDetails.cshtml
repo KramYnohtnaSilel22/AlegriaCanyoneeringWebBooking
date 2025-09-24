@@ -59,7 +59,7 @@
                 </div>
 
                 <div class="card-footer bg-white d-flex justify-content-between rounded-bottom-4 p-3">
-              @*       <a asp-action="EditReserve" asp-route-id="@Model.Guest.GuestId"
+                    @*       <a asp-action="EditReserve" asp-route-id="@Model.Guest.GuestId"
                        class="btn btn-warning shadow-sm rounded-pill px-4">
                         <i class="fas fa-edit me-2"></i> Edit
                     </a> *@
@@ -67,12 +67,16 @@
                        class="btn btn-outline-secondary shadow-sm rounded-pill px-4">
                         <i class="fas fa-arrow-left me-2"></i> Back
                     </a>
-                    <a asp-action="NewBooking" asp-route-batch="@Model.Guest.Batch" asp-route-id="@Model.Guest.GuestId"
+                    <a asp-controller="Guest"
+                       asp-action="NewBooking"
+                       asp-route-batch="@Model.Guest.Batch"
+                       asp-route-id="@Model.Guest.GuestId"
                        class="btn btn-outline-primary rounded-pill"
                        title="Add another guest to this booking">
                         <i class="fas fa-user-plus me-1"></i>
                         Add Guest
                     </a>
+
                 </div>
             </div>
 
@@ -93,7 +97,7 @@
                             <div class="card shadow h-100 border-0 rounded-4 hover-shadow">
                                 <div class="card-header border-0 bg-white rounded-top-4 py-3 d-flex align-items-center justify-content-between">
                                     <div>
-                                    
+
                                         <span class="badge ms-2
                             @(guest.BookingStatus == "confirmed" ? "bg-success" :
                               guest.BookingStatus == "anticipated" ? "bg-warning text-dark" :
@@ -160,24 +164,24 @@
     </div>
 
 </div>
-                        
+
 @section Scripts {
     <!-- Font Awesome (optional if already in _Layout) -->
     <script src="https://kit.fontawesome.com/a2d0507b9c.js" crossorigin="anonymous"></script>
     <style>
-                    .hover-shadow:hover {
-                        transform: translateY(-6px) scale(1.02);
-                        box-shadow: 0 14px 32px rgba(0,0,0,0.18) !important;
-                        transition: .25s;
-                    }
+        .hover-shadow:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 14px 32px rgba(0,0,0,0.18) !important;
+            transition: .25s;
+        }
 
-                    .badge {
-                        letter-spacing: 0.5px;
-                    }
+        .badge {
+            letter-spacing: 0.5px;
+        }
 
-                    .card {
-                        border-radius: 1.25rem;
-                    }
+        .card {
+            border-radius: 1.25rem;
+        }
 
     </style>
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -219,53 +220,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return Ok(model);
         }
 
-        // POST: api/guest/finalize-booking-batch
-        [HttpPost("finalize-booking-batch")]
-        public async Task<IActionResult> FinalBookingBatchApi([FromBody] string batchCode)
-        {
-            if (string.IsNullOrEmpty(batchCode))
-            {
-                return BadRequest(new { message = "BatchCode is required.", status = "error" });
-            }
-
-            var guestsToFinalize = await _context.Guests
-                .Where(g => g.Batch == batchCode && g.BookingStatus != "finalized")
-                .ToListAsync();
-
-            if (guestsToFinalize.Any())
-            {
-                foreach (var guest in guestsToFinalize)
-                {
-                    guest.BookingStatus = "finalized";
-                }
-                await _context.SaveChangesAsync();
-            }
-
-            var batchGuests = await _context.Guests
-                .Where(g => g.Batch == batchCode)
-                .ToListAsync();
-
-            if (batchGuests.Count > 0 && !await _context.reserve.AnyAsync(r => r.BatchCode == batchCode))
-            {
-                var first = batchGuests.First();
-                DateTime arrivalDate;
-                try { arrivalDate = Convert.ToDateTime(first.ArrivalDate); }
-                catch { arrivalDate = DateTime.Now; }
-
-                _context.reserve.Add(new Reserve
-                {
-                    BatchCode = batchCode,
-                    OperatorId = first.OperatorId,
-                    TotalGuests = batchGuests.Count,
-                    ArrivalDate = arrivalDate,
-                    Status = "finalized",
-                    CreatedDate = DateTime.UtcNow
-                });
-                await _context.SaveChangesAsync();
-            }
-
-            return Ok(new { message = "Batch finalized successfully", status = "success" });
-        }
+  
 
         // Helper Methods
         private string GenerateRFID() => "RFID" + Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
