@@ -26,7 +26,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // GET: Drivers/Details/5
-        public async Task<IActionResult> Details(long id)
+        public async Task<IActionResult> Details(int id)
         {
             var driver = await _context.Drivers.FindAsync(id);
             if (driver == null)
@@ -35,6 +35,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
             return View(driver);
         }
+
 
         // GET: Drivers/Create
         public IActionResult Create()
@@ -80,7 +81,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // GET: Drivers/Edit/5
-        public async Task<IActionResult> Edit(long id)
+        public async Task<IActionResult> Edit(int id)
         {
             var driver = await _context.Drivers.FindAsync(id);
             if (driver == null)
@@ -89,6 +90,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
             return View(driver);
         }
+
 
         // POST: Drivers/Edit/5
         [HttpPost]
@@ -134,7 +136,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // GET: Drivers/Delete/5
-        public async Task<IActionResult> Delete(long id)
+        public async Task<IActionResult> Delete(int id)
         {
             var driver = await _context.Drivers.FindAsync(id);
             if (driver == null)
@@ -147,7 +149,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Drivers/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(long id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var driver = await _context.Drivers.FindAsync(id);
             if (driver != null)
@@ -157,5 +159,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
     }
 }
