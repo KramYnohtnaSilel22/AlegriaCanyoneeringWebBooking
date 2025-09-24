@@ -17,7 +17,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         private readonly ApplicationDbContext _context;
 
         public AuthController(ApplicationDbContext context)
-        { 
+        {
             _context = context;
         }
 
