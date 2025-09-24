@@ -129,7 +129,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> FinalBookingBatch()
         {
             // Get all Reserve batches, order by CreatedDate DESC
-            var allBatches = await _context.reserve.OrderByDescending(r => r.CreatedDate).ToListAsync();
+            var allBatches = await _context.reserve.OrderByDescending(r => r.ArrivalDate).ToListAsync();
             ViewBag.AllBatches = allBatches;
 
             // Gather all guests for each batch for the modal detail
@@ -185,14 +185,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 try { arrivalDate = Convert.ToDateTime(first.ArrivalDate); }
                 catch { arrivalDate = DateTime.Now; }
 
-                _context.reserve.Add(new Models.Reserve
+                _context.reserve.Add(new Reserve
                 {
                     BatchCode = BatchCode,
                     OperatorId = first.OperatorId,
                     TotalGuests = batchGuests.Count,
-                    ArrivalDate = arrivalDate,
+           
                     Status = "finalized",
-                    CreatedDate = DateTime.UtcNow
+                    ArrivalDate = DateTime.Now
+
                 });
                 await _context.SaveChangesAsync();
             }

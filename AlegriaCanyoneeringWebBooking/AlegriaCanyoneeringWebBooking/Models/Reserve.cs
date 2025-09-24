@@ -11,9 +11,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string BatchCode { get; set; }
         public int? OperatorId { get; set; }
         public int TotalGuests { get; set; }
-        public DateTime? ArrivalDate { get; set; }
+
         public string Status { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public DateTime ArrivalDate { get; set; }
     }
 
 }
