@@ -14,13 +14,13 @@
     <thead>
         <tr>
             <th>Name</th>
+            <th>Email</th>
             <th>Business Name</th>
             <th>Age</th>
             <th>Gender</th>
             <th>Username</th>
-            <th>Password</th>
             <th>Role</th>
-            <th></th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -28,11 +28,11 @@
         {
             <tr>
                 <td>@item.Name</td>
+                <td>@item.EmailAddress</td>
                 <td>@item.BusinessName</td>
                 <td>@item.Age</td>
                 <td>@item.Gender</td>
                 <td>@item.Username</td>
-             @*    <td>@item.Password</td> *@
                 <td>@item.Roles?.Name</td>
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.OperatorId" class="btn btn-sm btn-warning">Edit</a>

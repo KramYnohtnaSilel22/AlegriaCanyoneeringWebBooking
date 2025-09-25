@@ -32,7 +32,12 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [StringLength(255)]
         [DataType(DataType.Password)]
-        public string? Password { get; set; } 
+        public string? Password { get; set; }
+
+        [Column("EmailAddress")]
+        [DataType(DataType.EmailAddress)]
+        public string? EmailAddress { get; set; }
+
         [Required]
         [Column("RoleId")]
         public int RoleId { get; set; }

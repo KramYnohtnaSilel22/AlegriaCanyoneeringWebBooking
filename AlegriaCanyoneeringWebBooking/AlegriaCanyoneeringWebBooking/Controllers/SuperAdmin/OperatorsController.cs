@@ -48,13 +48,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Operators/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,BusinessName,Age,Gender,Username,Password,RoleId")] Operator op)
+        public async Task<IActionResult> Create([Bind("Name,BusinessName,Age,Gender,Username,Password,EmailAddress,RoleId")] Operator op)
         {
 
             if (ModelState.IsValid)
             {
-                // Set a default role for Operator Only
-                op.RoleId = 3;
 
                 op.Password = PasswordHelper.HashPassword(op.Password); // Unified password hashing
                 _context.Add(op);
@@ -85,7 +83,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Edit(
             int id,
             // 👉 Bind the correct key name
-            [Bind("OperatorId,Name,BusinessName,Age,Gender,Username,RoleId")] Operator op,
+            [Bind("OperatorId,Name,BusinessName,Age,Gender,Username,EmailAddress,RoleId")] Operator op,
             string? NewPassword)
         {
             if (id != op.OperatorId) return NotFound();

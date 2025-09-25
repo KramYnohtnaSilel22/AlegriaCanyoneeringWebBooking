@@ -26,7 +26,7 @@
 
                     <h4 class="text-center fw-bold mb-4">Login on your acccount</h4>
 
-                    <form asp-action="Login" asp-controller="Auth" method="post" novalidate>
+                    <form asp-action="Login" asp-controller="Authentication" method="post" novalidate>
                         @Html.AntiForgeryToken()
 
 
@@ -52,7 +52,7 @@
 
                         <!-- Optional: "Forgot password?" link -->
                         <div class="text-center mt-3">
-                            <a asp-action="ForgotPassword" asp-controller="Auth">Forgot password?</a>
+                            <a asp-action="ForgotPassword" asp-controller="Authentication">Forgot password?</a>
                         </div>
                     </form>
 
