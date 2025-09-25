@@ -84,15 +84,23 @@
                         <legend>Nationality & Booking</legend>
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityType" class="form-label">Nationality Type</label>
-                            <select asp-for="NewGuest.NationalityType" class="form-select">
+                            <select asp-for="NewGuest.NationalityType" class="form-select" id="NationalityType">
+                          
                                 <option value="Local">Local</option>
                                 <option value="Foreign">Foreign</option>
                             </select>
                         </div>
+
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityId" class="form-label">Nationality</label>
-                            <select asp-for="NewGuest.NationalityId" asp-items="ViewBag.NationalityList" class="form-select"></select>
+                            <select asp-for="NewGuest.NationalityId" class="form-select" id="NationalityId"></select>
+                            <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
+
+                            
+                           
                         </div>
+
+
                         <div class="mb-3">
                             <label asp-for="NewGuest.Date" class="form-label">Booking Date</label>
                             <input asp-for="NewGuest.Date" type="date" class="form-control" id="BookingDateInput"
@@ -130,6 +138,66 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
 <script>
+
+      $(document).ready(function () {
+        const $type = $('#NationalityType');
+        const $list = $('#NationalityId');
+        const selectedNationalityId = '@Model.NewGuest.NationalityId';// Always compare as string
+        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+
+        function updateNationalityIdOptions(typeChoice) {
+            $list.empty(); // Always clear options
+
+            if (typeChoice === 'Local') {
+                const localOptions = [
+                    { id: '1000', text: 'Within Cebu Province' },
+                    { id: '1001', text: 'Outside Cebu Province' }
+                ];
+
+                localOptions.forEach(opt => {
+                    const option = new Option(opt.text, opt.id);
+                    if (selectedNationalityId === opt.id) {
+                        option.selected = true;
+                    }
+                    $list.append(option);
+                });
+            } else if (typeChoice === 'Foreign') {
+                $list.append(new Option('Loading...', ''));
+
+                $.getJSON(getNationalitiesUrl)
+                    .done(function (data) {
+                        $list.empty(); // clear any existing options
+                        $list.append(new Option('-- Select Nationality --', ''));
+
+                        data.forEach(item => {
+                            const itemId = item.nationalityId.toString();
+                            const option = new Option(item.natName, itemId);
+                            if (selectedNationalityId === itemId) {
+                                option.selected = true;
+                            }
+                            $list.append(option);
+                        });
+                    })
+                    .fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error('AJAX error:', textStatus, errorThrown);
+                        $list.empty().append(new Option('Error loading nationalities', ''));
+                    });
+            } else {
+                $list.append(new Option('-- Select Nationality Type First --', ''));
+            }
+        }
+
+        $type.on('change', function () {
+            updateNationalityIdOptions($(this).val());
+        });
+
+        // Trigger on page load (pre-fill if value exists)
+        if ($type.val()) {
+            updateNationalityIdOptions($type.val());
+        }
+    });
+
+
     const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
 
     $(document).ready(function () {
@@ -162,7 +230,7 @@
             Gender: $('[name="NewGuest.Gender"]').val(),
             ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
             NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-            NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
+            NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()),
             Area: $('[name="NewGuest.Area"]').val(),
             Date: $('[name="NewGuest.Date"]').val(),
             ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
