@@ -1,13 +1,18 @@
 ﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+
 @{
     ViewData["Title"] = "Reserved Booking";
 }
+
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Reserved Booking</h2>
+
+    @* Toast Notification *@
     @if (TempData["ToastMessage"] != null)
     {
         <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-            <div class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true" id="toastMessage">
+            <div class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show"
+                 role="alert" aria-live="assertive" aria-atomic="true" id="toastMessage">
                 <div class="d-flex">
                     <div class="toast-body">
                         <i class="fas fa-info-circle me-2"></i> @TempData["ToastMessage"]
@@ -17,18 +22,16 @@
             </div>
         </div>
     }
+
     @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
     {
         <div class="table-responsive">
             <table id="example1" class="table text-truncate">
                 <thead class="table-dark">
                     <tr>
-                        @*    <th>Full Name</th> *@
                         <th>Status</th>
                         <th>Operator</th>
                         <th>Nationality</th>
-                        @*    <th>Batch</th> *@
-
                         <th>Total of Guests</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -43,8 +46,8 @@
                             "confirmed" => "success",
                             _ => "secondary"
                         };
+
                         <tr>
-                            @*        <td class="fw-semibold">@guest.Fullname</td> *@
                             <td>
                                 <span class="badge bg-@badgeClass text-uppercase px-2 py-1">
                                     @guest.BookingStatus
@@ -52,19 +55,24 @@
                             </td>
                             <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
                             <td>@(guest.Nationality?.NatName ?? "N/A")</td>
-                            @*     <td>@guest.Batch</td> *@
                             <td>@guest.NumberOfGuests</td>
                             <td class="text-center">
-                                <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-primary" title="View">
+                                <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.GuestId"
+                                   class="btn btn-sm btn-primary" title="View">
                                     View <i class="fas fa-users me-2"></i>
                                 </a>
 
-                                @*  <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-warning btn-sm text-dark border"><i class="fas fa-edit"></i></a> *@
-                                <!-- View QR Button -->
+                                @* Show QR Modal Button *@
                                 <button type="button" class="btn btn-info btn-sm"
                                         onclick="showQrModal('@guest.GuestId')">
-                                    <i class="fas fa-qrcode"></i>QR CODE
+                                    <i class="fas fa-qrcode"></i> QR CODE
                                 </button>
+
+                                @* Hidden Confirmation Form *@
+                                <form id="confirmForm-@guest.GuestId" method="post" asp-action="FinalBookingBatch"
+                                      asp-controller="Reserve" class="d-none">
+                                    <input type="hidden" name="BatchCode" value="@guest.Batch" />
+                                </form>
                             </td>
                         </tr>
                     }
@@ -80,65 +88,96 @@
         </div>
     }
 </section>
+
 @section Scripts {
     <script>
+        // Toast for TempData
+        $(document).ready(function () {
+            var toastElement = document.getElementById('toastMessage');
+            if (toastElement) {
+                var toast = new bootstrap.Toast(toastElement);
+                toast.show();
+            }
+        });
+
+        // Show Modal
         function showQrModal(guestId) {
             const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
             modal.show();
         }
+
+        // Draw text + QR onto canvas, download, then submit form
+        function downloadAndConfirm(guestId, operatorName, numberOfGuests) {
+            const qrImage = document.getElementById('qrImage-' + guestId);
+            const canvas = document.getElementById('qrCanvas-' + guestId);
+            const ctx = canvas.getContext('2d');
+
+            if (!qrImage || !canvas) {
+                alert("QR code not available.");
+                return;
+            }
+
+            // Clear canvas and add white background
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw text
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 14px Arial";
+            ctx.fillText("Operator: " + operatorName, 10, 20);
+            ctx.fillText("Guests: " + numberOfGuests, 10, 40);
+
+            // Draw QR code
+            ctx.drawImage(qrImage, 20, 60, 180, 180);
+
+            // Export to image and download
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png");
+            link.download = `QRCode_${guestId}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Submit form
+            setTimeout(() => {
+                const form = document.getElementById('confirmForm-' + guestId);
+                form.submit();
+            }, 1000);
+        }
     </script>
-    <!-- QR View Modal for each guest, now includes CONFIRM button inside -->
+
+    @* Modal per guest *@
     @foreach (var guest in Model.ReservedGuests ?? Enumerable.Empty<dynamic>())
     {
         <div class="modal fade" id="qrViewModal-@guest.GuestId" tabindex="-1"
              aria-labelledby="qrViewModalLabel-@guest.GuestId" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content text-center">
-                    <div class="modal-header">
-                        <h6 class="modal-title">
-                            Operator: @(guest.OperatorList?.BusinessName ?? "N/A")
-                        </h6>
-                        <h6 class="modal-title">
-                            Total Guests: @guest.NumberOfGuests
-                        </h6>
-
+                    <div class="modal-header d-flex flex-column">
+             
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @if (!string.IsNullOrEmpty(guest.QRBase64))
-                        {
-                            <div>
-                                <img src="@guest.QRBase64" alt="QR for @guest.Fullname" style="width:180px;height:180px;" />
-                                <a href="@Url.Action("DownloadQRCode", "Guest", new { base64Image = guest.QRBase64, fileName = "QR_Code_" + guest.Fullname + ".png" })" class="btn btn-primary mt-2">
-                                    <i class="fas fa-download"></i> Download QR Code
-                                </a>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-muted">No QR image generated.</div>
-                        }
-                        <form method="post" asp-action="FinalBookingBatch" asp-controller="Reserve" class="mt-3">
-                            <input type="hidden" name="BatchCode" value="@guest.Batch" />
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-check"></i> Confirm
-                            </button>
-                        </form>
+
+               
+                            <p class="mb-1 fw-semibold">Operator: @(guest.OperatorList?.BusinessName ?? "N/A")</p>
+                            <p class="mb-2 fw-semibold">Total Guest: @guest.NumberOfGuests</p>
+                            <img id="qrImage-@guest.GuestId"
+                                 src="@guest.QRBase64"
+                                 alt="QR for @guest.Fullname"
+                                 style="width:180px;height:180px;" />
+                        </div>
+
+                        <canvas id="qrCanvas-@guest.GuestId" width="220" height="270" style="display:none;"></canvas>
+
+                        <button class="btn btn-success mt-2"
+                                onclick="downloadAndConfirm('@guest.GuestId', '@(guest.OperatorList?.BusinessName ?? "N/A")', '@guest.NumberOfGuests')">
+                            <i class="fas fa-download"></i> Download & Confirm
+                        </button>
                     </div>
-
-
                 </div>
             </div>
-        </div>
+        
     }
 }
-
-
-<script>
-    $(document).ready(function () {
-        var toastElement = document.getElementById('toastMessage');
-        if (toastElement) {
-            var toast = new bootstrap.Toast(toastElement);
-            toast.show();
-        }
-    });
-</script>

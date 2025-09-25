@@ -11,5 +11,13 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public Dictionary<string, List<Guest>> BatchGuests { get; set; }
         public string BatchGuestsJson { get; set; }
 
+        // Read-only values
+        public int? ReadOnlyOperatorId { get; set; }
+        public DateTime? ReadOnlyArrivalDate { get; set; }
+        public DateTime? ReadOnlyBookingDate { get; set; }
+        public string ReadOnlyTourArea { get; set; }
+        public int? ReadOnlyNationalityId { get; set; }
+
+
     }
 }

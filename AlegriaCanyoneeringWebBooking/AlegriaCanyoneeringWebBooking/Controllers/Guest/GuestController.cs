@@ -43,6 +43,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
+
         private async Task PopulateDropdowns()
         {
 
@@ -56,7 +57,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             await PopulateDropdowns();
 
-            // Prepare the list of reserved guests as before
+            // Your existing logic for filtered guests
             var filteredGuests = await _context.Guests
                 .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
                 .GroupBy(g => g.Batch)
@@ -69,9 +70,42 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ReservedGuests = filteredGuests
             };
 
-            // These make sure your form handles the current batch and main guest ID
             ViewBag.CurrentBatch = batch;
             ViewBag.MainGuestId = id;
+
+            // Your existing logic
+            if (!string.IsNullOrEmpty(batch))
+            {
+                var batchDetails = await _context.Guests
+                    .Include(g => g.OperatorList)
+                    .Where(g => g.Batch == batch)
+                    .OrderBy(g => g.GuestId)
+                    .Select(g => new
+                    {
+                        g.OperatorId,
+                        OperatorName = g.OperatorList.BusinessName,
+                        g.Date,
+                        g.ArrivalDate,
+                        g.Area
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (batchDetails != null)
+                {
+                    // Set your model properties here
+                    model.NewGuest.OperatorId = batchDetails.OperatorId;
+                    model.NewGuest.Date = batchDetails.Date;
+                    model.NewGuest.ArrivalDate = batchDetails.ArrivalDate;
+                    model.NewGuest.Area = batchDetails.Area;
+                }
+            }
+
+            // Set ViewBag.IsReadonly based on batch presence
+            ViewBag.IsReadonly = !string.IsNullOrEmpty(batch);
+
+            // Other ViewBags or model assignments
+            ViewBag.CurrentBatch = batch;
+            // etc...
 
             return View(model);
         }
@@ -110,7 +144,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     {
                         // Batch Add: redirect to ReserveDetails with main guest id
                         int redirectId = id.Value;
-                        return RedirectToAction("ReserveDetails", "Reserve", new { id = redirectId });
+                        return RedirectToAction("NewBooking", new { id = redirectId });
 
                     }
                     else
@@ -125,9 +159,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await PopulateDropdowns();
             return View(model);
         }
-
-
-
 
         public async Task<IActionResult> saveguest()
         {
@@ -166,8 +197,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-
-
+     
 
 
 

@@ -1,6 +1,10 @@
 ﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
+@using System.Text.Json
 @{
     ViewData["Title"] = "Guest Management";
+    var batchDetails = ViewBag.BatchDetails ?? new { };
+    var serializedBatch = JsonSerializer.Serialize(batchDetails);
+    bool isReadonly = ViewBag.IsReadonly ?? false;
 }
 <div class="overlay" id="loadingOverlay">
     <div class="spinner"></div>
@@ -23,10 +27,10 @@
 
 <div class="card shadow-lg rounded-4 border-0">
     <div class="card-body p-4">
-        <h4 class=" text-primary mb-4 fw-semibold">Add New Guest</h4>
+        <h4 class="text-primary mb-4 fw-semibold">Add New Guest</h4>
 
         <!-- Guest Info Header -->
-        <div class="mb-3 ">
+        <div class="mb-3">
             <h5 class="text-primary">
                 <i class="fas fa-users me-2"></i>
                 Total Guests: <span id="totalGuestsCount">0</span>
@@ -39,7 +43,6 @@
             <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
             <input type="hidden" id="MainGuestId" name="id" value="@ViewBag.MainGuestId" />
 
-
             <div class="row">
                 <!-- Guest Info Section -->
                 <div class="col-md-6">
@@ -47,7 +50,10 @@
                         <legend>Guest Info</legend>
                         <div class="mb-3">
                             <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
-                            <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select" id="OperatorInput"></select>
+                            <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"
+                                    id="OperatorInput"
+                                    disabled="@(isReadonly ? "disabled" : null)">
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Fullname" class="form-label">Full Name</label>
@@ -89,15 +95,18 @@
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Date" class="form-label">Booking Date</label>
-                            <input asp-for="NewGuest.Date" type="date" class="form-control" id="BookingDateInput" />
+                            <input asp-for="NewGuest.Date" type="date" class="form-control" id="BookingDateInput"
+                                   readonly="@(isReadonly ? "readonly" : null)" />
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.ArrivalDate" class="form-label">Arrival Date</label>
-                            <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control" id="ArrivalDateInput" />
+                            <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control" id="ArrivalDateInput"
+                                   readonly="@(isReadonly ? "readonly" : null)" />
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Area" class="form-label">Tour Area</label>
-                            <select asp-for="NewGuest.Area" class="form-select" id="TourAreaInput">
+                            <select asp-for="NewGuest.Area" class="form-select" id="TourAreaInput"
+                                    disabled="@(isReadonly ? "disabled" : null)">
                                 <option value="">Select Area</option>
                                 <option value="Wonder Falls">Wonder Falls</option>
                                 <option value="Kanlaob">Kanlaob</option>
@@ -116,58 +125,30 @@
         </form>
     </div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
 <script>
-     // Trigger the toast when the page loads and TempData has a message
+    const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
+
     $(document).ready(function () {
-        // Check if the toast element exists
-        var toastElement = document.getElementById('toastMessage');
-        if (toastElement) {
-            var toast = new bootstrap.Toast(toastElement);
-            toast.show(); // Show the toast message
-        }
-    });
-    $(function () {
-        const $type = $('#NationalityType');
-        const $list = $('#NationalityId');
-        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+        if (isReadonly) {
+            // Disable or make readonly only the required inputs
+            $('#OperatorInput, #TourAreaInput').prop('disabled', true);
+            $('#BookingDateInput, #ArrivalDateInput').prop('readonly', true);
 
-        function updateNationalityIdOptions(choice) {
-            $list.empty();
-            if (choice === 'Local') {
-                $list.append(new Option('Within Cebu Province', 'Within Cebu Province'));
-                $list.append(new Option('Outside Cebu Province', 'Outside Cebu Province'));
-            } else if (choice === 'Foreign') {
-                $list.append(new Option('Loading...', ''));
-                $.getJSON(getNationalitiesUrl)
-                    .done(function (data) {
-                        $list.empty();
-                        if (data.length === 0) {
-                            $list.append(new Option('No nationalities found', ''));
-                        } else {
-                            data.forEach(function (name) {
-                                $list.append(new Option(name, name));
-                            });
-                        }
-                    })
-                    .fail(function () {
-                        $list.empty().append(new Option('Error loading', ''));
-                    });
-            } else {
-                $list.append(new Option('-- Select --', ''));
-            }
-        }
-
-        $type.on('change', function () {
-            updateNationalityIdOptions($(this).val());
-        });
-        if ($type.val()) {
-            updateNationalityIdOptions($type.val());
+            // Apply visual styling for readonly/disabled inputs
+            $('#OperatorInput, #BookingDateInput, #ArrivalDateInput, #TourAreaInput').css({
+                'background-color': '#f5f5f5',
+                'color': '#888'
+            });
         }
     });
 
+    // Guest batch management
     let guestsBatch = [];
+
     function updateTotalGuestsDisplay() {
         $('#totalGuestsCount').text(guestsBatch.length);
         $('#saveBtn').prop('disabled', guestsBatch.length === 0);
@@ -194,28 +175,23 @@
         }
         guestsBatch.push(guest);
         updateTotalGuestsDisplay();
-          // Set Batch field to readonly, but DO NOT clear value!
 
-    // Apply readonly to required fields, but don't reset
-      $('#BookingDateInput').prop('readonly', true);
-      $('#ArrivalDateInput').prop('readonly', true);
-      $('#OperatorInput').on('mousedown', function (e) { e.preventDefault(); });
-      $('#TourAreaInput').on('mousedown', function (e) { e.preventDefault(); });
+        // Lock batch-related inputs after adding guest to batch (but don't clear values)
+        $('#BookingDateInput, #ArrivalDateInput').prop('readonly', true);
+        $('#OperatorInput, #TourAreaInput').on('mousedown', function (e) { e.preventDefault(); });
+        $('#OperatorInput, #TourAreaInput, #BookingDateInput, #ArrivalDateInput')
+            .css({'background-color': '#f5f5f5', 'color': '#888'});
 
-      $('#OperatorInput, #TourAreaInput, #BookingDateInput, #ArrivalDateInput').css({
-          'background-color': '#f5f5f5',
-          'color': '#888'
-      });
-
-    $('#CurrentBatch').prop('readonly', true).css({'background-color':'#f5f5f5','color':'#888'});
-    $('#CurrentBatch').css({'background-color':'#f5f5f5','color':'#888'});
+        $('#CurrentBatch')
+            .prop('readonly', true)
+            .css({'background-color':'#f5f5f5','color':'#888'});
     });
 
+    // Serialize batch guests to hidden field on form submit
     $('#guestForm').on('submit', function () {
         $('#BatchGuestsJson').val(JSON.stringify(guestsBatch));
     });
 
+    // Initialize display on page load
     updateTotalGuestsDisplay();
-
-
 </script>
