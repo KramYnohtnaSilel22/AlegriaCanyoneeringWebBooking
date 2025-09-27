@@ -8,17 +8,8 @@
 }
 
 <section class="container py-4">
-    <h2 class="fw-bold mb-4 text-success">Final Booking</h2>
-    <!-- Filter Section -->
+    <h2 class="fw-bold mb-4 text-success">Booked Guest</h2>
 
-    <div class="col-md-6 mb-3">
-            <label for="sortFilter" class="form-label">Sort by Date:</label>
-            <select id="sortFilter" class="form-select" onchange="BookingfilterByDate()">
-                <option value="all">All</option>
-                <option value="latest">Latest</option>
-                <option value="oldest">Oldest</option>
-            </select>
-        </div>
     @if (allBatches.Any())
     {
         <div class="table-responsive">

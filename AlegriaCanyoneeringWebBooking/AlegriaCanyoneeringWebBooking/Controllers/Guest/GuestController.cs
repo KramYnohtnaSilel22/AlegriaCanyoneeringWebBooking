@@ -150,6 +150,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Your existing logic for filtered guests
             var filteredGuests = await _context.Guests
+                 .Include(g => g.NationalityEntity) // Include Nationality info
                 .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved")
                 .GroupBy(g => g.Batch)
                 .Select(grp => grp.OrderBy(x => x.Id).FirstOrDefault())
@@ -205,7 +206,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
         {
-            string batchId = !string.IsNullOrEmpty(batch) ? batch : DateTime.Now.ToString("yyyyMMddHHmmss");
+            string batchId = !string.IsNullOrEmpty(batch) ? batch : await GenerateBatchCode();
 
             if (!string.IsNullOrWhiteSpace(model.BatchGuestsJson))
             {
@@ -217,54 +218,67 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     {
                         guest.BookingStatus = "anticipated";
                         guest.Batch = batchId;
-
-                        // Update the usage of `GenerateRFID` to ensure it matches the expected type.
                         guest.RFID = GenerateRFID();
-                        guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode(); // Optional random code
-
+                        guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
                         guest.Month = DateTime.Today.ToString("yyyy-MM");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
 
                         _context.Guests.Add(guest);
                     }
 
-                    // Save batch guests to database
                     await _context.SaveChangesAsync();
 
-                    // Set number of guests for this batch
+                    // Update guest count
                     var guestsInBatch = await _context.Guests
                         .Where(g => g.Batch == batchId)
                         .ToListAsync();
 
                     int count = guestsInBatch.Count;
                     guestsInBatch.ForEach(g => g.NumberOfGuests = count);
-
                     await _context.SaveChangesAsync();
 
-                    // Success message
                     TempData["ToastMessage"] = "Guests added successfully!";
                     TempData["ToastType"] = "success";
 
-                    // Redirect depending on single or batch mode
                     if (id.HasValue && id.Value > 0)
                     {
                         return RedirectToAction("NewBooking", new { id = id.Value });
                     }
                     else
                     {
-                        return RedirectToAction("NewBooking");
+                        return RedirectToAction("saveguest");
                     }
                 }
 
-                // No guests error
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
                 TempData["ToastType"] = "danger";
             }
 
-            // In case of model error or no data
             await PopulateDropdowns();
             return View(model);
+        }
+        private async Task<string> GenerateBatchCode()
+        {
+            // Get all batch codes that are valid integers only
+            var numericBatches = _context.Guests
+                .AsEnumerable()
+                .Select(g => g.Batch)
+                .Where(batch =>
+                    !string.IsNullOrWhiteSpace(batch) &&
+                    batch.All(char.IsDigit) &&
+                    int.TryParse(batch, out _)) // ensure it's parseable
+                .Select(batch => int.Parse(batch)) // now it's safe
+                .OrderByDescending(x => x)
+                .ToList();
 
+            int nextBatchCode = 10000;
+
+            if (numericBatches.Any())
+            {
+                nextBatchCode = numericBatches.First() + 1;
+            }
+
+            return nextBatchCode.ToString();
         }
 
         private string GenerateRFIDCode()

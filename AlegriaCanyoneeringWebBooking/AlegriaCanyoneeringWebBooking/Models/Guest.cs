@@ -12,9 +12,11 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Display(Name = "Full Name")]
         public string? Fullname { get; set; }   // <-- Remove [Required] for batch
 
-        [StringLength(1000, ErrorMessage = "Age cannot exceed 1000 characters")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "Age must contain only numbers.")]
+        [StringLength(3, ErrorMessage = "Age cannot exceed 3 digits.")]
         [Display(Name = "Age")]
-        public string? Age { get; set; }        // <-- Remove [Required] for batch
+        public string? Age { get; set; }
+
 
         [Display(Name = "Number of Guests")]
         [Column("number_of_guests")]
