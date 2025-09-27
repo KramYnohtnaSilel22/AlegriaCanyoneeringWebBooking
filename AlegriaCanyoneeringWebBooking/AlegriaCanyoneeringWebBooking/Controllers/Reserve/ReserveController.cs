@@ -203,6 +203,43 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return RedirectToAction("reservebooking", new { BatchCode }); // Adjust if your GET takes no param
         }
 
+        public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
+        {
+            var model = new GuestListViewModel();
+            var allBatches = new List<Reserve>();
+
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                // Ensure endDate includes the whole day by adding time to end of day
+                var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
+
+                allBatches = await _context.reserve
+                    .Where(r => r.ArrivalDate >= startDate.Value.Date && r.ArrivalDate <= endDateInclusive)
+                    .OrderBy(r => r.ArrivalDate)
+                    .ToListAsync();
+
+                var batchCodes = allBatches.Select(b => b.BatchCode).ToList();
+
+                var batchGuests = await _context.Guests
+                    .Include(g => g.OperatorList)
+                    .Include(g => g.NationalityEntity)
+                    .Where(g => batchCodes.Contains(g.Batch))
+                    .ToListAsync();
+
+                model.BatchGuests = batchGuests
+                    .GroupBy(g => g.Batch)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                ViewBag.AllBatches = allBatches;
+            }
+            else
+            {
+                ViewBag.AllBatches = new List<Reserve>();
+            }
+
+            return View(model);
+        }
+
 
     }
 }

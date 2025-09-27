@@ -61,7 +61,8 @@
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Age" class="form-label">Age</label>
-                            <input asp-for="NewGuest.Age" type="number" class="form-control" placeholder="e.g., 25" />
+                            <input asp-for="NewGuest.Age" type="number" class="form-control" placeholder="e.g., 25" pattern="\d*" inputmode="numeric" />
+
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Gender" class="form-label">Gender</label>
@@ -138,6 +139,14 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
 <script>
+       // Loading overlay handling
+    $(window).on('load', function () {
+        $('#successMessage').text('Page loaded successfully!').fadeIn(500);
+
+        setTimeout(function () {
+            $('#loadingOverlay').fadeOut(500);
+        }, 1000);
+    });
 
       $(document).ready(function () {
         const $type = $('#NationalityType');

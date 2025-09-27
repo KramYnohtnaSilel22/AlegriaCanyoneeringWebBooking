@@ -57,23 +57,32 @@
                             <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
                             <td>@guest.NumberOfGuests</td>
                             <td class="text-center">
-                                <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.Id"
-                                   class="btn btn-sm btn-primary" title="View">
-                                    View <i class="fas fa-users me-2"></i>
-                                </a>
+                                <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-1">
 
-                                @* Show QR Modal Button *@
-                                <button type="button" class="btn btn-info btn-sm"
-                                        onclick="showQrModal('@guest.Id')">
-                                    <i class="fas fa-qrcode"></i> QR CODE
-                                </button>
+                                    <!-- 🔍 View Button -->
+                                    <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.Id"
+                                       class="btn btn-sm btn-primary d-flex align-items-center" title="View">
+                                        <i class="fas fa-users me-1"></i> View
+                                    </a>
 
-                                @* Hidden Confirmation Form *@
-                                <form id="confirmForm-@guest.Id" method="post" asp-action="FinalBookingBatch"
-                                      asp-controller="Reserve" class="d-none">
-                                    <input type="hidden" name="BatchCode" value="@guest.Batch" />
-                                </form>
+                                    <!-- 📷 View QR Code -->
+                                    <button type="button" class="btn btn-sm btn-info d-flex align-items-center"
+                                            onclick="showQrModal('@guest.Id')">
+                                        <i class="fas fa-qrcode me-1"></i>View QR Code
+                                    </button>
+
+                                    <!-- ✅ Confirm Booking -->
+                                    <form id="confirmForm-@guest.Id" method="post"
+                                          asp-action="FinalBookingBatch" asp-controller="Reserve" class="m-0">
+                                        <input type="hidden" name="BatchCode" value="@guest.Batch" />
+                                        <button type="submit" class="btn btn-sm btn-success d-flex align-items-center">
+                                            <i class="fas fa-check me-1"></i> Confirm
+                                        </button>
+                                    </form>
+
+                                </div>
                             </td>
+
                         </tr>
                     }
                 </tbody>
@@ -168,10 +177,14 @@
 
                     <canvas id="qrCanvas-@guest.Id" width="220" height="270" style="display:none;"></canvas>
 
-                    <button class="btn btn-success mt-2"
-                            onclick="downloadAndConfirm('@guest.Id', '@(guest.OperatorList?.BusinessName ?? "N/A")', '@guest.NumberOfGuests')">
-                        <i class="fas fa-download"></i> Download & Confirm
-                    </button>
+                    <!-- 🔽 Download QR Button -->
+                    <a class="btn btn-success mt-2"
+                       href="@Url.Action("DownloadQRCode", "Guest", new { base64Image = guest.QRBase64, fileName = $"QRCode_{guest.Id}.png" })">
+                        <i class="fas fa-download"></i> Download QR
+                    </a>
+
+
+
                 </div>
             </div>
         </div>
