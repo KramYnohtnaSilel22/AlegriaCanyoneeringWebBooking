@@ -6,7 +6,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
     public class Guest
     {
         [Key]
-        public int GuestId { get; set; }
+        public int Id { get; set; }
 
         [StringLength(1000, ErrorMessage = "Full name cannot exceed 1000 characters")]
         [Display(Name = "Full Name")]
@@ -32,7 +32,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int? NationalityId { get; set; }
 
         // Navigation property for related Nationality
-        public Nationality Nationality { get; set; } // Ensure this navigation property is added
+        public Nationality? NationalityEntity { get; set; } // ✅ Isa ra ni
 
 
         [StringLength(1000, ErrorMessage = "Gender cannot exceed 1000 characters")]
@@ -54,13 +54,20 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Display(Name = "Short Date")]
         [Column("dateshort")]
         public string? DateShort { get; set; }
-
         [Column("rfid")]
-        public string? RFID { get; set; }
+        public int? RFID { get; set; }  // system-assigned guest code
 
+        [Column("rfIDCode")]
+        public string? RFIDCode { get; set; }  // real tag code from RFID card
+
+
+        [Column("year")]
+            public string? Year { get; set; }
+
+        [Column("status")]
         [StringLength(50)]
-        [Column("bookingstatus")]
         public string BookingStatus { get; set; } = "anticipated";
+
 
         [Column("qrcode")]
         public string? QrCode { get; set; }
@@ -75,14 +82,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int? OperatorId { get; set; }
         public OperatorList? OperatorList { get; set; }
 
-        [Column("DriverId")]
-        public int? DriverId { get; set; }
-        public Driver? Driver { get; set; }
 
-        [Column("GuideId")]
-        public int? GuideId { get; set; }
-        [ForeignKey(nameof(GuideId))]
-        public Guide? Guide { get; set; }
 
         [NotMapped] public string? QRBase64 { get; set; }
         [NotMapped] public string? QRText { get; set; }

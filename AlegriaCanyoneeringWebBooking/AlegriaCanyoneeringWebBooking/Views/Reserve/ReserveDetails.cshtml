@@ -36,7 +36,7 @@
                         <div class="col-md-6"><i class="fas fa-user-clock me-2 text-muted"></i><strong>Age:</strong> @Model.Guest.Age</div>
                         <div class="col-md-6"><i class="fas fa-phone me-2 text-muted"></i><strong>Contact #:</strong> @Model.Guest.ContactNumber</div>
                         <div class="col-md-6"><i class="fas fa-flag me-2 text-muted"></i><strong>Nationality:</strong> @Model.Guest.NationalityType</div>
-                        <div class="col-md-6"><i class="fas fa-passport me-2 text-muted"></i><strong>National Status:</strong> @(Model.Guest.Nationality?.NatName ?? "N/A")</div>
+                        <div class="col-md-6"><i class="fas fa-passport me-2 text-muted"></i><strong>National Status:</strong> @(Model.Guest.NationalityEntity?.NatName ?? "N/A")</div>
                         @*      <div class="col-md-6"><strong>Operator:</strong> @Model.Guest.OperatorList?.BusinessName</div>
                         <div class="col-md-6"><strong>Booking Date:</strong> @Model.Guest.Date</div> *@
                         <div class="col-md-6"><i class="fas fa-calendar-alt me-2 text-muted"></i><strong>Arrival Date:</strong> @Model.Guest.ArrivalDate</div>
@@ -70,7 +70,7 @@
                     <a asp-controller="Guest"
                        asp-action="NewBooking"
                        asp-route-batch="@Model.Guest.Batch"
-                       asp-route-id="@Model.Guest.GuestId"
+                       asp-route-id="@Model.Guest.Id"
                        class="btn btn-outline-primary rounded-pill"
                        title="Add another guest to this booking">
                         <i class="fas fa-user-plus me-1"></i>
@@ -111,7 +111,7 @@
                                           onsubmit="return confirm('Are you sure you want to cancel this guest?');"
                                           class="d-inline">
                                         @Html.AntiForgeryToken()
-                                        <input type="hidden" name="GuestId" value="@guest.GuestId" />
+                                        <input type="hidden" name="GuestId" value="@guest.Id" />
                                         <button type="submit"
                                                 class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center ms-2"
                                                 style="width:34px;height:34px;" title="Cancel this companion">

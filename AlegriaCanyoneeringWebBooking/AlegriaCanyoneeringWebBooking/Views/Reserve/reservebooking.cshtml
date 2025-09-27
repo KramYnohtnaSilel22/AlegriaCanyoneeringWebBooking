@@ -54,22 +54,22 @@
                                 </span>
                             </td>
                             <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
-                            <td>@(guest.Nationality?.NatName ?? "N/A")</td>
+                            <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
                             <td>@guest.NumberOfGuests</td>
                             <td class="text-center">
-                                <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.GuestId"
+                                <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.Id"
                                    class="btn btn-sm btn-primary" title="View">
                                     View <i class="fas fa-users me-2"></i>
                                 </a>
 
                                 @* Show QR Modal Button *@
                                 <button type="button" class="btn btn-info btn-sm"
-                                        onclick="showQrModal('@guest.GuestId')">
+                                        onclick="showQrModal('@guest.Id')">
                                     <i class="fas fa-qrcode"></i> QR CODE
                                 </button>
 
                                 @* Hidden Confirmation Form *@
-                                <form id="confirmForm-@guest.GuestId" method="post" asp-action="FinalBookingBatch"
+                                <form id="confirmForm-@guest.Id" method="post" asp-action="FinalBookingBatch"
                                       asp-controller="Reserve" class="d-none">
                                     <input type="hidden" name="BatchCode" value="@guest.Batch" />
                                 </form>
@@ -100,13 +100,13 @@
             }
         });
 
-        // Show Modal
+        // Show QR Modal
         function showQrModal(guestId) {
             const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
             modal.show();
         }
 
-        // Draw text + QR onto canvas, download, then submit form
+        // Download QR and Submit
         function downloadAndConfirm(guestId, operatorName, numberOfGuests) {
             const qrImage = document.getElementById('qrImage-' + guestId);
             const canvas = document.getElementById('qrCanvas-' + guestId);
@@ -147,37 +147,33 @@
         }
     </script>
 
-    @* Modal per guest *@
+    @* Modal for QR per guest *@
     @foreach (var guest in Model.ReservedGuests ?? Enumerable.Empty<dynamic>())
     {
-        <div class="modal fade" id="qrViewModal-@guest.GuestId" tabindex="-1"
-             aria-labelledby="qrViewModalLabel-@guest.GuestId" aria-hidden="true">
+        <div class="modal fade" id="qrViewModal-@guest.Id" tabindex="-1"
+             aria-labelledby="qrViewModalLabel-@guest.Id" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content text-center">
                     <div class="modal-header d-flex flex-column">
-             
                         <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-
-               
-                            <p class="mb-1 fw-semibold">Operator: @(guest.OperatorList?.BusinessName ?? "N/A")</p>
-                            <p class="mb-2 fw-semibold">Total Guest: @guest.NumberOfGuests</p>
-                            <img id="qrImage-@guest.GuestId"
-                                 src="@guest.QRBase64"
-                                 alt="QR for @guest.Fullname"
-                                 style="width:180px;height:180px;" />
-                        </div>
-
-                        <canvas id="qrCanvas-@guest.GuestId" width="220" height="270" style="display:none;"></canvas>
-
-                        <button class="btn btn-success mt-2"
-                                onclick="downloadAndConfirm('@guest.GuestId', '@(guest.OperatorList?.BusinessName ?? "N/A")', '@guest.NumberOfGuests')">
-                            <i class="fas fa-download"></i> Download & Confirm
-                        </button>
+                        <p class="mb-1 fw-semibold">Operator: @(guest.OperatorList?.BusinessName ?? "N/A")</p>
+                        <p class="mb-2 fw-semibold">Total Guest: @guest.NumberOfGuests</p>
+                        <img id="qrImage-@guest.Id"
+                             src="@guest.QRBase64"
+                             alt="QR for @guest.Fullname"
+                             style="width:180px;height:180px;" />
                     </div>
+
+                    <canvas id="qrCanvas-@guest.Id" width="220" height="270" style="display:none;"></canvas>
+
+                    <button class="btn btn-success mt-2"
+                            onclick="downloadAndConfirm('@guest.Id', '@(guest.OperatorList?.BusinessName ?? "N/A")', '@guest.NumberOfGuests')">
+                        <i class="fas fa-download"></i> Download & Confirm
+                    </button>
                 </div>
             </div>
-        
+        </div>
     }
 }

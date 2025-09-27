@@ -1,8 +1,22 @@
-﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel
-@{
+﻿@{
     ViewData["Title"] = "Saved Batch Leaders";
 }
 
+<h2 class="fw-bold mb-4 text-success">Saved Guests</h2>
+
+<table id="guestsTable" class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Operator</th>
+            <th>Total Guests</th>
+            <th>Arrival Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+</table>
+
+<!-- ✅ Toast Message -->
 @if (TempData["ToastMessage"] != null)
 {
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
@@ -17,78 +31,64 @@
     </div>
 }
 
-@if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
-{
-    <h2 class="fw-bold mb-4 text-success">Save Guests</h2>
-    <table id="example1" class="table text-truncate">
-        <thead class="table-dark">
-            <tr>
-                @*    <th>Batch</th> *@
-                <th>Operator</th>
-                <th>Arrival Date</th>
-                <th>Total of Guests</th>
-                <th>Booking Status</th>
-                @*     <th>Full Name</th> *@
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var guest in Model.ReservedGuests)
-            {
-                <tr>
-                    @*       <td>@guest.Batch</td> *@
-                    <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
-                    <td>@guest.ArrivalDate</td>
-                    <td>@guest.NumberOfGuests</td>
-                    <td>
-                        <span class="badge bg-@(guest.BookingStatus == "reserved" ? "success" : "info")">
-                            @guest.BookingStatus
-                        </span>
-                    </td>
-
-                    @*        <td>@guest.Fullname</td> *@
-                    <td>
-                        <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.GuestId" class="btn btn-sm btn-primary" title="View">
-                            View <i class="fas fa-users me-2"></i>
-                        </a>
-
-                  @*       <a asp-action="EditReserve" asp-route-id="@guest.GuestId" class="btn btn-sm btn-warning text-dark" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </a> *@
-                        @if (guest.BookingStatus == "anticipated")
-                        {
-                            <form asp-action="UpdateStatus" method="post" class="d-inline">
-                                <input type="hidden" name="id" value="@guest.GuestId" />
-                                <input type="hidden" name="status" value="reserved" />
-                                <button type="submit" class="btn btn-sm btn-success" title="Submit">Submit
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            </form>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#guestsTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '@Url.Action("GetGuestsData", "Guest")',
+                    type: 'POST'
+                },
+                columns: [
+                    { data: 'operatorName', title: 'Operator' },
+                    { data: 'totalGuests', title: 'Total Guests' },
+                    { data: 'arrivalDate', title: 'Arrival Date' },
+                    {
+                        data: 'bookingStatus',
+                        title: 'Status',
+                        render: function (data) {
+                            let badge = data === "reserved" ? "success" : "info";
+                            return `<span class="badge bg-${badge}">${data}</span>`;
                         }
-                    </td>
+                    },
+                    {
+                        data: 'id',
+                        title: 'Actions',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            return `
+                                <a href="/Reserve/ReserveDetails/${data}" class="btn btn-sm btn-primary me-1">
+                                    View
+                                </a>
+                                ${row.bookingStatus === 'anticipated' ? `
+                                    <form method="post" action="/Guest/UpdateStatus" style="display:inline">
+                                        <input type="hidden" name="id" value="${data}" />
+                                        <input type="hidden" name="status" value="reserved" />
+                                        <button type="submit" class="btn btn-sm btn-success">Submit</button>
+                                    </form>
+                                ` : ''}
+                            `;
+                        }
+                    }
+                ],
+                pageLength: 10,
+                lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
+                responsive: true,
+                autoWidth: false,
+                language: {
+                    emptyTable: "No guests found."
+                }
+            });
 
-                </tr>
+            // ✅ Toast Message Handling
+            var toastElement = document.getElementById('toastMessage');
+            if (toastElement) {
+                var toast = new bootstrap.Toast(toastElement);
+                toast.show();
             }
-        </tbody>
-    </table>
+        });
+    </script>
 }
-else
-{
-
-    <div class="d-flex flex-column align-items-center justify-content-center py-5">
-        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
-        <p class="lead fw-semibold text-muted">No save guest.</p>
-    </div>
-}
-
- <script>
-        // Trigger the toast when the page loads and TempData has a message
-    $(document).ready(function () {
-        // Check if the toast element exists
-        var toastElement = document.getElementById('toastMessage');
-        if (toastElement) {
-            var toast = new bootstrap.Toast(toastElement);
-            toast.show(); // Show the toast message
-        }
-    });
- </script>

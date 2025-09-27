@@ -34,11 +34,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Get all reserved/confirmed guests
             var reservedGuests = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .Include(g => g.Driver)
-                .Include(g => g.Guide)
+                .Include(g => g.NationalityEntity)
+
                 .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "confirmed")
-                .OrderBy(g => g.GuestId)
+                .OrderBy(g => g.Id)
                 .ToListAsync();
 
             if (!reservedGuests.Any())
@@ -96,8 +95,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Retrieve main guest, including related entities
             var mainGuest = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .FirstOrDefaultAsync(g => g.GuestId == id);
+                .Include(g => g.NationalityEntity)
+                .FirstOrDefaultAsync(g => g.Id == id);
 
             if (mainGuest == null)
             {
@@ -107,14 +106,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Get all active (non-canceled) guests in the same batch
             var guestsInBatch = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
+                .Include(g => g.NationalityEntity)
                 .Where(g => g.Batch == mainGuest.Batch && g.BookingStatus != "canceled")
-                .OrderBy(g => g.GuestId)
+                .OrderBy(g => g.Id)
                 .ToListAsync();
 
             // Optionally, display main guest (current record) as companion or not
             // If you want to exclude main guest from companion list:
-            guestsInBatch = guestsInBatch.Where(g => g.GuestId != mainGuest.GuestId).ToList();
+            guestsInBatch = guestsInBatch.Where(g => g.Id != mainGuest.Id).ToList();
 
             var model = new GuestDetailsViewModel
             {
@@ -138,7 +137,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 var guests = await _context.Guests
                     .Include(g => g.OperatorList)
-                    .Include(g => g.Nationality)
+                    .Include(g => g.NationalityEntity)
                     .Where(g => g.Batch == batch.BatchCode && g.BookingStatus == "finalized")
                     .ToListAsync();
                 batchGuestsDict[batch.BatchCode] = guests;

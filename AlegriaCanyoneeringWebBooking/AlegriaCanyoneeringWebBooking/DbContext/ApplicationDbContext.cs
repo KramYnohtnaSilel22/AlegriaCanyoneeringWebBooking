@@ -10,89 +10,122 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public DbSet<Batch> Batches { get; set; }
         public DbSet<Guest> Guests { get; set; }
         public DbSet<OperatorList> OperatorLists { get; set; }
-        public DbSet<Reserve> reserve{ get; set; }
-
+        public DbSet<Reserve> reserve { get; set; }
         public DbSet<Nationality> Nationalities { get; set; }
-
-        public DbSet<Driver> Drivers { get; set; }
-
-        public DbSet<Guide> Guides { get; set; }
-
+  
+        // //public DbSet<Driver> Drivers { get; set; }
+        //public DbSet<Guide> Guides { get; set; }
         public DbSet<Role> Roles { get; set; }
-
         public DbSet<Operator> Operators { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Guest entity configuration
-            // ===========================
             modelBuilder.Entity<Guest>(entity =>
             {
                 entity.ToTable("guest");
-                entity.HasKey(e => e.GuestId);
 
-                entity.Property(e => e.GuestId).HasColumnName("guestid");
+                // ====== Primary Key ======
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                // ====== Basic Properties ======
+                entity.Property(e => e.Fullname)
+                    .HasColumnName("fullname")
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.Age)
+                    .HasColumnName("age")
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.NumberOfGuests)
+                    .HasColumnName("number_of_guests");
+
+                entity.Property(e => e.Batch)
+                    .HasColumnName("batch")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.NationalityType)
+                    .HasColumnName("nationality")
+                    .HasMaxLength(10000);
+
+                entity.Property(e => e.NationalityId)
+                    .HasColumnName("nat_stat");
+
+                entity.Property(e => e.Gender)
+                    .HasColumnName("gender")
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.Date)
+                    .HasColumnName("date")
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.ArrivalDate)
+                    .HasColumnName("arrivaldate")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Month)
+                    .HasColumnName("month");
+
+                entity.Property(e => e.DateShort)
+                    .HasColumnName("dateshort")
+                    .HasMaxLength(100);
 
 
+                entity.Property(e => e.Batch)
+                      .HasColumnName("batchcode")
+                      .HasMaxLength(100);
 
+                entity.Property(e => e.Year)
+                    .HasColumnName("year");
 
-                entity.Property(e => e.Fullname).HasColumnName("fullname").HasMaxLength(1000).IsRequired();
-                entity.Property(e => e.Age).HasColumnName("age").HasMaxLength(1000).IsRequired();
-                entity.Property(e => e.NationalityType).HasColumnName("nationality").HasMaxLength(10000).IsRequired(false); // Changed to not required
+                entity.Property(e => e.BookingStatus)
+                    .HasColumnName("status")
+                    .HasMaxLength(50)
+                    .HasDefaultValue("anticipated");
 
-                // CRITICAL FIX: Make these nullable as they can be NULL in database
-                entity.Property(e => e.NationalityId).HasColumnName("natstat").IsRequired(false); // Changed from IsRequired()
-                entity.Property(e => e.OperatorId).HasColumnName("operatorid").IsRequired(false); // Changed from IsRequired()
-                entity.Property(e => e.DriverId).HasColumnName("driverid").IsRequired(false); // Changed from IsRequired()
-                entity.Property(e => e.GuideId).HasColumnName("guideid").IsRequired(false); // Changed from IsRequired()
+                entity.Property(e => e.QrCode)
+                    .HasColumnName("qrcode");
 
-                entity.Property(e => e.Gender).HasColumnName("gender").HasMaxLength(1000).IsRequired();
-                entity.Property(e => e.Date).HasColumnName("date").HasMaxLength(1000).IsRequired();
-                entity.Property(e => e.ArrivalDate).HasColumnName("arrivaldate").HasMaxLength(100).IsRequired();
-                entity.Property(e => e.Month).HasColumnName("month").HasMaxLength(500).IsRequired();
+                entity.Property(e => e.RFID)
+    .HasColumnName("rfid");
 
-                // Make these nullable as they can be NULL
-                entity.Property(e => e.DateShort).HasColumnName("dateshort").HasMaxLength(100).IsRequired(false); // Changed from IsRequired()
-                entity.Property(e => e.RFID).HasColumnName("rfid").IsRequired(false); // Changed from IsRequired() and fixed column name
-                entity.Property(e => e.BookingStatus).HasColumnName("bookingstatus").HasMaxLength(50).HasDefaultValue("anticipated"); // Fixed column name
-                entity.Property(e => e.QrCode).HasColumnName("qrcode").HasMaxLength(500); // Fixed column name
+                entity.Property(e => e.RFIDCode)
+                    .HasColumnName("rfidcode")
+                    .HasMaxLength(1000);
 
-                entity.Property(e => e.NumberOfGuests).HasColumnName("number_of_guests").IsRequired();
-                entity.Property(e => e.Area).HasColumnName("Area").HasMaxLength(500).IsRequired();
-                entity.Property(e => e.ContactNumber).HasColumnName("ContactNum").HasMaxLength(500).IsRequired();
-                entity.Property(e => e.Batch).HasColumnName("batch").HasMaxLength(100);
+                entity.Property(e => e.QrCode)
+                    .HasColumnName("qrcode");
 
-                // Configure foreign key relationships with proper cascade behavior for nullable FKs
+                entity.Property(e => e.Area)
+                    .HasColumnName("Area")
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.ContactNumber)
+                    .HasColumnName("ContactNum")
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.OperatorId)
+                    .HasColumnName("operatorid");
+
+                // ====== Relationships ======
+
                 entity.HasOne(g => g.OperatorList)
-                      .WithMany(o => o.Guests)
-                      .HasForeignKey(g => g.OperatorId)
-                      .HasConstraintName("FK_Guest_Operator")
-                      .OnDelete(DeleteBehavior.SetNull) // Changed to SetNull for nullable FK
-                      .IsRequired(false); // Make the relationship optional
+                    .WithMany(o => o.Guests)
+                    .HasForeignKey(g => g.OperatorId)
+                    .HasConstraintName("FK_Guest_Operator")
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .IsRequired(false);
 
-                entity.HasOne(g => g.Driver)
-                      .WithMany(d => d.Guests)
-                      .HasForeignKey(g => g.DriverId)
-                      .HasConstraintName("FK_Guest_Driver")
-                      .OnDelete(DeleteBehavior.SetNull) // Changed to SetNull for nullable FK
-                      .IsRequired(false); // Make the relationship optional
+                entity.HasOne(g => g.NationalityEntity)
+                    .WithMany()
+                    .HasForeignKey(g => g.NationalityId)
+                    .HasConstraintName("FK_Guest_Nationality")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
 
-                entity.HasOne(g => g.Guide)
-                      .WithMany(gd => gd.Guests)
-                      .HasForeignKey(g => g.GuideId)
-                      .HasConstraintName("FK_Guest_Guide")
-                      .OnDelete(DeleteBehavior.SetNull) // Changed to SetNull for nullable FK
-                      .IsRequired(false); // Make the relationship optional
-
-                entity.HasOne(g => g.Nationality)
-                      .WithMany()
-                      .HasForeignKey(g => g.NationalityId)
-                      .HasConstraintName("FK_Guest_Nationality")
-                      .OnDelete(DeleteBehavior.Restrict)
-                      .IsRequired(false); // Make the relationship optional
-
+                // ====== Indexes ======
                 entity.HasIndex(e => e.Fullname).HasDatabaseName("IX_guests_fullname");
                 entity.HasIndex(e => e.RFID).HasDatabaseName("IX_guests_rfid");
                 entity.HasIndex(e => e.NationalityType).HasDatabaseName("IX_guests_nationality");
@@ -106,7 +139,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.ToTable("operator_list");
                 entity.HasKey(e => e.OperatorId);
 
-                // Column mappings
                 entity.Property(e => e.OperatorId).HasColumnName("id");
                 entity.Property(e => e.OwnerName).HasColumnName("owner_name").HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.Gender).HasColumnName("gender").HasMaxLength(1000).IsRequired();
@@ -118,8 +150,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
-            modelBuilder.Entity<Driver>().ToTable("driver_details");
-            modelBuilder.Entity<Guide>().ToTable("tourguide_details");
+            // Removed Driver entity configuration
+            // modelBuilder.Entity<Driver>().ToTable("driver_details");
+            //modelBuilder.Entity<Guide>().ToTable("tourguide_details");
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<Operator>().ToTable("operator");
             modelBuilder.Entity<Reserve>().ToTable("reserve");

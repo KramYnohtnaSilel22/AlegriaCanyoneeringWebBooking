@@ -17,7 +17,9 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public DateTime? ReadOnlyBookingDate { get; set; }
         public string ReadOnlyTourArea { get; set; }
         public int? ReadOnlyNationalityId { get; set; }
-
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalRecords { get; set; }
 
     }
 }

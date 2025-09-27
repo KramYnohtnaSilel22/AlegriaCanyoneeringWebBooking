@@ -66,7 +66,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 guest.BookingStatus = "anticipated";
                 guest.Batch = batchId;
-                guest.RFID = GenerateRFID();
+                //guest.RFID = RfdId;
                 guest.Month = DateTime.Today.ToString("yyyy-MM");
                 guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
 
@@ -81,12 +81,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 // Fetch updated list of anticipated guests
                 var reservedGuests = await _context.Guests
                     .Where(g => g.BookingStatus == "anticipated")
-                    .OrderBy(g => g.GuestId)
+                    .OrderBy(g => g.Id)
                     .ToListAsync();
 
                 var batchLeaders = reservedGuests
                     .GroupBy(g => g.Batch)
-                    .Select(batch => batch.OrderBy(x => x.GuestId).First())
+                    .Select(batch => batch.OrderBy(x => x.Id).First())
                     .ToList();
 
 
@@ -115,12 +115,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             var reservedGuests = await _context.Guests
                 .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "anticipated")
-                .OrderBy(g => g.GuestId)
+                .OrderBy(g => g.Id)
                 .ToListAsync();
 
             var batchLeaders = reservedGuests
                 .GroupBy(g => g.Batch)
-                .Select(batch => batch.OrderBy(x => x.GuestId).First())
+                .Select(batch => batch.OrderBy(x => x.Id).First())
                 .ToList();
 
             return Ok(batchLeaders);
@@ -195,8 +195,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             var mainGuest = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .FirstOrDefaultAsync(g => g.GuestId == id);
+                .Include(g => g.NationalityEntity)
+                .FirstOrDefaultAsync(g => g.Id == id);
 
             if (mainGuest == null)
             {
@@ -205,9 +205,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var guestsInBatch = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.Nationality)
-                .Where(g => g.Batch == mainGuest.Batch && g.GuestId != mainGuest.GuestId)
-                .OrderBy(g => g.GuestId)
+                .Include(g => g.NationalityEntity)
+                .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
+                .OrderBy(g => g.Id)
                 .Take(4)
                 .ToListAsync();
 
