@@ -6,19 +6,23 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
 
-            <h1 class="text-center mb-4 text-primary">About Us</h1>
+            <h1 class="text-center mb-5 text-primary fw-bold display-4">About Us</h1>
 
-            <article class="bg-white shadow rounded p-4">
-                <section class="mb-4">
-                    <h3 class="text-secondary">Our Mission</h3>
-                    <p class="fs-5">
+            <article class="bg-white shadow-lg rounded-4 p-5 border border-primary-subtle">
+                <section class="mb-5">
+                    <h3 class="text-secondary fw-semibold mb-3 border-start border-4 border-primary ps-3">
+                        Our Mission
+                    </h3>
+                    <p class="fs-5 text-muted lh-lg">
                         To provide a seamless and efficient booking system that simplifies guest management while delivering exceptional service through innovation, accuracy, and reliability.
                     </p>
                 </section>
 
                 <section>
-                    <h3 class="text-secondary">Our Vision</h3>
-                    <p class="fs-5">
+                    <h3 class="text-secondary fw-semibold mb-3 border-start border-4 border-primary ps-3">
+                        Our Vision
+                    </h3>
+                    <p class="fs-5 text-muted lh-lg">
                         To become the leading digital platform in the tourism and hospitality industry by empowering operators, enhancing guest experiences, and streamlining operations across all levels.
                     </p>
                 </section>
@@ -27,3 +31,19 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Smooth shadows and subtle highlight */
+    article {
+        transition: box-shadow 0.3s ease;
+    }
+
+        article:hover {
+            box-shadow: 0 12px 24px rgba(13, 110, 253, 0.25);
+        }
+
+    /* Slightly increase line-height for readability */
+    p.fs-5 {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+</style>

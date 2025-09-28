@@ -138,7 +138,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
-<script>
+@* <script>
        // Loading overlay handling
     $(window).on('load', function () {
         $('#successMessage').text('Page loaded successfully!').fadeIn(500);
@@ -271,4 +271,143 @@
 
     // Initialize display on page load
     updateTotalGuestsDisplay();
+</script>
+ *@
+
+
+<script>
+    $(function () {
+        // Cache selectors
+        const $type = $('#NationalityType');
+        const $list = $('#NationalityId');
+        const $operatorInput = $('#OperatorInput');
+        const $tourAreaInput = $('#TourAreaInput');
+        const $bookingDateInput = $('#BookingDateInput');
+        const $arrivalDateInput = $('#ArrivalDateInput');
+        const $batchGuestsJson = $('#BatchGuestsJson');
+        const $saveBtn = $('#saveBtn');
+        const $totalGuestsCount = $('#totalGuestsCount');
+        const $currentBatch = $('#CurrentBatch');
+
+        // Store nationalities cache for foreign type
+        let foreignNationalitiesCache = null;
+
+        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+        const selectedNationalityId = '@Model.NewGuest.NationalityId';
+
+        function fillLocalNationalities() {
+            const localOptions = [
+                { id: '1000', text: 'Within Cebu Province' },
+                { id: '1001', text: 'Outside Cebu Province' }
+            ];
+            $list.empty();
+            localOptions.forEach(opt => {
+                const option = new Option(opt.text, opt.id);
+                if (selectedNationalityId === opt.id) option.selected = true;
+                $list.append(option);
+            });
+        }
+
+        function fillForeignNationalities(data) {
+            $list.empty();
+            $list.append(new Option('-- Select Nationality --', ''));
+            data.forEach(item => {
+                const option = new Option(item.natName, item.nationalityId);
+                if (selectedNationalityId === item.nationalityId.toString()) option.selected = true;
+                $list.append(option);
+            });
+        }
+
+        function updateNationalityIdOptions(typeChoice) {
+            if (typeChoice === 'Local') {
+                fillLocalNationalities();
+            } else if (typeChoice === 'Foreign') {
+                if (foreignNationalitiesCache) {
+                    fillForeignNationalities(foreignNationalitiesCache);
+                } else {
+                    $list.empty().append(new Option('Loading...', ''));
+                    $.getJSON(getNationalitiesUrl)
+                        .done(data => {
+                            foreignNationalitiesCache = data;
+                            fillForeignNationalities(data);
+                        })
+                        .fail(() => {
+                            $list.empty().append(new Option('Error loading nationalities', ''));
+                        });
+                }
+            } else {
+                $list.empty().append(new Option('-- Select Nationality Type First --', ''));
+            }
+        }
+
+        // Initialize nationality list on page load
+        updateNationalityIdOptions($type.val());
+
+        // Debounce nationality type changes to avoid rapid repeated calls
+        let nationalityTypeChangeTimeout;
+        $type.on('change', function () {
+            clearTimeout(nationalityTypeChangeTimeout);
+            nationalityTypeChangeTimeout = setTimeout(() => {
+                updateNationalityIdOptions($type.val());
+            }, 250);
+        });
+
+        // Readonly inputs styling and disabling
+        const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
+        if (isReadonly) {
+            $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $bookingDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+        }
+
+        // Guest batch management
+        let guestsBatch = [];
+        function updateTotalGuestsDisplay() {
+            $totalGuestsCount.text(guestsBatch.length);
+            $saveBtn.prop('disabled', guestsBatch.length === 0);
+        }
+
+        $('#addGuestBtn').click(function () {
+            const guest = {
+                OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
+                Fullname: $('[name="NewGuest.Fullname"]').val(),
+                Age: $('[name="NewGuest.Age"]').val(),
+                Gender: $('[name="NewGuest.Gender"]').val(),
+                ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
+                NationalityType: $('[name="NewGuest.NationalityType"]').val(),
+                NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()),
+                Area: $('[name="NewGuest.Area"]').val(),
+                Date: $('[name="NewGuest.Date"]').val(),
+                ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
+            };
+
+            // Minimal inline validation (consider replacing alerts with inline messages)
+            if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
+                !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            guestsBatch.push(guest);
+            updateTotalGuestsDisplay();
+
+            // Lock inputs after adding first guest
+            $bookingDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $currentBatch.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+        });
+
+        $('#guestForm').on('submit', function () {
+            $batchGuestsJson.val(JSON.stringify(guestsBatch));
+        });
+
+        // Hide overlay immediately after page ready
+        $('#loadingOverlay').fadeOut(300);
+
+        // Initial update
+        updateTotalGuestsDisplay();
+    });
 </script>

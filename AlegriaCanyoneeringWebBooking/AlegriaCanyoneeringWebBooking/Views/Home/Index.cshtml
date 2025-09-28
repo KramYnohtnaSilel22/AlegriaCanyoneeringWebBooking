@@ -1,8 +1,54 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Welcome to Alegria Canyoneering";
 }
+<style>
+    @@keyframes fadeInUp {
+        from
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 1s ease forwards;
+    }
+
+    .btn-custom {
+        background-color: #f97316; /* bright orange */
+        color: #0c2340; /* dark blue */
+        border: none;
+        border-radius: 50px;
+        padding: 0.75rem 2.5rem;
+        font-weight: 700;
+        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.4);
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+        .btn-custom:hover {
+            background-color: #0c2340; /* dark blue */
+            color: #f97316; /* bright orange */
+            box-shadow: 0 6px 12px rgba(12, 35, 64, 0.6);
+        }
+</style>
+
+<div class="d-flex flex-column justify-content-center align-items-center vh-100 bg-gradient" style="background: linear-gradient(135deg, #4a90e2, #50e3c2); color: #0c2340; text-align: center; padding: 0 20px;">
+    <h1 class="display-3 fw-bold mb-3" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">
+        <span style="color:#007BFF;">Welcome to</span>
+        <span style="color: #f97316;">Alegria Canyoneering</span>
+    </h1>
+
+    <p class="lead mb-4" style="max-width: 600px; font-size: 1.25rem; color: #4caf50; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
+        Embark on an unforgettable adventure! Discover breathtaking landscapes and create memories that last a lifetime.
+    </p>
+    <a href="/Guest/NewBooking" class="btn btn-custom">
+        Book Your Adventure Now
+    </a>
 </div>
