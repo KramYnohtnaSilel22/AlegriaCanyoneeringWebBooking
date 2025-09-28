@@ -28,7 +28,7 @@
 <div class="card shadow-lg rounded-4 border-0">
     <div class="card-body p-4">
         <h4 class="text-primary mb-4 fw-semibold">Add New Guest</h4>
-
+            
         <!-- Guest Info Header -->
         <div class="mb-3">
             <h5 class="text-primary">
@@ -49,6 +49,13 @@
                     <fieldset>
                         <legend>Guest Info</legend>
                         <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary">Upload Guest Photo</label>
+                            <input type="file" name="Photo" class="form-control" accept="image/*" />
+
+
+                        </div>
+
+                        <div class="mb-3">
                             <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
                             <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"
                                     id="OperatorInput"
@@ -67,7 +74,7 @@
                         <div class="mb-3">
                             <label asp-for="NewGuest.Gender" class="form-label">Gender</label>
                             <select asp-for="NewGuest.Gender" class="form-select">
-                                <option value="">Select Gender</option>
+                             
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>
@@ -116,7 +123,7 @@
                             <label asp-for="NewGuest.Area" class="form-label">Tour Area</label>
                             <select asp-for="NewGuest.Area" class="form-select" id="TourAreaInput"
                                     disabled="@(isReadonly ? "disabled" : null)">
-                                <option value="">Select Area</option>
+                             
                                 <option value="Wonder Falls">Wonder Falls</option>
                                 <option value="Kanlaob">Kanlaob</option>
                                 <option value="Kawasan Exit">Kawasan Exit</option>
@@ -132,6 +139,7 @@
                 <button type="submit" id="saveBtn" class="btn btn-success" disabled>Save All Guests</button>
             </div>
         </form>
+
     </div>
 </div>
 

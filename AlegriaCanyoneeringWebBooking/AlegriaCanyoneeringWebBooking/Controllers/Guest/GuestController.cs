@@ -201,7 +201,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(model);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
@@ -214,6 +213,26 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 if (batchGuests != null && batchGuests.Count > 0)
                 {
+                    // ✅ Handle file upload without saving to database
+                    if (model.Photo != null && model.Photo.Length > 0)
+                    {
+                        var uploadsPath = Path.Combine(_environment.WebRootPath, "uploads");
+
+                        if (!Directory.Exists(uploadsPath))
+                            Directory.CreateDirectory(uploadsPath);
+
+                        var uniqueFilename = Guid.NewGuid().ToString() + Path.GetExtension(model.Photo.FileName);
+                        var fullPath = Path.Combine(uploadsPath, uniqueFilename);
+
+                        using (var stream = new FileStream(fullPath, FileMode.Create))
+                        {
+                            await model.Photo.CopyToAsync(stream);
+                        }
+
+                        // Optional: Log the path or keep in session if needed
+                        TempData["UploadedPhoto"] = uniqueFilename;
+                    }
+
                     foreach (var guest in batchGuests)
                     {
                         guest.BookingStatus = "anticipated";
@@ -229,10 +248,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     await _context.SaveChangesAsync();
 
                     // Update guest count
-                    var guestsInBatch = await _context.Guests
-                        .Where(g => g.Batch == batchId)
-                        .ToListAsync();
-
+                    var guestsInBatch = await _context.Guests.Where(g => g.Batch == batchId).ToListAsync();
                     int count = guestsInBatch.Count;
                     guestsInBatch.ForEach(g => g.NumberOfGuests = count);
                     await _context.SaveChangesAsync();
@@ -240,14 +256,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     TempData["ToastMessage"] = "Guests added successfully!";
                     TempData["ToastType"] = "success";
 
-                    if (id.HasValue && id.Value > 0)
-                    {
-                        return RedirectToAction("NewBooking", new { id = id.Value });
-                    }
-                    else
-                    {
-                        return RedirectToAction("saveguest");
-                    }
+                    return id.HasValue && id.Value > 0
+                        ? RedirectToAction("NewBooking", new { id = id.Value })
+                        : RedirectToAction("saveguest");
                 }
 
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
@@ -257,6 +268,63 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await PopulateDropdowns();
             return View(model);
         }
+
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
+        //{
+        //    string batchId = !string.IsNullOrEmpty(batch) ? batch : await GenerateBatchCode();
+
+        //    if (!string.IsNullOrWhiteSpace(model.BatchGuestsJson))
+        //    {
+        //        var batchGuests = JsonSerializer.Deserialize<List<Guest>>(model.BatchGuestsJson);
+
+        //        if (batchGuests != null && batchGuests.Count > 0)
+        //        {
+        //            foreach (var guest in batchGuests)
+        //            {
+        //                guest.BookingStatus = "anticipated";
+        //                guest.Batch = batchId;
+        //                guest.RFID = GenerateRFID();
+        //                guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
+        //                guest.Month = DateTime.Today.ToString("yyyy-MM");
+        //                guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
+
+        //                _context.Guests.Add(guest);
+        //            }
+
+        //            await _context.SaveChangesAsync();
+
+        //            // Update guest count
+        //            var guestsInBatch = await _context.Guests
+        //                .Where(g => g.Batch == batchId)
+        //                .ToListAsync();
+
+        //            int count = guestsInBatch.Count;
+        //            guestsInBatch.ForEach(g => g.NumberOfGuests = count);
+        //            await _context.SaveChangesAsync();
+
+        //            TempData["ToastMessage"] = "Guests added successfully!";
+        //            TempData["ToastType"] = "success";
+
+        //            if (id.HasValue && id.Value > 0)
+        //            {
+        //                return RedirectToAction("NewBooking", new { id = id.Value });
+        //            }
+        //            else
+        //            {
+        //                return RedirectToAction("saveguest");
+        //            }
+        //        }
+
+        //        TempData["ToastMessage"] = "Please add at least one guest before saving!";
+        //        TempData["ToastType"] = "danger";
+        //    }
+
+        //    await PopulateDropdowns();
+        //    return View(model);
+        //}
         private async Task<string> GenerateBatchCode()
         {
             // Get all batch codes that are valid integers only
@@ -424,7 +492,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
-            if (string.IsNullOrEmpty(base64Image))
+            if (string.IsNullOrEmpty(base64Image))  
             {
                 TempData["ToastMessage"] = "No image data provided.";
                 TempData["ToastType"] = "danger"; // can be 'success', 'danger', etc.

@@ -21,5 +21,11 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public int PageSize { get; set; }
         public int TotalRecords { get; set; }
 
+
+        // Add this 👇 for image upload
+        [DataType(DataType.Upload)]
+        public IFormFile Photo { get; set; }
+
+
     }
 }
