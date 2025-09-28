@@ -320,8 +320,8 @@
             $list.empty();
             $list.append(new Option('-- Select Nationality --', ''));
             data.forEach(item => {
-                const option = new Option(item.natName, item.nationalityId);
-                if (selectedNationalityId === item.nationalityId.toString()) option.selected = true;
+                const option = new Option(item.natName, item.id);
+                if (selectedNationalityId === item.id.toString()) option.selected = true;
                 $list.append(option);
             });
         }

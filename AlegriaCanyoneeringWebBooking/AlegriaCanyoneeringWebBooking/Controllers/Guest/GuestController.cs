@@ -388,7 +388,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .OrderBy(n => n.NatName)
                     .Select(n => new
                     {
-                        n.NationalityId,      // Return Id
+                        n.id,      // Return Id
                         n.NatName  // Return Name
                     })
                     .ToListAsync();

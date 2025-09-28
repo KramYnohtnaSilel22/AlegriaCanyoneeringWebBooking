@@ -1,0 +1,72 @@
+﻿@{
+    ViewData["Title"] = "Operators Management";
+}
+
+<h2 class="fw-bold mb-4 text-primary">Operators</h2>
+
+<a asp-action="CreateOperator" class="btn btn-primary mb-3">Create New Operator</a>
+
+<table id="mainTable" class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Owner Name</th>
+            <th>Gender</th>
+            <th>Business Name</th>
+            <th>Business Permit</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+</table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#mainTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '@Url.Action("GetOperatorsData", "OperatorList")',
+                    type: 'POST',
+                    dataSrc: function (json) {
+                        console.log("Data received:", json);
+                        return json.data;
+                    },
+                    error: function (xhr) {
+                        console.error("AJAX error:", xhr.responseText);
+                        alert("Failed to load data.");
+                    }
+                },
+                columns: [
+                    { data: 'ownerName' },
+                    { data: 'gender' },
+                    { data: 'businessName' },
+                    { data: 'bussPermit' },
+                    { data: 'location' },
+                    {
+                        data: 'status',
+                        render: function (data) {
+                            return data === 1 ? "Active" : "Inactive";
+                        }
+                    },
+                    {
+                        data: 'operatorId',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data) {
+                            return `<a href="/Operator/EditOperator/${data}" class="btn btn-sm btn-warning">Edit</a>`;
+                        }
+                    }
+                ],
+                pageLength: 10,
+                lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
+                responsive: true,
+                autoWidth: false,
+                language: {
+                    emptyTable: "No operators found."
+                }
+            });
+        });
+    </script>
+}

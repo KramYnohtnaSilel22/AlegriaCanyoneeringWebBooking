@@ -6,14 +6,69 @@ using AlegriaCanyoneeringWebBooking.Models;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
-    public class AdminController : Controller
+    public class OperatorListController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public AdminController(ApplicationDbContext context)
+        public OperatorListController(ApplicationDbContext context)
         {
             _context = context;
         }
+        [HttpPost]
+        public async Task<IActionResult> GetOperatorsData()
+        {
+            try
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+                var search = Request.Form["search[value]"].FirstOrDefault();
+
+                var query = _context.OperatorLists.AsQueryable();
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(o =>
+                        o.OwnerName.Contains(search) ||
+                        o.Gender.Contains(search) ||
+                        o.BusinessName.Contains(search) ||
+                        o.BussPermit.Contains(search) ||
+                        o.Location.Contains(search)
+                    );
+                }
+
+                var recordsTotal = await query.CountAsync();
+
+                var data = await query
+                    .OrderBy(o => o.OperatorId)
+                    .Skip(start)
+                    .Take(length)
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    draw = draw,
+                    recordsFiltered = recordsTotal,
+                    recordsTotal = recordsTotal,
+                    data = data.Select(o => new
+                    {
+                        operatorId = o.OperatorId,
+                        ownerName = o.OwnerName,
+                        gender = o.Gender,
+                        businessName = o.BusinessName,
+                        bussPermit = o.BussPermit,
+                        location = o.Location,
+                        status = o.Status,
+                        isActive = o.Status == 1
+                    })
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = $"Server Error: {ex.Message}" });
+            }
+        }
+
 
         // GET: Admin/Operators
         public async Task<IActionResult> Operators()
@@ -31,7 +86,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Admin/CreateOperator
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateOperator(OperatorList operatorModel)
+        public async Task<IActionResult> CreateOperator(Models.OperatorList operatorModel)
         {
             if (ModelState.IsValid)
             {
@@ -58,7 +113,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Admin/EditOperator/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditOperator(int id, OperatorList operatorModel)
+        public async Task<IActionResult> EditOperator(int id, Models.OperatorList operatorModel)
         {
             if (id != operatorModel.OperatorId)
             {

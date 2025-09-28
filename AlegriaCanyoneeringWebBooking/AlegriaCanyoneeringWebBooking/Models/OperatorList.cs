@@ -33,13 +33,13 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Required]
         [Column("status")]
         public int Status { get; set; }
-        // Navigation property to Guests
+
+        // NotMapped property
         [NotMapped]
-        [Column("is_active")]
-        public bool IsActive { get; set; }
+        public bool IsActive => Status == 1;
 
         // Navigation property for related Guests
-   
+
         public ICollection<Guest> Guests { get; set; } = new List<Guest>();
     }
 }
