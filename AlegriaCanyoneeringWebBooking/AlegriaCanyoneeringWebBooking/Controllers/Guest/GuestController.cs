@@ -237,7 +237,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         TempData["ToastType"] = "warning";
                     }
 
-                    return RedirectToAction("NewBooking", new { batch = batchId, id = id });
+                    return RedirectToAction("saveguest", new { batch = batchId, id = id });
                 }
 
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
@@ -355,7 +355,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-    
 
         public async Task<IActionResult> UpdateStatus(int id, string status)
         {
@@ -365,11 +364,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound();
             }
 
-            // Find ALL guests for this OperatorId and update status for ALL of them
+            // Get all guests of the same operator with the same current booking status (optional filter)
             var operatorGuests = await _context.Guests
-                .Where(g => g.OperatorId == guest.OperatorId && (g.BookingStatus == "anticipated" || g.BookingStatus == "reserved"))
+                .Where(g => g.OperatorId == guest.OperatorId)
                 .ToListAsync();
 
+            if (operatorGuests == null || operatorGuests.Count == 0)
+            {
+                return NotFound("No guests found for this operator.");
+            }
+
+            // Update the BookingStatus for all guests of this operator
             foreach (var g in operatorGuests)
             {
                 g.BookingStatus = status;
@@ -378,7 +383,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                TempData["ToastMessage"] = "Submit successfully.";
+
+                TempData["ToastMessage"] = $"Successfully updated status '{status}' for all guests of the operator!";
                 TempData["ToastType"] = "success";
             }
             catch (DbUpdateConcurrencyException)
@@ -386,7 +392,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Conflict("Concurrency conflict: guests may have been modified by another process.");
             }
 
-            // Redirect to SaveGuests - the operator row(s) will auto-remove if no anticipated/reserved guests remain
+            // Redirect to your saveguest or reservedbooking action as needed
             return RedirectToAction(nameof(saveguest));
         }
 

@@ -147,12 +147,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
-
-
-
 <script>
     $(function () {
-        // Cache selectors
         const $type = $('#NationalityType');
         const $list = $('#NationalityId');
         const $operatorInput = $('#OperatorInput');
@@ -164,9 +160,7 @@
         const $totalGuestsCount = $('#totalGuestsCount');
         const $currentBatch = $('#CurrentBatch');
 
-        // Store nationalities cache for foreign type
         let foreignNationalitiesCache = null;
-
         const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
         const selectedNationalityId = '@Model.NewGuest.NationalityId';
 
@@ -215,10 +209,10 @@
             }
         }
 
-        // Initialize nationality list on page load
+        // Initialize nationalities
         updateNationalityIdOptions($type.val());
 
-        // Debounce nationality type changes to avoid rapid repeated calls
+        // Debounce for nationality type switch
         let nationalityTypeChangeTimeout;
         $type.on('change', function () {
             clearTimeout(nationalityTypeChangeTimeout);
@@ -227,7 +221,7 @@
             }, 250);
         });
 
-        // Readonly inputs styling and disabling
+        // Apply readonly if set from ViewBag
         const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
         if (isReadonly) {
             $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
@@ -236,12 +230,17 @@
             $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
         }
 
-        // Guest batch management
-        let guestsBatch = [];
-        function updateTotalGuestsDisplay() {
-            $totalGuestsCount.text(guestsBatch.length);
-            $saveBtn.prop('disabled', guestsBatch.length === 0);
-        }
+        // ===============================
+        // ✅ LOCAL STORAGE LOGIC START
+        // ===============================
+
+        let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
+
+     function updateTotalGuestsDisplay() {
+        $totalGuestsCount.text(guestsBatch.length);
+        $saveBtn.prop('disabled', guestsBatch.length < 1);
+    }
+
 
         $('#addGuestBtn').click(function () {
             const guest = {
@@ -257,7 +256,6 @@
                 ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
             };
 
-            // Minimal inline validation (consider replacing alerts with inline messages)
             if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
                 !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
                 alert('Please fill in all required fields.');
@@ -265,6 +263,7 @@
             }
 
             guestsBatch.push(guest);
+            localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
             updateTotalGuestsDisplay();
 
             // Lock inputs after adding first guest
@@ -277,12 +276,13 @@
 
         $('#guestForm').on('submit', function () {
             $batchGuestsJson.val(JSON.stringify(guestsBatch));
+            localStorage.removeItem('guestsBatch');
         });
 
-        // Hide overlay immediately after page ready
-        $('#loadingOverlay').fadeOut(300);
-
-        // Initial update
         updateTotalGuestsDisplay();
+
+        // Hide overlay after load
+        $('#loadingOverlay').fadeOut(300);
     });
 </script>
+
