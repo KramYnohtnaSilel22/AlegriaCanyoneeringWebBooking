@@ -20,6 +20,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Guest>(entity =>
@@ -131,6 +132,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.HasIndex(e => e.NationalityType).HasDatabaseName("IX_guests_nationality");
                 entity.HasIndex(e => e.NationalityId).HasDatabaseName("IX_guests_nationality_id");
                 entity.HasIndex(e => e.BookingStatus).HasDatabaseName("IX_guests_booking_status");
+
             });
 
             // OperatorList entity configuration

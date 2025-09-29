@@ -36,7 +36,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Include(g => g.OperatorList)
                 .Include(g => g.NationalityEntity)
 
-                .Where(g => g.BookingStatus == "reserved" || g.BookingStatus == "confirmed")
+                .Where(g => g.BookingStatus == "reserved" )
                 .OrderBy(g => g.Id)
                 .ToListAsync();
 
@@ -125,27 +125,76 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> FinalBookingBatch()
-        {
-            // Get all Reserve batches, order by CreatedDate DESC
-            var allBatches = await _context.reserve.OrderByDescending(r => r.ArrivalDate).ToListAsync();
-            ViewBag.AllBatches = allBatches;
 
-            // Gather all guests for each batch for the modal detail
-            var batchGuestsDict = new Dictionary<string, List<Guest>>();
-            foreach (var batch in allBatches)
+        // GET: The main page that shows the table and modals
+        public IActionResult FinalBookingBatch()
+        {
+            return View();
+        }
+
+        // DataTables AJAX POST endpoint for guests batches
+        [HttpPost]
+        public async Task<IActionResult> GetGuestsData()
+        {
+            var draw = Request.Form["draw"].FirstOrDefault();
+            var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
+            var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
+            var search = Request.Form["search[value]"].FirstOrDefault();
+
+            // Query confirmed guests grouped by batch
+            var batchQuery = _context.Guests
+                .Where(g => g.BookingStatus == "confirmed")
+                .GroupBy(g => g.Batch)
+                .Select(g => new
+                {
+                    BatchCode = g.Key,
+                    TotalGuests = g.Count(),
+                    OperatorName = g.FirstOrDefault().OperatorList.BusinessName,
+                    ArrivalDate = g.FirstOrDefault().ArrivalDate,
+                    Status = "Confirmed"
+                });
+
+            if (!string.IsNullOrEmpty(search))
             {
-                var guests = await _context.Guests
-                    .Include(g => g.OperatorList)
-                    .Include(g => g.NationalityEntity)
-                    .Where(g => g.Batch == batch.BatchCode && g.BookingStatus == "finalized")
-                    .ToListAsync();
-                batchGuestsDict[batch.BatchCode] = guests;
+                batchQuery = batchQuery.Where(b =>
+                    b.BatchCode.Contains(search) ||
+                    b.OperatorName.Contains(search)
+                );
             }
 
-            var model = new GuestListViewModel { BatchGuests = batchGuestsDict };
-            return View(model);
+            var recordsTotal = await batchQuery.CountAsync();
+
+            var data = await batchQuery
+                .OrderByDescending(b => b.ArrivalDate)
+                .Skip(start)
+                .Take(length)
+                .ToListAsync();
+
+            return Json(new
+            {
+                draw = draw,
+                recordsFiltered = recordsTotal,
+                recordsTotal = recordsTotal,
+                data = data
+            });
         }
+
+        // Endpoint to get guests by batch (for modal details)
+        [HttpGet]
+        public async Task<IActionResult> GetGuestsByBatch(string batchCode)
+        {
+            if (string.IsNullOrEmpty(batchCode))
+                return BadRequest("BatchCode is required");
+
+            var guests = await _context.Guests
+                .Include(g => g.OperatorList)
+                .Include(g => g.NationalityEntity)
+                .Where(g => g.Batch == batchCode)
+                .ToListAsync();
+
+            return PartialView("_GuestDetailsPartial", guests);
+        }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -158,50 +207,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return RedirectToAction("reservebooking");
             }
 
-            // Finalize guests for this batch
+            // Update all guests in the batch to confirmed
             var guestsToFinalize = await _context.Guests
-                .Where(g => g.Batch == BatchCode && g.BookingStatus != "finalized")
+                .Where(g => g.Batch == BatchCode && g.BookingStatus != "confirmed")
                 .ToListAsync();
 
             if (guestsToFinalize.Any())
             {
                 foreach (var guest in guestsToFinalize)
                 {
-                    guest.BookingStatus = "finalized";
+                    guest.BookingStatus = "confirmed";
                 }
                 await _context.SaveChangesAsync();
+
+                TempData["ToastMessage"] = "Batch confirmed successfully!";
+                TempData["ToastType"] = "success";
             }
-
-            // Add Reserve row for batch if it doesn't exist
-            var batchGuests = await _context.Guests
-            .Where(g => g.Batch == BatchCode)
-                .ToListAsync();
-
-            if (batchGuests.Count > 0 && !await _context.reserve.AnyAsync(r => r.BatchCode == BatchCode))
+            else
             {
-                var first = batchGuests.First();
-                DateTime arrivalDate;
-                try { arrivalDate = Convert.ToDateTime(first.ArrivalDate); }
-                catch { arrivalDate = DateTime.Now; }
-
-                _context.reserve.Add(new Reserve
-                {
-                    BatchCode = BatchCode,
-                    OperatorId = first.OperatorId,
-                    TotalGuests = batchGuests.Count,
-           
-                    Status = "finalized",
-                    ArrivalDate = DateTime.Now
-
-                });
-                await _context.SaveChangesAsync();
+                TempData["ToastMessage"] = "No guests to confirm in this batch.";
+                TempData["ToastType"] = "info";
             }
 
-            // Add Toast, then redirect to GET version of same page to show toast message
-            TempData["ToastMessage"] = "FinalBook Successfully!";
-            TempData["ToastType"] = "success";
-            return RedirectToAction("reservebooking", new { BatchCode }); // Adjust if your GET takes no param
+            return RedirectToAction("reservebooking", new { BatchCode });
         }
+
 
         public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
         {

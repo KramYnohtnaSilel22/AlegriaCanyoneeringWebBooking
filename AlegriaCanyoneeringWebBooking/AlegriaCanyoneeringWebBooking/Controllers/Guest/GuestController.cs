@@ -93,11 +93,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var query = _context.Guests
                 .Include(g => g.OperatorList) // Include operator data
-                .Where(g => g.BookingStatus == "anticipated" || g.BookingStatus == "reserved");
+                .Where(g => g.BookingStatus == "anticipated");
 
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(g =>
+
                     g.Fullname.Contains(search) ||
                     g.Batch.Contains(search) ||
                     (g.OperatorList != null && g.OperatorList.BusinessName.Contains(search))
@@ -454,8 +455,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return RedirectToAction(nameof(saveguest));
         }
-
-
 
 
         [HttpPost]
