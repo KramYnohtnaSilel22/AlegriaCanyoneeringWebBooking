@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -83,6 +84,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         //        })
         //    });
         //}
+        private string ConvertUnixTimestampToDate(string unixTimestamp)
+        {
+            if (long.TryParse(unixTimestamp, out long timestamp))
+            {
+                // Unix timestamp is seconds past epoch
+                var dateTime = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
+                // Format date as "September 29 2025"
+                return dateTime.ToString("MMMM dd yyyy", CultureInfo.InvariantCulture);
+            }
+            return "N/A";
+        }
+
         [HttpPost]
         public async Task<IActionResult> GetGuestsData()
         {
@@ -92,13 +105,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var search = Request.Form["search[value]"].FirstOrDefault();
 
             var query = _context.Guests
-                .Include(g => g.OperatorList) // Include operator data
+                .Include(g => g.OperatorList)
                 .Where(g => g.BookingStatus == "anticipated");
 
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(g =>
-
                     g.Fullname.Contains(search) ||
                     g.Batch.Contains(search) ||
                     (g.OperatorList != null && g.OperatorList.BusinessName.Contains(search))
@@ -113,20 +125,25 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Take(length)
                 .ToListAsync();
 
+            var formattedData = data.Select(g => new
+            {
+                g.Id,
+                OperatorName = g.OperatorList?.BusinessName ?? "N/A",
+                totalGuests = g.NumberOfGuests,
+                arrivalDate = ConvertUnixTimestampToDate(g.ArrivalDate),  // <-- Convert here
+                bookingStatus = g.BookingStatus
+            });
+
             return Json(new
             {
                 draw = draw,
                 recordsFiltered = recordsTotal,
                 recordsTotal = recordsTotal,
-                data = data.Select(g => new {
-                    g.Id,
-                    OperatorName = g.OperatorList != null ? g.OperatorList.BusinessName : "N/A",
-                    totalGuests = g.NumberOfGuests,    // Add this if your model has it
-                    arrivalDate = g.ArrivalDate, // Format as needed
-                    g.BookingStatus
-                })
+                data = formattedData
             });
         }
+
+
 
         private async Task PopulateDropdowns()
         {

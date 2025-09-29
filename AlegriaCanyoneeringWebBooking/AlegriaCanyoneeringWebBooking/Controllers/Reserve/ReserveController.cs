@@ -133,19 +133,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View();
         }
         [HttpGet]
-        public async Task<IActionResult> GetGuestsByBatch(string batchCode)
-        {
-            if (string.IsNullOrEmpty(batchCode))
-                return BadRequest("Batch code is required.");
+public async Task<IActionResult> GetGuestsByBatch(string batchCode)
+{
+    if (string.IsNullOrEmpty(batchCode))
+        return BadRequest("Batch code is required.");
 
-            var guests = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)
-                .Where(g => g.Batch == batchCode)
-                .ToListAsync();
+    var guests = await _context.Guests
+        .Include(g => g.OperatorList)
+        .Include(g => g.NationalityEntity)
+        .Where(g => g.Batch == batchCode)
+        .ToListAsync();
 
-            return PartialView("_GuestDetailsPartial", guests);
-        }
+    return PartialView("_GuestDetailsPartial", guests);
+}
 
         [HttpPost]
         public async Task<IActionResult> GetGuestsData()
@@ -249,12 +249,30 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .Include(g => g.NationalityEntity)
                     .ToListAsync();
 
-                // Filter guests by ArrivalDate (parsed) and date range
+                // Helper function to convert Unix timestamp string to DateTime?
+                DateTime? ConvertUnixTimestampToDateTime(string unixTimestamp)
+                {
+                    if (long.TryParse(unixTimestamp, out var seconds))
+                    {
+                        // Unix timestamp assumed to be seconds since epoch UTC
+                        var dateTime = DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
+                        return dateTime;
+                    }
+                    return null;
+                }
+
+                // Filter guests by ArrivalDate parsed as Unix timestamp and date range
                 var filteredGuests = guests
-                    .Where(g => DateTime.TryParse(g.ArrivalDate, out var arrivalDate) &&
-                                arrivalDate >= startDate.Value.Date &&
-                                arrivalDate <= endDateInclusive)
-                    .OrderBy(g => DateTime.Parse(g.ArrivalDate))
+                    .Select(g =>
+                    {
+                        var arrivalDate = ConvertUnixTimestampToDateTime(g.ArrivalDate);
+                        return new { Guest = g, ArrivalDate = arrivalDate };
+                    })
+                    .Where(x => x.ArrivalDate.HasValue &&
+                                x.ArrivalDate.Value >= startDate.Value.Date &&
+                                x.ArrivalDate.Value <= endDateInclusive)
+                    .OrderBy(x => x.ArrivalDate.Value)
+                    .Select(x => x.Guest)
                     .ToList();
 
                 // Group guests by BatchCode
@@ -274,6 +292,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(model);
         }
+
 
     }
 

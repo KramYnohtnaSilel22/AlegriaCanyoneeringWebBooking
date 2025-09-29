@@ -34,15 +34,21 @@
                     { data: 'batchCode', title: 'Batch' },
                     { data: 'totalGuests', title: 'Total Guests' },
                     { data: 'operatorName', title: 'Operator' },
-                    {
-                        data: 'arrivalDate',
-                        title: 'Arrival Date',
-                        render: function (data) {
-                            if (!data) return '';
-                            const options = { year: 'numeric', month: 'short', day: 'numeric' };
-                            return new Date(data).toLocaleDateString(undefined, options);
-                        }
-                    },
+                          {
+                data: 'arrivalDate',
+                title: 'Arrival Date',
+                render: function (data) {
+                    if (!data) return '';
+                    // If your arrivalDate is a Unix timestamp (seconds), convert to milliseconds
+                    var milliseconds = parseInt(data) * 1000;
+                    var date = new Date(milliseconds);
+                    if (isNaN(date)) return ''; // fallback if date invalid
+
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    return date.toLocaleDateString(undefined, options); // e.g. September 29, 2025
+                }
+            },
+
                     {
                         data: 'status',
                         title: 'Status',
