@@ -38,14 +38,23 @@
                         data: 'arrivalDate',
                         title: 'Arrival Date',
                         render: function (data) {
-                            return new Date(data).toLocaleDateString();
+                            if (!data) return '';
+                            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                            return new Date(data).toLocaleDateString(undefined, options);
                         }
                     },
                     {
                         data: 'status',
                         title: 'Status',
                         render: function (data) {
-                            return `<span class="badge bg-primary text-uppercase px-2 py-1">${data}</span>`;
+                            if (!data) return '';
+                            // You can customize badge color based on status if needed
+                            let badgeClass = 'primary';
+                            if (data.toLowerCase() === 'confirmed') badgeClass = 'success';
+                            else if (data.toLowerCase() === 'anticipated') badgeClass = 'info';
+                            else if (data.toLowerCase() === 'cancelled') badgeClass = 'danger';
+
+                            return `<span class="badge bg-${badgeClass} text-uppercase px-2 py-1">${data}</span>`;
                         }
                     },
                     {

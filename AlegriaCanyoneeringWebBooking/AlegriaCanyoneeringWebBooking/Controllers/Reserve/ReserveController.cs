@@ -126,65 +126,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        // GET: The main page that shows the table and modals
+
+        // GET: FinalBookingBatch
         public IActionResult FinalBookingBatch()
         {
             return View();
         }
-
-        // DataTables AJAX POST endpoint for guests batches
-        [HttpPost]
-        public async Task<IActionResult> GetGuestsData()
-        {
-            var draw = Request.Form["draw"].FirstOrDefault();
-            var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
-            var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
-            var search = Request.Form["search[value]"].FirstOrDefault();
-
-            // Query confirmed guests grouped by batch
-            var batchQuery = _context.Guests
-                .Where(g => g.BookingStatus == "confirmed")
-                .GroupBy(g => g.Batch)
-                .Select(g => new
-                {
-                    BatchCode = g.Key,
-                    TotalGuests = g.Count(),
-                    OperatorName = g.FirstOrDefault().OperatorList.BusinessName,
-                    ArrivalDate = g.FirstOrDefault().ArrivalDate,
-                    Status = "Confirmed"
-                });
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                batchQuery = batchQuery.Where(b =>
-                    b.BatchCode.Contains(search) ||
-                    b.OperatorName.Contains(search)
-                );
-            }
-
-            var recordsTotal = await batchQuery.CountAsync();
-
-            var data = await batchQuery
-                .OrderByDescending(b => b.ArrivalDate)
-                .Skip(start)
-                .Take(length)
-                .ToListAsync();
-
-            return Json(new
-            {
-                draw = draw,
-                recordsFiltered = recordsTotal,
-                recordsTotal = recordsTotal,
-                data = data
-            });
-        }
-
-        // Endpoint to get guests by batch (for modal details)
         [HttpGet]
         public async Task<IActionResult> GetGuestsByBatch(string batchCode)
         {
             if (string.IsNullOrEmpty(batchCode))
-                return BadRequest("BatchCode is required");
+                return BadRequest("Batch code is required.");
 
             var guests = await _context.Guests
                 .Include(g => g.OperatorList)
@@ -194,6 +146,56 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return PartialView("_GuestDetailsPartial", guests);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> GetGuestsData()
+        {
+            var draw = Request.Form["draw"].FirstOrDefault();
+            var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
+            var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
+            var search = Request.Form["search[value]"].FirstOrDefault();
+
+            var query = _context.Guests
+                .Include(g => g.OperatorList)
+                .Where(g => g.BookingStatus == "confirmed");
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(g =>
+                    g.Batch.Contains(search) ||
+                    g.OperatorList.BusinessName.Contains(search)
+                );
+            }
+
+            var recordsTotal = await query.CountAsync();
+
+            // Group guests by Batch, Operator and ArrivalDate and get total guests count
+            var grouped = query
+                .GroupBy(g => new { g.Batch, OperatorName = g.OperatorList.BusinessName, g.ArrivalDate, g.BookingStatus })
+                .Select(grp => new
+                {
+                    batchCode = grp.Key.Batch,
+                    operatorName = grp.Key.OperatorName,
+                    arrivalDate = grp.Key.ArrivalDate, // format date as ISO string for JS
+                    status = grp.Key.BookingStatus,
+                    totalGuests = grp.Count()
+                });
+
+            var filteredData = await grouped
+                .OrderBy(g => g.batchCode)
+                .Skip(start)
+                .Take(length)
+                .ToListAsync();
+
+            return Json(new
+            {
+                draw = draw,
+                recordsTotal = recordsTotal,
+                recordsFiltered = recordsTotal,
+                data = filteredData
+            });
+        }
+
 
 
         [HttpPost]
@@ -232,44 +234,50 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return RedirectToAction("reservebooking", new { BatchCode });
         }
 
-
         public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
         {
             var model = new GuestListViewModel();
-            var allBatches = new List<Reserve>();
 
             if (startDate.HasValue && endDate.HasValue)
             {
-                // Ensure endDate includes the whole day by adding time to end of day
+                // Make sure to include entire end day
                 var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
 
-                allBatches = await _context.reserve
-                    .Where(r => r.ArrivalDate >= startDate.Value.Date && r.ArrivalDate <= endDateInclusive)
-                    .OrderBy(r => r.ArrivalDate)
-                    .ToListAsync();
-
-                var batchCodes = allBatches.Select(b => b.BatchCode).ToList();
-
-                var batchGuests = await _context.Guests
+                // Get all guests including navigation properties
+                var guests = await _context.Guests
                     .Include(g => g.OperatorList)
                     .Include(g => g.NationalityEntity)
-                    .Where(g => batchCodes.Contains(g.Batch))
                     .ToListAsync();
 
-                model.BatchGuests = batchGuests
-                    .GroupBy(g => g.Batch)
+                // Filter guests by ArrivalDate (parsed) and date range
+                var filteredGuests = guests
+                    .Where(g => DateTime.TryParse(g.ArrivalDate, out var arrivalDate) &&
+                                arrivalDate >= startDate.Value.Date &&
+                                arrivalDate <= endDateInclusive)
+                    .OrderBy(g => DateTime.Parse(g.ArrivalDate))
+                    .ToList();
+
+                // Group guests by BatchCode
+                model.BatchGuests = filteredGuests
+                    .GroupBy(g => g.Batch)  // Assuming g.Batch stores the BatchCode
                     .ToDictionary(g => g.Key, g => g.ToList());
 
-                ViewBag.AllBatches = allBatches;
+                // Pass the batch codes to ViewBag
+                ViewBag.AllBatches = model.BatchGuests.Keys.ToList();
             }
             else
             {
-                ViewBag.AllBatches = new List<Reserve>();
+                // No filter, empty batch guest dictionary & batch list
+                model.BatchGuests = new Dictionary<string, List<Guest>>();
+                ViewBag.AllBatches = new List<string>();
             }
 
             return View(model);
         }
 
-
     }
+
+
+
 }
+

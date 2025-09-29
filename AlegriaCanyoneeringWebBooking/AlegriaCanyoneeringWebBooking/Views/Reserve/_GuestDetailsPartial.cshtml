@@ -4,11 +4,13 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="guestDetailsModalLabel">Booking Details - Batch: @Model.FirstOrDefault()?.Batch</h5>
+                <h5 class="modal-title" id="guestDetailsModalLabel">
+                    Booking Details - Batch: @Model.FirstOrDefault()?.Batch ?? "N/A"
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                @if (Model.Any())
+                @if (Model != null && Model.Any())
                 {
                     var primaryGuest = Model.First();
                     var companions = Model.Skip(1).ToList();
@@ -29,14 +31,26 @@
                         </thead>
                         <tbody>
                             <tr class="table-success">
-                                <td>@(primaryGuest.OperatorList?.BusinessName ?? "N/A")</td>
+                                <td>@(primaryGuest.OperatorList?.BusinessName)</td>
                                 <td>@primaryGuest.Fullname</td>
                                 <td>@primaryGuest.Age</td>
                                 <td>@primaryGuest.ContactNumber</td>
                                 <td>@primaryGuest.Gender</td>
-                                <td>@(primaryGuest.NationalityEntity?.NatName ?? "N/A")</td>
+                                <td>@(primaryGuest.NationalityEntity?.NatName )</td>
                                 <td>@primaryGuest.Area</td>
-                                <td>@primaryGuest.ArrivalDate</td>
+                                <td>
+                                    @{
+                                        // Parse ArrivalDate string to DateTime and format nicely
+                                        if (DateTime.TryParse(primaryGuest.ArrivalDate, out var arrivalDt))
+                                        {
+                                            @arrivalDt.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            @primaryGuest.ArrivalDate
+                                        }
+                                    }
+                                </td>
                             </tr>
                         </tbody>
                     </table>
