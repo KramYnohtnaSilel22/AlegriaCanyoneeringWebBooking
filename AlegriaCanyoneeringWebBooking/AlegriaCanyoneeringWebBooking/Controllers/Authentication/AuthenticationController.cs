@@ -249,6 +249,73 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
+        // ================= GET =================
+        // GET: /Authentication/Edit
+        [Authorize(Roles = "Super Admin,Admin,Operator")]
+        [HttpGet("/Authentication/Edit")]
+        public async Task<IActionResult> Edit()
+        {
+            var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(idClaim)) return RedirectToAction("Login", "Authentication");
+
+            if (!int.TryParse(idClaim, out int operatorId)) return BadRequest("Invalid operator id.");
+
+            var op = await _context.Operators
+                .Include(o => o.Roles)
+                .FirstOrDefaultAsync(o => o.OperatorId == operatorId);
+
+            if (op == null) return NotFound();
+
+            var vm = new OperatorUpdateViewModel
+            {
+                OperatorId = op.OperatorId,
+                Name = op.Name,
+                BusinessName = op.BusinessName,
+                Age = op.Age,
+                Gender = op.Gender ?? string.Empty,
+                Username = op.Username ?? string.Empty,
+                EmailAddress = op.EmailAddress,
+                RoleId = op.RoleId,
+                RoleName = op.Roles?.Name
+            };
+
+            return View(vm);
+        }
+
+        // ================= POST =================
+        // POST: /Authentication/Edit
+        [Authorize(Roles = "Super Admin,Admin,Operator")]
+        [HttpPost("/Authentication/Edit")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(OperatorUpdateViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            // get the current operator id from the logged-in user (extra safety)
+            var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(idClaim) || model.OperatorId.ToString() != idClaim)
+            {
+                return Forbid(); // prevent editing someone else's record
+            }
+
+            var op = await _context.Operators.FindAsync(model.OperatorId);
+            if (op == null) return NotFound();
+
+            op.Name = model.Name;
+            op.BusinessName = model.BusinessName;
+            op.Age = model.Age;
+            op.Gender = model.Gender;
+            op.Username = model.Username;
+            op.EmailAddress = model.EmailAddress;
+            op.RoleId = model.RoleId;
+
+            _context.Update(op);
+            await _context.SaveChangesAsync();
+
+            TempData["UpdateSuccess"] = "Operator information updated successfully.";
+            return RedirectToAction("Index", "Home"); // or wherever you want to go after saving
+        }
+
 
         public IActionResult AccessDenied()
         {
