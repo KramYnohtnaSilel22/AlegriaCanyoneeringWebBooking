@@ -39,6 +39,7 @@
 
         <!-- Form for Guest Info -->
         <form asp-action="NewBooking" method="post" id="guestForm">
+                @Html.AntiForgeryToken()
             <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
             <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
             <input type="hidden" id="MainGuestId" name="id" value="@ViewBag.MainGuestId" />
@@ -146,141 +147,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
-@* <script>
-       // Loading overlay handling
-    $(window).on('load', function () {
-        $('#successMessage').text('Page loaded successfully!').fadeIn(500);
 
-        setTimeout(function () {
-            $('#loadingOverlay').fadeOut(500);
-        }, 1000);
-    });
-
-      $(document).ready(function () {
-        const $type = $('#NationalityType');
-        const $list = $('#NationalityId');
-        const selectedNationalityId = '@Model.NewGuest.NationalityId';// Always compare as string
-        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-
-        function updateNationalityIdOptions(typeChoice) {
-            $list.empty(); // Always clear options
-
-            if (typeChoice === 'Local') {
-                const localOptions = [
-                    { id: '1000', text: 'Within Cebu Province' },
-                    { id: '1001', text: 'Outside Cebu Province' }
-                ];
-
-                localOptions.forEach(opt => {
-                    const option = new Option(opt.text, opt.id);
-                    if (selectedNationalityId === opt.id) {
-                        option.selected = true;
-                    }
-                    $list.append(option);
-                });
-            } else if (typeChoice === 'Foreign') {
-                $list.append(new Option('Loading...', ''));
-
-                $.getJSON(getNationalitiesUrl)
-                    .done(function (data) {
-                        $list.empty(); // clear any existing options
-                        $list.append(new Option('-- Select Nationality --', ''));
-
-                        data.forEach(item => {
-                            const itemId = item.nationalityId.toString();
-                            const option = new Option(item.natName, itemId);
-                            if (selectedNationalityId === itemId) {
-                                option.selected = true;
-                            }
-                            $list.append(option);
-                        });
-                    })
-                    .fail(function (jqXHR, textStatus, errorThrown) {
-                        console.error('AJAX error:', textStatus, errorThrown);
-                        $list.empty().append(new Option('Error loading nationalities', ''));
-                    });
-            } else {
-                $list.append(new Option('-- Select Nationality Type First --', ''));
-            }
-        }
-
-        $type.on('change', function () {
-            updateNationalityIdOptions($(this).val());
-        });
-
-        // Trigger on page load (pre-fill if value exists)
-        if ($type.val()) {
-            updateNationalityIdOptions($type.val());
-        }
-    });
-
-
-    const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
-
-    $(document).ready(function () {
-        if (isReadonly) {
-            // Disable or make readonly only the required inputs
-            $('#OperatorInput, #TourAreaInput').prop('disabled', true);
-            $('#BookingDateInput, #ArrivalDateInput').prop('readonly', true);
-
-            // Apply visual styling for readonly/disabled inputs
-            $('#OperatorInput, #BookingDateInput, #ArrivalDateInput, #TourAreaInput').css({
-                'background-color': '#f5f5f5',
-                'color': '#888'
-            });
-        }
-    });
-
-    // Guest batch management
-    let guestsBatch = [];
-
-    function updateTotalGuestsDisplay() {
-        $('#totalGuestsCount').text(guestsBatch.length);
-        $('#saveBtn').prop('disabled', guestsBatch.length === 0);
-    }
-
-    $('#addGuestBtn').click(function () {
-        const guest = {
-            OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
-            Fullname: $('[name="NewGuest.Fullname"]').val(),
-            Age: $('[name="NewGuest.Age"]').val(),
-            Gender: $('[name="NewGuest.Gender"]').val(),
-            ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
-            NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-            NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()),
-            Area: $('[name="NewGuest.Area"]').val(),
-            Date: $('[name="NewGuest.Date"]').val(),
-            ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
-        };
-
-        if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
-            !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
-            alert('Please fill in all required fields.');
-            return;
-        }
-        guestsBatch.push(guest);
-        updateTotalGuestsDisplay();
-
-        // Lock batch-related inputs after adding guest to batch (but don't clear values)
-        $('#BookingDateInput, #ArrivalDateInput').prop('readonly', true);
-        $('#OperatorInput, #TourAreaInput').on('mousedown', function (e) { e.preventDefault(); });
-        $('#OperatorInput, #TourAreaInput, #BookingDateInput, #ArrivalDateInput')
-            .css({'background-color': '#f5f5f5', 'color': '#888'});
-
-        $('#CurrentBatch')
-            .prop('readonly', true)
-            .css({'background-color':'#f5f5f5','color':'#888'});
-    });
-
-    // Serialize batch guests to hidden field on form submit
-    $('#guestForm').on('submit', function () {
-        $('#BatchGuestsJson').val(JSON.stringify(guestsBatch));
-    });
-
-    // Initialize display on page load
-    updateTotalGuestsDisplay();
-</script>
- *@
 
 
 <script>

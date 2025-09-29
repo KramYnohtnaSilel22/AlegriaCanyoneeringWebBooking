@@ -10,7 +10,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public DbSet<Batch> Batches { get; set; }
         public DbSet<Guest> Guests { get; set; }
         public DbSet<OperatorList> OperatorLists { get; set; }
-    
+
         public DbSet<Nationality> Nationalities { get; set; }
   
         // //public DbSet<Driver> Drivers { get; set; }
@@ -20,7 +20,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Guest>(entity =>
@@ -132,7 +131,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.HasIndex(e => e.NationalityType).HasDatabaseName("IX_guests_nationality");
                 entity.HasIndex(e => e.NationalityId).HasDatabaseName("IX_guests_nationality_id");
                 entity.HasIndex(e => e.BookingStatus).HasDatabaseName("IX_guests_booking_status");
-
             });
 
             // OperatorList entity configuration
@@ -157,6 +155,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
             //modelBuilder.Entity<Guide>().ToTable("tourguide_details");
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<Operator>().ToTable("operator");
+   
         }
     }
 }

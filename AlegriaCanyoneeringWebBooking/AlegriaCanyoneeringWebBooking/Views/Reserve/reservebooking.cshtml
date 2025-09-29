@@ -31,7 +31,7 @@
                     <tr>
                         <th>Status</th>
                         <th>Operator</th>
-                        <th>Nationality</th>
+                   @*      <th>Nationality</th> *@
                         <th>Total of Guests</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -54,7 +54,7 @@
                                 </span>
                             </td>
                             <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
-                            <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
+                        @*     <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td> *@
                             <td>@guest.NumberOfGuests</td>
                             <td class="text-center">
                                 <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-1">

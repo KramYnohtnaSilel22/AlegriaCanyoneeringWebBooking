@@ -1,54 +1,114 @@
 ﻿@{
-    ViewData["Title"] = "Welcome to Alegria Canyoneering";
+    ViewData["Title"] = "Dashboard - Alegria Canyoneering";
 }
+
+<!-- Dashboard Styling -->
 <style>
-    @@keyframes fadeInUp {
-        from
-
-    {
-        opacity: 0;
-        transform: translateY(20px);
+    .dashboard-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: 0.3s;
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    }
-
-    .fade-in-up {
-        animation: fadeInUp 1s ease forwards;
-    }
-
-    .btn-custom {
-        background-color: #f97316; /* bright orange */
-        color: #0c2340; /* dark blue */
-        border: none;
-        border-radius: 50px;
-        padding: 0.75rem 2.5rem;
-        font-weight: 700;
-        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.4);
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-        .btn-custom:hover {
-            background-color: #0c2340; /* dark blue */
-            color: #f97316; /* bright orange */
-            box-shadow: 0 6px 12px rgba(12, 35, 64, 0.6);
+        .dashboard-card:hover {
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
         }
+
+    .dashboard-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0c2340;
+    }
+
+    .dashboard-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #f97316;
+    }
+
+
+    .bg-gradient {
+        background: linear-gradient(to right, #4a90e2, #50e3c2);
+    }
 </style>
 
-<div class="d-flex flex-column justify-content-center align-items-center vh-100 bg-gradient" style="background: linear-gradient(135deg, #4a90e2, #50e3c2); color: #0c2340; text-align: center; padding: 0 20px;">
-    <h1 class="display-3 fw-bold mb-3" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">
-        <span style="color:#007BFF;">Welcome to</span>
-        <span style="color: #f97316;">Alegria Canyoneering</span>
-    </h1>
+<div class="container py-5">
+    <h2 class="mb-4 fw-bold text-success">Dashboard Overview</h2>
 
-    <p class="lead mb-4" style="max-width: 600px; font-size: 1.25rem; color: #4caf50; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
-        Embark on an unforgettable adventure! Discover breathtaking landscapes and create memories that last a lifetime.
-    </p>
-    <a href="/Guest/NewBooking" class="btn btn-custom">
-        Book Your Adventure Now
-    </a>
+    <!-- Stats Overview -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <div class="dashboard-title">Guests This Week</div>
+                <div class="dashboard-number">132</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <div class="dashboard-title">Guests This Month</div>
+                <div class="dashboard-number">892</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <div class="dashboard-title">Guests This Year</div>
+                <div class="dashboard-number">7,543</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <h5 class="section-title">Monthly Guest Trend</h5>
+            <canvas id="guestTrendChart" height="100"></canvas>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var ctx = document.getElementById('guestTrendChart').getContext('2d');
+
+            var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                    datasets: [{
+                        label: 'Guests',
+                        data: [400, 500, 600, 450, 700, 800, 900, 850, 950],
+                        fill: true,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 100
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

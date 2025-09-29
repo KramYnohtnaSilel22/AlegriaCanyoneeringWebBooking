@@ -16,6 +16,7 @@
     </thead>
 </table>
 
+<!-- ✅ Toast Message -->
 @if (TempData["ToastMessage"] != null)
 {
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
@@ -43,7 +44,18 @@
                 columns: [
                     { data: 'operatorName', title: 'Operator' },
                     { data: 'totalGuests', title: 'Total Guests' },
-                    { data: 'arrivalDate', title: 'Arrival Date' },
+                {
+            data: 'arrivalDate',
+            title: 'Arrival Date',
+            render: function(data) {
+                if (!data) return '';
+                const d = new Date(data);
+                if (isNaN(d.getTime())) return ''; // returns blank if invalid
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return d.toLocaleDateString('en-US', options);
+            }
+        },
+
                     {
                         data: 'bookingStatus',
                         title: 'Status',
@@ -82,6 +94,7 @@
                 }
             });
 
+            // ✅ Toast Message Handling
             var toastElement = document.getElementById('toastMessage');
             if (toastElement) {
                 var toast = new bootstrap.Toast(toastElement);
