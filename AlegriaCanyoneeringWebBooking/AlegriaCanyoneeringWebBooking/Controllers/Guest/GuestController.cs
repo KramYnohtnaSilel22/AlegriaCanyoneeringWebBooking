@@ -434,8 +434,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Redirect back to the BookingDetails
-            return RedirectToAction("saveguest", new { batch = guest.Batch });
+
+            // ✅ Redirect back to ReserveDetails
+            return RedirectToAction("ReserveDetails", "Reserve", new { id = guest.Id });
+
         }
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
