@@ -364,39 +364,45 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound();
             }
 
-            // Get all guests of the same operator with the same current booking status (optional filter)
+            // Get all guests with the same OperatorId and same BookingStatus as the current guest (ex: anticipated)
             var operatorGuests = await _context.Guests
-                .Where(g => g.OperatorId == guest.OperatorId)
+                .Where(g => g.OperatorId == guest.OperatorId && g.BookingStatus == guest.BookingStatus)
                 .ToListAsync();
 
-            if (operatorGuests == null || operatorGuests.Count == 0)
+            if (!operatorGuests.Any())
             {
                 return NotFound("No guests found for this operator.");
             }
 
-            // Update the BookingStatus for all guests of this operator
+            // 🔐 Generate a new batch code to make sure it's treated as a separate row
+            string newBatchCode = GenerateBatchCode(guest.OperatorId);
+
+            // Update status and assign new batch code
             foreach (var g in operatorGuests)
             {
                 g.BookingStatus = status;
+                g.Batch = newBatchCode;
             }
 
             try
             {
                 await _context.SaveChangesAsync();
-
-                TempData["ToastMessage"] = $"Successfully updated status '{status}' for all guests of the operator!";
-                TempData["ToastType"] = "success";
             }
             catch (DbUpdateConcurrencyException)
             {
                 return Conflict("Concurrency conflict: guests may have been modified by another process.");
             }
 
-            // Redirect to your saveguest or reservedbooking action as needed
+            // Optional: redirect to saveguest or paginated section
             return RedirectToAction(nameof(saveguest));
         }
 
+        private string GenerateBatchCode(int? operatorId)
+        {
+            return $"OP{operatorId}-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
+        }
 
+ 
 
         [HttpPost]
         [ValidateAntiForgeryToken]

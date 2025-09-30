@@ -40,32 +40,35 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (!reservedGuests.Any())
                 return View(new GuestListViewModel());
 
+            // Generate QR for each guest
             foreach (var guest in reservedGuests)
             {
                 guest.QRText = GenerateQRText(guest);
                 guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
             }
 
+            // ✅ Group by Batch instead of OperatorId
             var grouped = reservedGuests
-                .GroupBy(g => g.OperatorId)
+                .GroupBy(g => g.Batch)
                 .Select(grp =>
                 {
                     var first = grp.First();
                     return new Guest
                     {
-                        Id = first.Id,  // <--- Important for link routing
-                        OperatorId = grp.Key,
+                        Id = first.Id,  // Used for View/Action links
+                        OperatorId = first.OperatorId,
                         OperatorList = first.OperatorList,
                         NumberOfGuests = grp.Count(x => x.BookingStatus != "canceled"),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus,
                         QRText = GenerateQRText(first),
                         QRBase64 = GenerateQRCodeBase64(first.OperatorList?.BusinessName ?? ""),
-                        Batch = first.Batch  // <-- ensure Batch is carried over
+                        Batch = first.Batch
                     };
                 })
                 .ToList();
 
+            // Optional: Use first batch for QR display (not really needed per-row)
             string batchCode = reservedGuests.First().Batch;
             string batchQrBase64 = GenerateQRCodeBase64(batchCode);
 
@@ -73,12 +76,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 ReservedGuests = grouped,
                 BatchQrBase64 = batchQrBase64
-
             };
 
             return View(vm);
         }
-
 
         // ---------- QR Helpers ----------
 
@@ -107,31 +108,36 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
         public async Task<IActionResult> ReserveDetails(int id)
         {
-            // Retrieve the main guest by Id with related data
+            // Get the main guest, including the nationality (make sure to include Nationality)
             var mainGuest = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)
+                .Include(g => g.NationalityEntity)  // Ensure Nationality is loaded
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (mainGuest == null)
-                return NotFound();
+            {
+                return NotFound(); // Return if no guest found
+            }
 
-            // Get all reserved guests with the same OperatorId
-            var guestsInOperator = await _context.Guests
+            // Get other guests in the same batch, excluding the main guest
+            var guestsInBatch = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)
-                .Where(g => g.OperatorId == mainGuest.OperatorId && g.BookingStatus == "reserved")
+                .Include(g => g.NationalityEntity)  // Ensure Nationality is included
+                .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
                 .OrderBy(g => g.Id)
+                .Take(4)
                 .ToListAsync();
 
             var model = new GuestDetailsViewModel
             {
                 Guest = mainGuest,
-                GuestsInBatch = guestsInOperator
+                GuestsInBatch = guestsInBatch
             };
 
             return View(model);
         }
+
+
 
 
 
@@ -243,41 +249,55 @@ public async Task<IActionResult> GetGuestsByBatch(string batchCode)
 
 
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> FinalBookingBatch(string BatchCode)
+       [HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> FinalBookingBatch(string BatchCode)
+{
+    if (string.IsNullOrEmpty(BatchCode))
+    {
+        TempData["ToastType"] = "danger";
+        return RedirectToAction("reservebooking");
+    }
+
+    // Get any guest from the batch to get the OperatorId
+    var sampleGuest = await _context.Guests
+        .FirstOrDefaultAsync(g => g.Batch == BatchCode);
+
+    if (sampleGuest == null)
+    {
+        TempData["ToastMessage"] = "Invalid batch code.";
+        TempData["ToastType"] = "danger";
+        return RedirectToAction("reservebooking");
+    }
+
+    // Update all guests with same OperatorId and Batch to 'confirmed'
+    var guestsToFinalize = await _context.Guests
+        .Where(g => g.OperatorId == sampleGuest.OperatorId &&
+                    g.Batch == BatchCode &&
+                    g.BookingStatus != "confirmed")
+        .ToListAsync();
+
+    if (guestsToFinalize.Any())
+    {
+        foreach (var guest in guestsToFinalize)
         {
-            if (string.IsNullOrEmpty(BatchCode))
-            {
-           
-                TempData["ToastType"] = "danger";
-                return RedirectToAction("reservebooking");
-            }
-
-            // Update all guests in the batch to confirmed
-            var guestsToFinalize = await _context.Guests
-                .Where(g => g.Batch == BatchCode && g.BookingStatus != "confirmed")
-                .ToListAsync();
-
-            if (guestsToFinalize.Any())
-            {
-                foreach (var guest in guestsToFinalize)
-                {
-                    guest.BookingStatus = "confirmed";
-                }
-                await _context.SaveChangesAsync();
-
-                TempData["ToastMessage"] = "Batch confirmed successfully!";
-                TempData["ToastType"] = "success";
-            }
-            else
-            {
-                TempData["ToastMessage"] = "No guests to confirm in this batch.";
-                TempData["ToastType"] = "info";
-            }
-
-            return RedirectToAction("reservebooking", new { BatchCode });
+            guest.BookingStatus = "confirmed";
         }
+
+        await _context.SaveChangesAsync();
+
+        TempData["ToastMessage"] = "Guests confirmed successfully!";
+        TempData["ToastType"] = "success";
+    }
+    else
+    {
+        TempData["ToastMessage"] = "No guests to confirm for this batch and operator.";
+        TempData["ToastType"] = "info";
+    }
+
+    return RedirectToAction("reservebooking", new { BatchCode });
+}
+
 
             public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
         {
