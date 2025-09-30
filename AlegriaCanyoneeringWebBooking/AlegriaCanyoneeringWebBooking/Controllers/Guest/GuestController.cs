@@ -203,12 +203,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     foreach (var guest in batchGuests)
                     {
-                        // Allow adding even if a guest with the same name and operator already exists
+                        var now = DateTime.Now;
+
                         guest.BookingStatus = "anticipated";
+                        guest.Year = now.Year.ToString();  // force overwrite as int
+                        guest.Date = now.ToString("ddd, dd MMMM yyyy HH:mm");
                         guest.Batch = batchId;
                         guest.RFID = GenerateRFID();
                         guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
-                        guest.Month = DateTime.Today.ToString("yyyy-MM");
+                        guest.Month = DateTime.Today.ToString("MMMM");
                         guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
 
