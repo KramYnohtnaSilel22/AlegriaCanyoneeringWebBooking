@@ -9,81 +9,205 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = AlegriaCanyoneeringWebBooking
 build_property.RootNamespace = AlegriaCanyoneeringWebBooking
-build_property.ProjectDir = C:\Users\dovtyler\source\repos\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking\
+build_property.ProjectDir = C:\Users\Darius Cumpio\Source\Repos\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\dovtyler\source\repos\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking
+build_property.MSBuildProjectDirectory = C:\Users\Darius Cumpio\Source\Repos\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking\AlegriaCanyoneeringWebBooking
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Admin/CreateOperator.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ3JlYXRlT3BlcmF0b3IuY3NodG1s
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/AccessDenied.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cQWNjZXNzRGVuaWVkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Admin/EditOperator.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cRWRpdE9wZXJhdG9yLmNzaHRtbA==
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/ChangePassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cQ2hhbmdlUGFzc3dvcmQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Admin/Operators.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cT3BlcmF0b3JzLmNzaHRtbA==
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cRWRpdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/Accept.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3RcQWNjZXB0LmNzaHRtbA==
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/ForgotPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cRm9yZ290UGFzc3dvcmQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/Anticipate.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3RcQW50aWNpcGF0ZS5jc2h0bWw=
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/ForgotPasswordConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cRm9yZ290UGFzc3dvcmRDb25maXJtYXRpb24uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/EditReserve.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cTG9naW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/ResetPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cUmVzZXRQYXNzd29yZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Authentication/ResetPasswordConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aGVudGljYXRpb25cUmVzZXRQYXNzd29yZENvbmZpcm1hdGlvbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Batches/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmF0Y2hlc1xDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Batches/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmF0Y2hlc1xEZWxldGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Batches/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmF0Y2hlc1xFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Batches/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmF0Y2hlc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/EditReserve.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3RcRWRpdFJlc2VydmUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/Reserve.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3RcUmVzZXJ2ZS5jc2h0bWw=
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/NewBooking.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3RcTmV3Qm9va2luZy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/ReserveDetails.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3RcUmVzZXJ2ZURldGFpbHMuY3NodG1s
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/saveguest.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3Rcc2F2ZWd1ZXN0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Guest/ScanQR.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR3Vlc3RcU2NhblFSLmNzaHRtbA==
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Home/About.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxBYm91dC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Home/Index.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Home/Privacy.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Shared/Error.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Nationalities/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTmF0aW9uYWxpdGllc1xDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Nationalities/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTmF0aW9uYWxpdGllc1xEZWxldGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Nationalities/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTmF0aW9uYWxpdGllc1xEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Nationalities/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTmF0aW9uYWxpdGllc1xFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Nationalities/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTmF0aW9uYWxpdGllc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/OperatorList/CreateOperator.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JMaXN0XENyZWF0ZU9wZXJhdG9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/OperatorList/EditOperator.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JMaXN0XEVkaXRPcGVyYXRvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/OperatorList/Operators.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JMaXN0XE9wZXJhdG9ycy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Operators/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JzXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Operators/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JzXERlbGV0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Operators/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JzXERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Operators/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JzXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Operators/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0b3JzXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Reserve/FinalBookingBatch.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXJ2ZVxGaW5hbEJvb2tpbmdCYXRjaC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Reserve/reservebooking.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXJ2ZVxyZXNlcnZlYm9va2luZy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Reserve/ReserveDetails.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXJ2ZVxSZXNlcnZlRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Reserve/SaveGuest.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXJ2ZVxTYXZlR3Vlc3QuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Reserve/_GuestDetailsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXJ2ZVxfR3Vlc3REZXRhaWxzUGFydGlhbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Roles/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUm9sZXNcQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Roles/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUm9sZXNcRGVsZXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Roles/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUm9sZXNcRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Roles/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUm9sZXNcRWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Roles/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUm9sZXNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Shared/Layout_Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXExheW91dF9Mb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Test/Index.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Test/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVzdFxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/_ViewImports.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/_ViewStart.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/dovtyler/source/repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Shared/_Layout.cshtml]
+[C:/Users/Darius Cumpio/Source/Repos/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/AlegriaCanyoneeringWebBooking/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-5n2p9lf05j

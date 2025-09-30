@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AlegriaCanyoneeringWebBooking")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cce4d59e0294c838ee0dde870693749ab941254f")]
 [assembly: System.Reflection.AssemblyProductAttribute("AlegriaCanyoneeringWebBooking")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AlegriaCanyoneeringWebBooking")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

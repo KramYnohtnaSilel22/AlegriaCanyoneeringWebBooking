@@ -1,0 +1,401 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\controllers\\guest\\guestcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\controllers\\guest\\guestcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\models\\guest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\models\\guest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\guest\\newbooking.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\guest\\newbooking.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\models\\guide.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\models\\guide.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\controllers\\authentication\\authenticationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\controllers\\authentication\\authenticationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\shared\\layout_login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\shared\\layout_login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\authentication\\changepassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\authentication\\changepassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\authentication\\forgotpasswordconfirmation.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\authentication\\forgotpasswordconfirmation.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\authentication\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\authentication\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\authentication\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\authentication\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\models\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\models\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\viewmodel\\operatorupdateviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\viewmodel\\operatorupdateviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\authentication\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\authentication\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\authentication\\resetpasswordconfirmation.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\authentication\\resetpasswordconfirmation.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\authentication\\resetpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\authentication\\resetpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\operators\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\operators\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\views\\operators\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\views\\operators\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\models\\operator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\models\\operator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\service\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\service\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\helpers\\passwordhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\helpers\\passwordhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|c:\\users\\darius cumpio\\source\\repos\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\alegriacanyoneeringwebbooking\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{4997455A-F83E-442A-98CD-C5B0B0CF0223}|AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj|solutionrelative:alegriacanyoneeringwebbooking\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 9,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{004be353-6879-467c-9d1e-9ac23cdf6d49}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "NewBooking.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Guest\\NewBooking.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Guest\\NewBooking.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Guest\\NewBooking.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Guest\\NewBooking.cshtml",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAQwGgAAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-30T05:45:35.158Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Guide.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Guide.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Models\\Guide.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Guide.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Models\\Guide.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-30T05:19:26.279Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GuestController.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Controllers\\Guest\\GuestController.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Controllers\\Guest\\GuestController.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Controllers\\Guest\\GuestController.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Controllers\\Guest\\GuestController.cs",
+              "ViewState": "AgIAAMAAAAAAAAAAAAAUwNQAAABOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-30T03:23:48.229Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Edit.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Edit.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Edit.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Edit.cshtml",
+              "ViewState": "AgIAABgAAAAAAAAAAAAUwDwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:11:00.951Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Login.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Login.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Login.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\Login.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-28T10:45:59.138Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "AuthenticationController.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Controllers\\Authentication\\AuthenticationController.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Controllers\\Authentication\\AuthenticationController.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Controllers\\Authentication\\AuthenticationController.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Controllers\\Authentication\\AuthenticationController.cs",
+              "ViewState": "AgIAACIBAAAAAAAAAAAcwB4BAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-28T10:45:21.713Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "OperatorUpdateViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\ViewModel\\OperatorUpdateViewModel.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\ViewModel\\OperatorUpdateViewModel.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\ViewModel\\OperatorUpdateViewModel.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\ViewModel\\OperatorUpdateViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-29T06:09:35.648Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ForgotPasswordConfirmation.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPasswordConfirmation.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPasswordConfirmation.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPasswordConfirmation.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPasswordConfirmation.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:26:57.867Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Guest.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Guest.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Models\\Guest.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Guest.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Models\\Guest.cs",
+              "ViewState": "AgIAADcAAAAAAAAAAAAmwEIAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-28T09:58:42.717Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ForgotPassword.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPassword.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPassword.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPassword.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ForgotPassword.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:25:50.878Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Layout_Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Shared\\Layout_Login.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Shared\\Layout_Login.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Shared\\Layout_Login.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Shared\\Layout_Login.cshtml",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:46:47.055Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "ResetPasswordConfirmation.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPasswordConfirmation.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPasswordConfirmation.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPasswordConfirmation.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPasswordConfirmation.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:27:00.905Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Role.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Role.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Models\\Role.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Role.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Models\\Role.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-29T06:35:16.149Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ChangePassword.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ChangePassword.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ChangePassword.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ChangePassword.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ChangePassword.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:26:54.046Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "ResetPassword.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPassword.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPassword.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPassword.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Authentication\\ResetPassword.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:26:59.862Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAEIBAAAAAAAAAAAAAGABAABmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:12:35.05Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Operators\\Edit.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Operators\\Edit.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Operators\\Edit.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Operators\\Edit.cshtml",
+              "ViewState": "AgIAACUAAAAAAAAAAAAUwEkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:11:31.101Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Operators\\Create.cshtml",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Views\\Operators\\Create.cshtml",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Views\\Operators\\Create.cshtml",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Views\\Operators\\Create.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-29T06:11:29.382Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Operator.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Operator.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Models\\Operator.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Models\\Operator.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Models\\Operator.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAiwDAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-29T06:08:09.059Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "PasswordHelper.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Helpers\\PasswordHelper.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Helpers\\PasswordHelper.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Helpers\\PasswordHelper.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Helpers\\PasswordHelper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-28T10:39:31.261Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "EmailService.cs",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Service\\EmailService.cs",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\Service\\EmailService.cs",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\Service\\EmailService.cs",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\Service\\EmailService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-28T10:39:29.89Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\appsettings.json",
+              "RelativeDocumentMoniker": "AlegriaCanyoneeringWebBooking\\appsettings.json",
+              "ToolTip": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\appsettings.json",
+              "RelativeToolTip": "AlegriaCanyoneeringWebBooking\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-28T10:39:02.623Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
