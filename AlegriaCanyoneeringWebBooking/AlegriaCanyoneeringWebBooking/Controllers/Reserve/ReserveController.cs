@@ -61,8 +61,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         NumberOfGuests = grp.Count(x => x.BookingStatus != "canceled"),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus,
-                        QRText = GenerateQRText(first),
-                        QRBase64 = GenerateQRCodeBase64(first.OperatorList?.BusinessName ?? ""),
+                        QRText = first.QRText,
+                        QRBase64 = first.QRBase64,
                         Batch = first.Batch
                     };
                 })
@@ -85,13 +85,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private string GenerateQRText(Guest guest)
         {
-            var sb = new StringBuilder();
-
-            sb.AppendLine($"Batch        : {guest.Batch}");
-
-            return sb.ToString();
+            return $"Batch        : {guest.Batch}";
         }
-
         private string GenerateQRCodeBase64(string data)
         {
             var qrGenerator = new QRCodeGenerator();

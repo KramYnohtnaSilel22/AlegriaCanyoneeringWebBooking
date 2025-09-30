@@ -355,7 +355,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-
         public async Task<IActionResult> UpdateStatus(int id, string status)
         {
             var guest = await _context.Guests.FindAsync(id);
@@ -374,14 +373,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound("No guests found for this operator.");
             }
 
-            // 🔐 Generate a new batch code to make sure it's treated as a separate row
-            string newBatchCode = GenerateBatchCode(guest.OperatorId);
+            // **Do NOT generate a new batch code**
+            // Keep the existing batch code from the first guest in the group
+            string existingBatchCode = guest.Batch;
 
-            // Update status and assign new batch code
+            // Update status and keep the same batch code
             foreach (var g in operatorGuests)
             {
                 g.BookingStatus = status;
-                g.Batch = newBatchCode;
+                g.Batch = existingBatchCode;  // Keep old batch code
             }
 
             try
@@ -396,6 +396,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Optional: redirect to saveguest or paginated section
             return RedirectToAction(nameof(saveguest));
         }
+
 
         private string GenerateBatchCode(int? operatorId)
         {
