@@ -9,7 +9,8 @@ builder.Services.AddControllers();
 
 // 1️⃣ Add services BEFORE Build
 builder.Services.AddControllersWithViews();
-
+// Add SignalR service
+builder.Services.AddSignalR();
 // Database Connection
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -95,5 +96,8 @@ app.MapControllers();  // This maps the controllers to the routes.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Authentication}/{action=Login}/{id?}");
+
+// Map SignalR Hub
+app.MapHub<BatchCodeHub>("/batchCodeHub");
 
 app.Run();
