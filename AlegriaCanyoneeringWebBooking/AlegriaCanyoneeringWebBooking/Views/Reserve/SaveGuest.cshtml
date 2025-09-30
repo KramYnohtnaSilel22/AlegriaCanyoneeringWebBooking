@@ -1,8 +1,27 @@
-﻿@{
+﻿@* @{
     ViewData["Title"] = "Confirmed Booking Batches";
+    var startDate = Context.Request.Query["startDate"].FirstOrDefault();
+    var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
 
 <h2 class="mb-4 text-success">Booked Guests Batches</h2>
+
+<!-- ✅ Date Range Filter Form -->
+<form id="filterForm" class="row g-3 mb-4 align-items-end">
+    <div class="col-md-4">
+        <label for="startDate" class="form-label">Start Date</label>
+        <input type="date" class="form-control" id="startDate" name="startDate" value="@startDate" required>
+    </div>
+    <div class="col-md-4">
+        <label for="endDate" class="form-label">End Date</label>
+        <input type="date" class="form-control" id="endDate" name="endDate" value="@endDate" required>
+    </div>
+    <div class="col-md-4">
+        <button type="submit" class="btn btn-success w-100">
+            <i class="fas fa-search me-1"></i> Search
+        </button>
+    </div>
+</form>
 
 <table id="batchesTable" class="table table-bordered table-striped">
     <thead class="table-dark">
@@ -28,33 +47,33 @@
                 serverSide: true,
                 ajax: {
                     url: '@Url.Action("GetGuestsData", "Reserve")',
-                    type: 'POST'
+                    type: 'POST',
+                    data: function (d) {
+                        d.startDate = $('#startDate').val();
+                        d.endDate = $('#endDate').val();
+                    }
                 },
                 columns: [
                     { data: 'batchCode', title: 'Batch' },
                     { data: 'totalGuests', title: 'Total Guests' },
                     { data: 'operatorName', title: 'Operator' },
-                          {
-                data: 'arrivalDate',
-                title: 'Arrival Date',
-                render: function (data) {
-                    if (!data) return '';
-                    // If your arrivalDate is a Unix timestamp (seconds), convert to milliseconds
-                    var milliseconds = parseInt(data) * 1000;
-                    var date = new Date(milliseconds);
-                    if (isNaN(date)) return ''; // fallback if date invalid
-
-                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                    return date.toLocaleDateString(undefined, options); // e.g. September 29, 2025
-                }
-            },
-
+                    {
+                        data: 'arrivalDate',
+                        title: 'Arrival Date',
+                        render: function (data) {
+                            if (!data) return '';
+                            var milliseconds = parseInt(data) * 1000;
+                            var date = new Date(milliseconds);
+                            if (isNaN(date)) return '';
+                            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                            return date.toLocaleDateString(undefined, options);
+                        }
+                    },
                     {
                         data: 'status',
                         title: 'Status',
                         render: function (data) {
                             if (!data) return '';
-                            // You can customize badge color based on status if needed
                             let badgeClass = 'primary';
                             if (data.toLowerCase() === 'confirmed') badgeClass = 'success';
                             else if (data.toLowerCase() === 'anticipated') badgeClass = 'info';
@@ -84,31 +103,27 @@
                 }
             });
 
-            // Store modal instance globally
-            var guestModal;
+            // ✅ Filter form submit
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault(); // prevent page reload
+                table.ajax.reload(); // reload DataTable with new params
+            });
 
-            // Handle click on View buttons
+            // ✅ Handle modal view guest details
+            var guestModal;
             $('#batchesTable').on('click', '.view-guest-details', function () {
                 var batchCode = $(this).data('batch');
                 var modalContainer = $('#guestDetailsModalContainer');
 
-                // Load partial view via AJAX
                 $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode: batchCode })
                     .done(function (html) {
-                        // Inject the partial view HTML into the container
                         modalContainer.html(html);
-
-                        // Initialize Bootstrap modal
                         var modalElement = document.getElementById('guestDetailsModal');
                         guestModal = new bootstrap.Modal(modalElement, {
-                            backdrop: 'static', // optional: prevent closing on backdrop click if desired
-                            keyboard: true      // allow ESC to close
+                            backdrop: 'static',
+                            keyboard: true
                         });
-
-                        // Show modal
                         guestModal.show();
-
-                        // Optional: clear modal content on hide to avoid stale data
                         modalElement.addEventListener('hidden.bs.modal', function () {
                             modalContainer.empty();
                         });
@@ -119,4 +134,4 @@
             });
         });
     </script>
-}
+} *@

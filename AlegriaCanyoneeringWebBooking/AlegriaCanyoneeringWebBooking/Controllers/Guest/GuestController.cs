@@ -203,15 +203,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     foreach (var guest in batchGuests)
                     {
-                        var now = DateTime.Now;
-
+                        // Allow adding even if a guest with the same name and operator already exists
                         guest.BookingStatus = "anticipated";
-                        guest.Year = now.Year.ToString();  // force overwrite as int
-                        guest.Date = now.ToString("ddd, dd MMMM yyyy HH:mm");
                         guest.Batch = batchId;
                         guest.RFID = GenerateRFID();
                         guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
-                        guest.Month = DateTime.Today.ToString("MMMM");
+                        guest.Month = DateTime.Today.ToString("yyyy-MM");
                         guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
 
@@ -437,8 +434,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Redirect back to the BookingDetails
-            return RedirectToAction("saveguest", new { batch = guest.Batch });
+
+            // ✅ Redirect back to ReserveDetails
+            return RedirectToAction("ReserveDetails", "Reserve", new { id = guest.Id });
+
         }
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {

@@ -201,10 +201,27 @@ public async Task<IActionResult> GetGuestsByBatch(string batchCode)
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault();
 
+            // Parse startDate and endDate from the request form
+            DateTime? startDate = null;
+            DateTime? endDate = null;
+
+            if (DateTime.TryParse(Request.Form["startDate"].FirstOrDefault(), out var parsedStartDate))
+            {
+                startDate = parsedStartDate.Date;
+            }
+
+            if (DateTime.TryParse(Request.Form["endDate"].FirstOrDefault(), out var parsedEndDate))
+            {
+                // End of day for inclusive filtering
+                endDate = parsedEndDate.Date.AddDays(1).AddTicks(-1);
+            }
+
+            // Base query for confirmed bookings
             var query = _context.Guests
                 .Include(g => g.OperatorList)
-                .Where(g => g.BookingStatus == "confirmed");
+                .Where(g => g.BookingStatus.ToLower() == "confirmed");
 
+            // Apply search filter if exists
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(g =>
@@ -213,38 +230,67 @@ public async Task<IActionResult> GetGuestsByBatch(string batchCode)
                 );
             }
 
-            var recordsTotal = await query.CountAsync();
+            // Fetch all matching guests into memory for date filtering
+            var guestList = await query.ToListAsync();
 
-            // Group guests by Batch, Operator and ArrivalDate and get total guests count
-            var grouped = query
+            // Filter guests by arrivalDate in memory (ArrivalDate is string, so parse it)
+            if (startDate.HasValue)
+            {
+                guestList = guestList.Where(g =>
+                {
+                    if (DateTime.TryParse(g.ArrivalDate, out var arrival))
+                    {
+                        return arrival >= startDate.Value;
+                    }
+                    return false;
+                }).ToList();
+            }
+
+            if (endDate.HasValue)
+            {
+                guestList = guestList.Where(g =>
+                {
+                    if (DateTime.TryParse(g.ArrivalDate, out var arrival))
+                    {
+                        return arrival <= endDate.Value;
+                    }
+                    return false;
+                }).ToList();
+            }
+
+            // Group the filtered guests by Batch, Operator, ArrivalDate, BookingStatus
+            var grouped = guestList
                 .GroupBy(g => new { g.Batch, OperatorName = g.OperatorList.BusinessName, g.ArrivalDate, g.BookingStatus })
                 .Select(grp => new
                 {
                     batchCode = grp.Key.Batch,
                     operatorName = grp.Key.OperatorName,
-                    arrivalDate = grp.Key.ArrivalDate, // format date as ISO string for JS
+                    arrivalDate = grp.Key.ArrivalDate,
                     status = grp.Key.BookingStatus,
                     totalGuests = grp.Count()
-                });
-
-            var filteredData = await grouped
+                })
                 .OrderBy(g => g.batchCode)
+                .ToList();
+
+            // Pagination
+            var pagedData = grouped
                 .Skip(start)
                 .Take(length)
-                .ToListAsync();
+                .ToList();
 
+            // Return JSON result with DataTables parameters
             return Json(new
             {
                 draw = draw,
-                recordsTotal = recordsTotal,
-                recordsFiltered = recordsTotal,
-                data = filteredData
+                recordsTotal = grouped.Count,
+                recordsFiltered = grouped.Count,
+                data = pagedData
             });
         }
 
 
 
-       [HttpPost]
+        [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> FinalBookingBatch(string BatchCode)
 {
@@ -293,65 +339,66 @@ public async Task<IActionResult> FinalBookingBatch(string BatchCode)
     return RedirectToAction("reservebooking", new { BatchCode });
 }
 
-
-            public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
+        public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
         {
             var model = new GuestListViewModel();
 
             if (startDate.HasValue && endDate.HasValue)
             {
-                // Make sure to include entire end day
+                // Include full day for endDate
                 var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
 
-                // Get all guests including navigation properties
+                // Load guests with related data
                 var guests = await _context.Guests
                     .Include(g => g.OperatorList)
                     .Include(g => g.NationalityEntity)
                     .ToListAsync();
 
-                // Helper function to convert Unix timestamp string to DateTime?
+                // Helper: convert Unix timestamp string to DateTime?
                 DateTime? ConvertUnixTimestampToDateTime(string unixTimestamp)
                 {
                     if (long.TryParse(unixTimestamp, out var seconds))
                     {
-                        // Unix timestamp assumed to be seconds since epoch UTC
-                        var dateTime = DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
-                        return dateTime;
+                        return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
                     }
                     return null;
                 }
 
-                // Filter guests by ArrivalDate parsed as Unix timestamp and date range
+                // Filter guests by ArrivalDate inside range
                 var filteredGuests = guests
-                    .Select(g =>
+                    .Select(g => new
                     {
-                        var arrivalDate = ConvertUnixTimestampToDateTime(g.ArrivalDate);
-                        return new { Guest = g, ArrivalDate = arrivalDate };
+                        Guest = g,
+                        ArrivalDate = ConvertUnixTimestampToDateTime(g.ArrivalDate)
                     })
-                    .Where(x => x.ArrivalDate.HasValue &&
-                                x.ArrivalDate.Value >= startDate.Value.Date &&
-                                x.ArrivalDate.Value <= endDateInclusive)
+                    .Where(x => x.ArrivalDate.HasValue
+                                && x.ArrivalDate.Value >= startDate.Value.Date
+                                && x.ArrivalDate.Value <= endDateInclusive)
                     .OrderBy(x => x.ArrivalDate.Value)
                     .Select(x => x.Guest)
                     .ToList();
 
-                // Group guests by BatchCode
+                // Group by Batch code
                 model.BatchGuests = filteredGuests
-                    .GroupBy(g => g.Batch)  // Assuming g.Batch stores the BatchCode
+                    .GroupBy(g => g.Batch)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
-                // Pass the batch codes to ViewBag
+                // Pass batch codes to ViewBag
                 ViewBag.AllBatches = model.BatchGuests.Keys.ToList();
+
+                // If no bookings found, add a flag for frontend
+                ViewBag.HasBookings = model.BatchGuests.Any();
             }
             else
             {
-                // No filter, empty batch guest dictionary & batch list
                 model.BatchGuests = new Dictionary<string, List<Guest>>();
                 ViewBag.AllBatches = new List<string>();
+                ViewBag.HasBookings = false;
             }
 
             return View(model);
         }
+
 
 
     }

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
-    [Authorize(Roles = "Super Admin")]
+    [Authorize(Roles = "Admin")]
     public class OperatorsController : Controller
     {
         private readonly ApplicationDbContext _context;
