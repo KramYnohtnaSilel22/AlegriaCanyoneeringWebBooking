@@ -46,10 +46,7 @@
                             <i class="fas fa-flag text-muted me-2" aria-hidden="true"></i>
                             <strong class="me-1">Nationality:</strong> <span>@Model.Guest.NationalityType</span>
                         </div>
-                        <div class="col-md-6 d-flex align-items-center">
-                            <i class="fas fa-passport text-muted me-2" aria-hidden="true"></i>
-                            <strong class="me-1">National Status:</strong> <span>@(Model.Guest.NationalityEntity?.NatName ?? "N/A")</span>
-                        </div>
+                
                         <div class="col-md-6 d-flex align-items-center">
                             <i class="fas fa-calendar-alt text-muted me-2" aria-hidden="true"></i>
                             <strong class="me-1">Arrival Date:</strong> <span>@Model.Guest.ArrivalDate</span>

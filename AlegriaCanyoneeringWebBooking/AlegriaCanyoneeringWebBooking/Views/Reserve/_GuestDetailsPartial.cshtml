@@ -38,7 +38,7 @@
                                 <td>@primaryGuest.Age</td>
                                 <td>@primaryGuest.ContactNumber</td>
                                 <td>@primaryGuest.Gender</td>
-                                <td>@(primaryGuest.NationalityEntity?.NatName )</td>
+                                <td>@primaryGuest.NationalityType</td>
                                 <td>@primaryGuest.Area</td>
                                 <td>
                                     @{
@@ -78,7 +78,7 @@
                                         <td>@guest.Age</td>
                                         <td>@guest.ContactNumber</td>
                                         <td>@guest.Gender</td>
-                                        <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                        <td>@guest.NationalityType</td>
                                     </tr>
                                 }
                             </tbody>

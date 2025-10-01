@@ -99,6 +99,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 id = g.MainGuestId,
                 operatorName = g.OperatorName,
                 totalGuests = g.TotalGuests,
+              
                 arrivalDate = g.ArrivalDate,
                 bookingStatus = g.Status
             });
@@ -156,6 +157,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                             OperatorList = first.OperatorList,
                             NumberOfGuests = grp.Count(g => g.BookingStatus != "canceled"),
                             ArrivalDate = first.ArrivalDate,
+                            Date = first.Date,
                             BookingStatus = first.BookingStatus
                         };
                     }).ToList()

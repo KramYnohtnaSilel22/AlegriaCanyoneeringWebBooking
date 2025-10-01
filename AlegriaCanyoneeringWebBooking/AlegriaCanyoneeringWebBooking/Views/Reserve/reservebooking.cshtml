@@ -7,7 +7,7 @@
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-success">Reserved Booking</h2>
 
-    @* Toast Notification *@
+    <!-- ✅ Toast Notification -->
     @if (TempData["ToastMessage"] != null)
     {
         <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
@@ -25,13 +25,24 @@
 
     @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
     {
+        <!-- ✅ Global Scan QR Button -->
+        <div class="d-flex justify-content-between mb-3">
+         
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openGlobalScanner()">
+                <i class="fas fa-qrcode"></i> Scan Batch QR
+            </button>
+        </div>
+
         <div class="table-responsive">
             <table id="example1" class="table text-truncate">
                 <thead class="table-dark">
                     <tr>
-                        <th>Status</th>
+                        <th>Guest Name</th>
+                        <th>Gender</th>
+                        <th>Nationality</th>
                         <th>Operator</th>
-                        <th>Total of Guests</th>
+                        <th>Date Of Registration</th>
+                        <th>Status</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -46,28 +57,31 @@
                         };
 
                         <tr>
+                            <td>@guest.Fullname</td>
+                            <td>@guest.Gender</td>
+                            <td>@guest.NationalityEntity?.NatName </td>
+                            <td>@guest.OperatorList?.BusinessName </td>
+                            <td>@guest.Date</td>
                             <td>
                                 <span class="badge bg-@badgeClass text-uppercase px-2 py-1">
                                     @guest.BookingStatus
                                 </span>
                             </td>
-                            <td>@(guest.OperatorList?.BusinessName ?? "N/A")</td>
-                            <td>@guest.NumberOfGuests</td>
                             <td class="text-center">
                                 <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-1">
 
+                                    <!-- 🔍 View Details -->
                                     <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.Id" class="btn btn-sm btn-primary">
                                         View
                                     </a>
 
-                                    <!-- 📷 View QR Code -->
+                                    <!-- 📷 View QR Code (Per Guest) -->
                                     <button type="button" class="btn btn-sm btn-info d-flex align-items-center"
                                             onclick="showQrModal('@guest.Id')">
-                                        <i class="fas fa-qrcode me-1"></i>View QR Code
+                                        <i class="fas fa-qrcode me-1"></i> View QR Code
                                     </button>
 
-
-                                    <!-- ✅ Confirm Booking -->
+                                    <!-- ✅ Confirm Booking (per guest OR batch scan) -->
                                     <form id="confirmForm-@guest.Id" method="post"
                                           asp-action="FinalBookingBatch" asp-controller="Reserve" class="m-0">
                                         <input type="hidden" name="BatchCode" value="@guest.Batch" />
@@ -75,27 +89,7 @@
                                             <i class="fas fa-check me-1"></i> Confirm
                                         </button>
                                     </form>
-
-
-                                    <button type="button" class="btn btn-sm btn-secondary"
-                                            onclick="toggleQrDisplay('@guest.Id')">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-
                                 </div>
-
-                                <div id="qrContainer-@guest.Id" style="display:none; margin-top:10px; text-align:center;">
-                                    <p><strong>Scan QR to get Batch Code:</strong></p>
-                                    <input type="text" readonly id="batchInput-@guest.Id"
-                                           placeholder="Waiting for scan..." class="form-control form-control-sm mb-2 text-center"
-                                           style="width: 250px; margin: 0 auto; background: #f8f9fa; border: 1px solid #ccc;" />
-                                    <div id="reader-@guest.Id" style="width: 250px; margin: 0 auto;"></div>
-
-                                    <img src="@guest.QRBase64"
-                                         alt="QR Code for batch @guest.Batch"
-                                         style="width:180px; height:180px;" />
-                                </div>
-
                             </td>
                         </tr>
                     }
@@ -112,214 +106,116 @@
     }
 </section>
 
+<!-- ✅ Styles & Scripts -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Scripts: Load in this exact order -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
-<script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script> <!-- html5-qrcode -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script> <!-- SignalR -->
+    <script>
+        // ✅ GLOBAL SCANNER
+        let globalScanner = null;
 
-<script>
-    function downloadQRCode(guestId, operatorName, guestCount) {
-        const canvas = document.getElementById('qrCanvas-' + guestId);
-        const ctx = canvas.getContext('2d');
+        function openGlobalScanner() {
+            const modal = new bootstrap.Modal(document.getElementById('globalQrModal'));
+            modal.show();
 
-        // Clear the canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Set white background
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Draw text
-        ctx.fillStyle = "#000000";
-        ctx.font = "14px Arial";
-        ctx.textAlign = "center";
-
-        // Exact formatting
-        ctx.fillText("Operator: " + operatorName, canvas.width / 2, 20);
-        ctx.fillText("Total Guest: " + guestCount, canvas.width / 2, 40);
-
-        // Load and draw QR
-        const qrImg = document.getElementById('qrImage-' + guestId);
-        const qr = new Image();
-        qr.src = qrImg.src;
-
-        qr.onload = function () {
-            ctx.drawImage(qr, 20, 60, 180, 180); // Draw QR
-
-            // Download canvas as image
-            const imageData = canvas.toDataURL("image/png");
-
-            const link = document.createElement('a');
-            const safeOperator = operatorName.replace(/\s+/g, '_').replace(/[^\w\-]/g, '');
-            link.download = `QRCode_${guestId}_${safeOperator}_${guestCount}Guests.png`;
-            link.href = imageData;
-            link.click();
-        };
-    }
-
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/batchCodeHub")
-        .build();
-
-    connection.start().catch(err => console.error(err.toString()));
-
-    let html5QrcodeScanner = null;
-    let currentGuestId = null;
-
-    // SUCCESS: When QR is scanned
-    function onScanSuccess(decodedText, decodedResult) {
-        console.log("Scanned batch code:", decodedText);
-
-        // Fill batch code into the visible input
-        fillBatchInputForCurrentGuest(decodedText.trim());
-
-        // Auto-submit confirmation form for the current guest
-        if (currentGuestId) {
-            const confirmForm = document.getElementById('confirmForm-' + currentGuestId);
-            if (confirmForm) {
-                confirmForm.submit();
-            }
-        }
-
-        // Send to SignalR hub (optional)
-        connection.invoke("SendBatchCode", decodedText).catch(err => console.error(err.toString()));
-
-        // Stop scanner after scan
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.stop().then(() => {
-                html5QrcodeScanner.clear();
-            }).catch(err => console.error(err));
-        }
-
-        // Hide the QR container after scan
-        if (currentGuestId) {
-            const container = document.getElementById('qrContainer-' + currentGuestId);
-            if (container) container.style.display = 'none';
-        }
-    }
-
-    // ERROR: During scan
-    function onScanError(errorMessage) {
-        // You can log or ignore errors
-        // console.warn("QR scan error:", errorMessage);
-    }
-
-    // Fill the specific input for the currently scanned guest
-    function fillBatchInputForCurrentGuest(batchCode) {
-        if (!currentGuestId) return;
-
-        const input = document.getElementById('batchInput-' + currentGuestId);
-        if (input) {
-            input.value = batchCode;
-            console.log(`Batch code "${batchCode}" filled in input: batchInput-${currentGuestId}`);
-        } else {
-            console.warn("Input not found for guest:", currentGuestId);
-        }
-    }
-
-    // Start/Stop QR scanner for guest
-    function toggleQrDisplay(guestId) {
-        const container = document.getElementById('qrContainer-' + guestId);
-        const isVisible = container && window.getComputedStyle(container).display === 'block';
-
-        if (isVisible) {
-            // Hide scanner
-            container.style.display = 'none';
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    html5QrcodeScanner.clear();
-                }).catch(err => console.error(err));
-            }
-            currentGuestId = null;
-        } else {
-            // Show and scan
-            container.style.display = 'block';
-            currentGuestId = guestId;
-
-            // Stop existing scanner if any
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    html5QrcodeScanner.clear().then(() => {
-                        startScanner(guestId);
-                    });
-                }).catch(() => {
-                    startScanner(guestId);
+            if (globalScanner) {
+                globalScanner.stop().then(() => {
+                    globalScanner.clear().then(() => startGlobalScanner());
                 });
             } else {
-                startScanner(guestId);
+                startGlobalScanner();
             }
         }
-    }
 
-    // Start scanner for specific guest
-    function startScanner(guestId) {
-        const readerElementId = 'reader-' + guestId;
-        let readerElement = document.getElementById(readerElementId);
+        function startGlobalScanner() {
+            globalScanner = new Html5Qrcode("globalReader");
 
-        if (!readerElement) {
-            const container = document.getElementById('qrContainer-' + guestId);
-            readerElement = document.createElement('div');
-            readerElement.id = readerElementId;
-            readerElement.style.width = '250px';
-            readerElement.style.margin = '0 auto';
-            container.appendChild(readerElement);
+            const config = { fps: 10, qrbox: 250 };
+            globalScanner.start(
+                { facingMode: "environment" },
+                config,
+                onGlobalScanSuccess,
+                (err) => { /* ignore scan errors */ }
+            ).catch(err => console.error("Global scanner failed:", err));
         }
 
-        html5QrcodeScanner = new Html5Qrcode(readerElementId);
+        function onGlobalScanSuccess(batchCode) {
+            console.log("✅ Global scan result:", batchCode);
 
-        const config = { fps: 10, qrbox: 250 };
-        html5QrcodeScanner.start(
-            { facingMode: "environment" },
-            config,
-            onScanSuccess,
-            onScanError
-        ).catch(err => console.error("Scanner start failed:", err));
-    }
-
-    // Optional: Keyboard input fallback (for USB scanners)
-    let scannedBatch = "";
-    let scanTimeout;
-    document.addEventListener('keydown', function (e) {
-        if (["Shift", "Alt", "Control"].includes(e.key)) return;
-
-        scannedBatch += e.key;
-        if (scanTimeout) clearTimeout(scanTimeout);
-
-        scanTimeout = setTimeout(() => {
-            const trimmed = scannedBatch.trim();
-            if (/^\d{4,}$/.test(trimmed)) {
-                fillBatchInputForCurrentGuest(trimmed);
-
-                // Auto-submit the form if a guest is selected
-                if (currentGuestId) {
-                    const confirmForm = document.getElementById('confirmForm-' + currentGuestId);
-                    if (confirmForm) {
-                        confirmForm.submit();
-                    }
-                }
+            // Stop scanner after success
+            if (globalScanner) {
+                globalScanner.stop().then(() => globalScanner.clear());
             }
-            scannedBatch = "";
-        }, 2000);
-    });
 
-    // Bootstrap toast (optional)
-    document.addEventListener("DOMContentLoaded", function () {
-        var toastElement = document.getElementById('toastMessage');
-        if (toastElement) {
-            var toast = new bootstrap.Toast(toastElement);
-            toast.show();
+            // Auto-submit all forms with this batch code
+            document.querySelectorAll(`form input[name="BatchCode"][value="${batchCode}"]`)
+                .forEach(input => {
+                    const form = input.closest("form");
+                    if (form) form.submit();
+                });
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('globalQrModal'));
+            if (modal) modal.hide();
         }
-    });
 
-    // Optional modal view (if using modal for QR code)
-    function showQrModal(guestId) {
-        const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
-        modal.show();
-    }
-</script>
+        // ✅ Bootstrap toast auto-show
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastElement = document.getElementById('toastMessage');
+            if (toastElement) {
+                var toast = new bootstrap.Toast(toastElement);
+                toast.show();
+            }
+        });
 
+        // ✅ Per-guest QR modal
+        function showQrModal(guestId) {
+            const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
+            modal.show();
+        }
+
+        // ✅ Download QR Code
+        function downloadQRCode(guestId, operator, totalGuests) {
+            var img = document.getElementById("qrImage-" + guestId);
+            var canvas = document.getElementById("qrCanvas-" + guestId);
+            var ctx = canvas.getContext("2d");
+
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.drawImage(img, 20, 20, 180, 180);
+
+            ctx.fillStyle = "#000";
+            ctx.font = "14px Arial";
+            ctx.fillText("Operator: " + operator, 10, 220);
+            ctx.fillText("Total Guests: " + totalGuests, 10, 240);
+
+            var link = document.createElement("a");
+            link.download = "BatchQR-" + guestId + ".png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+    </script>
+
+<!-- ✅ Global QR Scanner Modal -->
+<div class="modal fade" id="globalQrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content text-center">
+            <div class="modal-header">
+                <h5 class="modal-title">Scan Batch QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="globalReader" style="width:350px; margin:0 auto;"></div>
+                <p class="mt-3 text-muted">Point the camera at a QR code to confirm all guests in the same batch.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Per-Guest QR Modals -->
 @foreach (var guest in Model.ReservedGuests ?? Enumerable.Empty<dynamic>())
 {
     <div class="modal fade" id="qrViewModal-@guest.Id" tabindex="-1"
@@ -338,14 +234,11 @@
                          style="width:180px;height:180px;" />
                 </div>
                 <div class="modal-footer">
-
                     <canvas id="qrCanvas-@guest.Id" width="220" height="270" style="display:none;"></canvas>
-
-                    <!-- 🔽 Download QR Button -->
-                    <button class="btn btn-success mt-2" onclick="downloadQRCode('@guest.Id', '@(guest.OperatorList?.BusinessName ?? "N/A")', @guest.NumberOfGuests)">
+                    <button class="btn btn-success mt-2"
+                            onclick="downloadQRCode('@guest.Id', '@(guest.OperatorList?.BusinessName ?? "N/A")', @guest.NumberOfGuests)">
                         <i class="fas fa-download"></i> Download QR
                     </button>
-
                 </div>
             </div>
         </div>
