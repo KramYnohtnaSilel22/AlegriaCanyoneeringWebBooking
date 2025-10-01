@@ -56,16 +56,7 @@
                         </div>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(Model.Guest.RFIDCode))
-                    {
-                            <hr />
-                            <div class="text-center mt-4">
-                                <h6 class="fw-semibold text-secondary mb-3">QR Code</h6>
-                            <img src="@Model.Guest.RFIDCode" alt="QR code for @Model.Guest.Fullname"
-                                     class="img-fluid shadow rounded-3" style="max-width: 200px;" />
-                            </div>
-                    }
-                </div>
+           
 
                 <div class="card-footer bg-white d-flex justify-content-between rounded-bottom-4 p-3">
                     <a asp-action="saveguest"

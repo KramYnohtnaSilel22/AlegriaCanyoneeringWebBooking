@@ -22,10 +22,19 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public int TotalRecords { get; set; }
 
 
+
+        // ✅ Add properties for HTML5 date inputs
+        public string Html5BookingDate => DateTime.TryParse(NewGuest.Date, out var bookingDate)
+            ? bookingDate.ToString("yyyy-MM-dd")
+            : "";
+
+        public string Html5ArrivalDate => DateTime.TryParse(NewGuest.ArrivalDate, out var arrivalDate)
+            ? arrivalDate.ToString("yyyy-MM-dd")
+            : "";
         // Add this 👇 for image upload
         [DataType(DataType.Upload)]
         public IFormFile Photo { get; set; }
 
-  
+   
     }
 }

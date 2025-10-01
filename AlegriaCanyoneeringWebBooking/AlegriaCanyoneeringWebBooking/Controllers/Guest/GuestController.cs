@@ -1,4 +1,10 @@
-﻿using AlegriaCanyoneeringWebBooking.Models;
+﻿
+
+
+
+
+
+using AlegriaCanyoneeringWebBooking.Models;
 using AlegriaCanyoneeringWebBooking.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -44,6 +50,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
+
         [HttpPost]
         public async Task<IActionResult> GetGuestsData()
         {
@@ -65,26 +72,29 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 );
             }
 
-            // Materialize from DB first -- so you can use C# formatting later
+            // ✅ FIXED: GROUP BY BATCH INSTEAD OF OPERATOR ID
             var groupedRaw = await query
-                .GroupBy(g => g.OperatorId)
+                .GroupBy(g => new { g.Batch, g.OperatorId }) // ✅ GROUP BY BATCH + OPERATOR
                 .Select(grp => new
                 {
-                    OperatorId = grp.Key,
+                    Batch = grp.Key.Batch, // ✅ INCLUDE BATCH
+                    OperatorId = grp.Key.OperatorId,
                     OperatorName = grp.First().OperatorList != null
                         ? grp.First().OperatorList.BusinessName : "N/A",
                     TotalGuests = grp.Count(g => g.BookingStatus != "canceled"),
-                    ArrivalDate = grp.Min(x => x.ArrivalDate), // DateTime? or DateTime
+                    ArrivalDate = grp.Min(x => x.ArrivalDate),
                     Status = "anticipated",
                     MainGuestId = grp.OrderBy(x => x.Id).First().Id
                 })
                 .OrderBy(g => g.OperatorName)
+                .ThenBy(g => g.Batch) // ✅ ORDER BY BATCH TOO
                 .Skip(start)
                 .Take(length)
                 .ToListAsync();
 
+            // ✅ FIXED: COUNT DISTINCT BATCHES INSTEAD OF OPERATORS
             var recordsTotal = await query
-                .Select(g => g.OperatorId)
+                .Select(g => new { g.Batch, g.OperatorId }) // ✅ COUNT BATCHES
                 .Distinct()
                 .CountAsync();
 
@@ -97,10 +107,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Now format in C#, after ToListAsync (no EF errors)
             var grouped = groupedRaw.Select(g => new {
                 id = g.MainGuestId,
+                batch = g.Batch, // ✅ INCLUDE BATCH IN OUTPUT
                 operatorName = g.OperatorName,
                 totalGuests = g.TotalGuests,
-              
-                arrivalDate = g.ArrivalDate,
+                arrivalDate = g.ArrivalDate, // ✅ USE FORMATTED DATE
                 bookingStatus = g.Status
             });
 
@@ -117,13 +127,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
+
         private async Task PopulateDropdowns()
         {
 
             ViewBag.OperatorList = new SelectList(await _context.OperatorLists.ToListAsync(), "OperatorId", "BusinessName");
             ViewBag.NationalityList = new SelectList(await _context.Nationalities.ToListAsync(), "NationalityId", "NatName"); // Populate Nationality dropdown
         }
-
         // Fix for CS0029: Cannot implicitly convert type 'string' to 'int?'
         // The issue is likely in the assignment of `guest.RFID` where `GenerateRFID()` returns a string but `RFID` expects an int?.
         // Update the `GenerateRFID` method to return an int instead of a string.
@@ -131,7 +141,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return 1;
         }
-
 
         [HttpGet]
         public async Task<IActionResult> NewBooking(string batch, int? id)
@@ -213,7 +222,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         guest.Month = DateTime.Today.ToString("MMMM");
                         guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
-                        guest.Date = DateTime.Today.ToString("MMM dd, yyyy");
+                        guest.Date = DateTime.Today.ToString("MMM dd, yyyy hh:mm tt");
 
                         _context.Guests.Add(guest);
                         insertedCount++;
@@ -250,7 +259,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await PopulateDropdowns();
             return View(model);
         }
-
 
         private async Task<string> GenerateBatchCode()
         {
@@ -319,13 +327,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 ReservedGuests = grouped,
 
-           
+
 
 
             };
 
             return View(model);
         }
+
 
         public async Task<IActionResult> SaveguestDetails(int id)
         {
@@ -405,7 +414,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Get all guests with the same OperatorId and same BookingStatus as the current guest (ex: anticipated)
             var operatorGuests = await _context.Guests
-                .Where(g => g.OperatorId == guest.OperatorId && g.BookingStatus == guest.BookingStatus)
+// ✅ CORRECT: Updates ONLY guests with same Batch
+.Where(g => g.Batch == guest.Batch && g.BookingStatus == guest.BookingStatus)
                 .ToListAsync();
 
             if (!operatorGuests.Any())
@@ -445,7 +455,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return $"OP{operatorId}-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
         }
 
- 
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -478,12 +488,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
             // ✅ Redirect back to ReserveDetails
-            return RedirectToAction("ReserveDetails", "Reserve", new { id = guest.Id });
+            return RedirectToAction("SaveguestDetails", "Guest", new { id = guest.Id });
 
         }
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
-            if (string.IsNullOrEmpty(base64Image))  
+            if (string.IsNullOrEmpty(base64Image))
             {
                 TempData["ToastMessage"] = "No image data provided.";
                 TempData["ToastType"] = "danger"; // can be 'success', 'danger', etc.
@@ -515,5 +525,4 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
     }
 }
-
 

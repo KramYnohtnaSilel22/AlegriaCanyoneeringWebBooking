@@ -28,7 +28,7 @@
 <div class="card shadow-lg rounded-4 border-0">
     <div class="card-body p-4">
         <h4 class="text-primary mb-4 fw-semibold">Add New Guest</h4>
-            
+
         <!-- Guest Info Header -->
         <div class="mb-3">
             <h5 class="text-primary">
@@ -39,7 +39,7 @@
 
         <!-- Form for Guest Info -->
         <form asp-action="NewBooking" method="post" id="guestForm">
-                @Html.AntiForgeryToken()
+            @Html.AntiForgeryToken()
             <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
             <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
             <input type="hidden" id="MainGuestId" name="id" value="@ViewBag.MainGuestId" />
@@ -75,7 +75,7 @@
                         <div class="mb-3">
                             <label asp-for="NewGuest.Gender" class="form-label">Gender</label>
                             <select asp-for="NewGuest.Gender" class="form-select">
-                             
+
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>
@@ -94,7 +94,7 @@
                         <div class="mb-3">
                             <label asp-for="NewGuest.NationalityType" class="form-label">Nationality Type</label>
                             <select asp-for="NewGuest.NationalityType" class="form-select" id="NationalityType">
-                          
+
                                 <option value="Local">Local</option>
                                 <option value="Foreign">Foreign</option>
                             </select>
@@ -105,26 +105,35 @@
                             <select asp-for="NewGuest.NationalityId" class="form-select" id="NationalityId"></select>
                             <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
 
-                            
-                           
-                        </div>
 
+
+                        </div>
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.Date" class="form-label">Booking Date</label>
-                            <input asp-for="NewGuest.Date" type="date" class="form-control" id="BookingDateInput"
+                            <input type="date"
+                                   name="NewGuest.Date"
+                                   class="form-control"
+                                   id="BookingDateInput"
+                                   value="@Model.Html5BookingDate"
                                    readonly="@(isReadonly ? "readonly" : null)" />
+                            <span asp-validation-for="NewGuest.Date" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.ArrivalDate" class="form-label">Arrival Date</label>
-                            <input asp-for="NewGuest.ArrivalDate" type="date" class="form-control" id="ArrivalDateInput"
+                            <input type="date"
+                                   name="NewGuest.ArrivalDate"
+                                   class="form-control"
+                                   id="ArrivalDateInput"
+                                   value="@Model.Html5ArrivalDate"
                                    readonly="@(isReadonly ? "readonly" : null)" />
+                            <span asp-validation-for="NewGuest.ArrivalDate" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Area" class="form-label">Tour Area</label>
                             <select asp-for="NewGuest.Area" class="form-select" id="TourAreaInput"
                                     disabled="@(isReadonly ? "disabled" : null)">
-                             
+
                                 <option value="Wonder Falls">Wonder Falls</option>
                                 <option value="Kanlaob">Kanlaob</option>
                                 <option value="Kawasan Exit">Kawasan Exit</option>
@@ -143,49 +152,59 @@
 
     </div>
 </div>
-
+<!-- Add these before your existing scripts -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+<!-- Bootstrap Datepicker JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<!-- Add Bootstrap Datepicker -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
 <script>
     $(function () {
-        const $type = $('#NationalityType');
-        const $list = $('#NationalityId');
-        const $operatorInput = $('#OperatorInput');
-        const $tourAreaInput = $('#TourAreaInput');
-        const $bookingDateInput = $('#BookingDateInput');
-        const $arrivalDateInput = $('#ArrivalDateInput');
-        const $batchGuestsJson = $('#BatchGuestsJson');
-        const $saveBtn = $('#saveBtn');
-        const $totalGuestsCount = $('#totalGuestsCount');
-        const $currentBatch = $('#CurrentBatch');
+         const $type = $('#NationalityType');
+         const $list = $('#NationalityId');
+         const $operatorInput = $('#OperatorInput');
+         const $tourAreaInput = $('#TourAreaInput');
+         const $bookingDateInput = $('#BookingDateInput');
+         const $arrivalDateInput = $('#ArrivalDateInput');
+         const $batchGuestsJson = $('#BatchGuestsJson');
+         const $saveBtn = $('#saveBtn');
+         const $totalGuestsCount = $('#totalGuestsCount');
+         const $currentBatch = $('#CurrentBatch');
 
-        let foreignNationalitiesCache = null;
-        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-        const selectedNationalityId = '@Model.NewGuest.NationalityId';
+         let foreignNationalitiesCache = null;
+         const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+         const selectedNationalityId = '@Model.NewGuest.NationalityId';
 
-        function fillLocalNationalities() {
-            const localOptions = [
-                { id: '1000', text: 'Within Cebu Province' },
-                { id: '1001', text: 'Outside Cebu Province' }
-            ];
-            $list.empty();
-            localOptions.forEach(opt => {
-                const option = new Option(opt.text, opt.id);
-                if (selectedNationalityId === opt.id) option.selected = true;
-                $list.append(option);
-            });
-        }
+         function fillLocalNationalities() {
+             const localOptions = [
+                 { id: '1000', text: 'Within Cebu Province' },
+                 { id: '1001', text: 'Outside Cebu Province' }
+             ];
+             $list.empty();
+             localOptions.forEach(opt => {
+                 const option = new Option(opt.text, opt.id);
+                 if (selectedNationalityId === opt.id) option.selected = true;
+                 $list.append(option);
+             });
+         }
 
-        function fillForeignNationalities(data) {
-            $list.empty();
-            $list.append(new Option('-- Select Nationality --', ''));
-            data.forEach(item => {
-                const option = new Option(item.natName, item.id);
-                if (selectedNationalityId === item.id.toString()) option.selected = true;
-                $list.append(option);
-            });
-        }
+         function fillForeignNationalities(data) {
+             $list.empty();
+             $list.append(new Option('-- Select Nationality --', ''));
+             data.forEach(item => {
+                 const option = new Option(item.natName, item.id);
+                 if (selectedNationalityId === item.id.toString()) option.selected = true;
+                 $list.append(option);
+             });
+         }
+
 
         function updateNationalityIdOptions(typeChoice) {
             if (typeChoice === 'Local') {
@@ -221,6 +240,7 @@
             }, 250);
         });
 
+
         // Apply readonly if set from ViewBag
         const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
         if (isReadonly) {
@@ -236,11 +256,10 @@
 
         let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
 
-     function updateTotalGuestsDisplay() {
-        $totalGuestsCount.text(guestsBatch.length);
-        $saveBtn.prop('disabled', guestsBatch.length < 1);
-    }
-
+        function updateTotalGuestsDisplay() {
+            $totalGuestsCount.text(guestsBatch.length);
+            $saveBtn.prop('disabled', guestsBatch.length < 1);
+        }
 
         $('#addGuestBtn').click(function () {
             const guest = {
