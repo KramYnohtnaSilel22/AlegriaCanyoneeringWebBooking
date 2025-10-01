@@ -36,15 +36,7 @@
                                 <td>@primaryGuest.Age</td>
                                 <td>@primaryGuest.ContactNumber</td>
                                 <td>@primaryGuest.Gender</td>
-                                <td>
-                                    @{
-                                        // Try NationalityEntity first, fallback to NationalityType string
-                                        var primaryNat = primaryGuest.NationalityEntity?.NatName
-                                        ?? primaryGuest.NationalityType
-                                        ?? "N/A";
-                                    }
-                                    @primaryNat
-                                </td>
+                                <td>@(primaryGuest.NationalityEntity?.NatName ?? "N/A")</td>
                                 <td>@primaryGuest.Area</td>
                                 <td>
                                     @{
@@ -83,15 +75,7 @@
                                         <td>@guest.Age</td>
                                         <td>@guest.ContactNumber</td>
                                         <td>@guest.Gender</td>
-                                        <td>
-                                            @{
-                                                // Try NationalityEntity first, fallback to NationalityType string
-                                                var companionNat = guest.NationalityEntity?.NatName
-                                                ?? guest.NationalityType
-                                                ?? "N/A";
-                                            }
-                                            @companionNat
-                                        </td>
+                                        <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
                                     </tr>
                                 }
                             </tbody>
