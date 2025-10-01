@@ -10,8 +10,7 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         [Required, StringLength(255)]
         public string Name { get; set; } = string.Empty;
 
-        [Required, StringLength(255)]
-        public string BusinessName { get; set; } = string.Empty;
+        public string? BusinessName { get; set; }
 
         [Required]
         public int Age { get; set; }
