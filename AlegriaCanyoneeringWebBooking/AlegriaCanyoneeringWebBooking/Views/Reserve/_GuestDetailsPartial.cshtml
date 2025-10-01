@@ -75,7 +75,7 @@
                                         <td>@guest.Age</td>
                                         <td>@guest.ContactNumber</td>
                                         <td>@guest.Gender</td>
-                                        <td>@guest.NationalityType</td>
+                                        <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
                                     </tr>
                                 }
                             </tbody>

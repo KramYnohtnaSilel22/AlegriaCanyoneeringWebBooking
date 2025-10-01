@@ -222,7 +222,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         guest.Month = DateTime.Today.ToString("MMMM");
                         guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
-                        guest.Date = DateTime.Today.ToString("MMM dd, yyyy hh:mm tt");
+                        guest.Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
 
                         _context.Guests.Add(guest);
                         insertedCount++;
