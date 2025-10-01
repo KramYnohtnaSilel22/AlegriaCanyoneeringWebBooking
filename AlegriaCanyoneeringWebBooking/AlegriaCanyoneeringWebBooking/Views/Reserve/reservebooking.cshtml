@@ -27,7 +27,6 @@
     {
         <!-- ✅ Global Scan QR Button -->
         <div class="d-flex justify-content-between mb-3">
-         
             <button type="button" class="btn btn-secondary btn-sm" onclick="openGlobalScanner()">
                 <i class="fas fa-qrcode"></i> Scan Batch QR
             </button>
@@ -59,8 +58,8 @@
                         <tr>
                             <td>@guest.Fullname</td>
                             <td>@guest.Gender</td>
-                            <td>@guest.NationalityEntity?.NatName </td>
-                            <td>@guest.OperatorList?.BusinessName </td>
+                            <td>@guest.NationalityEntity?.NatName</td>
+                            <td>@guest.OperatorList?.BusinessName</td>
                             <td>@guest.Date</td>
                             <td>
                                 <span class="badge bg-@badgeClass text-uppercase px-2 py-1">
@@ -69,7 +68,6 @@
                             </td>
                             <td class="text-center">
                                 <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-1">
-
                                     <!-- 🔍 View Details -->
                                     <a asp-controller="Reserve" asp-action="ReserveDetails" asp-route-id="@guest.Id" class="btn btn-sm btn-primary">
                                         View
@@ -82,8 +80,11 @@
                                     </button>
 
                                     <!-- ✅ Confirm Booking (per guest OR batch scan) -->
-                                    <form id="confirmForm-@guest.Id" method="post"
-                                          asp-action="FinalBookingBatch" asp-controller="Reserve" class="m-0">
+                                    <form method="post"
+                                          asp-action="FinalBookingBatch"
+                                          asp-controller="Reserve"
+                                          class="m-0 batch-form"
+                                          data-batch="@guest.Batch">
                                         <input type="hidden" name="BatchCode" value="@guest.Batch" />
                                         <button type="submit" class="btn btn-sm btn-success d-flex align-items-center">
                                             <i class="fas fa-check me-1"></i> Confirm
@@ -112,92 +113,107 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        // ✅ GLOBAL SCANNER
-        let globalScanner = null;
+            <script>
+                // ✅ GLOBAL SCANNER
+                let globalScanner = null;
 
-        function openGlobalScanner() {
-            const modal = new bootstrap.Modal(document.getElementById('globalQrModal'));
-            modal.show();
+                function openGlobalScanner() {
+                    const modal = new bootstrap.Modal(document.getElementById('globalQrModal'));
+                    modal.show();
 
-            if (globalScanner) {
-                globalScanner.stop().then(() => {
-                    globalScanner.clear().then(() => startGlobalScanner());
+                    if (globalScanner) {
+                        globalScanner.stop().then(() => {
+                            globalScanner.clear().then(() => startGlobalScanner());
+                        });
+                    } else {
+                        startGlobalScanner();
+                    }
+                }
+
+                function startGlobalScanner() {
+                    globalScanner = new Html5Qrcode("globalReader");
+
+                    const config = { fps: 10, qrbox: 250 };
+                    globalScanner.start(
+                        { facingMode: "environment" },
+                        config,
+                        onGlobalScanSuccess,
+                        (err) => { /* ignore scan errors */ }
+                    ).catch(err => console.error("Global scanner failed:", err));
+                }
+
+                function onGlobalScanSuccess(decodedText, decodedResult) {
+                    const batchCode = decodedText; // QR code content is the batch code
+                    console.log("✅ Global scan result:", batchCode);
+
+                    // Stop scanner after success
+                    if (globalScanner) {
+                        globalScanner.stop().then(() => {
+                            globalScanner.clear();
+
+                            // ✅ ENSURE FORM SUBMISSION AFTER SCANNER STOPS
+                            setTimeout(() => {
+                                const forms = document.querySelectorAll(`form input[name="BatchCode"][value="${batchCode}"]`);
+                                console.log(`📋 Found ${forms.length} forms for batch: ${batchCode}`);
+
+                                if (forms.length > 0) {
+                                    forms.forEach(input => {
+                                        const form = input.closest("form");
+                                        if (form) {
+                                            console.log("🚀 Submitting form for batch:", batchCode);
+                                            form.submit();
+                                        }
+                                    });
+                                } else {
+                                    console.warn("❌ No forms found for batch:", batchCode);
+                                    alert(`No booking found for batch: ${batchCode}`);
+                                }
+
+                                // Close modal
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('globalQrModal'));
+                                if (modal) modal.hide();
+                            }, 500);
+                        });
+                    }
+                }
+
+                // ✅ Bootstrap toast auto-show
+                document.addEventListener("DOMContentLoaded", function () {
+                    var toastElement = document.getElementById('toastMessage');
+                    if (toastElement) {
+                        var toast = new bootstrap.Toast(toastElement);
+                        toast.show();
+                    }
                 });
-            } else {
-                startGlobalScanner();
-            }
-        }
 
-        function startGlobalScanner() {
-            globalScanner = new Html5Qrcode("globalReader");
+                // ✅ Per-guest QR modal
+                function showQrModal(guestId) {
+                    const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
+                    modal.show();
+                }
 
-            const config = { fps: 10, qrbox: 250 };
-            globalScanner.start(
-                { facingMode: "environment" },
-                config,
-                onGlobalScanSuccess,
-                (err) => { /* ignore scan errors */ }
-            ).catch(err => console.error("Global scanner failed:", err));
-        }
+                // ✅ Download QR Code
+                function downloadQRCode(guestId, operator, totalGuests) {
+                    var img = document.getElementById("qrImage-" + guestId);
+                    var canvas = document.getElementById("qrCanvas-" + guestId);
+                    var ctx = canvas.getContext("2d");
 
-        function onGlobalScanSuccess(batchCode) {
-            console.log("✅ Global scan result:", batchCode);
+                    ctx.fillStyle = "#fff";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Stop scanner after success
-            if (globalScanner) {
-                globalScanner.stop().then(() => globalScanner.clear());
-            }
+                    ctx.drawImage(img, 20, 20, 180, 180);
 
-            // Auto-submit all forms with this batch code
-            document.querySelectorAll(`form input[name="BatchCode"][value="${batchCode}"]`)
-                .forEach(input => {
-                    const form = input.closest("form");
-                    if (form) form.submit();
-                });
+                    ctx.fillStyle = "#000";
+                    ctx.font = "14px Arial";
+                    ctx.fillText("Operator: " + operator, 10, 220);
+                    ctx.fillText("Total Guests: " + totalGuests, 10, 240);
 
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('globalQrModal'));
-            if (modal) modal.hide();
-        }
-
-        // ✅ Bootstrap toast auto-show
-        document.addEventListener("DOMContentLoaded", function () {
-            var toastElement = document.getElementById('toastMessage');
-            if (toastElement) {
-                var toast = new bootstrap.Toast(toastElement);
-                toast.show();
-            }
-        });
-
-        // ✅ Per-guest QR modal
-        function showQrModal(guestId) {
-            const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
-            modal.show();
-        }
-
-        // ✅ Download QR Code
-        function downloadQRCode(guestId, operator, totalGuests) {
-            var img = document.getElementById("qrImage-" + guestId);
-            var canvas = document.getElementById("qrCanvas-" + guestId);
-            var ctx = canvas.getContext("2d");
-
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.drawImage(img, 20, 20, 180, 180);
-
-            ctx.fillStyle = "#000";
-            ctx.font = "14px Arial";
-            ctx.fillText("Operator: " + operator, 10, 220);
-            ctx.fillText("Total Guests: " + totalGuests, 10, 240);
-
-            var link = document.createElement("a");
-            link.download = "BatchQR-" + guestId + ".png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        }
-    </script>
+                    var link = document.createElement("a");
+                    link.download = "BatchQR-" + guestId + ".png";
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                }
+            </script>
 
 <!-- ✅ Global QR Scanner Modal -->
 <div class="modal fade" id="globalQrModal" tabindex="-1" aria-hidden="true">
