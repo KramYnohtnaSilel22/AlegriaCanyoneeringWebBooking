@@ -2,6 +2,7 @@
 using AlegriaCanyoneeringWebBooking.Models;
 using AlegriaCanyoneeringWebBooking.ViewModel;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Amqp.Framing;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using System.Text;
@@ -101,7 +102,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> ReserveDetails(int id)
+        public async Task<IActionResult> ReserveDetails(int id )
         {
             // Get the main guest, including the nationality (make sure to include Nationality)
             var mainGuest = await _context.Guests
@@ -126,7 +127,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var model = new GuestDetailsViewModel
             {
                 Guest = mainGuest,
-                GuestsInBatch = guestsInBatch
+                GuestsInBatch = guestsInBatch,
+             
+
             };
 
             return View(model);

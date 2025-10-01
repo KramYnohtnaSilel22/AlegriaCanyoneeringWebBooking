@@ -126,14 +126,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // Fix for CS0029: Cannot implicitly convert type 'string' to 'int?'
         // The issue is likely in the assignment of `guest.RFID` where `GenerateRFID()` returns a string but `RFID` expects an int?.
         // Update the `GenerateRFID` method to return an int instead of a string.
-
         private int GenerateRFID()
         {
-            var hexString = Guid.NewGuid().ToString("N").Substring(0, 8); // 8 chars fit in int
-            return int.Parse(hexString, System.Globalization.NumberStyles.HexNumber);
+            return 1;
         }
 
-   
+
         [HttpGet]
         public async Task<IActionResult> NewBooking(string batch, int? id)
         {
@@ -206,11 +204,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         // Allow adding even if a guest with the same name and operator already exists
                         guest.BookingStatus = "anticipated";
                         guest.Batch = batchId;
-                        guest.RFID = GenerateRFID();
+                        guest.RFID = 1;
+
                         guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
-                        guest.Month = DateTime.Today.ToString("yyyy-MM");
+                        guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
+                        guest.Month = DateTime.Today.ToString("MMMM");
                         guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
+                        guest.Date = DateTime.Today.ToString("MMM dd, yyyy");
 
                         _context.Guests.Add(guest);
                         insertedCount++;
@@ -314,13 +315,50 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var model = new GuestListViewModel
             {
-                ReservedGuests = grouped
+                ReservedGuests = grouped,
+
+           
+
+
             };
 
             return View(model);
         }
 
-        
+        public async Task<IActionResult> SaveguestDetails(int id)
+        {
+            // Get the main guest, including the nationality (make sure to include Nationality)
+            var mainGuest = await _context.Guests
+                .Include(g => g.OperatorList)
+                .Include(g => g.NationalityEntity)  // Ensure Nationality is loaded
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (mainGuest == null)
+            {
+                return NotFound(); // Return if no guest found
+            }
+
+            // Get other guests in the same batch, excluding the main guest
+            var guestsInBatch = await _context.Guests
+                .Include(g => g.OperatorList)
+                .Include(g => g.NationalityEntity)  // Ensure Nationality is included
+                .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
+                .OrderBy(g => g.Id)
+                .Take(4)
+                .ToListAsync();
+
+            var model = new GuestDetailsViewModel
+            {
+                Guest = mainGuest,
+                GuestsInBatch = guestsInBatch,
+
+
+            };
+
+            return View(model);
+        }
+
+
 
         private int GetCurrentOperatorId()
         {
@@ -393,8 +431,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Conflict("Concurrency conflict: guests may have been modified by another process.");
             }
 
-            // Optional: redirect to saveguest or paginated section
-            return RedirectToAction(nameof(saveguest));
+            return RedirectToAction("reservebooking", "Reserve");
+
+
+
         }
 
 

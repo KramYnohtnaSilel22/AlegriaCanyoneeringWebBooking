@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AlegriaCanyoneeringWebBooking.ViewModel
 {
-    public class GuestListViewModel
+    public class GuestListViewModel 
     {
         public Guest NewGuest { get; set; } = new Guest();
         public List<Guest> ReservedGuests { get; set; } = new List<Guest>();

@@ -56,11 +56,19 @@
                         </div>
                     </div>
 
-                 
+                    @if (!string.IsNullOrEmpty(Model.Guest.RFIDCode))
+                    {
+                            <hr />
+                            <div class="text-center mt-4">
+                                <h6 class="fw-semibold text-secondary mb-3">QR Code</h6>
+                            <img src="@Model.Guest.RFIDCode" alt="QR code for @Model.Guest.Fullname"
+                                     class="img-fluid shadow rounded-3" style="max-width: 200px;" />
+                            </div>
+                    }
                 </div>
 
                 <div class="card-footer bg-white d-flex justify-content-between rounded-bottom-4 p-3">
-                    <a asp-action="reservebooking"
+                    <a asp-action="saveguest"
                        class="btn btn-outline-secondary shadow-sm rounded-pill px-4 d-flex align-items-center gap-2"
                        title="Go back to booking list">
                         <i class="fas fa-arrow-left"></i> Back
@@ -83,56 +91,56 @@
 
             @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any(g => g.BookingStatus != "canceled"))
             {
-                <div class="row g-4">
+                    <div class="row g-4">
                     @foreach (var guest in Model.GuestsInBatch.Where(g => g.BookingStatus != "canceled"))
                     {
-                        <div class="col-lg-4 col-md-6">
-                            <div class="card shadow-sm h-100 border rounded-4 hover-shadow transition-fast">
-                                <div class="card-header d-flex justify-content-end bg-white border-0 rounded-top-4 py-3 px-3">
-                                    <form asp-action="CancelGuest" asp-controller="Guest" method="post"
-                                          onsubmit="return confirm('Are you sure you want to cancel this guest?');"
-                                          class="d-inline">
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card shadow-sm h-100 border rounded-4 hover-shadow transition-fast">
+                                        <div class="card-header d-flex justify-content-end bg-white border-0 rounded-top-4 py-3 px-3">
+                                            <form asp-action="CancelGuest" asp-controller="Guest" method="post"
+                                                  onsubmit="return confirm('Are you sure you want to cancel this guest?');"
+                                                  class="d-inline">
                                         @Html.AntiForgeryToken()
-                                        <input type="hidden" name="GuestId" value="@guest.Id" />
-                                        <button type="submit"
-                                                class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center"
-                                                style="width:36px;height:36px;" title="Cancel this companion"
-                                                aria-label="Cancel companion @guest.Fullname">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                                <div class="card-body p-4 fs-6">
-                                    <div class="d-flex flex-wrap gap-3">
-                                        <span class="d-flex align-items-center" title="Full Name">
-                                            <i class="fas fa-user me-1 text-muted"></i>
-                                            <strong class="me-1">Full Name:</strong> @guest.Fullname
-                                        </span>
-                                        <span class="d-flex align-items-center" title="Age">
-                                            <i class="fas fa-calendar-alt ms-3 me-1 text-muted"></i>
-                                            <strong class="me-1">Age:</strong> @guest.Age
-                                        </span>
-                                        <span class="d-flex align-items-center" title="Gender">
-                                            <i class="fas fa-venus-mars ms-3 me-1 text-muted"></i>
-                                            <strong class="me-1">Gender:</strong> @guest.Gender
-                                        </span>
-                                        <span class="d-flex align-items-center" title="Nationality">
-                                            <i class="fas fa-flag ms-3 me-1 text-muted"></i>
-                                            <strong class="me-1">Nationality:</strong> @guest.NationalityType
-                                        </span>
+                                                <input type="hidden" name="GuestId" value="@guest.Id" />
+                                                <button type="submit"
+                                                        class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center"
+                                                        style="width:36px;height:36px;" title="Cancel this companion"
+                                                        aria-label="Cancel companion @guest.Fullname">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <div class="card-body p-4 fs-6">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <span class="d-flex align-items-center" title="Full Name">
+                                                    <i class="fas fa-user me-1 text-muted"></i>
+                                                    <strong class="me-1">Full Name:</strong> @guest.Fullname
+                                                </span>
+                                                <span class="d-flex align-items-center" title="Age">
+                                                    <i class="fas fa-calendar-alt ms-3 me-1 text-muted"></i>
+                                                    <strong class="me-1">Age:</strong> @guest.Age
+                                                </span>
+                                                <span class="d-flex align-items-center" title="Gender">
+                                                    <i class="fas fa-venus-mars ms-3 me-1 text-muted"></i>
+                                                    <strong class="me-1">Gender:</strong> @guest.Gender
+                                                </span>
+                                                <span class="d-flex align-items-center" title="Nationality">
+                                                    <i class="fas fa-flag ms-3 me-1 text-muted"></i>
+                                                    <strong class="me-1">Nationality:</strong> @guest.NationalityType
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
                     }
-                </div>
+                    </div>
             }
             else
             {
-                <div class="alert alert-info text-center rounded-3 shadow-sm py-4 fs-5">
-                    <i class="fas fa-info-circle me-2"></i>
-                    No active companions in this booking yet.
-                </div>
+                    <div class="alert alert-info text-center rounded-3 shadow-sm py-4 fs-5">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No active companions in this booking yet.
+                    </div>
             }
         </div>
     </div>

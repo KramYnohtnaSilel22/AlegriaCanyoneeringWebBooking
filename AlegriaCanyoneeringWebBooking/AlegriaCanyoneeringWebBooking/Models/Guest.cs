@@ -71,8 +71,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string BookingStatus { get; set; } = "anticipated";
 
 
-        [Column("qrcode")]
-        public string? QrCode { get; set; }
 
         [Column("Area")]
         public string? Area { get; set; }

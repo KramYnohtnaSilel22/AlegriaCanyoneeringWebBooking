@@ -1,5 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Saved Batch Leaders";
+
 }
 
 <h2 class="fw-bold mb-4 text-success">Saved Guests</h2>
@@ -71,7 +72,7 @@
                         searchable: false,
                         render: function (data, type, row) {
                             return `
-                                <a href="/Reserve/ReserveDetails/${data}" class="btn btn-sm btn-primary me-1">
+                                <a href="/Guest/SaveguestDetails/${data}" class="btn btn-sm btn-primary me-1">
                                     View
                                 </a>
                                 ${row.bookingStatus === 'anticipated' ? `

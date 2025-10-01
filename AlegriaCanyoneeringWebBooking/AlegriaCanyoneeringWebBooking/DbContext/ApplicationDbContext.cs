@@ -85,9 +85,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
                     .HasMaxLength(50)
                     .HasDefaultValue("anticipated");
 
-                entity.Property(e => e.QrCode)
-                    .HasColumnName("qrcode");
-
                 entity.Property(e => e.RFID)
     .HasColumnName("rfid");
 
@@ -95,9 +92,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
                     .HasColumnName("rfidcode")
                     .HasMaxLength(1000);
 
-                entity.Property(e => e.QrCode)
-                    .HasColumnName("qrcode");
-
+               
                 entity.Property(e => e.Area)
                     .HasColumnName("Area")
                     .HasMaxLength(500);
