@@ -167,64 +167,49 @@
 
 <script>
     $(function () {
-         const $type = $('#NationalityType');
-         const $list = $('#NationalityId');
-         const $operatorInput = $('#OperatorInput');
-         const $tourAreaInput = $('#TourAreaInput');
-         const $bookingDateInput = $('#BookingDateInput');
-         const $arrivalDateInput = $('#ArrivalDateInput');
-         const $batchGuestsJson = $('#BatchGuestsJson');
-         const $saveBtn = $('#saveBtn');
-         const $totalGuestsCount = $('#totalGuestsCount');
-         const $currentBatch = $('#CurrentBatch');
+        const $type = $('#NationalityType');
+        const $list = $('#NationalityId');
+        const $operatorInput = $('#OperatorInput');
+        const $tourAreaInput = $('#TourAreaInput');
+        const $bookingDateInput = $('#BookingDateInput');
+        const $arrivalDateInput = $('#ArrivalDateInput');
+        const $batchGuestsJson = $('#BatchGuestsJson');
+        const $saveBtn = $('#saveBtn');
+        const $totalGuestsCount = $('#totalGuestsCount');
+        const $currentBatch = $('#CurrentBatch');
 
-         let foreignNationalitiesCache = null;
-         const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-         const selectedNationalityId = '@Model.NewGuest.NationalityId';
+        let foreignNationalitiesCache = null;
+        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+        const selectedNationalityId = '@Model.NewGuest.NationalityId';
 
-         function fillLocalNationalities() {
-             const localOptions = [
-                 { id: '1000', text: 'Within Cebu Province' },
-                 { id: '1001', text: 'Outside Cebu Province' }
-             ];
-             $list.empty();
-             localOptions.forEach(opt => {
-                 const option = new Option(opt.text, opt.id);
-                 if (selectedNationalityId === opt.id) option.selected = true;
-                 $list.append(option);
-             });
-         }
+        function updateNationalityIdOptions(choice) {
+            $list.empty();
+            if (choice === 'Local') {
+                // ✅ CHANGED: Use 1 and 2 instead of 1000 and 1001
+                $list.append(new Option('Within Cebu Province', '1'));
+                $list.append(new Option('Outside Cebu Province', '2'));
 
-         function fillForeignNationalities(data) {
-             $list.empty();
-             $list.append(new Option('-- Select Nationality --', ''));
-             data.forEach(item => {
-                 const option = new Option(item.natName, item.id);
-                 if (selectedNationalityId === item.id.toString()) option.selected = true;
-                 $list.append(option);
-             });
-         }
-
-
-        function updateNationalityIdOptions(typeChoice) {
-            if (typeChoice === 'Local') {
-                fillLocalNationalities();
-            } else if (typeChoice === 'Foreign') {
-                if (foreignNationalitiesCache) {
-                    fillForeignNationalities(foreignNationalitiesCache);
-                } else {
-                    $list.empty().append(new Option('Loading...', ''));
-                    $.getJSON(getNationalitiesUrl)
-                        .done(data => {
-                            foreignNationalitiesCache = data;
-                            fillForeignNationalities(data);
-                        })
-                        .fail(() => {
-                            $list.empty().append(new Option('Error loading nationalities', ''));
-                        });
+                // Set selected value if matches
+                if (selectedNationalityId === '1' || selectedNationalityId === '2') {
+                    $list.val(selectedNationalityId);
                 }
+            } else if (choice === 'Foreign') {
+                $list.append(new Option('Loading...', ''));
+                $.getJSON(getNationalitiesUrl)
+                    .done(function (data) {
+                        $list.empty();
+                        $list.append(new Option('-- Select Nationality --', ''));
+                        data.forEach(function (item) {
+                            const option = new Option(item.natName, item.id);
+                            if (selectedNationalityId === item.id.toString()) option.selected = true;
+                            $list.append(option);
+                        });
+                    })
+                    .fail(function () {
+                        $list.empty().append(new Option('Error loading', ''));
+                    });
             } else {
-                $list.empty().append(new Option('-- Select Nationality Type First --', ''));
+                $list.append(new Option('-- Select --', ''));
             }
         }
 
@@ -236,10 +221,9 @@
         $type.on('change', function () {
             clearTimeout(nationalityTypeChangeTimeout);
             nationalityTypeChangeTimeout = setTimeout(() => {
-                updateNationalityIdOptions($type.val());
+                updateNationalityIdOptions($(this).val());
             }, 250);
         });
-
 
         // Apply readonly if set from ViewBag
         const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
@@ -269,7 +253,8 @@
                 Gender: $('[name="NewGuest.Gender"]').val(),
                 ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
                 NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-                NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()),
+                // ✅ FIXED: Now uses 1 and 2 for Local nationalities
+                NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
                 Area: $('[name="NewGuest.Area"]').val(),
                 Date: $('[name="NewGuest.Date"]').val(),
                 ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
@@ -304,4 +289,3 @@
         $('#loadingOverlay').fadeOut(300);
     });
 </script>
-
