@@ -12,11 +12,11 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Required, StringLength(255)]
         [Column("Name")]
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
-        [Required, StringLength(255)]
+
         [Column("BusinessName")]
-        public string BusinessName { get; set; } = string.Empty;
+        public string? BusinessName { get; set; } 
 
         [Required]
         [Column("Age")]

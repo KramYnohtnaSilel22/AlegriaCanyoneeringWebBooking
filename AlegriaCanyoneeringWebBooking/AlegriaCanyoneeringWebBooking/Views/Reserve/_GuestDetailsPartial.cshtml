@@ -5,7 +5,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="guestDetailsModalLabel">
-                    Booking Details - Batch: @Model.FirstOrDefault()?.Batch ?? "N/A"
+                    Booking Details - Batch: @Model.FirstOrDefault()?.Batch 
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -20,8 +20,6 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Operator</th>
-
-
                                 <th>Full Name</th>
                                 <th>Age</th>
                                 <th>Contact No.</th>
@@ -33,16 +31,15 @@
                         </thead>
                         <tbody>
                             <tr class="table-success">
-                                <td>@(primaryGuest.OperatorList?.BusinessName)</td>
+                                <td>@(primaryGuest.OperatorList?.BusinessName ?? "N/A")</td>
                                 <td>@primaryGuest.Fullname</td>
                                 <td>@primaryGuest.Age</td>
                                 <td>@primaryGuest.ContactNumber</td>
                                 <td>@primaryGuest.Gender</td>
-                                <td>@primaryGuest.NationalityType</td>
+                                <td>@(primaryGuest.NationalityEntity?.NatName ?? "N/A")</td>
                                 <td>@primaryGuest.Area</td>
                                 <td>
                                     @{
-                                        // Parse ArrivalDate string to DateTime and format nicely
                                         if (DateTime.TryParse(primaryGuest.ArrivalDate, out var arrivalDt))
                                         {
                                             @arrivalDt.ToString("MMM dd, yyyy")
