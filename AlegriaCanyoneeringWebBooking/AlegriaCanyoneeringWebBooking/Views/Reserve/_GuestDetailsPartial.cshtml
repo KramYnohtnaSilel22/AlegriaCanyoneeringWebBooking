@@ -20,8 +20,6 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Operator</th>
-
-
                                 <th>Full Name</th>
                                 <th>Age</th>
                                 <th>Contact No.</th>
@@ -33,16 +31,23 @@
                         </thead>
                         <tbody>
                             <tr class="table-success">
-                                <td>@(primaryGuest.OperatorList?.BusinessName)</td>
+                                <td>@(primaryGuest.OperatorList?.BusinessName ?? "N/A")</td>
                                 <td>@primaryGuest.Fullname</td>
                                 <td>@primaryGuest.Age</td>
                                 <td>@primaryGuest.ContactNumber</td>
                                 <td>@primaryGuest.Gender</td>
-                                <td>@(primaryGuest.NationalityEntity?.NatName )</td>
+                                <td>
+                                    @{
+                                        // Try NationalityEntity first, fallback to NationalityType string
+                                        var primaryNat = primaryGuest.NationalityEntity?.NatName
+                                        ?? primaryGuest.NationalityType
+                                        ?? "N/A";
+                                    }
+                                    @primaryNat
+                                </td>
                                 <td>@primaryGuest.Area</td>
                                 <td>
                                     @{
-                                        // Parse ArrivalDate string to DateTime and format nicely
                                         if (DateTime.TryParse(primaryGuest.ArrivalDate, out var arrivalDt))
                                         {
                                             @arrivalDt.ToString("MMM dd, yyyy")
@@ -78,7 +83,15 @@
                                         <td>@guest.Age</td>
                                         <td>@guest.ContactNumber</td>
                                         <td>@guest.Gender</td>
-                                        <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                        <td>
+                                            @{
+                                                // Try NationalityEntity first, fallback to NationalityType string
+                                                var companionNat = guest.NationalityEntity?.NatName
+                                                ?? guest.NationalityType
+                                                ?? "N/A";
+                                            }
+                                            @companionNat
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
