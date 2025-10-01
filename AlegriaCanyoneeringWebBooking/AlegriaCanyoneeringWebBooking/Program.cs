@@ -6,7 +6,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSession(option =>
+{
+    option.Cookie.Name = "AlegriaCanyoneering.Session";
+    option.IdleTimeout = TimeSpan.FromMinutes(59);
+    option.Cookie.IsEssential = true;
+});
+
 
 // 1️⃣ Add services BEFORE Build
 builder.Services.AddControllersWithViews();
@@ -86,10 +94,12 @@ app.UseCors("AllowAll");  // Apply the CORS policy
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseRouting();
 
+
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 
 // API routes (Controller mappings)
 app.MapControllers();  // This maps the controllers to the routes.

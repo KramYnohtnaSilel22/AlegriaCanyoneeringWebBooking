@@ -29,7 +29,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             ViewBag.ReturnUrl = returnUrl;
             return View(new LoginViewModel());
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -48,21 +47,33 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, op.Username!),
-            new Claim(ClaimTypes.NameIdentifier, op.OperatorId.ToString()),
-            new Claim(ClaimTypes.Role, op.Roles?.Name ?? "User")
-        };
+    {
+        new Claim(ClaimTypes.Name, op.Username!),
+        new Claim(ClaimTypes.NameIdentifier, op.OperatorId.ToString()),
+        new Claim(ClaimTypes.Role, op.Roles?.Name ?? "User"),
+    
+    };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true, // Remember me functionality
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2) // Session duration
+            };
+
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity));
+                new ClaimsPrincipal(identity),
+                authProperties);
+
+            // ✅ SET SESSION FOR USERNAME DISPLAY
+            HttpContext.Session.SetString("Username", op.Username!);
+            HttpContext.Session.SetInt32("OperatorId", op.OperatorId);
+            HttpContext.Session.SetString("UserRole", op.Roles?.Name ?? "User");
+
             // Set TempData for login success
             TempData["LoginSuccess"] = "Login successful! Welcome back.";
             return RedirectToAction("NewBooking", "Guest");
-
-
         }
 
         public async Task<IActionResult> Logout()
