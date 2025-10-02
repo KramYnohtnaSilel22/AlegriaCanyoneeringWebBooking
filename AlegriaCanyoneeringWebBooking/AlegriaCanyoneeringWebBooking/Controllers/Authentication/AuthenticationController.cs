@@ -73,7 +73,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Set TempData for login success
             TempData["LoginSuccess"] = "Login successful! Welcome back.";
-            return RedirectToAction("NewBooking", "Guest");
+            return RedirectToAction("Index", "Home");
         }
 
         public async Task<IActionResult> Logout()

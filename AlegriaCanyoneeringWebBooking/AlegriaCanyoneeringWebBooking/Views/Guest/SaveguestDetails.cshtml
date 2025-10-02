@@ -64,14 +64,24 @@
                        title="Go back to booking list">
                         <i class="fas fa-arrow-left"></i> Back
                     </a>
-                    <a asp-controller="Guest"
-                       asp-action="NewBooking"
-                       asp-route-batch="@Model.Guest.Batch"
-                       asp-route-id="@Model.Guest.Id"
-                       class="btn btn-primary rounded-pill d-flex align-items-center gap-2"
-                       title="Add another guest to this booking">
-                        <i class="fas fa-user-plus"></i> Add Guest
-                    </a>
+                        @if (!User.IsInRole("Admin"))
+                        {
+                            <a asp-controller="Guest"
+                               asp-action="NewBooking"
+                               asp-route-batch="@Model.Guest.Batch"
+                               asp-route-id="@Model.Guest.Id"
+                               class="btn btn-primary rounded-pill d-flex align-items-center gap-2"
+                               title="Add another guest to this booking">
+                                <i class="fas fa-user-plus"></i> Add Guest
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-danger fw-bold">
+                                <i class="fas fa-ban me-1"></i> Authorized Only
+                            </span>
+                        }
+
                 </div>
             </div>
 
@@ -117,7 +127,7 @@
                                                 </span>
                                                 <span class="d-flex align-items-center" title="Nationality">
                                                     <i class="fas fa-flag ms-3 me-1 text-muted"></i>
-                                                    <strong class="me-1">Nationality:</strong> @guest.NationalityType
+                                                    <strong class="me-1">Nationality:</strong> @(Model.Guest.NationalityEntity?.NatName ?? "N/A")
                                                 </span>
                                             </div>
                                         </div>

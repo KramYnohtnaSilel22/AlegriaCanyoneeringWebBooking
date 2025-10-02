@@ -115,7 +115,7 @@
                                         </span>
                                         <span class="d-flex align-items-center" title="Nationality">
                                             <i class="fas fa-flag ms-3 me-1 text-muted"></i>
-                                            <strong class="me-1">Nationality:</strong> @guest.NationalityType
+                                            <strong class="me-1">Nationality:</strong> @(Model.Guest.NationalityEntity?.NatName ?? "N/A")
                                         </span>
                                     </div>
                                 </div>

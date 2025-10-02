@@ -1,10 +1,12 @@
-﻿@inject IHttpContextAccessor HttpContextAccessor
+﻿
+
+ @inject IHttpContextAccessor HttpContextAccessor
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Alegria Canyoneering Web Boooking</title>
+    <title>Alegria Canyoneering</title>
 
     <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -18,270 +20,267 @@
     <!-- Custom CSS -->
     <style>
         body {
-            display: flex;
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
+        display: flex;
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
         }
 
         /* Header */
         header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            height: 56px;
-            background-color: #0d6efd;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 1rem;
-            z-index: 1030;
-            transition: width 0.3s ease;
-            justify-content: flex-end;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 56px;
+        background-color: #0d6efd;
+        color: white;
+        display: flex;
+        align-items: center;
+        padding: 0 1rem;
+        z-index: 1030;
+        transition: width 0.3s ease;
+        justify-content: flex-end;
         }
 
-            header.collapsed {
-                width: 80px;
-            }
+        header.collapsed {
+        width: 80px;
+        }
 
         .header_toggle {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.75rem;
-            cursor: pointer;
-            transition: transform 0.3s ease;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.75rem;
+        cursor: pointer;
+        transition: transform 0.3s ease;
         }
 
         header.collapsed .header_toggle {
-            transform: rotate(90deg);
+        transform: rotate(90deg);
         }
 
         /* Sidebar */
         .sidebar {
-            width: 250px;
-            background-color: #0d6efd;
-            padding-top: 72px; /* leave space for fixed header */
-            color: white;
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            transition: width 0.3s ease;
-            overflow-x: hidden;
-            overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.15);
+        width: 250px;
+        background-color: #0d6efd;
+        padding-top: 72px; /* leave space for fixed header */
+        color: white;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        transition: width 0.3s ease;
+        overflow-x: hidden;
+        overflow-y: auto;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.15);
         }
 
-            .sidebar.collapsed {
-                width: 80px;
-            }
+        .sidebar.collapsed {
+        width: 80px;
+        }
 
-            /* Sidebar links */
-            .sidebar a {
-                color: white;
-                text-decoration: none;
-                padding: 0.75rem 1.5rem;
-                display: flex;
-                align-items: center;
-                font-weight: 500;
-                transition: padding 0.3s ease, background-color 0.3s ease;
-                white-space: nowrap;
-            }
+        /* Sidebar links */
+        .sidebar a {
+        color: white;
+        text-decoration: none;
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        transition: padding 0.3s ease, background-color 0.3s ease;
+        white-space: nowrap;
+        }
 
-            .sidebar.collapsed a {
-                padding-left: 1rem;
-                justify-content: center;
-            }
+        .sidebar.collapsed a {
+        padding-left: 1rem;
+        justify-content: center;
+        }
 
-            .sidebar a:hover, .sidebar a:focus {
-                background-color: #0b5ed7;
-                outline: none;
-            }
+        .sidebar a:hover, .sidebar a:focus {
+        background-color: #0b5ed7;
+        outline: none;
+        }
 
-            /* Icon & text span in links */
-            .sidebar a i {
-                font-size: 1.2rem;
-                min-width: 24px;
-                text-align: center;
-            }
+        /* Icon & text span in links */
+        .sidebar a i {
+        font-size: 1.2rem;
+        min-width: 24px;
+        text-align: center;
+        }
 
-            .sidebar a span {
-                margin-left: 12px;
-                transition: opacity 0.3s ease;
-            }
+        .sidebar a span {
+        margin-left: 12px;
+        transition: opacity 0.3s ease;
+        }
 
-            .sidebar.collapsed a span {
-                opacity: 0;
-                width: 0;
-                overflow: hidden;
-                display: inline-block;
-                margin-left: 0;
-            }
+        .sidebar.collapsed a span {
+        opacity: 0;
+        width: 0;
+        overflow: hidden;
+        display: inline-block;
+        margin-left: 0;
+        }
 
-            /* Section titles */
-            .sidebar .section-title {
-                font-size: 0.85rem;
-                text-transform: uppercase;
-                opacity: 0.7;
-                padding: 0.5rem 1.5rem;
-                white-space: nowrap;
-                user-select: none;
-            }
+        /* Section titles */
+        .sidebar .section-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        opacity: 0.7;
+        padding: 0.5rem 1.5rem;
+        white-space: nowrap;
+        user-select: none;
+        }
 
-            .sidebar.collapsed .section-title {
-                opacity: 0;
-                height: 0;
-                overflow: hidden;
-                padding: 0;
-                margin: 0;
-            }
+        .sidebar.collapsed .section-title {
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        }
 
-            /* Navbar Brand Logo */
-            .sidebar .navbar-brand img {
-                width: 100px;
-                height: 100px;
-                object-fit: cover;
-                border-radius: 50%;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                margin-bottom: 10px;
-                transition: width 0.3s ease, height 0.3s ease;
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
-            }
+        /* Navbar Brand Logo */
+        .sidebar .navbar-brand img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 50%;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        margin-bottom: 10px;
+        transition: width 0.3s ease, height 0.3s ease;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        }
 
-            .sidebar.collapsed .navbar-brand img {
-                width: 50px;
-                height: 50px;
-                margin-bottom: 0;
-            }
+        .sidebar.collapsed .navbar-brand img {
+        width: 50px;
+        height: 50px;
+        margin-bottom: 0;
+        }
 
-            .sidebar .navbar-brand span {
-                display: block;
-                text-align: center;
-                transition: opacity 0.3s ease;
-            }
+        .sidebar .navbar-brand span {
+        display: block;
+        text-align: center;
+        transition: opacity 0.3s ease;
+        }
 
-            .sidebar.collapsed .navbar-brand span {
-                opacity: 0;
-                width: 0;
-                overflow: hidden;
-                display: inline-block;
-            }
+        .sidebar.collapsed .navbar-brand span {
+        opacity: 0;
+        width: 0;
+        overflow: hidden;
+        display: inline-block;
+        }
 
         /* Main content */
         .main-content {
-            margin-left: 250px;
-            padding: 2rem;
-            flex-grow: 1;
-            background-color: #f8f9fa;
-            transition: margin-left 0.3s ease;
-            min-height: 100vh;
+        margin-left: 250px;
+        padding: 2rem;
+        flex-grow: 1;
+        background-color: #f8f9fa;
+        transition: margin-left 0.3s ease;
+        min-height: 100vh;
         }
 
         .sidebar.collapsed ~ .main-content {
-            margin-left: 80px;
+        margin-left: 80px;
         }
 
         /* Settings toggle */
         .settings-toggle {
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            user-select: none;
-            white-space: nowrap;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        user-select: none;
+        white-space: nowrap;
         }
 
-            .settings-toggle span {
-                display: flex;
-                align-items: center;
-                font-weight: 500;
-            }
+        .settings-toggle span {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        }
 
-            .settings-toggle i.toggle-icon {
-                transition: transform 0.3s ease;
-                font-size: 1.2rem;
-            }
+        .settings-toggle i.toggle-icon {
+        transition: transform 0.3s ease;
+        font-size: 1.2rem;
+        }
 
-            .settings-toggle.collapsed i.toggle-icon {
-                transform: rotate(0deg);
-            }
+        .settings-toggle.collapsed i.toggle-icon {
+        transform: rotate(0deg);
+        }
 
-            .settings-toggle.expanded i.toggle-icon {
-                transform: rotate(180deg);
-            }
+        .settings-toggle.expanded i.toggle-icon {
+        transform: rotate(180deg);
+        }
 
         /* Settings submenu */
         #settingsSubmenu a {
-            padding-left: 3rem !important;
+        padding-left: 3rem !important;
         }
 
         /* Scrollbar for sidebar */
         .sidebar::-webkit-scrollbar {
-            width: 8px;
+        width: 8px;
         }
 
         .sidebar::-webkit-scrollbar-track {
-            background: transparent;
+        background: transparent;
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
         }
 
         /* Responsive for smaller devices */
         @@media (max-width: 992px) {
-            header
-
-        {
-            width: 100%;
-            height: 56px;
-            justify-content: flex-start;
-            padding: 0 1rem;
+        header {
+        width: 100%;
+        height: 56px;
+        justify-content: flex-start;
+        padding: 0 1rem;
         }
 
         header.collapsed {
-            width: 100%;
+        width: 100%;
         }
 
         .sidebar {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            width: 250px;
-            height: calc(100vh - 56px);
-            padding-top: 1rem;
-            transform: translateX(0);
-            transition: transform 0.3s ease;
-            z-index: 1040;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.25);
+        position: fixed;
+        top: 56px;
+        left: 0;
+        width: 250px;
+        height: calc(100vh - 56px);
+        padding-top: 1rem;
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+        z-index: 1040;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.25);
         }
 
-            .sidebar.collapsed {
-                transform: translateX(-100%);
-            }
+        .sidebar.collapsed {
+        transform: translateX(-100%);
+        }
 
-                .sidebar.collapsed a span,
-                .sidebar.collapsed .section-title,
-                .sidebar.collapsed .navbar-brand span {
-                    opacity: 1 !important;
-                    width: auto !important;
-                    display: inline-block !important;
-                }
+        .sidebar.collapsed a span,
+        .sidebar.collapsed .section-title,
+        .sidebar.collapsed .navbar-brand span {
+        opacity: 1 !important;
+        width: auto !important;
+        display: inline-block !important;
+        }
 
         .main-content {
-            margin-left: 0;
-            padding: 1rem;
+        margin-left: 0;
+        padding: 1rem;
         }
 
         .sidebar.collapsed ~ .main-content {
-            margin-left: 0;
+        margin-left: 0;
         }
-
         }
     </style>
 </head>
@@ -292,33 +291,44 @@
         <button class="header_toggle" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
             <i class="bi bi-list"></i>
         </button>
-    
-     
-       
+
+
+
     </header>
 
     <nav class="sidebar" id="sidebar" role="navigation" aria-label="Sidebar Navigation">
         <div class="text-center mb-4">
-            <a class="navbar-brand fw-bold text-white" asp-area="" asp-controller="Guest" asp-action="NewBooking" style="display: inline-block; text-decoration: none;">
+
+            <a class="navbar-brand fw-bold text-white" asp-area="" asp-controller="Home" asp-action="Index" style="display: inline-block; text-decoration: none;">
                 <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" />
-                <span class="fs-6 d-block">Alegria Canyoneering Web Booking</span>
+                <span class="fs-6 d-block">Alegria Canyoneering</span>
             </a>
         </div>
-    
-        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
+
+        <!-- Para sa Super Admin ug Operator -->
+        @if (User.IsInRole("Super Admin") || User.IsInRole("Operator"))
         {
             <div class="section-title">Main</div>
             <a asp-controller="Guest" asp-action="NewBooking"><i class="bi bi-calendar-plus-fill me-2"></i> <span>New Booking</span></a>
+        }
+        <!-- Para sa Admin ug Super Admin -->
+        @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
+        {
+            <!-- Admin-specific links -->
             <a asp-controller="Guest" asp-action="saveguest"><i class="bi bi-person-plus-fill me-2"></i> <span>Save Guest</span></a>
             <a asp-controller="Reserve" asp-action="reservebooking"><i class="bi bi-journal-check me-2"></i> <span>Reserve Bookings</span></a>
-            <a asp-controller="Reserve" asp-action="FinalBookingBatch"><i class="bi bi-clipboard-check me-2"></i> <span>Booked Guest</span></a>
+            <!-- Operator -->
+            @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
+            {
+                <a asp-controller="Reserve" asp-action="FinalBookingBatch"><i class="bi bi-clipboard-check me-2"></i> <span>Booked Guest</span></a>
+            
+            }
         }
 
-        @if (User.IsInRole("Super Admin"))
+        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
         {
             <div class="section-title">Settings</div>
 
-            <!-- Settings collapsible menu toggle -->
             <a href="#settingsSubmenu"
                class="settings-toggle text-white text-decoration-none"
                data-bs-toggle="collapse"
@@ -331,92 +341,47 @@
             </a>
 
             <div class="collapse" id="settingsSubmenu">
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Batches" asp-action="Index">
-                    <i class="bi bi-layers-half me-2"></i> <span>Batch</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Guides" asp-action="Index">
-                    <i class="bi bi-person-badge me-2"></i> <span>Guide Details</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Operators" asp-action="Index">
-                    <i class="bi bi-person-workspace me-2"></i> <span>User</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Drivers" asp-action="Index">
-                    <i class="bi bi-truck-front me-2"></i> <span>Driver Details</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="OperatorList" asp-action="Operators">
-                    <i class="bi bi-people-fill me-2"></i> <span>OperatorsList</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Nationalities" asp-action="Index">
-                    <i class="bi bi-flag-fill me-2"></i> <span>Nationality</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Roles" asp-action="Index">
-                    <i class="bi bi-person-badge-fill me-2"></i> <span>Roles</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="ChangePassword">
-                    <i class="bi bi-shield-lock-fill me-2"></i> <span>Change Password</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="Edit">
-                    <i class="bi bi-pencil-square me-2"></i> <span>Update Info</span>
-                </a>
+                @* ✅ For Super Admin only *@
+                @if (User.IsInRole("Super Admin"))
+                {
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Batches" asp-action="Index">
+                        <i class="bi bi-layers-half me-2"></i> <span>Batch</span>
+                    </a>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Guides" asp-action="Index">
+                        <i class="bi bi-person-badge me-2"></i> <span>Guide Details</span>
+                    </a>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Operators" asp-action="Index">
+                        <i class="bi bi-person-workspace me-2"></i> <span>Operator</span>
+                    </a>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Drivers" asp-action="Index">
+                        <i class="bi bi-truck-front me-2"></i> <span>Driver Details</span>
+                    </a>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="OperatorList" asp-action="Operators">
+                        <i class="bi bi-people-fill me-2"></i> <span>OperatorsList</span>
+                    </a>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Nationalities" asp-action="Index">
+                        <i class="bi bi-flag-fill me-2"></i> <span>Nationality</span>
+                    </a>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Roles" asp-action="Index">
+                        <i class="bi bi-person-badge-fill me-2"></i> <span>Roles</span>
+                    </a>
+                }
+
+                @* ✅ For Super Admin and Admin - Change Password & Update Info *@
+                @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
+                {
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="ChangePassword">
+                        <i class="bi bi-shield-lock-fill me-2"></i> <span>Change Password</span>
+                    </a>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="Edit">
+                        <i class="bi bi-pencil-square me-2"></i> <span>Update Info</span>
+                    </a>
+                }
             </div>
         }
 
-        @if (User.IsInRole("Admin"))
-        {
-            <div class="section-title">Settings</div>
-
-            <!-- Settings collapsible menu toggle -->
-            <a href="#settingsSubmenu"
-               class="settings-toggle text-white text-decoration-none"
-               data-bs-toggle="collapse"
-               role="button"
-               aria-expanded="false"
-               aria-controls="settingsSubmenu"
-               id="settingsToggle">
-                <span><i class="bi bi-gear-fill me-2"></i> <span>Settings</span></span>
-                <i class="bi bi-chevron-down toggle-icon"></i>
-            </a>
-
-            <div class="collapse" id="settingsSubmenu">
-
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="ChangePassword">
-                    <i class="bi bi-shield-lock-fill me-2"></i> <span>Change Password</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="Edit">
-                    <i class="bi bi-pencil-square me-2"></i> <span>Update Info</span>
-                </a>
-            </div>
-        }
-
-      
 
 
-        @if (User.IsInRole("Operator"))
-        {
-            <div class="section-title">Settings</div>
-
-            <!-- Settings collapsible menu toggle -->
-            <a href="#settingsSubmenu"
-               class="settings-toggle text-white text-decoration-none"
-               data-bs-toggle="collapse"
-               role="button"
-               aria-expanded="false"
-               aria-controls="settingsSubmenu"
-               id="settingsToggle">
-                <span><i class="bi bi-gear-fill me-2"></i> <span>Settings</span></span>
-                <i class="bi bi-chevron-down toggle-icon"></i>
-            </a>
-
-            <div class="collapse" id="settingsSubmenu">
-         
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="ChangePassword">
-                    <i class="bi bi-shield-lock-fill me-2"></i> <span>Change Password</span>
-                </a>
-                <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="Edit">
-                    <i class="bi bi-pencil-square me-2"></i> <span>Update Info</span>
-                </a>
-            </div>
-        }
 
         <div class="section-title">Account</div>
         <a asp-controller="Home" asp-action="About"><i class="bi bi-info-circle-fill me-2"></i> <span>About Us</span></a>
@@ -431,7 +396,7 @@
 
         <footer class="border-top pt-3 mt-5 text-muted">
             <div class="container">
-                &copy; 2025 - Alegria Canyoneering Web Booking
+                &copy; 2025 - Alegria Canyoneering WebBooking
             </div>
         </footer>
     </main>
@@ -502,3 +467,6 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+
+

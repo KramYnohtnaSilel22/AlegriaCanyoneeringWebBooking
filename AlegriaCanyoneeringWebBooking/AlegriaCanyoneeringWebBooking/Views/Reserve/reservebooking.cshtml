@@ -73,23 +73,27 @@
                                         View
                                     </a>
 
-                                    <!-- 📷 View QR Code (Per Guest) -->
-                                    <button type="button" class="btn btn-sm btn-info d-flex align-items-center"
-                                            onclick="showQrModal('@guest.Id')">
-                                        <i class="fas fa-qrcode me-1"></i> View QR Code
-                                    </button>
-
-                                    <!-- ✅ Confirm Booking (per guest OR batch scan) -->
-                                    <form method="post"
-                                          asp-action="FinalBookingBatch"
-                                          asp-controller="Reserve"
-                                          class="m-0 batch-form"
-                                          data-batch="@guest.Batch">
-                                        <input type="hidden" name="BatchCode" value="@guest.Batch" />
-                                        <button type="submit" class="btn btn-sm btn-success d-flex align-items-center">
-                                            <i class="fas fa-check me-1"></i> Confirm
+                                    @if (!User.IsInRole("Admin"))
+                                    {
+                                        <!-- 📷 View QR Code (Per Guest) -->
+                                        <button type="button" class="btn btn-sm btn-info d-flex align-items-center"
+                                                onclick="showQrModal('@guest.Id')">
+                                            <i class="fas fa-qrcode me-1"></i> View QR Code
                                         </button>
-                                    </form>
+
+                                        <!-- ✅ Confirm Booking (per guest OR batch scan) -->
+                                        <form method="post"
+                                              asp-action="FinalBookingBatch"
+                                              asp-controller="Reserve"
+                                              class="m-0 batch-form"
+                                              data-batch="@guest.Batch">
+                                            <input type="hidden" name="BatchCode" value="@guest.Batch" />
+                                            <button type="submit" class="btn btn-sm btn-success d-flex align-items-center">
+                                                <i class="fas fa-check me-1"></i> Confirm
+                                            </button>
+                                        </form>
+                                    }
+                                  
                                 </div>
                             </td>
                         </tr>

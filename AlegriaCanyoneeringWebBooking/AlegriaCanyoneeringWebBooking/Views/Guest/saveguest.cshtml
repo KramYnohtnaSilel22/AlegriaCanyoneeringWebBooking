@@ -34,6 +34,7 @@
 
 @section Scripts {
     <script>
+            const isAdmin = @User.IsInRole("Admin").ToString().ToLower(); // true/false in JS
         $(document).ready(function () {
             $('#guestsTable').DataTable({
                 processing: true,
@@ -75,13 +76,13 @@
                                 <a href="/Guest/SaveguestDetails/${data}" class="btn btn-sm btn-primary me-1">
                                     View
                                 </a>
-                                ${row.bookingStatus === 'anticipated' ? `
-                                    <form method="post" action="/Guest/UpdateStatus" style="display:inline">
-                                        <input type="hidden" name="id" value="${data}" />
-                                        <input type="hidden" name="status" value="reserved" />
-                                        <button type="submit" class="btn btn-sm btn-success">Submit</button>
-                                    </form>
-                                ` : ''}
+                             ${row.bookingStatus === 'anticipated' && !isAdmin ? `
+            <form method="post" action="/Guest/UpdateStatus" style="display:inline">
+                <input type="hidden" name="id" value="${data}" />
+                <input type="hidden" name="status" value="reserved" />
+                <button type="submit" class="btn btn-sm btn-success">Submit</button>
+            </form>
+        ` : ''}
                             `;
                         }
                     }
