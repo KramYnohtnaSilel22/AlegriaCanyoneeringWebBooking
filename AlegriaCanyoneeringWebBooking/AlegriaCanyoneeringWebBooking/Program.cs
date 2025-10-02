@@ -53,9 +53,9 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Auth/Login";
-        options.LogoutPath = "/Auth/Logout";
-        options.AccessDeniedPath = "/Auth/AccessDenied";
+        options.LoginPath = "/Authentication/Login";
+        options.LogoutPath = "/AuAuthenticationth/Logout";
+        options.AccessDeniedPath = "/Authentication/AccessDenied";
     });
 
 // 2️⃣ Now build the app
