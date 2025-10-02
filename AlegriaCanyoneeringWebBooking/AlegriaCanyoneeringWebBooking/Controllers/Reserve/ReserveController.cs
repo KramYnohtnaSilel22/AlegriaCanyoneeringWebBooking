@@ -109,34 +109,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> ReserveDetails(int id )
+        public async Task<IActionResult> ReserveDetails(int id)
         {
             // Get the main guest, including the nationality (make sure to include Nationality)
             var mainGuest = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Include(g => g.NationalityEntity)  // Ensure Nationality is loaded
                 .FirstOrDefaultAsync(g => g.Id == id);
-
+                
             if (mainGuest == null)
             {
                 return NotFound(); // Return if no guest found
             }
 
-            // Get other guests in the same batch, excluding the main guest
+            // Get all other guests in the same batch, excluding the main guest
             var guestsInBatch = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Include(g => g.NationalityEntity)  // Ensure Nationality is included
                 .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
                 .OrderBy(g => g.Id)
-                .Take(4)
-                .ToListAsync();
+                .ToListAsync(); // ✅ removed .Take(4)
 
             var model = new GuestDetailsViewModel
             {
                 Guest = mainGuest,
-                GuestsInBatch = guestsInBatch,
-             
-
+                GuestsInBatch = guestsInBatch
             };
 
             return View(model);

@@ -349,25 +349,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return NotFound(); // Return if no guest found
             }
 
-            // Get other guests in the same batch, excluding the main guest
+            // Get all other guests in the same batch, excluding the main guest
             var guestsInBatch = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Include(g => g.NationalityEntity)  // Ensure Nationality is included
                 .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
                 .OrderBy(g => g.Id)
-                .Take(4)
-                .ToListAsync();
+                .ToListAsync(); // Removed .Take(4)
 
             var model = new GuestDetailsViewModel
             {
                 Guest = mainGuest,
-                GuestsInBatch = guestsInBatch,
-
-
+                GuestsInBatch = guestsInBatch
             };
 
             return View(model);
         }
+
 
 
 

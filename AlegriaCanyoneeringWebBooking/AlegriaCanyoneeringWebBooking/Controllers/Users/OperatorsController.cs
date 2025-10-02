@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
-    [Authorize(Roles = "Super Admin")]
+    //[Authorize(Roles = "Super Admin")]
     public class OperatorsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -31,7 +31,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var op = await _context.Operators
                                    .Include(o => o.Roles)
-                                   .FirstOrDefaultAsync(m => m.OperatorId == id);
+                                   .FirstOrDefaultAsync(m => m.Id == id);
             if (op == null) return NotFound();
 
             return View(op);
@@ -86,7 +86,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             [Bind("OperatorId,Name,BusinessName,Age,Gender,Username,EmailAddress,RoleId")] Operator op,
             string? NewPassword)
         {
-            if (id != op.OperatorId) return NotFound();
+            if (id != op.Id) return NotFound();
 
             if (!ModelState.IsValid)
             {
@@ -134,7 +134,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var op = await _context.Operators
                                    .Include(o => o.Roles)
-                                   .FirstOrDefaultAsync(m => m.OperatorId == id);
+                                   .FirstOrDefaultAsync(m => m.Id == id);
             if (op == null) return NotFound();
 
             return View(op);

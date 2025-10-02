@@ -3,12 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AlegriaCanyoneeringWebBooking.Models
 {
-    [Table("operator")]
+    [Table("tbl_operator_mobile")]
     public class Operator
     {
         [Key]
-        [Column("OperatorId")]
-        public int OperatorId { get; set; }
+        [Column("Id")]
+        public int Id { get; set; }
 
         [Required, StringLength(255)]
         [Column("Name")]
@@ -39,7 +39,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? EmailAddress { get; set; }
 
         [Required]
-        [Column("RoleId")]
+        [Column("Role")]
         public int RoleId { get; set; }
 
         [ForeignKey(nameof(RoleId))]

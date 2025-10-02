@@ -149,7 +149,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
             // modelBuilder.Entity<Driver>().ToTable("driver_details");
             //modelBuilder.Entity<Guide>().ToTable("tourguide_details");
             modelBuilder.Entity<Role>().ToTable("role");
-            modelBuilder.Entity<Operator>().ToTable("operator");
+            modelBuilder.Entity<Operator>().ToTable("tbl_operator_mobile");
    
         }
     }

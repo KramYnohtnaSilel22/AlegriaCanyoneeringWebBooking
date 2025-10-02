@@ -49,7 +49,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Name, op.Username!),
-        new Claim(ClaimTypes.NameIdentifier, op.OperatorId.ToString()),
+        new Claim(ClaimTypes.NameIdentifier, op.Id.ToString()),
         new Claim(ClaimTypes.Role, op.Roles?.Name ?? "User"),
     
     };
@@ -68,7 +68,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // ✅ SET SESSION FOR USERNAME DISPLAY
             HttpContext.Session.SetString("Username", op.Username!);
-            HttpContext.Session.SetInt32("OperatorId", op.OperatorId);
+            HttpContext.Session.SetInt32("OperatorId", op.Id);
             HttpContext.Session.SetString("UserRole", op.Roles?.Name ?? "User");
 
             // Set TempData for login success
@@ -273,13 +273,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var op = await _context.Operators
                 .Include(o => o.Roles)
-                .FirstOrDefaultAsync(o => o.OperatorId == operatorId);
+                .FirstOrDefaultAsync(o => o.Id == operatorId);
 
             if (op == null) return NotFound();
 
             var vm = new OperatorUpdateViewModel
             {
-                OperatorId = op.OperatorId,
+                OperatorId = op.Id,
                 Name = op.Name,
                 BusinessName = op.BusinessName,
                 Age = op.Age,
