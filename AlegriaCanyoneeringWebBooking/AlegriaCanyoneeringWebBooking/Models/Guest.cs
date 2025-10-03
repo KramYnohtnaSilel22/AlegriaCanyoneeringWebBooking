@@ -18,9 +18,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Age { get; set; }
 
 
-        [Display(Name = "Number of Guests")]
-        [Column("number_of_guests")]
-        public int NumberOfGuests { get; set; }
 
         [Display(Name = "Batch")]
         [StringLength(100)]
