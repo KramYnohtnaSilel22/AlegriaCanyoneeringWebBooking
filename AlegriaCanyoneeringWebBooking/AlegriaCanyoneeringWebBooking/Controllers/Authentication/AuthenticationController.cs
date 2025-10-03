@@ -1,4 +1,5 @@
-﻿using AlegriaCanyoneeringWebBooking.Models;
+﻿
+using AlegriaCanyoneeringWebBooking.Models;
 using AlegriaCanyoneeringWebBooking.ViewModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -39,19 +40,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .FirstOrDefaultAsync(o => o.Username == model.Username);
 
             if (op == null || op.Password == null ||
-            !PasswordHelper.VerifyPassword(model.Password, op.Password))
+                !PasswordHelper.VerifyPassword(model.Password, op.Password))
             {
                 ModelState.AddModelError("", "Invalid username or password.");
                 return View(model);
             }
-
 
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Name, op.Username!),
         new Claim(ClaimTypes.NameIdentifier, op.Id.ToString()),
         new Claim(ClaimTypes.Role, op.Roles?.Name ?? "User"),
-    
+
     };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -95,33 +95,38 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [Authorize(Roles = "Super Admin,Admin,Operator")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Super Admin,Admin,Operator")]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
 
+            // Get current logged-in user
             var username = User.Identity?.Name;
             if (username == null)
+            {
                 return RedirectToAction("Login", "Authentication");
+            }
 
             var op = await _context.Operators.FirstOrDefaultAsync(o => o.Username == username);
             if (op == null)
+            {
                 return RedirectToAction("Login", "Authentication");
+            }
 
+            // Verify current password
             if (!PasswordHelper.VerifyPassword(model.CurrentPassword, op.Password))
             {
                 ModelState.AddModelError("", "Current password is incorrect.");
                 return View(model);
             }
 
+            // Update password
             op.Password = PasswordHelper.HashPassword(model.NewPassword);
             _context.Update(op);
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Password changed successfully!";
-            return RedirectToAction("NewBooking", "Guest");
+            return RedirectToAction("NewBooking", "Guest"); // Redirect wherever appropriate
         }
-
 
         [HttpGet]
         [AllowAnonymous]
@@ -246,9 +251,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 // Not found — show confirmation anyway
                 return View("ResetPasswordConfirmation");
             }
-            // 🔑 Hash the new password using SHA-1
-            user.Password = PasswordHelper.HashPassword(model.NewPassword);
+            // Validate token and expiry here
 
+            user.Password = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
             await _context.SaveChangesAsync();
 
             return View("ResetPasswordConfirmation");
@@ -288,6 +293,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(vm);
         }
 
+        // ================= POST =================
+        // POST: /Authentication/Edit
         [Authorize(Roles = "Super Admin,Admin,Operator")]
         [HttpPost("/Authentication/Edit")]
         [ValidateAntiForgeryToken]
@@ -295,14 +302,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
+            // get the current operator id from the logged-in user (extra safety)
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(idClaim) || model.OperatorId.ToString() != idClaim)
+            {
                 return Forbid(); // prevent editing someone else's record
+            }
 
             var op = await _context.Operators.FindAsync(model.OperatorId);
             if (op == null) return NotFound();
 
-            // Update basic info
             op.Name = model.Name;
             op.BusinessName = model.BusinessName;
             op.Age = model.Age;
@@ -311,27 +320,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             op.EmailAddress = model.EmailAddress;
             op.RoleId = model.RoleId;
 
-            // 🔑 Handle password change (SHA-1)
-            if (!string.IsNullOrWhiteSpace(model.NewPassword))
-            {
-                op.Password = PasswordHelper.HashPassword(model.NewPassword);
-            }
-            else
-            {
-                // Optional: ensure existing password is hashed (legacy safety)
-                if (!PasswordHelper.IsHashed(op.Password))
-                {
-                    op.Password = PasswordHelper.HashPassword(op.Password);
-                }
-            }
-
             _context.Update(op);
             await _context.SaveChangesAsync();
 
             TempData["UpdateSuccess"] = "Operator information updated successfully.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Home"); // or wherever you want to go after saving
         }
-
 
 
         public IActionResult AccessDenied()

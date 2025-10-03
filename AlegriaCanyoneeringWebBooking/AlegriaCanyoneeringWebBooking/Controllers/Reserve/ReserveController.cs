@@ -31,18 +31,37 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
+        // ✅ Fetch Guest of the Day
         [HttpGet]
         public IActionResult GetGuestOfTheDay()
         {
-            var guest = _guestService.GetGuestOfTheDay();
+            // Example logic → adjust to your business rule
+            var guest = _context.Guests
+                 .Include(g => g.NationalityEntity)   // 👈 ensures nationality is loaded
+                .OrderByDescending(g => g.ArrivalDate) // or your own criteria
+                .FirstOrDefault();
+
             if (guest == null)
             {
-                return Content("<p>No guest of the day found.</p>", "text/html");
+                return Content("<p class='text-danger'>No guest of the day found.</p>", "text/html");
             }
-            // Return a partial view with a list (because your existing partial expects List<Guest>)
-            return PartialView("_GuestDetailsPartial", new List<Guest> { guest });
-        }
 
+            // Load operator name if applicable
+            var operatorName = _context.Operators
+                .Where(o => o.Id == guest.OperatorId)
+                .Select(o => o.Name)
+                .FirstOrDefault() ?? "N/A";
+
+            // Wrap into ViewModel
+            var vm = new GuestWithOperatorVM
+            {
+                Guest = guest,
+                OperatorName = operatorName
+            };
+
+            // Reuse the same modal partial you already use for batch guests
+            return PartialView("_GuestDetailsPartial", new List<GuestWithOperatorVM> { vm });
+        }
 
         public async Task<IActionResult> reservebooking()
         {
