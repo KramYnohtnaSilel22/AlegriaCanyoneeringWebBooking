@@ -18,7 +18,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<GuestController> _logger;
-         private readonly IGuestService _guestService;
+        private readonly IGuestService _guestService;
         public ReserveController(ApplicationDbContext context, IWebHostEnvironment environment, ILogger<GuestController> logger, IGuestService guestService)
         {
             _context = context;
@@ -43,7 +43,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return PartialView("_GuestDetailsPartial", new List<Guest> { guest });
         }
 
-        public async Task<IActionResult> ReserveBooking()
+
+        public async Task<IActionResult> reservebooking()
         {
             // 1. Get all operators from tbl_operator_mobile
             var operators = await _context.Operators
@@ -58,11 +59,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .ToListAsync();
 
             if (!reservedGuests.Any())
-                return View(new GuestListViewModel
-                {
-                    GuestGroups = new List<GuestGroupViewModel>(),
-                    GuestsInBatch = new List<Guest>()
-                });
+                return View(new GuestListViewModel());
 
             // 3. Generate QR for each guest
             foreach (var guest in reservedGuests)
@@ -71,43 +68,61 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
             }
 
-            // Group guests by Batch + Operator
-            var groups = reservedGuests
-                .GroupBy(g => new { g.Batch, g.OperatorId })
+            // 4. Group guests by Batch and map Operator BusinessName
+            var grouped = reservedGuests
+                .GroupBy(g => g.Batch)
                 .Select(grp =>
                 {
                     var first = grp.First();
-                    return new GuestGroupViewModel
+
+                    // ✅ Lookup Operator's BusinessName from tbl_operator_mobile
+                    var businessName = operators
+                        .FirstOrDefault(o => o.Id == first.OperatorId)?.BusinessName ?? "N/A";
+
+                    return new Guest
                     {
-                        OperatorId = grp.Key.OperatorId,
-                        OperatorList = first.OperatorList,
+                        Id = first.Id,
+                        Fullname = first.Fullname,
+                        Gender = first.Gender,
+                        NationalityEntity = first.NationalityEntity,
+                        OperatorId = first.OperatorId,
+
+                        // ✅ Inject BusinessName using a stubbed OperatorList object
+                        OperatorList = new OperatorList
+                        {
+                            BusinessName = businessName
+                        },
+
+                        RFID = grp.Count(x => x.BookingStatus != "canceled"),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus,
-                        ActiveGuestCount = grp.Count(),
-                        Batch = grp.Key.Batch // ✅ Add this line
+                        Date = first.Date,
+                        QRText = first.QRText,
+                        QRBase64 = first.QRBase64,
+                        Batch = first.Batch
                     };
-                }).ToList();
+                })
+                .ToList();
 
-            var batchCode = reservedGuests.First().Batch;
-            var batchQrBase64 = GenerateQRCodeBase64(batchCode);
+            // 5. Generate batch QR
+            string batchCode = reservedGuests.First().Batch;
+            string batchQrBase64 = GenerateQRCodeBase64(batchCode);
 
             var vm = new GuestListViewModel
             {
-                GuestGroups = groups,
-                BatchQrBase64 = batchQrBase64,
-                GuestsInBatch = reservedGuests
+                ReservedGuests = grouped,
+                BatchQrBase64 = batchQrBase64
             };
 
             return View(vm);
         }
-        // ❌ REMOVE THE DUPLICATE METHOD (the other reservebooking/ReserveBooking method)
 
         // ---------- QR Helpers ----------
+
         private string GenerateQRText(Guest guest)
         {
             return $"Batch        : {guest.Batch}";
         }
-
         private string GenerateQRCodeBase64(string data)
         {
             var qrGenerator = new QRCodeGenerator();
@@ -117,43 +132,80 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return "data:image/png;base64," + Convert.ToBase64String(qrBytes);
         }
 
+
         public IActionResult Index()
         {
             return View();
         }
-
-
-        public async Task<IActionResult> ReserveDetails(int operatorId, string batch)
+        public async Task<IActionResult> ReserveDetails(int id)
         {
-            // Get all guests for this operator and batch
-            var guestsInBatch = await _context.Guests
+            // Get the main guest, including the nationality (make sure to include Nationality)
+            var mainGuest = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)
-                .Where(g => g.OperatorId == operatorId &&
-                            g.Batch == batch &&
-                            g.BookingStatus != "canceled")
-                .OrderBy(g => g.Id)
-                .ToListAsync();
+                .Include(g => g.NationalityEntity)  // Ensure Nationality is loaded
+                .FirstOrDefaultAsync(g => g.Id == id);
 
-            if (!guestsInBatch.Any())
+            if (mainGuest == null)
             {
-                TempData["ToastMessage"] = "No guests found for this batch.";
-                TempData["ToastType"] = "warning";
-                return RedirectToAction("ReserveBooking");
+                return NotFound(); // Return if no guest found
             }
 
-            // Take the first guest as the main guest
-            var mainGuest = guestsInBatch.First();
+            // Get all other guests in the same batch, excluding the main guest
+            var guestsInBatch = await _context.Guests
+                .Include(g => g.OperatorList)
+                .Include(g => g.NationalityEntity)  // Ensure Nationality is included
+                .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
+                .OrderBy(g => g.Id)
+                .ToListAsync(); // ✅ removed .Take(4)
 
             var model = new GuestDetailsViewModel
             {
                 Guest = mainGuest,
-                GuestsInBatch = guestsInBatch,
-                CurrentBatch = batch
+                GuestsInBatch = guestsInBatch
             };
 
             return View(model);
         }
+
+
+
+
+
+        //public async Task<IActionResult> ReserveDetails(int id)
+        //{
+        //    // Retrieve main guest, including related entities
+        //    var mainGuest = await _context.Guests
+        //        .Include(g => g.OperatorList)
+        //        .Include(g => g.NationalityEntity)
+        //        .FirstOrDefaultAsync(g => g.Id == id);
+
+        //    if (mainGuest == null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    // Get all active (non-canceled) guests in the same batch
+        //    var guestsInBatch = await _context.Guests
+        //        .Include(g => g.OperatorList)
+        //        .Include(g => g.NationalityEntity)
+        //        .Where(g => g.Batch == mainGuest.Batch && g.BookingStatus != "canceled")
+        //        .OrderBy(g => g.Id)
+        //        .ToListAsync();
+
+        //    // Optionally, display main guest (current record) as companion or not
+        //    // If you want to exclude main guest from companion list:
+        //    guestsInBatch = guestsInBatch.Where(g => g.Id != mainGuest.Id).ToList();
+
+        //    var model = new GuestDetailsViewModel
+        //    {
+        //        Guest = mainGuest,
+        //        GuestsInBatch = guestsInBatch
+        //        // Add other view properties as needed
+        //    };
+
+        //    return View(model);
+        //}
+
 
 
         // GET: FinalBookingBatch
@@ -167,13 +219,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (string.IsNullOrEmpty(batchCode))
                 return BadRequest("Batch code is required.");
 
+            var operators = await _context.Operators
+                .Select(o => new { o.Id, o.BusinessName })
+                .ToListAsync();
+
             var guests = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)
+                      .Include(g => g.NationalityEntity) // Include Nationality
                 .Where(g => g.Batch == batchCode)
                 .ToListAsync();
 
-            return PartialView("_GuestDetailsPartial", guests);
+            var guestsWithOperatorName = guests.Select(g => new GuestWithOperatorVM
+            {
+                Guest = g,
+                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
+            }).ToList();
+
+            return PartialView("_GuestDetailsPartial", guestsWithOperatorName);
         }
 
 
@@ -270,7 +331,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             });
         }
 
-     
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> FinalBookingBatch(string BatchCode)

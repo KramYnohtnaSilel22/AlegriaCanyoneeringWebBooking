@@ -18,7 +18,7 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
         public int TotalRecords { get; set; }
-
+        public List<Guest> ReservedGuests { get; set; } = new List<Guest>();
         // ✅ Add this property
         public List<Guest> GuestsInBatch { get; set; } = new List<Guest>();
 
