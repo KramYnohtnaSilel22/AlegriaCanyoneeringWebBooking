@@ -1,4 +1,4 @@
-﻿using AlegriaCanyoneeringWebBooking.Helpers;
+﻿
 using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -54,7 +54,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (ModelState.IsValid)
             {
 
-                op.Password = PasswordHelper.HashPassword(op.Password); // Unified password hashing
+                // ✅ Hashes the plain text password before saving
+                op.Password = PasswordHelper.HashPassword(op.Password);
                 _context.Add(op);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -67,26 +68,30 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Operators/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null) return NotFound();
+            if (id == null)
+                return BadRequest();
 
             var op = await _context.Operators.FindAsync(id);
-            if (op == null) return NotFound();
+            if (op == null)
+                return NotFound();
 
             ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
             ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
+
             return View(op);
         }
+
 
         // POST: Operators/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            int id,
-            // 👉 Bind the correct key name
-            [Bind("OperatorId,Name,BusinessName,Age,Gender,Username,EmailAddress,RoleId")] Operator op,
-            string? NewPassword)
+     int id,
+     [Bind("Id,Name,BusinessName,Age,Gender,Username,EmailAddress,RoleId")] Operator op,
+     string? NewPassword)
         {
-            if (id != op.Id) return NotFound();
+            if (id != op.Id) // Ensure property name matches your model
+                return BadRequest();
 
             if (!ModelState.IsValid)
             {
@@ -96,7 +101,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             var existing = await _context.Operators.FindAsync(id);
-            if (existing == null) return NotFound();
+            if (existing == null)
+                return NotFound();
 
             // Update fields
             existing.Name = op.Name;
@@ -104,27 +110,20 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             existing.Age = op.Age;
             existing.Gender = op.Gender;
             existing.Username = op.Username;
+            existing.EmailAddress = op.EmailAddress;
             existing.RoleId = op.RoleId;
 
-            // 🔑 Password hashing logic
+            // Password handling
             if (!string.IsNullOrWhiteSpace(NewPassword))
             {
-                // User supplied a new password – hash and replace
                 existing.Password = PasswordHelper.HashPassword(NewPassword);
             }
-            else
-            {
-                // No new password provided – ensure the stored password is still hashed
-                // (optional extra safety if some older rows were saved as plain text)
-                if (!PasswordHelper.IsHashed(existing.Password))
-                {
-                    existing.Password = PasswordHelper.HashPassword(existing.Password);
-                }
-            }
+            // Do not re-hash if password was unchanged
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+
 
 
         // GET: Operators/Delete/5

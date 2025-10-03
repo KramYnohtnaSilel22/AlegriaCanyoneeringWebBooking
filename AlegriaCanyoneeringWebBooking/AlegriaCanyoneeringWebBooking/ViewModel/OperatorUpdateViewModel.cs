@@ -28,5 +28,9 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public int RoleId { get; set; }
 
         public string? RoleName { get; set; }
+
+        // 🔹 Optional: new password
+        [DataType(DataType.Password)]
+        public string? NewPassword { get; set; }
     }
 }
