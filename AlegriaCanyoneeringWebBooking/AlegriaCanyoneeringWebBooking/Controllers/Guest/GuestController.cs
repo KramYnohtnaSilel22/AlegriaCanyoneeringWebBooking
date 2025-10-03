@@ -152,24 +152,25 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Where(g => g.BookingStatus == "anticipated")
                 .ToListAsync();
 
+            var grouped = anticipatedGuests
+                .GroupBy(g => g.OperatorId)
+                .Select(grp => {
+                    var first = grp.First();
+                    return new GuestGroupViewModel
+                    {
+                        OperatorId = grp.Key,
+                        OperatorList = first.OperatorList,
+                        ActiveGuestCount = grp.Count(), // "anticipated" only
+                        ArrivalDate = first.ArrivalDate,
+                        BookingStatus = first.BookingStatus
+                    };
+                })
+                .ToList();
+
             var model = new GuestListViewModel
             {
                 NewGuest = new Guest(),
-                ReservedGuests = anticipatedGuests
-                    .GroupBy(g => g.OperatorId)
-                    .Select(grp =>
-                    {
-                        var first = grp.First();
-                        return new Guest
-                        {
-                            OperatorId = grp.Key,
-                            OperatorList = first.OperatorList,
-                            NumberOfGuests = grp.Count(g => g.BookingStatus != "canceled"),
-                            ArrivalDate = first.ArrivalDate,
-                            Date = first.Date,
-                            BookingStatus = first.BookingStatus
-                        };
-                    }).ToList()
+                GuestGroups = grouped
             };
 
             ViewBag.CurrentBatch = batch;
@@ -195,6 +196,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(model);
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -232,16 +234,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     {
                         await _context.SaveChangesAsync();
 
-                        var guestsForOperator = await _context.Guests
-                            .Where(g => g.OperatorId == batchGuests.First().OperatorId && g.BookingStatus != "canceled")
-                            .ToListAsync();
+                        // Optionally fetch newly inserted guests by batch code.
+                        var newGuestIds = _context.Guests
+                            .Where(g => g.Batch == batchId)
+                            .Select(g => g.Id)
+                            .ToList();
 
-                        int count = guestsForOperator.Count;
-                        guestsForOperator.ForEach(g => g.NumberOfGuests = count);
-                        await _context.SaveChangesAsync();
+                        TempData["GuestIds"] = string.Join(", ", newGuestIds);
 
                         TempData["ToastMessage"] = $"Guests added successfully";
                         TempData["ToastType"] = "success";
+
+                        return RedirectToAction("saveguest", new { batch = batchId, id = id });
                     }
                     else
                     {
@@ -312,11 +316,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Select(grp =>
                 {
                     var first = grp.First();
-                    return new Guest
+                    return new GuestGroupViewModel
                     {
                         OperatorId = grp.Key,
                         OperatorList = first.OperatorList,
-                        NumberOfGuests = grp.Count(x => x.BookingStatus != "canceled"),
+                        ActiveGuestCount = grp.Count(x => x.BookingStatus != "canceled"),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus
                     };
@@ -325,15 +329,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var model = new GuestListViewModel
             {
-                ReservedGuests = grouped,
-
-
-
-
+                GuestGroups = grouped
             };
 
             return View(model);
         }
+
 
 
         public async Task<IActionResult> SaveguestDetails(int id)
@@ -411,10 +412,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             // Get all guests with the same OperatorId and same BookingStatus as the current guest (ex: anticipated)
-            var operatorGuests = await _context.Guests
-// ✅ CORRECT: Updates ONLY guests with same Batch
-.Where(g => g.Batch == guest.Batch && g.BookingStatus == guest.BookingStatus)
-                .ToListAsync();
+             var operatorGuests = await _context.Guests
+            // ✅ CORRECT: Updates ONLY guests with same Batch
+            .Where(g => g.Batch == guest.Batch && g.BookingStatus == guest.BookingStatus)
+                            .ToListAsync();
 
             if (!operatorGuests.Any())
             {
@@ -467,28 +468,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             guest.BookingStatus = "canceled";
             await _context.SaveChangesAsync();
 
-            // Recalculate number of active (non-canceled) guests in the same batch
-            var updatedGuestCount = await _context.Guests
+            // Count active (non-canceled) guests in the same batch
+            int activeCount = await _context.Guests
                 .Where(g => g.Batch == guest.Batch && g.BookingStatus != "canceled")
                 .CountAsync();
 
-            // Update NumberOfGuests for all guests in the batch
-            var guestsInBatch = await _context.Guests
-                .Where(g => g.Batch == guest.Batch)
-                .ToListAsync();
+            // Optional: Pass the count to TempData, ViewBag, or as a parameter
+            TempData["ActiveGuestsCount"] = activeCount;
 
-            foreach (var g in guestsInBatch)
-            {
-                g.NumberOfGuests = updatedGuestCount;
-            }
-
-            await _context.SaveChangesAsync();
-
-
-            // ✅ Redirect back to ReserveDetails
+            // Redirect to your details page (optionally include active count)
             return RedirectToAction("SaveguestDetails", "Guest", new { id = guest.Id });
-
         }
+
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
             if (string.IsNullOrEmpty(base64Image))
