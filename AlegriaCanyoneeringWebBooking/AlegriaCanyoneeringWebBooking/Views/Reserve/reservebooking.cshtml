@@ -38,8 +38,9 @@
                     <tr>
                     @*     <th>Guest Name</th>
                         <th>Gender</th> *@
-                        <th>Nationality</th>
                         <th>Operator</th>
+                        <th>Nationality</th>
+                
                         <th>Date Of Registration</th>
                         <th>Status</th>
                         <th class="text-center">Actions</th>
@@ -58,8 +59,9 @@
                         <tr>
                        @*      <td>@guest.Fullname</td>
                             <td>@guest.Gender</td> *@
-                            <td>@guest.NationalityEntity?.NatName</td>
                             <td>@guest.OperatorList?.BusinessName</td>
+                            <td>@guest.NationalityEntity?.NatName</td>
+                    
                             <td>@guest.Date</td>
                             <td>
                                 <span class="badge bg-@badgeClass text-uppercase px-2 py-1">
