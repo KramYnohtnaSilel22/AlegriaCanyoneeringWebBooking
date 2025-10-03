@@ -1,0 +1,173 @@
+﻿@{
+    ViewData["Title"] = "Dashboard - Alegria Canyoneering";
+    var monthLabels = ViewBag.MonthLabels as List<string>;
+    var monthlyGuestCounts = ViewBag.MonthlyGuestCounts as List<int>;
+    var yearLabels = ViewBag.YearLabels as List<string>;
+    var yearlyGuestCounts = ViewBag.YearlyGuestCounts as List<int>;
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-success">Dashboard Overview</h2>
+        <h5 class="text-muted">Welcome, @User.Identity.Name</h5>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Guests Today</h5>
+                    <h2 class="card-text">@ViewBag.GuestsToday</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-success shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Guests This Month</h5>
+                    <h2 class="card-text">@ViewBag.GuestsThisMonth</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-warning shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Previous Month</h5>
+                    <h2 class="card-text">@ViewBag.GuestsPrevMonth</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Guest Trend Chart -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Monthly Guest Trend</h5>
+            <canvas id="monthlyGuestTrendChart" height="150"></canvas>
+        </div>
+    </div>
+
+    <!-- Yearly Guest Trend Chart -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Year’s Guest Trend</h5>
+            <canvas id="yearlyGuestTrendChart" height="150"></canvas>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Monthly Chart
+            var ctxMonth = document.getElementById('monthlyGuestTrendChart').getContext('2d');
+            var gradientMonth = ctxMonth.createLinearGradient(0, 0, 0, 400);
+            gradientMonth.addColorStop(0, 'rgba(54, 162, 235, 0.5)');
+            gradientMonth.addColorStop(1, 'rgba(54, 162, 235, 0.05)');
+
+            new Chart(ctxMonth, {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(monthLabels)),
+                    datasets: [{
+                        label: 'Guests',
+                        data: @Html.Raw(Json.Serialize(monthlyGuestCounts)),
+                        fill: true,
+                        backgroundColor: gradientMonth,
+                        borderColor: '#36A2EB',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#36A2EB',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { size: 14 }, color: '#333' }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#000',
+                            titleFont: { size: 16 },
+                            bodyFont: { size: 14 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 10, color: '#555', font: { size: 12 } },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#555', font: { size: 12 } },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    }
+                }
+            });
+
+            // Yearly Chart
+            var ctxYear = document.getElementById('yearlyGuestTrendChart').getContext('2d');
+            var gradientYear = ctxYear.createLinearGradient(0, 0, 0, 400);
+            gradientYear.addColorStop(0, 'rgba(255, 159, 64, 0.5)');
+            gradientYear.addColorStop(1, 'rgba(255, 159, 64, 0.05)');
+
+            new Chart(ctxYear, {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(yearLabels)),
+                    datasets: [{
+                        label: 'Guests',
+                        data: @Html.Raw(Json.Serialize(yearlyGuestCounts)),
+                        fill: true,
+                        backgroundColor: gradientYear,
+                        borderColor: '#FF9F40',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#FF9F40',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { size: 14 }, color: '#333' }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#000',
+                            titleFont: { size: 16 },
+                            bodyFont: { size: 14 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 10, color: '#555', font: { size: 12 } },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#555', font: { size: 12 } },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
