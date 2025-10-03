@@ -141,3 +141,145 @@
         });
     }
 </script>
+
+<div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="guestDetailsModalLabel">
+                    Booking Details - Batch: @Model.FirstOrDefault()?.Guest.Batch
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Download PDF Button -->
+            <div class="mt-4 px-3">
+                <button class="btn btn-danger d-print-none" onclick="downloadGuestDetailsPdf()">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </button>
+            </div>
+
+            <!-- PDF Content Wrapper -->
+            <div class="modal-body" id="guestDetailsContent">
+                @if (Model != null && Model.Any())
+                {
+                    var primaryGuestVM = Model.First();
+                    var companionsVM = Model.Skip(1).ToList();
+
+                    <h6 class="text-primary mb-3 mt-3"><i class="fas fa-user"></i> Primary Guest</h6>
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Operator</th>
+                                <th>Full Name</th>
+                                <th>Age</th>
+                                <th>Contact No.</th>
+                                <th>Gender</th>
+                                <th>Nationality</th>
+                                <th>Area</th>
+                                <th>Arrival Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-success">
+                                <td>@primaryGuestVM.OperatorName</td>
+                                <td>@primaryGuestVM.Guest.Fullname</td>
+                                <td>@primaryGuestVM.Guest.Age</td>
+                                <td>@primaryGuestVM.Guest.ContactNumber</td>
+                                <td>@primaryGuestVM.Guest.Gender</td>
+                                <td>@(primaryGuestVM.Guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                <td>@primaryGuestVM.Guest.Area</td>
+                                <td>
+                                    @{
+                                        if (DateTime.TryParse(primaryGuestVM.Guest.ArrivalDate, out var arrivalDt))
+                                        {
+                                            @arrivalDt.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            @primaryGuestVM.Guest.ArrivalDate
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    @if (companionsVM.Any())
+                    {
+                        <h6 class="text-secondary mt-4 mb-3"><i class="fas fa-users"></i> Companion Guests</h6>
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Age</th>
+                                    <th>Contact No.</th>
+                                    <th>Gender</th>
+                                    <th>Nationality</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var vm in companionsVM)
+                                {
+                                    <tr>
+                                        <td>@vm.Guest.Fullname</td>
+                                        <td>@vm.Guest.Age</td>
+                                        <td>@vm.Guest.ContactNumber</td>
+                                        <td>@vm.Guest.Gender</td>
+                                        <td>@(vm.Guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No companion guests for this booking.</p>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No guests found for this batch.</p>
+                }
+            </div>
+            <!-- End PDF Content Wrapper -->
+
+        </div>
+    </div>
+</div>
+
+<!-- Include jsPDF and html2canvas scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+    async function downloadGuestDetailsPdf() {
+        const { jsPDF } = window.jspdf; 
+        const element = document.getElementById("guestDetailsContent");
+
+        if (!element) {
+            alert("No guest details found to export.");
+            return;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            scrollY: -window.scrollY
+        }).then(canvas => {
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+            pdf.save("GuestDetails.pdf");
+        }).catch(error => {
+            console.error("PDF generation error:", error);
+            alert("Failed to generate PDF.");
+        });
+    }
+</script>

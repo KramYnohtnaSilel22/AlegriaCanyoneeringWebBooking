@@ -178,6 +178,29 @@
                     }
                 });
             });
+         // View Guest of the Day Modal
+        $('#btnViewGuestOfDay').on('click', function () {
+            var modalContainer = $('#guestDetailsModalContainer');
+
+            $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
+                .done(function (html) {
+                    modalContainer.html(html);
+                    var modalElement = document.getElementById('guestDetailsModal');
+                    var guestModal = new bootstrap.Modal(modalElement, {
+                        backdrop: static,   // ✅ clicking outside will close
+                        keyboard: true    // ✅ pressing ESC will close
+                    });
+                    guestModal.show();
+
+                    modalElement.addEventListener('hidden.bs.modal', function () {
+                        modalContainer.empty();
+                    });
+                })
+                .fail(function () {
+                    alert('Failed to load Guest of the Day.');
+                });
+        });
+
 
             // View Guest Details Modal
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
