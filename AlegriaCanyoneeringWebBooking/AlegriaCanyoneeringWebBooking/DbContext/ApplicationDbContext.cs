@@ -39,8 +39,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
                     .HasColumnName("age")
                     .HasMaxLength(1000);
 
-                entity.Property(e => e.NumberOfGuests)
-                    .HasColumnName("number_of_guests");
+         
 
                 entity.Property(e => e.Batch)
                     .HasColumnName("batch")

@@ -19,8 +19,9 @@
                     <h5 class="mb-0 fw-semibold text-white">Booking Details</h5>
                     <span class="badge
                         @(Model.Guest.BookingStatus == "confirmed" ? "bg-success" :
-                          Model.Guest.BookingStatus == "anticipated" ? "bg-warning text-dark" :
-                          "bg-info text-dark")
+                                                    Model.Guest.BookingStatus == "reserved" ? "bg-info text-dark" :
+                                                    Model.Guest.BookingStatus == "anticipated" ? "bg-warning text-dark" :
+                                                    "bg-secondary")
                           text-capitalize fw-semibold px-3 py-2 shadow-sm rounded-pill">
                         @Model.Guest.BookingStatus
                     </span>
@@ -30,6 +31,16 @@
                     <h2 class="fw-bold text-dark mb-4">@Model.Guest.Fullname</h2>
 
                     <div class="row g-4 mb-4 fs-6">
+                        <div class="col-md-6 d-flex align-items-center">
+                            <i class="fas fa-building text-muted me-2" aria-hidden="true"></i>
+                            <strong class="me-1">Operator:</strong>
+                            <span>@(Model.Guest.OperatorList?.BusinessName ?? "N/A")</span>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center">
+                            <i class="fas fa-hashtag text-muted me-2" aria-hidden="true"></i>
+                            <strong class="me-1">Batch Code:</strong>
+                            <span class="badge bg-secondary">@Model.Guest.Batch</span>
+                        </div>
                         <div class="col-md-6 d-flex align-items-center">
                             <i class="fas fa-venus-mars text-muted me-2" aria-hidden="true"></i>
                             <strong class="me-1">Gender:</strong> <span>@Model.Guest.Gender</span>
@@ -46,35 +57,25 @@
                             <i class="fas fa-flag text-muted me-2" aria-hidden="true"></i>
                             <strong class="me-1">Nationality:</strong> <span>@Model.Guest.NationalityType</span>
                         </div>
-                
                         <div class="col-md-6 d-flex align-items-center">
                             <i class="fas fa-calendar-alt text-muted me-2" aria-hidden="true"></i>
                             <strong class="me-1">Arrival Date:</strong> <span>@Model.Guest.ArrivalDate</span>
                         </div>
                     </div>
-
-                 
                 </div>
 
                 <div class="card-footer bg-white d-flex justify-content-between rounded-bottom-4 p-3">
-                    <a asp-action="reservebooking"
+                    <a asp-action="ReserveBooking"
+                       asp-controller="Reserve"
                        class="btn btn-outline-secondary shadow-sm rounded-pill px-4 d-flex align-items-center gap-2"
                        title="Go back to booking list">
                         <i class="fas fa-arrow-left"></i> Back
                     </a>
-                 @*    <a asp-controller="Guest"
-                       asp-action="NewBooking"
-                       asp-route-batch="@Model.Guest.Batch"
-                       asp-route-id="@Model.Guest.Id"
-                       class="btn btn-primary rounded-pill d-flex align-items-center gap-2"
-                       title="Add another guest to this booking">
-                        <i class="fas fa-user-plus"></i> Add Guest
-                    </a> *@
                 </div>
             </div>
 
             <h3 class="fw-bold text-secondary border-bottom pb-2 mb-4 d-flex align-items-center">
-                <i class="fas fa-users me-2"></i> Companions
+                <i class="fas fa-users me-2"></i> All Guests in Batch
                 <span class="text-muted fs-6 ms-2">(@Model.GuestsInBatch?.Count(g => g.BookingStatus != "canceled"))</span>
             </h3>
 
@@ -88,6 +89,7 @@
                                 <th>Age</th>
                                 <th>Gender</th>
                                 <th>Nationality</th>
+                                <th>Contact Number</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -98,6 +100,7 @@
                                     <td>@guest.Age</td>
                                     <td>@guest.Gender</td>
                                     <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                    <td>@guest.ContactNumber</td>
                                 </tr>
                             }
                         </tbody>
@@ -108,7 +111,7 @@
             {
                 <div class="alert alert-info text-center rounded-3 shadow-sm py-4 fs-5">
                     <i class="fas fa-info-circle me-2"></i>
-                    No active companions in this booking yet.
+                    No active guests in this batch.
                 </div>
             }
 
@@ -117,6 +120,7 @@
 </div>
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -127,68 +131,57 @@
             responsive: true,
             pageLength: 10,
             lengthMenu: [5, 10, 25, 50, 100],
-            order: [[0, 'asc']] // sort by Full Name by default
+            order: [[0, 'asc']]
         });
     });
 </script>
 
-    <style>
-        /* Colors */
-        .bg-gradient-primary {
-            background: linear-gradient(135deg, #007bff, #00c6ff);
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff, #00c6ff);
+    }
+
+    .shadow-sm {
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+    }
+
+    .hover-shadow:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18) !important;
+        transition: 0.25s ease;
+    }
+
+    h2, h3, h4, h5, h6 {
+        letter-spacing: 0.3px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: #0056b3;
+            border-color: #004085;
         }
 
-        /* Shadows & Transitions */
-        .shadow-sm {
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+    .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+
+        .btn-outline-secondary:hover, .btn-outline-secondary:focus {
+            color: #343a40;
+            border-color: #343a40;
+            background-color: #e2e6ea;
         }
 
-        .hover-shadow:hover {
-            transform: translateY(-6px) scale(1.02);
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18) !important;
-            transition: 0.25s ease;
-        }
+    .badge {
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+    }
 
-        .transition-fast {
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
-
-        /* Typography */
-        h2, h3, h4, h5, h6 {
-            letter-spacing: 0.3px;
-        }
-
-        /* Button Enhancements */
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
-
-            .btn-primary:hover, .btn-primary:focus {
-                background-color: #0056b3;
-                border-color: #004085;
-            }
-
-        .btn-outline-secondary {
-            color: #6c757d;
-            border-color: #6c757d;
-        }
-
-            .btn-outline-secondary:hover, .btn-outline-secondary:focus {
-                color: #343a40;
-                border-color: #343a40;
-                background-color: #e2e6ea;
-            }
-
-        /* Badge */
-        .badge {
-            letter-spacing: 0.5px;
-            font-size: 0.85rem;
-        }
-
-        /* Card Border Radius */
-        .card {
-            border-radius: 1.25rem;
-        }
-    </style>
-
+    .card {
+        border-radius: 1.25rem;
+    }
+</style>

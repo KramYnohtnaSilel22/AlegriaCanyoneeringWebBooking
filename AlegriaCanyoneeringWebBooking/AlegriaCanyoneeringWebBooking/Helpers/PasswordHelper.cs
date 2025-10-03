@@ -1,33 +1,30 @@
-﻿using BCrypt.Net;
-using Org.BouncyCastle.Crypto.Generators;
+﻿using System.Security.Cryptography;
+using System.Text;
 
-namespace AlegriaCanyoneeringWebBooking.Helpers
+public static class PasswordHelper
 {
-    public class PasswordHelper
+    public static string HashPassword(string password)
     {
-        public static string HashPassword(string password)
+        using (SHA1 sha1 = SHA1.Create())
         {
-            return BCrypt.Net.BCrypt.HashPassword(password);
+            byte[] bytes = Encoding.UTF8.GetBytes(password);
+            byte[] hash = sha1.ComputeHash(bytes);
+            return BitConverter.ToString(hash).Replace("-", "").ToLower();
         }
-        public static bool VerifyPassword(string enteredPassword, string storedHashedPassword)
-        {
-            try
-            {
-                return BCrypt.Net.BCrypt.Verify(enteredPassword, storedHashedPassword);
-            }
-            catch (SaltParseException ex)
-            {
-                // Log the error message (if necessary)
-                Console.WriteLine($"Error verifying password: {ex.Message}");
-                return false; // Return false if there is an issue with the salt
-            }
+    }
 
-        }
+    public static bool VerifyPassword(string enteredPassword, string storedHashedPassword)
+    {
+        if (string.IsNullOrEmpty(storedHashedPassword))
+            return false;
 
-        public static bool IsHashed(string value)
-        {
-            // quick heuristic: BCrypt hashes start with "$2"
-            return !string.IsNullOrEmpty(value) && value.StartsWith("$2");
-        }
+        string sha1Hash = HashPassword(enteredPassword);
+        return string.Equals(sha1Hash, storedHashedPassword, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsHashed(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return false;
+        return value.Length == 40 && value.All(c => Uri.IsHexDigit(c));
     }
 }

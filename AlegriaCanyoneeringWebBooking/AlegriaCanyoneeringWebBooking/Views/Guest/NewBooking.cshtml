@@ -50,13 +50,7 @@
                 <div class="col-md-6">
                     <fieldset>
                         <legend>Guest Info</legend>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary">Upload Guest Photo</label>
-                            <input type="file" name="Photo" class="form-control" accept="image/*" />
-
-
-                        </div>
-
+                      
                         <div class="mb-3">
                             <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
                             <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"
@@ -140,6 +134,14 @@
                                 <option value="Kawasan Exit">Kawasan Exit</option>
                             </select>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary">Upload Guest Photo</label>
+                            <input type="file" name="Photo" class="form-control" accept="image/*" />
+
+
+                        </div>
+
                     </fieldset>
                 </div>
             </div>
