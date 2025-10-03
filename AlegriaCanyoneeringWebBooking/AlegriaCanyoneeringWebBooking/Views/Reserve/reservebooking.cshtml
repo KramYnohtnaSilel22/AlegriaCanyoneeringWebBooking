@@ -36,8 +36,8 @@
             <table id="example1" class="table text-truncate">
                 <thead class="table-dark">
                     <tr>
-                        <th>Guest Name</th>
-                        <th>Gender</th>
+                    @*     <th>Guest Name</th>
+                        <th>Gender</th> *@
                         <th>Nationality</th>
                         <th>Operator</th>
                         <th>Date Of Registration</th>
@@ -56,8 +56,8 @@
                         };
 
                         <tr>
-                            <td>@guest.Fullname</td>
-                            <td>@guest.Gender</td>
+                       @*      <td>@guest.Fullname</td>
+                            <td>@guest.Gender</td> *@
                             <td>@guest.NationalityEntity?.NatName</td>
                             <td>@guest.OperatorList?.BusinessName</td>
                             <td>@guest.Date</td>
@@ -111,113 +111,113 @@
     }
 </section>
 
-<!-- ✅ Styles & Scripts -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+            <!-- ✅ Styles & Scripts -->
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    // ✅ GLOBAL SCANNER
-    let globalScanner = null;
+            <script>
+                // ✅ GLOBAL SCANNER
+                let globalScanner = null;
 
-    function openGlobalScanner() {
-        const modal = new bootstrap.Modal(document.getElementById('globalQrModal'));
-        modal.show();
+                function openGlobalScanner() {
+                    const modal = new bootstrap.Modal(document.getElementById('globalQrModal'));
+                    modal.show();
 
-        if (globalScanner) {
-            globalScanner.stop().then(() => {
-                globalScanner.clear().then(() => startGlobalScanner());
-            });
-        } else {
-            startGlobalScanner();
-        }
-    }
-
-    function startGlobalScanner() {
-        globalScanner = new Html5Qrcode("globalReader");
-
-        const config = { fps: 10, qrbox: 250 };
-        globalScanner.start(
-            { facingMode: "environment" },
-            config,
-            onGlobalScanSuccess,
-            (err) => { /* ignore scan errors */ }
-        ).catch(err => console.error("Global scanner failed:", err));
-    }
-
-    function onGlobalScanSuccess(decodedText, decodedResult) {
-        const batchCode = decodedText; // QR code content is the batch code
-        console.log("✅ Global scan result:", batchCode);
-
-        // Stop scanner after success
-        if (globalScanner) {
-            globalScanner.stop().then(() => {
-                globalScanner.clear();
-
-                // ✅ ENSURE FORM SUBMISSION AFTER SCANNER STOPS
-                setTimeout(() => {
-                    const forms = document.querySelectorAll(`form input[name="BatchCode"][value="${batchCode}"]`);
-                    console.log(`📋 Found ${forms.length} forms for batch: ${batchCode}`);
-
-                    if (forms.length > 0) {
-                        forms.forEach(input => {
-                            const form = input.closest("form");
-                            if (form) {
-                                console.log("🚀 Submitting form for batch:", batchCode);
-                                form.submit();
-                            }
+                    if (globalScanner) {
+                        globalScanner.stop().then(() => {
+                            globalScanner.clear().then(() => startGlobalScanner());
                         });
                     } else {
-                        console.warn("❌ No forms found for batch:", batchCode);
-                        alert(`No booking found for batch: ${batchCode}`);
+                        startGlobalScanner();
                     }
+                }
 
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('globalQrModal'));
-                    if (modal) modal.hide();
-                }, 500);
-            });
-        }
-    }
+                function startGlobalScanner() {
+                    globalScanner = new Html5Qrcode("globalReader");
 
-    // ✅ Bootstrap toast auto-show
-    document.addEventListener("DOMContentLoaded", function () {
-        var toastElement = document.getElementById('toastMessage');
-        if (toastElement) {
-            var toast = new bootstrap.Toast(toastElement);
-            toast.show();
-        }
-    });
+                    const config = { fps: 10, qrbox: 250 };
+                    globalScanner.start(
+                        { facingMode: "environment" },
+                        config,
+                        onGlobalScanSuccess,
+                        (err) => { /* ignore scan errors */ }
+                    ).catch(err => console.error("Global scanner failed:", err));
+                }
 
-    // ✅ Per-guest QR modal
-    function showQrModal(guestId) {
-        const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
-        modal.show();
-    }
+                function onGlobalScanSuccess(decodedText, decodedResult) {
+                    const batchCode = decodedText; // QR code content is the batch code
+                    console.log("✅ Global scan result:", batchCode);
 
-    // ✅ Download QR Code
-    function downloadQRCode(guestId, operator, totalGuests) {
-        var img = document.getElementById("qrImage-" + guestId);
-        var canvas = document.getElementById("qrCanvas-" + guestId);
-        var ctx = canvas.getContext("2d");
+                    // Stop scanner after success
+                    if (globalScanner) {
+                        globalScanner.stop().then(() => {
+                            globalScanner.clear();
 
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            // ✅ ENSURE FORM SUBMISSION AFTER SCANNER STOPS
+                            setTimeout(() => {
+                                const forms = document.querySelectorAll(`form input[name="BatchCode"][value="${batchCode}"]`);
+                                console.log(`📋 Found ${forms.length} forms for batch: ${batchCode}`);
 
-        ctx.drawImage(img, 20, 20, 180, 180);
+                                if (forms.length > 0) {
+                                    forms.forEach(input => {
+                                        const form = input.closest("form");
+                                        if (form) {
+                                            console.log("🚀 Submitting form for batch:", batchCode);
+                                            form.submit();
+                                        }
+                                    });
+                                } else {
+                                    console.warn("❌ No forms found for batch:", batchCode);
+                                    alert(`No booking found for batch: ${batchCode}`);
+                                }
 
-        ctx.fillStyle = "#000";
-        ctx.font = "14px Arial";
-        ctx.fillText("Operator: " + operator, 10, 220);
-        ctx.fillText("Total Guests: " + totalGuests, 10, 240);
+                                // Close modal
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('globalQrModal'));
+                                if (modal) modal.hide();
+                            }, 500);
+                        });
+                    }
+                }
 
-        var link = document.createElement("a");
-        link.download = "BatchQR-" + guestId + ".png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    }
-</script>
+                // ✅ Bootstrap toast auto-show
+                document.addEventListener("DOMContentLoaded", function () {
+                    var toastElement = document.getElementById('toastMessage');
+                    if (toastElement) {
+                        var toast = new bootstrap.Toast(toastElement);
+                        toast.show();
+                    }
+                });
+
+                // ✅ Per-guest QR modal
+                function showQrModal(guestId) {
+                    const modal = new bootstrap.Modal(document.getElementById('qrViewModal-' + guestId));
+                    modal.show();
+                }
+
+                // ✅ Download QR Code
+                function downloadQRCode(guestId, operator, totalGuests) {
+                    var img = document.getElementById("qrImage-" + guestId);
+                    var canvas = document.getElementById("qrCanvas-" + guestId);
+                    var ctx = canvas.getContext("2d");
+
+                    ctx.fillStyle = "#fff";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.drawImage(img, 20, 20, 180, 180);
+
+                    ctx.fillStyle = "#000";
+                    ctx.font = "14px Arial";
+                    ctx.fillText("Operator: " + operator, 10, 220);
+                    ctx.fillText("Total Guests: " + totalGuests, 10, 240);
+
+                    var link = document.createElement("a");
+                    link.download = "BatchQR-" + guestId + ".png";
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                }
+            </script>
 
 <!-- ✅ Global QR Scanner Modal -->
 <div class="modal fade" id="globalQrModal" tabindex="-1" aria-hidden="true">
