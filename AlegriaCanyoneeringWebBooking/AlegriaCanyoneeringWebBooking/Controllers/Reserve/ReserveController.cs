@@ -1,10 +1,13 @@
 ﻿
 using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.Service;
 using AlegriaCanyoneeringWebBooking.ViewModel;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Azure.Amqp.Framing;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
+using System.Security.Claims;
 using System.Text;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
@@ -15,24 +18,41 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<GuestController> _logger;
-
-        public ReserveController(ApplicationDbContext context, IWebHostEnvironment environment, ILogger<GuestController> logger)
+         private readonly IGuestService _guestService;
+        public ReserveController(ApplicationDbContext context, IWebHostEnvironment environment, ILogger<GuestController> logger, IGuestService guestService)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
-
+            _guestService = guestService;
             // Test connection
             if (!_context.Database.CanConnect())
             {
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
+        [HttpGet]
+        public IActionResult GetGuestOfTheDay()
+        {
+            var guest = _guestService.GetGuestOfTheDay();
+            if (guest == null)
+            {
+                return Content("<p>No guest of the day found.</p>", "text/html");
+            }
+            // Return a partial view with a list (because your existing partial expects List<Guest>)
+            return PartialView("_GuestDetailsPartial", new List<Guest> { guest });
+        }
+
 
         public async Task<IActionResult> reservebooking()
         {
+            // 1. Get all operators from tbl_operator_mobile
+            var operators = await _context.Operators
+                .Select(o => new { o.Id, o.BusinessName })
+                .ToListAsync();
+
+            // 2. Load reserved guests
             var reservedGuests = await _context.Guests
-                .Include(g => g.OperatorList)
                 .Include(g => g.NationalityEntity)
                 .Where(g => g.BookingStatus == "reserved")
                 .OrderBy(g => g.Id)
@@ -41,33 +61,42 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (!reservedGuests.Any())
                 return View(new GuestListViewModel());
 
-            // Generate QR for each guest
+            // 3. Generate QR for each guest
             foreach (var guest in reservedGuests)
             {
                 guest.QRText = GenerateQRText(guest);
                 guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
             }
 
-            // ✅ Group guests by Batch
+            // 4. Group guests by Batch and map Operator BusinessName
             var grouped = reservedGuests
                 .GroupBy(g => g.Batch)
                 .Select(grp =>
                 {
                     var first = grp.First();
+
+                    // ✅ Lookup Operator's BusinessName from tbl_operator_mobile
+                    var businessName = operators
+                        .FirstOrDefault(o => o.Id == first.OperatorId)?.BusinessName ?? "N/A";
+
                     return new Guest
                     {
                         Id = first.Id,
                         Fullname = first.Fullname,
                         Gender = first.Gender,
                         NationalityEntity = first.NationalityEntity,
-                   
                         OperatorId = first.OperatorId,
-                        OperatorList = first.OperatorList,
+
+                        // ✅ Inject BusinessName using a stubbed OperatorList object
+                        OperatorList = new OperatorList
+                        {
+                            BusinessName = businessName
+                        },
+
                         NumberOfGuests = grp.Count(x => x.BookingStatus != "canceled"),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus,
-                        Date = first.Date, // <== Make sure this is assigned
-                   
+                        Date = first.Date,
                         QRText = first.QRText,
                         QRBase64 = first.QRBase64,
                         Batch = first.Batch
@@ -75,8 +104,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 })
                 .ToList();
 
-
-            // Optional: Use first batch for QR display (not really needed per-row)
+            // 5. Generate batch QR
             string batchCode = reservedGuests.First().Batch;
             string batchQrBase64 = GenerateQRCodeBase64(batchCode);
 
@@ -186,19 +214,29 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View();
         }
         [HttpGet]
-public async Task<IActionResult> GetGuestsByBatch(string batchCode)
-{
-    if (string.IsNullOrEmpty(batchCode))
-        return BadRequest("Batch code is required.");
+        public async Task<IActionResult> GetGuestsByBatch(string batchCode)
+        {
+            if (string.IsNullOrEmpty(batchCode))
+                return BadRequest("Batch code is required.");
 
-    var guests = await _context.Guests
-        .Include(g => g.OperatorList)
-        .Include(g => g.NationalityEntity)
-        .Where(g => g.Batch == batchCode)
-        .ToListAsync();
+            var operators = await _context.Operators
+                .Select(o => new { o.Id, o.BusinessName })
+                .ToListAsync();
 
-    return PartialView("_GuestDetailsPartial", guests);
-}
+            var guests = await _context.Guests
+                      .Include(g => g.NationalityEntity) // Include Nationality
+                .Where(g => g.Batch == batchCode)
+                .ToListAsync();
+
+            var guestsWithOperatorName = guests.Select(g => new GuestWithOperatorVM
+            {
+                Guest = g,
+                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
+            }).ToList();
+
+            return PartialView("_GuestDetailsPartial", guestsWithOperatorName);
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> GetGuestsData()
@@ -208,144 +246,92 @@ public async Task<IActionResult> GetGuestsByBatch(string batchCode)
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault();
 
-            // Parse startDate and endDate from the request form
-            DateTime? startDate = null;
-            DateTime? endDate = null;
+            // Get user id & role
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-            if (DateTime.TryParse(Request.Form["startDate"].FirstOrDefault(), out var parsedStartDate))
+            int? currentOperatorId = null;
+
+            if (userRole == "Operator" && int.TryParse(userId, out int operatorId))
             {
-                startDate = parsedStartDate.Date;
+                currentOperatorId = operatorId;
             }
 
-            if (DateTime.TryParse(Request.Form["endDate"].FirstOrDefault(), out var parsedEndDate))
-            {
-                // End of day for inclusive filtering
-                endDate = parsedEndDate.Date.AddDays(1).AddTicks(-1);
-            }
-
-            // Base query for confirmed bookings
+            // Base query with BookingStatus = "confirmed"
             var query = _context.Guests
-                .Include(g => g.OperatorList)
                 .Where(g => g.BookingStatus.ToLower() == "confirmed");
 
-            // Apply search filter if exists
+            // Filter by operator if current user is operator
+            if (currentOperatorId.HasValue)
+            {
+                query = query.Where(g => g.OperatorId == currentOperatorId.Value);
+            }
+
+            // Search filter on Batch or Fullname
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(g =>
                     g.Batch.Contains(search) ||
-                    g.OperatorList.BusinessName.Contains(search)
+                    g.Fullname.Contains(search)
                 );
             }
 
-            // Fetch all matching guests into memory for date filtering
-            var guestList = await query.ToListAsync();
+            // Get operators list for name mapping
+            var operators = await _context.Operators
+                .Select(o => new { o.Id, o.BusinessName })
+                .ToListAsync();
 
-            // Filter guests by arrivalDate in memory (ArrivalDate is string, so parse it)
-            if (startDate.HasValue)
-            {
-                guestList = guestList.Where(g =>
-                {
-                    if (DateTime.TryParse(g.ArrivalDate, out var arrival))
-                    {
-                        return arrival >= startDate.Value;
-                    }
-                    return false;
-                }).ToList();
-            }
-
-            if (endDate.HasValue)
-            {
-                guestList = guestList.Where(g =>
-                {
-                    if (DateTime.TryParse(g.ArrivalDate, out var arrival))
-                    {
-                        return arrival <= endDate.Value;
-                    }
-                    return false;
-                }).ToList();
-            }
-
-            // Group the filtered guests by Batch, Operator, ArrivalDate, BookingStatus
-            var grouped = guestList
-                .GroupBy(g => new { g.Batch, OperatorName = g.OperatorList.BusinessName, g.ArrivalDate, g.BookingStatus })
+            // Group by Batch + OperatorId + BookingStatus (confirmed)
+            var groupedRaw = await query
+                .GroupBy(g => new { g.Batch, g.OperatorId })
                 .Select(grp => new
                 {
-                    batchCode = grp.Key.Batch,
-                    operatorName = grp.Key.OperatorName,
-                    arrivalDate = grp.Key.ArrivalDate,
-                    status = grp.Key.BookingStatus,
-                    totalGuests = grp.Count()
+                    Batch = grp.Key.Batch,
+                    OperatorId = grp.Key.OperatorId,
+                    TotalGuests = grp.Count(g => g.BookingStatus != "canceled"),
+                    ArrivalDate = grp.Min(x => x.ArrivalDate),
+                    Status = "confirmed",
+                    MainGuestId = grp.OrderBy(x => x.Id).First().Id
                 })
-                .OrderBy(g => g.batchCode)
-                .ToList();
-
-            // Pagination
-            var pagedData = grouped
+                .OrderBy(g => g.OperatorId)
+                .ThenBy(g => g.Batch)
                 .Skip(start)
                 .Take(length)
-                .ToList();
+                .ToListAsync();
 
-            // Return JSON result with DataTables parameters
+            // Total records count
+            var recordsTotal = await query
+                .Select(g => new { g.Batch, g.OperatorId })
+                .Distinct()
+                .CountAsync();
+
+            // Map operator names
+            var grouped = groupedRaw.Select(g =>
+            {
+                var businessName = operators
+                    .FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A";
+
+                return new
+                {
+                    id = g.MainGuestId,
+                    batchCode = g.Batch,
+                    operatorName = businessName,
+                    totalGuests = g.TotalGuests,
+                    arrivalDate = g.ArrivalDate,
+                    status = g.Status
+                };
+            });
+
             return Json(new
             {
-                draw = draw,
-                recordsTotal = grouped.Count,
-                recordsFiltered = grouped.Count,
-                data = pagedData
+                draw,
+                recordsFiltered = recordsTotal,
+                recordsTotal,
+                data = grouped
             });
         }
 
-
-
-        //        [HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> FinalBookingBatch(string BatchCode)
-        //{
-        //    if (string.IsNullOrEmpty(BatchCode))
-        //    {
-        //        TempData["ToastType"] = "danger";
-        //        return RedirectToAction("reservebooking");
-        //    }
-
-        //    // Get any guest from the batch to get the OperatorId
-        //    var sampleGuest = await _context.Guests
-        //        .FirstOrDefaultAsync(g => g.Batch == BatchCode);
-
-        //    if (sampleGuest == null)
-        //    {
-        //        TempData["ToastMessage"] = "Invalid batch code.";
-        //        TempData["ToastType"] = "danger";
-        //        return RedirectToAction("reservebooking");
-        //    }
-
-        //    // Update all guests with same OperatorId and Batch to 'confirmed'
-        //    var guestsToFinalize = await _context.Guests
-        //        .Where(g => g.OperatorId == sampleGuest.OperatorId &&
-        //                    g.Batch == BatchCode &&
-        //                    g.BookingStatus != "confirmed")
-        //        .ToListAsync();
-
-        //    if (guestsToFinalize.Any())
-        //    {
-        //        foreach (var guest in guestsToFinalize)
-        //        {
-        //            guest.BookingStatus = "confirmed";
-        //        }
-
-        //        await _context.SaveChangesAsync();
-
-        //        TempData["ToastMessage"] = "Guests confirmed successfully!";
-        //        TempData["ToastType"] = "success";
-        //    }
-        //    else
-        //    {
-        //        TempData["ToastMessage"] = "No guests to confirm for this batch and operator.";
-        //        TempData["ToastType"] = "info";
-        //    }
-
-        //    return RedirectToAction("reservebooking", new { BatchCode });
-        //}
-
+     
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> FinalBookingBatch(string BatchCode)
@@ -357,7 +343,17 @@ public async Task<IActionResult> GetGuestsByBatch(string batchCode)
                 return RedirectToAction("ReserveBooking");
             }
 
-            // Get a sample guest from this batch
+            // ✅ Get current user's ID and Role from claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            int? currentOperatorId = null;
+            if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
+            {
+                currentOperatorId = parsedId;
+            }
+
+            // ✅ Get a sample guest from this batch
             var sampleGuest = await _context.Guests
                 .FirstOrDefaultAsync(g => g.Batch == BatchCode);
 
@@ -368,7 +364,21 @@ public async Task<IActionResult> GetGuestsByBatch(string batchCode)
                 return RedirectToAction("ReserveBooking");
             }
 
-            // Update all guests with same OperatorId + Batch
+            // ✅ Prevent operators from confirming others' batches
+            if (currentOperatorId.HasValue && sampleGuest.OperatorId != currentOperatorId.Value)
+            {
+                TempData["ToastMessage"] = "🚫 You are not authorized to confirm this batch.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction("ReserveBooking");
+            }
+
+            // ✅ Always fetch operator name directly from DB to avoid N/A issues
+            var operatorName = await _context.Operators
+                .Where(o => o.Id == sampleGuest.OperatorId)
+                .Select(o => o.BusinessName)
+                .FirstOrDefaultAsync() ?? "N/A";
+
+            // ✅ Update all guests with same OperatorId + Batch
             var guestsToFinalize = await _context.Guests
                 .Where(g => g.OperatorId == sampleGuest.OperatorId &&
                             g.Batch == BatchCode &&
@@ -384,17 +394,33 @@ public async Task<IActionResult> GetGuestsByBatch(string batchCode)
 
                 await _context.SaveChangesAsync();
 
-                TempData["ToastMessage"] = "Confirm Successfully";
+                TempData["ToastMessage"] = $"✅ Confirmed booking</i>";
                 TempData["ToastType"] = "success";
             }
             else
             {
-                TempData["ToastMessage"] = $"ℹ️ No pending guests to confirm for batch {BatchCode}.";
+                TempData["ToastMessage"] = $"ℹ️ No pending guests to confirm for batch <b>{BatchCode}</b>.";
                 TempData["ToastType"] = "info";
             }
 
+            // ✅ Optional: Populate OperatorList for dropdown in ReserveBooking view
+            List<Operator> operators;
+            if (userRole == "Operator" && currentOperatorId.HasValue)
+            {
+                operators = await _context.Operators
+                    .Where(o => o.Id == currentOperatorId.Value)
+                    .ToListAsync();
+            }
+            else
+            {
+                operators = await _context.Operators.ToListAsync();
+            }
+
+            ViewBag.OperatorList = new SelectList(operators, "Id", "BusinessName");
+
             return RedirectToAction("ReserveBooking", new { batchCode = BatchCode });
         }
+
 
         public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
         {

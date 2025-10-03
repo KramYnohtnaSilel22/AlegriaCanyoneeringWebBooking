@@ -1,4 +1,5 @@
 ﻿using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.Service;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 33)),
         mysqlOptions => mysqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null)
     ));
+builder.Services.AddScoped<IGuestService, GuestService>();
+
 
 builder.Services.AddCors(options =>
 {

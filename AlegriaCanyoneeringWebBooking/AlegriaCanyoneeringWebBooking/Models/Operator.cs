@@ -16,7 +16,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
 
         [Column("BusinessName")]
-        public string? BusinessName { get; set; } 
+        public string? BusinessName { get; set; } = string.Empty;
 
         [Required]
         [Column("Age")]

@@ -26,6 +26,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
@@ -49,8 +50,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
-
-
         [HttpPost]
         public async Task<IActionResult> GetGuestsData()
         {
@@ -60,58 +59,60 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var search = Request.Form["search[value]"].FirstOrDefault();
 
             var query = _context.Guests
-                .Include(g => g.OperatorList)
                 .Where(g => g.BookingStatus == "anticipated");
 
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(g =>
                     g.Fullname.Contains(search) ||
-                    g.Batch.Contains(search) ||
-                    (g.OperatorList != null && g.OperatorList.BusinessName.Contains(search))
+                    g.Batch.Contains(search)
                 );
             }
 
-            // ✅ FIXED: GROUP BY BATCH INSTEAD OF OPERATOR ID
+            // ✅ Get a local copy of tbl_operator_mobile to join later
+            var operators = await _context.Operators
+                .Select(o => new { o.Id, o.BusinessName })
+                .ToListAsync();
+
+            // ✅ Group the guest records
             var groupedRaw = await query
-                .GroupBy(g => new { g.Batch, g.OperatorId }) // ✅ GROUP BY BATCH + OPERATOR
+                .GroupBy(g => new { g.Batch, g.OperatorId })
                 .Select(grp => new
                 {
-                    Batch = grp.Key.Batch, // ✅ INCLUDE BATCH
+                    Batch = grp.Key.Batch,
                     OperatorId = grp.Key.OperatorId,
-                    OperatorName = grp.First().OperatorList != null
-                        ? grp.First().OperatorList.BusinessName : "N/A",
                     TotalGuests = grp.Count(g => g.BookingStatus != "canceled"),
                     ArrivalDate = grp.Min(x => x.ArrivalDate),
                     Status = "anticipated",
                     MainGuestId = grp.OrderBy(x => x.Id).First().Id
                 })
-                .OrderBy(g => g.OperatorName)
-                .ThenBy(g => g.Batch) // ✅ ORDER BY BATCH TOO
+                .OrderBy(g => g.OperatorId)
+                .ThenBy(g => g.Batch)
                 .Skip(start)
                 .Take(length)
                 .ToListAsync();
 
-            // ✅ FIXED: COUNT DISTINCT BATCHES INSTEAD OF OPERATORS
+            // ✅ Get distinct total records (for DataTables)
             var recordsTotal = await query
-                .Select(g => new { g.Batch, g.OperatorId }) // ✅ COUNT BATCHES
+                .Select(g => new { g.Batch, g.OperatorId })
                 .Distinct()
                 .CountAsync();
 
-            // Server-side pretty date formatting
-            string FormatDate(DateTime? dt) =>
-                dt.HasValue
-                    ? dt.Value.ToString("MMMM d yyyy", CultureInfo.InvariantCulture)
-                    : "N/A";
+            // ✅ Map operator names from tbl_operator_mobile
+            var grouped = groupedRaw.Select(g =>
+            {
+                var businessName = operators
+                    .FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A";
 
-            // Now format in C#, after ToListAsync (no EF errors)
-            var grouped = groupedRaw.Select(g => new {
-                id = g.MainGuestId,
-                batch = g.Batch, // ✅ INCLUDE BATCH IN OUTPUT
-                operatorName = g.OperatorName,
-                totalGuests = g.TotalGuests,
-                arrivalDate = g.ArrivalDate, // ✅ USE FORMATTED DATE
-                bookingStatus = g.Status
+                return new
+                {
+                    id = g.MainGuestId,
+                    batch = g.Batch,
+                    operatorName = businessName,
+                    totalGuests = g.TotalGuests,
+                    arrivalDate = g.ArrivalDate,
+                    bookingStatus = g.Status
+                };
             });
 
             return Json(new
@@ -123,6 +124,86 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             });
         }
 
+        //[HttpPost]
+        //public async Task<IActionResult> GetGuestsData()
+        //{
+        //    try
+        //    {
+        //        var draw = Request.Form["draw"].FirstOrDefault();
+        //        var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
+        //        var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
+        //        var search = Request.Form["search[value]"].FirstOrDefault();
+
+        //        var query = _context.Guests
+        //            .Include(g => g.OperatorList)
+        //            .Where(g => g.BookingStatus == "anticipated");
+
+        //        // (Optionally: filter by operator role, as before)
+
+        //        if (!string.IsNullOrEmpty(search))
+        //        {
+        //            query = query.Where(g =>
+        //                g.Fullname.Contains(search) ||
+        //                g.Batch.Contains(search) ||
+        //                (g.OperatorList != null && g.OperatorList.BusinessName.Contains(search))
+        //            );
+        //        }
+
+        //        var groupedRaw = await query
+        //            .GroupBy(g => new { g.Batch, g.OperatorId })
+        //            .Select(grp => new
+        //            {
+        //                Batch = grp.Key.Batch,
+        //                OperatorId = grp.Key.OperatorId,
+        //                OperatorName = grp.First().OperatorList != null
+        //                    ? grp.First().OperatorList.BusinessName : "N/A",
+        //                TotalGuests = grp.Count(g => g.BookingStatus != "canceled"),
+        //                ArrivalDate = grp.Min(x => x.ArrivalDate),
+        //                Status = "anticipated",
+        //                MainGuestId = grp.OrderBy(x => x.Id).First().Id
+        //            })
+        //            .OrderBy(g => g.OperatorName)
+        //            .ThenBy(g => g.Batch)
+        //            .Skip(start)
+        //            .Take(length)
+        //            .ToListAsync();
+
+        //        var recordsTotal = await query
+        //            .Select(g => new { g.Batch, g.OperatorId })
+        //            .Distinct()
+        //            .CountAsync();
+
+        //        var grouped = groupedRaw.Select(g => new
+        //        {
+        //            id = g.MainGuestId,
+        //            batch = g.Batch,
+        //            operatorName = g.OperatorName,
+        //            totalGuests = g.TotalGuests,
+        //            arrivalDate = g.ArrivalDate,
+        //            bookingStatus = g.Status
+        //        });
+
+        //        return Json(new
+        //        {
+        //            draw = draw,
+        //            recordsFiltered = recordsTotal,
+        //            recordsTotal = recordsTotal,
+        //            data = grouped
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log error ex (to your logging framework)
+        //        return Json(new
+        //        {
+        //            draw = 0,
+        //            recordsFiltered = 0,
+        //            recordsTotal = 0,
+        //            data = new List<object>(),
+        //            error = ex.Message
+        //        });
+        //    }
+        //}
 
 
 
@@ -145,13 +226,44 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [HttpGet]
         public async Task<IActionResult> NewBooking(string batch, int? id)
         {
-            await PopulateDropdowns();
+            // Get current user's ID and Role from claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
 
+            List<Operator> operators;
+
+            if (userRole == "Operator")
+            {
+                if (int.TryParse(userId, out int operatorId))
+
+
+                {
+                    // Only include the logged-in operator’s own business
+                    operators = await _context.Operators
+                        .Where(o => o.Id == operatorId)
+                        .ToListAsync();
+                }
+                else
+                {
+                    operators = new List<Operator>();
+                }
+            }
+            else
+            {
+                // Admin or others: show all businesses
+                operators = await _context.Operators.ToListAsync();
+            }
+
+            // Pass to View as dropdown list (Id = value, BusinessName = text)
+            ViewBag.OperatorList = new SelectList(operators, "Id", "BusinessName");
+
+            // Fetch anticipated guests
             var anticipatedGuests = await _context.Guests
                 .Include(g => g.OperatorList)
                 .Where(g => g.BookingStatus == "anticipated")
                 .ToListAsync();
 
+            // Prepare ViewModel
             var model = new GuestListViewModel
             {
                 NewGuest = new Guest(),
@@ -175,6 +287,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             ViewBag.CurrentBatch = batch;
             ViewBag.MainGuestId = id;
 
+            // Prefill data if editing a batch
             if (!string.IsNullOrEmpty(batch))
             {
                 var batchDetails = anticipatedGuests

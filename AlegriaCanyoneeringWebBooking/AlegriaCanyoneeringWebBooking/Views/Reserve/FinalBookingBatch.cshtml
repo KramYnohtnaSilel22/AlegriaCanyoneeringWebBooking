@@ -1,10 +1,17 @@
-﻿@* @{
+﻿@{
     ViewData["Title"] = "Confirmed Booking Batches";
     var startDate = Context.Request.Query["startDate"].FirstOrDefault();
     var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
 
-<h2 class="mb-4 text-success">Booked Guests Batches</h2>
+<h2 class="mb-4 text-success">Booked Guests</h2>
+
+<!-- View Guest of the Day Button -->
+<div class="mb-4">
+    <button id="btnViewGuestOfDay" class="btn btn-info">
+        <i class="fas fa-star"></i> View Guest of the Day
+    </button>
+</div>
 
 <!-- Date Range Filter Form -->
 <form id="filterForm" class="row g-3 mb-4 align-items-end">
@@ -23,142 +30,7 @@
     </div>
 </form>
 
-<table id="batchesTable" class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Batch</th>
-            <th>Total Guests</th>
-            <th>Operator</th>
-            <th>Arrival Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-</table>
-
-<!-- Modal Container -->
-<div id="guestDetailsModalContainer"></div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function () {
-            var table = $('#batchesTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: '@Url.Action("GetGuestsData", "Reserve")',
-                    type: 'POST',
-                    data: function (d) {
-                        d.startDate = $('#startDate').val();
-                        d.endDate = $('#endDate').val();
-                    }
-                },
-                columns: [
-                    { data: 'batchCode', title: 'Batch' },
-                    { data: 'totalGuests', title: 'Total Guests' },
-                    { data: 'operatorName', title: 'Operator' },
-                    {
-                        data: 'arrivalDate',
-                        title: 'Arrival Date',
-                        render: function (data) {
-                            if (!data) return '';
-                            // data is already a formatted date string from server, so just return it
-                            return data;
-                        }
-                    },
-                    {
-                        data: 'status',
-                        title: 'Status',
-                        render: function (data) {
-                            if (!data) return '';
-                            let badgeClass = 'primary';
-                            if (data.toLowerCase() === 'confirmed') badgeClass = 'success';
-                            else if (data.toLowerCase() === 'anticipated') badgeClass = 'info';
-                            else if (data.toLowerCase() === 'cancelled') badgeClass = 'danger';
-
-                            return `<span class="badge bg-${badgeClass} text-uppercase px-2 py-1">${data}</span>`;
-                        }
-                    },
-                    {
-                        data: 'batchCode',
-                        title: 'Actions',
-                        orderable: false,
-                        searchable: false,
-                        render: function (data) {
-                            return `<button type="button" class="btn btn-primary btn-sm view-guest-details" data-batch="${data}">
-                                        View <i class="fas fa-users ms-1"></i>
-                                    </button>`;
-                        }
-                    }
-                ],
-                pageLength: 10,
-                lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
-                responsive: true,
-                autoWidth: false,
-                language: {
-                    emptyTable: "No guest batches found."
-                }
-            });
-
-            // Filter form submit - reload DataTable with filter params
-            $('#filterForm').on('submit', function (e) {
-                e.preventDefault();
-                table.ajax.reload();
-            });
-
-            // Modal show guest details
-            var guestModal;
-            $('#batchesTable').on('click', '.view-guest-details', function () {
-                var batchCode = $(this).data('batch');
-                var modalContainer = $('#guestDetailsModalContainer');
-
-                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode: batchCode })
-                    .done(function (html) {
-                        modalContainer.html(html);
-                        var modalElement = document.getElementById('guestDetailsModal');
-                        guestModal = new bootstrap.Modal(modalElement, {
-                            backdrop: 'static',
-                            keyboard: true
-                        });
-                        guestModal.show();
-                        modalElement.addEventListener('hidden.bs.modal', function () {
-                            modalContainer.empty();
-                        });
-                    })
-                    .fail(function () {
-                        alert('Failed to load guest details.');
-                    });
-            });
-        });
-    </script>
-}
- *@
-@{
-    ViewData["Title"] = "Confirmed Booking Batches";
-    var startDate = Context.Request.Query["startDate"].FirstOrDefault();
-    var endDate = Context.Request.Query["endDate"].FirstOrDefault();
-}
-
-<h2 class="mb-4 text-success">Booked Guest</h2>
-
-<!-- Date Range Filter Form -->
-<form id="filterForm" class="row g-3 mb-4 align-items-end">
-    <div class="col-md-4">
-        <label for="startDate" class="form-label">Start Date</label>
-        <input type="date" class="form-control" id="startDate" name="startDate" value="@startDate" required>
-    </div>
-    <div class="col-md-4">
-        <label for="endDate" class="form-label">End Date</label>
-        <input type="date" class="form-control" id="endDate" name="endDate" value="@endDate" required>
-    </div>
-    <div class="col-md-4">
-        <button type="submit" class="btn btn-success w-100">
-            <i class="fas fa-search me-1"></i> Search
-        </button>
-    </div>
-</form>
-
-<!-- Table container - always hidden initially -->
+<!-- Table container -->
 <div id="batchesTableContainer" style="display:none;">
     <table id="batchesTable" class="table table-bordered table-striped">
         <thead class="table-dark">
@@ -180,26 +52,45 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            var table = null; // Datatable instance placeholder
+            var table = null;
 
+            // Guest of the Day button
+            $('#btnViewGuestOfDay').on('click', function () {
+                var modalContainer = $('#guestDetailsModalContainer');
+
+                $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
+                    .done(function (html) {
+                        modalContainer.html(html);
+                        var modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'), {
+                            backdrop: 'static',
+                            keyboard: true
+                        });
+                        modal.show();
+
+                        document.getElementById('guestDetailsModal').addEventListener('hidden.bs.modal', function () {
+                            modalContainer.empty();
+                        });
+                    })
+                    .fail(function () {
+                        alert('Failed to load guest of the day.');
+                    });
+            });
+
+            // Handle filter form submit
             $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
 
-                // Get the dates
-                var startDate = $('#startDate').val();
-                var endDate = $('#endDate').val();
+                const startDate = $('#startDate').val();
+                const endDate = $('#endDate').val();
 
-                // Simple validation, just to be sure
                 if (!startDate || !endDate) {
-                    alert('Please fill both start and end dates.');
+                    alert('Please select both start and end dates.');
                     return;
                 }
 
-                // If DataTable already initialized, destroy it before reinitializing
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
                     table.destroy();
-                    $('#batchesTable').empty(); // Clear table contents (thead stays)
-                    $('#batchesTable').append(`
+                    $('#batchesTable').empty().append(`
                         <thead class="table-dark">
                             <tr>
                                 <th>Batch</th>
@@ -213,7 +104,7 @@
                     `);
                 }
 
-                // Initialize DataTable
+                // Initialize or reload DataTable
                 table = $('#batchesTable').DataTable({
                     processing: true,
                     serverSide: true,
@@ -237,13 +128,19 @@
                     columns: [
                         { data: 'batchCode', title: 'Batch' },
                         { data: 'totalGuests', title: 'Total Guests' },
-                        { data: 'operatorName', title: 'Operator' },
+                        {
+                                data: 'operatorName',
+        title: 'Operator',
+        render: function (data) {
+            if (data && data.trim().length > 0) return data;
+            return '<span class="text-muted">N/A</span>';
+        }
+                        },
                         {
                             data: 'arrivalDate',
                             title: 'Arrival Date',
                             render: function (data) {
-                                if (!data) return '';
-                                return data;
+                                return data || '';
                             }
                         },
                         {
@@ -252,10 +149,11 @@
                             render: function (data) {
                                 if (!data) return '';
                                 let badgeClass = 'primary';
-                                if (data.toLowerCase() === 'confirmed') badgeClass = 'success';
-                                else if (data.toLowerCase() === 'anticipated') badgeClass = 'info';
-                                else if (data.toLowerCase() === 'cancelled') badgeClass = 'danger';
-
+                                switch (data.toLowerCase()) {
+                                    case 'confirmed': badgeClass = 'success'; break;
+                                    case 'anticipated': badgeClass = 'info'; break;
+                                    case 'cancelled': badgeClass = 'danger'; break;
+                                }
                                 return `<span class="badge bg-${badgeClass} text-uppercase px-2 py-1">${data}</span>`;
                             }
                         },
@@ -281,8 +179,7 @@
                 });
             });
 
-            // Handle modal guest details after table initialized and button clicked
-            var guestModal;
+            // View Guest Details Modal
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
                 var batchCode = $(this).data('batch');
                 var modalContainer = $('#guestDetailsModalContainer');
@@ -291,11 +188,12 @@
                     .done(function (html) {
                         modalContainer.html(html);
                         var modalElement = document.getElementById('guestDetailsModal');
-                        guestModal = new bootstrap.Modal(modalElement, {
+                        var guestModal = new bootstrap.Modal(modalElement, {
                             backdrop: 'static',
                             keyboard: true
                         });
                         guestModal.show();
+
                         modalElement.addEventListener('hidden.bs.modal', function () {
                             modalContainer.empty();
                         });
