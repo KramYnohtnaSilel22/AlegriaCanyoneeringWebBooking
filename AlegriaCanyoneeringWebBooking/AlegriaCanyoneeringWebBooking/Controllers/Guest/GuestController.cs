@@ -325,9 +325,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     foreach (var guest in batchGuests)
                     {
+                        // Allow adding even if a guest with the same name and operator already exists
                         guest.BookingStatus = "anticipated";
                         guest.Batch = batchId;
-                        guest.RFID = null; // ✅ Set to null initially, will be updated after save
+                        guest.RFID = 1;
+
                         guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
                         guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
                         guest.Month = DateTime.Today.ToString("MMMM");
@@ -341,19 +343,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     if (insertedCount > 0)
                     {
-                        await _context.SaveChangesAsync(); // ✅ Save first to generate IDs
+                        await _context.SaveChangesAsync();
 
-                        // ✅ Update RFID to match the Id for each newly added guest
-                        var newlyAddedGuests = await _context.Guests
-                            .Where(g => g.Batch == batchId && g.RFID == null)
+                        var guestsForOperator = await _context.Guests
+                            .Where(g => g.OperatorId == batchGuests.First().OperatorId && g.BookingStatus != "canceled")
                             .ToListAsync();
 
-                        foreach (var guest in newlyAddedGuests)
-                        {
-                            guest.RFID = guest.Id; // ✅ Set RFID to the Id
-                        }
-
-                        await _context.SaveChangesAsync(); // ✅ Save the RFID updates
+                  
+                        await _context.SaveChangesAsync();
 
                         TempData["ToastMessage"] = $"Guests added successfully";
                         TempData["ToastType"] = "success";
