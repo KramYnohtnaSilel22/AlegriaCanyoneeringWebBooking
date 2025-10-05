@@ -34,32 +34,62 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [HttpGet]
         public async Task<IActionResult> GetGuestOfTheDay()
         {
-            var guest = await _context.Guests
+            // 🟢 Fetch all guests ordered by ArrivalDate (latest first)
+            var guests = await _context.Guests
                 .Include(g => g.NationalityEntity)
                 .OrderByDescending(g => g.ArrivalDate)
-                .FirstOrDefaultAsync();
+                .ToListAsync();
 
-            if (guest == null)
+            if (guests == null || !guests.Any())
             {
-                return Content("<p class='text-danger'>No guest of the day found.</p>", "text/html");
+                return Content("<p class='text-danger'>No guests found.</p>", "text/html");
             }
 
-            // 🟢 Use same working operator lookup pattern
+            // 🟢 Fetch all operators once (avoid N+1 queries)
             var operators = await _context.Operators
                 .Select(o => new { o.Id, o.BusinessName })
                 .ToListAsync();
 
-            var operatorName = operators
-                .FirstOrDefault(o => o.Id == guest.OperatorId)?.BusinessName ?? "N/A";
-
-            var vm = new GuestWithOperatorVM
+            // 🟢 Build a list of GuestWithOperatorVM
+            var vmList = guests.Select(g => new GuestWithOperatorVM
             {
-                Guest = guest,
-                OperatorName = operatorName
-            };
+                Guest = g,
+                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
+            }).ToList();
 
-            return PartialView("_GuestDetailsPartial", new List<GuestWithOperatorVM> { vm });
+            // ✅ Return all guests to the partial view
+            return PartialView("_GuestDetailsPartial", vmList);
         }
+
+        //[HttpGet]
+        //public async Task<IActionResult> GetGuestOfTheDay()
+        //{
+        //    var guest = await _context.Guests
+        //        .Include(g => g.NationalityEntity)
+        //        .OrderByDescending(g => g.ArrivalDate)
+        //        .FirstOrDefaultAsync();
+
+        //    if (guest == null)
+        //    {
+        //        return Content("<p class='text-danger'>No guest of the day found.</p>", "text/html");
+        //    }
+
+        //    // 🟢 Use same working operator lookup pattern
+        //    var operators = await _context.Operators
+        //        .Select(o => new { o.Id, o.BusinessName })
+        //        .ToListAsync();
+
+        //    var operatorName = operators
+        //        .FirstOrDefault(o => o.Id == guest.OperatorId)?.BusinessName ?? "N/A";
+
+        //    var vm = new GuestWithOperatorVM
+        //    {
+        //        Guest = guest,
+        //        OperatorName = operatorName
+        //    };
+
+        //    return PartialView("_GuestDetailsPartial", new List<GuestWithOperatorVM> { vm });
+        //}
 
 
         public async Task<IActionResult> reservebooking()
