@@ -342,18 +342,18 @@
                 @* ✅ For Super Admin only *@
                 @if (User.IsInRole("Super Admin"))
                 {
-                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Batches" asp-action="Index">
+               @*      <a class="d-block py-1 text-white text-decoration-none" asp-controller="Batches" asp-action="Index">
                         <i class="bi bi-layers-half me-2"></i> <span>Batch</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Guides" asp-action="Index">
+                    </a> *@
+                 @*    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Guides" asp-action="Index">
                         <i class="bi bi-person-badge me-2"></i> <span>Guide Details</span>
-                    </a>
+                    </a> *@
                     <a class="d-block py-1 text-white text-decoration-none" asp-controller="Operators" asp-action="Index">
                         <i class="bi bi-person-workspace me-2"></i> <span>User</span>
                     </a>
-                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Drivers" asp-action="Index">
+              @*       <a class="d-block py-1 text-white text-decoration-none" asp-controller="Drivers" asp-action="Index">
                         <i class="bi bi-truck-front me-2"></i> <span>Driver Details</span>
-                    </a>
+                    </a> *@
                     <a class="d-block py-1 text-white text-decoration-none" asp-controller="OperatorList" asp-action="Operators">
                         <i class="bi bi-people-fill me-2"></i> <span>OperatorsList</span>
                     </a>

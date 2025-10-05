@@ -9,9 +9,9 @@
 <p>
     <a asp-action="Create" class="btn btn-primary">Create New</a>
 </p>
-
-<table class="table table-bordered table-striped">
-    <thead>
+<div class="table-responsive">
+    <table id="example1" class="table text-truncate">
+    <thead class="table-light">
         <tr>
             <th>Nationality Name</th>
             <th></th>
@@ -23,11 +23,14 @@
             <tr>
                 <td>@item.NatName</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.id">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.id">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.id">Delete</a>
+                        <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-sm btn-warning">Edit</a>
+
+                        <form asp-action="Delete" asp-route-id="@item.id" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+</div>

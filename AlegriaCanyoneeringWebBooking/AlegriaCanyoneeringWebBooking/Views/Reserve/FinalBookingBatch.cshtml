@@ -1,53 +1,64 @@
 ﻿@{
-    ViewData["Title"] = "Confirmed Booking Batches";
+    ViewData["Title"] = "Booked Guest";
     var startDate = Context.Request.Query["startDate"].FirstOrDefault();
     var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
 
-<h2 class="mb-4 text-success">Booked Guests</h2>
+<div class="container my-4">
 
-<!-- View Guest of the Day Button -->
-<div class="mb-4">
-    <button id="btnViewGuestOfDay" class="btn btn-info">
-        <i class="fas fa-star"></i> View Guest of the Day
-    </button>
-</div>
-
-<!-- Date Range Filter Form -->
-<form id="filterForm" class="row g-3 mb-4 align-items-end">
-    <div class="col-md-4">
-        <label for="startDate" class="form-label">Start Date</label>
-        <input type="date" class="form-control" id="startDate" name="startDate" value="@startDate" required>
-    </div>
-    <div class="col-md-4">
-        <label for="endDate" class="form-label">End Date</label>
-        <input type="date" class="form-control" id="endDate" name="endDate" value="@endDate" required>
-    </div>
-    <div class="col-md-4">
-        <button type="submit" class="btn btn-success w-100">
-            <i class="fas fa-search me-1"></i> Search
+    <!-- Page Title and Guest of the Day Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark m-0">📋 Booked Guest</h2>
+        <button id="btnViewGuestOfDay" class="btn btn-outline-primary">
+            <i class="fas fa-star me-1"></i> Guest of the Day
         </button>
     </div>
-</form>
 
-<!-- Table container -->
-<div id="batchesTableContainer" style="display:none;">
-    <table id="batchesTable" class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>Batch</th>
-                <th>Total Guests</th>
-                <th>Operator</th>
-                <th>Arrival Date</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-    </table>
+    <!-- Date Range Filter Form -->
+    <form id="filterForm" class="row row-cols-1 row-cols-md-auto g-3 align-items-end mb-4">
+        <div>
+            <label for="startDate" class="form-label fw-semibold">Start Date</label>
+            <input type="date" class="form-control" id="startDate" name="startDate" value="@startDate" required />
+        </div>
+        <div>
+            <label for="endDate" class="form-label fw-semibold">End Date</label>
+            <input type="date" class="form-control" id="endDate" name="endDate" value="@endDate" required />
+        </div>
+        <div>
+            <label class="form-label invisible">Search</label>
+            <button type="submit" class="btn btn-success w-100">
+                <i class="fas fa-search me-1"></i> Search
+            </button>
+        </div>
+    </form>
+
+    <!-- Table Container -->
+    <div id="batchesTableContainer" class="card shadow-sm border-0" style="display: none;">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="batchesTable" class="table table-hover align-middle w-100">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Batch</th>
+                            <th>Total Guests</th>
+                            <th>Operator</th>
+                            <th>Arrival Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+            <div id="emptyState" class="text-center text-muted py-4" style="display: none;">
+                <i class="fas fa-user-slash fa-2x mb-2"></i>
+                <p class="mb-0">No guest batches found for the selected range.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="guestDetailsModalContainer"></div>
 </div>
-
-<!-- Modal Container -->
-<div id="guestDetailsModalContainer"></div>
 
 @section Scripts {
     <script>
@@ -56,18 +67,20 @@
 
             // Guest of the Day button
             $('#btnViewGuestOfDay').on('click', function () {
-                var modalContainer = $('#guestDetailsModalContainer');
+                const modalContainer = $('#guestDetailsModalContainer');
+                modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
 
                 $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
                     .done(function (html) {
                         modalContainer.html(html);
-                        var modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'), {
+                        var modalElement = document.getElementById('guestDetailsModal');
+                        var guestModal = new bootstrap.Modal(modalElement, {
                             backdrop: 'static',
                             keyboard: true
                         });
-                        modal.show();
+                        guestModal.show();
 
-                        document.getElementById('guestDetailsModal').addEventListener('hidden.bs.modal', function () {
+                        modalElement.addEventListener('hidden.bs.modal', function () {
                             modalContainer.empty();
                         });
                     })
@@ -76,7 +89,7 @@
                     });
             });
 
-            // Handle filter form submit
+            // Filter form submit handler
             $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
 
@@ -88,10 +101,11 @@
                     return;
                 }
 
+                // Destroy existing DataTable if exists
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
                     table.destroy();
                     $('#batchesTable').empty().append(`
-                        <thead class="table-dark">
+                        <thead class="table-light">
                             <tr>
                                 <th>Batch</th>
                                 <th>Total Guests</th>
@@ -104,23 +118,21 @@
                     `);
                 }
 
-                // Initialize or reload DataTable
+                // Initialize DataTable
                 table = $('#batchesTable').DataTable({
                     processing: true,
                     serverSide: true,
                     ajax: {
                         url: '@Url.Action("GetGuestsData", "Reserve")',
                         type: 'POST',
-                        data: {
-                            startDate: startDate,
-                            endDate: endDate
-                        },
+                        data: { startDate, endDate },
                         dataSrc: function (json) {
                             if (json.data && json.data.length > 0) {
                                 $('#batchesTableContainer').show();
+                                $('#emptyState').hide();
                             } else {
-                                $('#batchesTableContainer').hide();
-                                alert('No booked guests found for the selected date range.');
+                                $('#batchesTableContainer').show();
+                                $('#emptyState').show();
                             }
                             return json.data;
                         }
@@ -129,12 +141,11 @@
                         { data: 'batchCode', title: 'Batch' },
                         { data: 'totalGuests', title: 'Total Guests' },
                         {
-                                data: 'operatorName',
-        title: 'Operator',
-        render: function (data) {
-            if (data && data.trim().length > 0) return data;
-            return '<span class="text-muted">N/A</span>';
-        }
+                            data: 'operatorName',
+                            title: 'Operator',
+                            render: function (data) {
+                                return data?.trim()?.length > 0 ? data : '<span class="text-muted">N/A</span>';
+                            }
                         },
                         {
                             data: 'arrivalDate',
@@ -148,13 +159,13 @@
                             title: 'Status',
                             render: function (data) {
                                 if (!data) return '';
-                                let badgeClass = 'primary';
+                                let badgeClass = 'secondary';
                                 switch (data.toLowerCase()) {
                                     case 'confirmed': badgeClass = 'success'; break;
                                     case 'anticipated': badgeClass = 'info'; break;
                                     case 'cancelled': badgeClass = 'danger'; break;
                                 }
-                                return `<span class="badge bg-${badgeClass} text-uppercase px-2 py-1">${data}</span>`;
+                                return `<span class="badge bg-${badgeClass} text-uppercase">${data}</span>`;
                             }
                         },
                         {
@@ -163,14 +174,15 @@
                             orderable: false,
                             searchable: false,
                             render: function (data) {
-                                return `<button type="button" class="btn btn-primary btn-sm view-guest-details" data-batch="${data}">
-                                            View <i class="fas fa-users ms-1"></i>
-                                        </button>`;
+                                return `
+                                    <button type="button" class="btn btn-outline-primary btn-sm view-guest-details" data-batch="${data}">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </button>`;
                             }
                         }
                     ],
                     pageLength: 10,
-                    lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
+                    lengthMenu: [[10, 20, 50], [10, 20, 50]],
                     responsive: true,
                     autoWidth: false,
                     language: {
@@ -178,34 +190,12 @@
                     }
                 });
             });
-         // View Guest of the Day Modal
-        $('#btnViewGuestOfDay').on('click', function () {
-            var modalContainer = $('#guestDetailsModalContainer');
 
-            $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
-                .done(function (html) {
-                    modalContainer.html(html);
-                    var modalElement = document.getElementById('guestDetailsModal');
-                    var guestModal = new bootstrap.Modal(modalElement, {
-                        backdrop: static,   // ✅ clicking outside will close
-                        keyboard: true    // ✅ pressing ESC will close
-                    });
-                    guestModal.show();
-
-                    modalElement.addEventListener('hidden.bs.modal', function () {
-                        modalContainer.empty();
-                    });
-                })
-                .fail(function () {
-                    alert('Failed to load Guest of the Day.');
-                });
-        });
-
-
-            // View Guest Details Modal
+            // View Guests by Batch - Modal
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
                 var batchCode = $(this).data('batch');
-                var modalContainer = $('#guestDetailsModalContainer');
+                const modalContainer = $('#guestDetailsModalContainer');
+                modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
 
                 $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode: batchCode })
                     .done(function (html) {

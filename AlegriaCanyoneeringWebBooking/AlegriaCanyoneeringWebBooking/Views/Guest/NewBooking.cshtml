@@ -39,7 +39,7 @@
         </div>
 
         <!-- Form for Guest Info -->
-        <form asp-action="NewBooking" method="post" id="guestForm">
+        <form asp-action="NewBooking" method="post" id="guestForm" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
             <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
             <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
@@ -134,14 +134,16 @@
                                 <option value="Kawasan Exit">Kawasan Exit</option>
                             </select>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-semibold text-secondary">Upload Guest Photo</label>
-                            <input type="file" name="Photo" class="form-control" accept="image/*" />
+                            <input type="file" name="Photo" class="form-control" accept="image/*" capture="environment"
+                                   onchange="validateImage(this)" max="5242880" />
+                       
 
-
+                            <!-- Image Preview -->
+                            <div id="photoPreview" class="mt-2"></div>
+                            <div id="fileError" class="text-danger small mt-1"></div>
                         </div>
-
                     </fieldset>
                 </div>
             </div>
@@ -169,6 +171,35 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 
 <script>
+    function validateImage(input) {
+          const errorDiv = document.getElementById('fileError');
+          const preview = document.getElementById('photoPreview');
+          errorDiv.textContent = '';
+          preview.innerHTML = '';
+
+          if (input.files && input.files[0]) {
+              const file = input.files[0];
+              const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+
+              if (file.size > maxSize) {
+                  errorDiv.textContent = `File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum allowed: 5MB.`;
+                  input.value = ''; // Clear the file input
+                  return;
+              }
+
+              // Preview image if valid
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                  const img = document.createElement('img');
+                  img.src = e.target.result;
+                  img.style.maxWidth = '200px';
+                  img.style.maxHeight = '200px';
+                  img.className = 'img-thumbnail';
+                  preview.appendChild(img);
+              }
+              reader.readAsDataURL(input.files[0]);
+          }
+      }
     $(function () {
         const $type = $('#NationalityType');
         const $list = $('#NationalityId');
