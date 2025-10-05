@@ -2,48 +2,187 @@
     ViewData["Title"] = "About Us";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+<div class="container py-5">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-primary display-4 mb-3 animate-fade">About Our App</h1>
+        <p class="text-muted fs-5 w-lg-75 mx-auto animate-fade-slow">
+            Simplifying guest management through seamless online booking — designed for operators, made for convenience.
+        </p>
+    </div>
 
-            <h1 class="text-center mb-5 text-primary fw-bold display-4">About Us</h1>
-
-            <article class="bg-white shadow-lg rounded-4 p-5 border border-primary-subtle">
-                <section class="mb-5">
-                    <h3 class="text-secondary fw-semibold mb-3 border-start border-4 border-primary ps-3">
-                        Our Mission
-                    </h3>
-                    <p class="fs-5 text-muted lh-lg">
-                        To provide a seamless and efficient booking system that simplifies guest management while delivering exceptional service through innovation, accuracy, and reliability.
+    <div class="row justify-content-center g-4">
+        <!-- The App Section -->
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg rounded-4 p-4 animate-rise">
+                <div class="card-body">
+                    <h4 class="fw-semibold text-secondary mb-3">
+                        <i class="bi bi-window me-2 text-primary"></i> What is This App?
+                    </h4>
+                    <p class="text-muted fs-5 lh-lg">
+                        This app focuses on web booking and helps operators manage <strong>New Bookings</strong>,
+                        <strong>Reservations</strong>, and <strong>Guest Booked</strong> efficiently.
+                        It bridges the gap between operators and guests — allowing easy coordination, faster response,
+                        and better guest experience.
                     </p>
-                </section>
+                    <div class="alert alert-primary bg-gradient mt-3 mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Did You Know?</strong> Over 90% of guests prefer booking online when the process is quick and user-friendly!
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <section>
-                    <h3 class="text-secondary fw-semibold mb-3 border-start border-4 border-primary ps-3">
-                        Our Vision
-                    </h3>
-                    <p class="fs-5 text-muted lh-lg">
-                        To become the leading digital platform in the tourism and hospitality industry by empowering operators, enhancing guest experiences, and streamlining operations across all levels.
+        <!-- Mission & Vision -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 p-4 animate-rise delay-1">
+                <div class="card-body">
+                    <h4 class="fw-semibold text-secondary mb-3">
+                        <i class="bi bi-bullseye me-2 text-danger"></i> Our Mission
+                    </h4>
+                    <p class="text-muted fs-5 lh-lg">
+                        To deliver a seamless and efficient booking system that empowers operators and enhances the guest journey through technology and reliability.
                     </p>
-                </section>
-            </article>
+                </div>
+            </div>
+        </div>
 
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 p-4 animate-rise delay-2">
+                <div class="card-body">
+                    <h4 class="fw-semibold text-secondary mb-3">
+                        <i class="bi bi-eye me-2 text-info"></i> Our Vision
+                    </h4>
+                    <p class="text-muted fs-5 lh-lg">
+                        To be the most trusted web booking solution across the tourism and hospitality industry — connecting guests and operators effortlessly.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Section -->
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg rounded-4 p-4 animate-rise delay-3">
+                <div class="card-body">
+                    <h4 class="fw-semibold text-secondary mb-3">
+                        <i class="bi bi-chat-dots me-2 text-success"></i> Get in Touch
+                    </h4>
+                    <p class="text-muted fs-5 lh-lg mb-3">
+                        Have an idea to make our app even better? We’d love to hear from you!
+                    </p>
+                    <ul class="list-unstyled fs-5 text-muted">
+                        <li><i class="bi bi-envelope me-2 text-success"></i>Email: <a href="mailto:lelis.markanthony@gmail.com" class="text-decoration-none text-dark fw-semibold">lelis.markanthony@gmail.com</a></li>
+                        <li><i class="bi bi-telephone me-2 text-success"></i>Phone: <span class="fw-semibold">(032) 417-5154</span></li>
+                    </ul>
+
+                    <div class="mt-3">
+                        <a href="/Contact" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm">
+                            <i class="bi bi-send"></i> Send Us a Message
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imprint Section -->
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg rounded-4 p-4 animate-rise delay-4">
+                <div class="card-body">
+                    <h4 class="fw-semibold text-secondary mb-3">
+                        <i class="bi bi-building me-2 text-warning"></i> Imprint
+                    </h4>
+                    <p class="text-muted fs-5 lh-lg mb-0">
+                        Published by <strong>JustClick Integrated Solutions Inc.</strong><br />
+                        171 N. Bacalso Avenue, Cebu City<br />
+                        Developed by <strong>Dendo Pulgo</strong> and <strong>Darius Cumpio</strong><br />
+                        Responsible: <strong>Mark Anthony P. Lelis</strong><br />
+                        On behalf of: <strong>Municipality of Alegria, Cebu</strong>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
+
+   
 </div>
 
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
 <style>
-    /* Smooth shadows and subtle highlight */
-    article {
-        transition: box-shadow 0.3s ease;
+    body {
+        background: #f9fafc;
     }
 
-        article:hover {
-            box-shadow: 0 12px 24px rgba(13, 110, 253, 0.25);
+    .card {
+        transition: all 0.4s ease;
+    }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
         }
 
-    /* Slightly increase line-height for readability */
-    p.fs-5 {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    .bg-gradient {
+        background: linear-gradient(135deg, #0d6efd, #00b4d8);
+    }
+
+    .animate-fade {
+        animation: fadeIn 1s ease forwards;
+        opacity: 0;
+    }
+
+    .animate-fade-slow {
+        animation: fadeIn 1.5s ease forwards;
+        opacity: 0;
+    }
+
+    .animate-rise {
+        animation: rise 0.8s ease forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    .delay-1 {
+        animation-delay: 0.2s;
+    }
+
+    .delay-2 {
+        animation-delay: 0.4s;
+    }
+
+    .delay-3 {
+        animation-delay: 0.6s;
+    }
+
+    .delay-4 {
+        animation-delay: 0.8s;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+
+    }
+
+    @@keyframes rise {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
     }
 </style>
