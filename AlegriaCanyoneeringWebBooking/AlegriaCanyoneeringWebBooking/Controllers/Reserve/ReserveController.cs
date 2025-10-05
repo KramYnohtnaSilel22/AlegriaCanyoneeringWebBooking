@@ -31,37 +31,36 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
-        // ✅ Fetch Guest of the Day
         [HttpGet]
-        public IActionResult GetGuestOfTheDay()
+        public async Task<IActionResult> GetGuestOfTheDay()
         {
-            // Example logic → adjust to your business rule
-            var guest = _context.Guests
-                 .Include(g => g.NationalityEntity)   // 👈 ensures nationality is loaded
-                .OrderByDescending(g => g.ArrivalDate) // or your own criteria
-                .FirstOrDefault();
+            var guest = await _context.Guests
+                .Include(g => g.NationalityEntity)
+                .OrderByDescending(g => g.ArrivalDate)
+                .FirstOrDefaultAsync();
 
             if (guest == null)
             {
                 return Content("<p class='text-danger'>No guest of the day found.</p>", "text/html");
             }
 
-            // Load operator name if applicable
-            var operatorName = _context.Operators
-                .Where(o => o.Id == guest.OperatorId)
-                .Select(o => o.Name)
-                .FirstOrDefault() ?? "N/A";
+            // 🟢 Use same working operator lookup pattern
+            var operators = await _context.Operators
+                .Select(o => new { o.Id, o.BusinessName })
+                .ToListAsync();
 
-            // Wrap into ViewModel
+            var operatorName = operators
+                .FirstOrDefault(o => o.Id == guest.OperatorId)?.BusinessName ?? "N/A";
+
             var vm = new GuestWithOperatorVM
             {
                 Guest = guest,
                 OperatorName = operatorName
             };
 
-            // Reuse the same modal partial you already use for batch guests
             return PartialView("_GuestDetailsPartial", new List<GuestWithOperatorVM> { vm });
         }
+
 
         public async Task<IActionResult> reservebooking()
         {
@@ -189,41 +188,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
-
-        //public async Task<IActionResult> ReserveDetails(int id)
-        //{
-        //    // Retrieve main guest, including related entities
-        //    var mainGuest = await _context.Guests
-        //        .Include(g => g.OperatorList)
-        //        .Include(g => g.NationalityEntity)
-        //        .FirstOrDefaultAsync(g => g.Id == id);
-
-        //    if (mainGuest == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    // Get all active (non-canceled) guests in the same batch
-        //    var guestsInBatch = await _context.Guests
-        //        .Include(g => g.OperatorList)
-        //        .Include(g => g.NationalityEntity)
-        //        .Where(g => g.Batch == mainGuest.Batch && g.BookingStatus != "canceled")
-        //        .OrderBy(g => g.Id)
-        //        .ToListAsync();
-
-        //    // Optionally, display main guest (current record) as companion or not
-        //    // If you want to exclude main guest from companion list:
-        //    guestsInBatch = guestsInBatch.Where(g => g.Id != mainGuest.Id).ToList();
-
-        //    var model = new GuestDetailsViewModel
-        //    {
-        //        Guest = mainGuest,
-        //        GuestsInBatch = guestsInBatch
-        //        // Add other view properties as needed
-        //    };
-
-        //    return View(model);
-        //}
 
 
 
@@ -413,7 +377,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 await _context.SaveChangesAsync();
 
-                TempData["ToastMessage"] = $"✅ Confirmed booking</i>";
+                TempData["ToastMessage"] = $"✅ Confirmed booking";
                 TempData["ToastType"] = "success";
             }
             else

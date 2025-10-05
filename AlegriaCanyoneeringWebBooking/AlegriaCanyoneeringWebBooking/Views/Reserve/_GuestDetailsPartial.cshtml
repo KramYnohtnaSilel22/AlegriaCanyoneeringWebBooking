@@ -110,37 +110,37 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<script>
-    async function downloadGuestDetailsPdf() {
-        const { jsPDF } = window.jspdf;
-        const element = document.getElementById("guestDetailsContent");
+        <script>
+            async function downloadGuestDetailsPdf() {
+                const { jsPDF } = window.jspdf;
+                const element = document.getElementById("guestDetailsContent");
 
-        if (!element) {
-            alert("No guest details found to export.");
-            return;
-        }
+                if (!element) {
+                    alert("No guest details found to export.");
+                    return;
+                }
 
-        await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 300));
 
-        html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            scrollY: -window.scrollY
-        }).then(canvas => {
-            const imgData = canvas.toDataURL("image/png");
-            const pdf = new jsPDF("p", "mm", "a4");
+                html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    scrollY: -window.scrollY
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL("image/png");
+                    const pdf = new jsPDF("p", "mm", "a4");
 
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-            pdf.save("GuestDetails.pdf");
-        }).catch(error => {
-            console.error("PDF generation error:", error);
-            alert("Failed to generate PDF.");
-        });
-    }
-</script>
+                    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+                    pdf.save("GuestDetails.pdf");
+                }).catch(error => {
+                    console.error("PDF generation error:", error);
+                    alert("Failed to generate PDF.");
+                });
+            }
+        </script>
 
 <div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -182,7 +182,11 @@
                         </thead>
                         <tbody>
                             <tr class="table-success">
-                                <td>@primaryGuestVM.OperatorName</td>
+                                <td>
+                                    @primaryGuestVM.OperatorName
+                                </td>
+
+
                                 <td>@primaryGuestVM.Guest.Fullname</td>
                                 <td>@primaryGuestVM.Guest.Age</td>
                                 <td>@primaryGuestVM.Guest.ContactNumber</td>
