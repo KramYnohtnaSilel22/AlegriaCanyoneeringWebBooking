@@ -31,6 +31,34 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetBookingDetails(int id)
+        {
+            var guest = await _context.Guests
+                .Include(g => g.NationalityEntity)
+                .Include(g => g.OperatorList) // optional if you use operator in partial
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (guest == null)
+                return Content("<p class='text-danger'>Guest not found.</p>", "text/html");
+
+            var guestsInBatch = await _context.Guests
+                .Where(g => g.Batch == guest.Batch && g.Id != guest.Id)
+                .Include(g => g.NationalityEntity)
+                .ToListAsync();
+
+            var vm = new GuestDetailsViewModel
+            {
+                Guest = guest,
+                GuestsInBatch = guestsInBatch
+            };
+
+            // Ensure the partial name matches the file you created:
+            return PartialView("_ReserveBookingDetailsPartial", vm);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetGuestOfTheDay()
         {
@@ -185,37 +213,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> ReserveDetails(int id)
-        {
-            // Get the main guest, including the nationality (make sure to include Nationality)
-            var mainGuest = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)  // Ensure Nationality is loaded
-                .FirstOrDefaultAsync(g => g.Id == id);
-
-            if (mainGuest == null)
-            {
-                return NotFound(); // Return if no guest found
-            }
-
-            // Get all other guests in the same batch, excluding the main guest
-            var guestsInBatch = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)  // Ensure Nationality is included
-                .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
-                .OrderBy(g => g.Id)
-                .ToListAsync(); // ✅ removed .Take(4)
-
-            var model = new GuestDetailsViewModel
-            {
-                Guest = mainGuest,
-                GuestsInBatch = guestsInBatch
-            };
-
-            return View(model);
-        }
-
-
+  
 
 
 

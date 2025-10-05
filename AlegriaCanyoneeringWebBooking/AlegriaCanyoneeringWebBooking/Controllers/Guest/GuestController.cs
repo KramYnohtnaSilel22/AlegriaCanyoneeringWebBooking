@@ -205,7 +205,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         //    }
         //}
 
+        [HttpGet]
+        public async Task<IActionResult> GetBookingDetails(int id)
+        {
+            var guest = await _context.Guests
+                .Include(g => g.NationalityEntity)
+                .Include(g => g.OperatorList) // optional if you use operator in partial
+                .FirstOrDefaultAsync(g => g.Id == id);
 
+            if (guest == null)
+                return Content("<p class='text-danger'>Guest not found.</p>", "text/html");
+
+            var guestsInBatch = await _context.Guests
+                .Where(g => g.Batch == guest.Batch && g.Id != guest.Id)
+                .Include(g => g.NationalityEntity)
+                .ToListAsync();
+
+            var vm = new GuestDetailsViewModel
+            {
+                Guest = guest,
+                GuestsInBatch = guestsInBatch
+            };
+
+            // Ensure the partial name matches the file you created:
+            return PartialView("_BookingDetailsPartial", vm);
+        }
 
 
 
@@ -448,37 +472,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        public async Task<IActionResult> SaveguestDetails(int id)
-        {
-            // Get the main guest, including the nationality (make sure to include Nationality)
-            var mainGuest = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)  // Ensure Nationality is loaded
-                .FirstOrDefaultAsync(g => g.Id == id);
-
-            if (mainGuest == null)
-            {
-                return NotFound(); // Return if no guest found
-            }
-
-            // Get all other guests in the same batch, excluding the main guest
-            var guestsInBatch = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Include(g => g.NationalityEntity)  // Ensure Nationality is included
-                .Where(g => g.Batch == mainGuest.Batch && g.Id != mainGuest.Id)
-                .OrderBy(g => g.Id)
-                .ToListAsync(); // Removed .Take(4)
-
-            var model = new GuestDetailsViewModel
-            {
-                Guest = mainGuest,
-                GuestsInBatch = guestsInBatch
-            };
-
-            return View(model);
-        }
-
-
+      
 
 
         private int GetCurrentOperatorId()
@@ -564,29 +558,38 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return $"OP{operatorId}-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
         }
-
-
+        public IActionResult BookingDetailsPartial(int id)
+        {
+            var model = new GuestDetailsViewModel
+            {
+                Guest = _context.Guests.FirstOrDefault(g => g.Id == id),
+                GuestsInBatch = _context.Guests.Where(g => g.Batch == _context.Guests.FirstOrDefault(x => x.Id == id).Batch).ToList()
+            };
+            return PartialView("_BookingDetailsPartial", model);
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelGuest(int GuestId)
         {
             var guest = await _context.Guests.FindAsync(GuestId);
-
             if (guest == null)
-                return NotFound("Guest not found.");
+                return Json(new { success = false, message = "Guest not found" });
 
-            guest.BookingStatus = "canceled";
+            // Store batch before deletion
+            var batch = guest.Batch;
+
+            // Remove the guest permanently
+            _context.Guests.Remove(guest);
             await _context.SaveChangesAsync();
 
-            // Recalculate number of active (non-canceled) guests in the same batch
+            // Recalculate RFID for remaining guests in the batch
             var updatedGuestCount = await _context.Guests
-                .Where(g => g.Batch == guest.Batch && g.BookingStatus != "canceled")
+                .Where(g => g.Batch == batch && g.BookingStatus != "canceled")
                 .CountAsync();
 
-            // Update NumberOfGuests for all guests in the batch
             var guestsInBatch = await _context.Guests
-                .Where(g => g.Batch == guest.Batch)
+                .Where(g => g.Batch == batch)
                 .ToListAsync();
 
             foreach (var g in guestsInBatch)
@@ -596,11 +599,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             await _context.SaveChangesAsync();
 
-
-            // ✅ Redirect back to ReserveDetails
-            return RedirectToAction("SaveguestDetails", "Guest", new { id = guest.Id });
-
+            return Json(new { success = true, guestId = GuestId });
         }
+
+
+
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
             if (string.IsNullOrEmpty(base64Image))
