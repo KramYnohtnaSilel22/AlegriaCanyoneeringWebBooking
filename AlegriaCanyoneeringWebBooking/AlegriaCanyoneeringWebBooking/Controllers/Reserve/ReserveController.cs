@@ -88,114 +88,206 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // ✅ Return all guests to the partial view
             return PartialView("_GuestDetailsPartial", vmList);
         }
+       
+public async Task<IActionResult> reservebooking()
+    {
+        // ✅ Get current user's ID and Role from claims
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-        //[HttpGet]
-        //public async Task<IActionResult> GetGuestOfTheDay()
-        //{
-        //    var guest = await _context.Guests
-        //        .Include(g => g.NationalityEntity)
-        //        .OrderByDescending(g => g.ArrivalDate)
-        //        .FirstOrDefaultAsync();
-
-        //    if (guest == null)
-        //    {
-        //        return Content("<p class='text-danger'>No guest of the day found.</p>", "text/html");
-        //    }
-
-        //    // 🟢 Use same working operator lookup pattern
-        //    var operators = await _context.Operators
-        //        .Select(o => new { o.Id, o.BusinessName })
-        //        .ToListAsync();
-
-        //    var operatorName = operators
-        //        .FirstOrDefault(o => o.Id == guest.OperatorId)?.BusinessName ?? "N/A";
-
-        //    var vm = new GuestWithOperatorVM
-        //    {
-        //        Guest = guest,
-        //        OperatorName = operatorName
-        //    };
-
-        //    return PartialView("_GuestDetailsPartial", new List<GuestWithOperatorVM> { vm });
-        //}
-
-
-        public async Task<IActionResult> reservebooking()
+        int? currentOperatorId = null;
+        if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
         {
-            // 1. Get all operators from tbl_operator_mobile
-            var operators = await _context.Operators
-                .Select(o => new { o.Id, o.BusinessName })
-                .ToListAsync();
-
-            // 2. Load reserved guests
-            var reservedGuests = await _context.Guests
-                .Include(g => g.NationalityEntity)
-                .Where(g => g.BookingStatus == "reserved")
-                .OrderBy(g => g.Id)
-                .ToListAsync();
-
-            if (!reservedGuests.Any())
-                return View(new GuestListViewModel());
-
-            // 3. Generate QR for each guest
-            foreach (var guest in reservedGuests)
-            {
-                guest.QRText = GenerateQRText(guest);
-                guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
-            }
-
-            // 4. Group guests by Batch and map Operator BusinessName
-            var grouped = reservedGuests
-                .GroupBy(g => g.Batch)
-                .Select(grp =>
-                {
-                    var first = grp.First();
-
-                    // ✅ Lookup Operator's BusinessName from tbl_operator_mobile
-                    var businessName = operators
-                        .FirstOrDefault(o => o.Id == first.OperatorId)?.BusinessName ?? "N/A";
-
-                    return new Guest
-                    {
-                        Id = first.Id,
-                        Fullname = first.Fullname,
-                        Gender = first.Gender,
-                        NationalityEntity = first.NationalityEntity,
-                        OperatorId = first.OperatorId,
-
-                        // ✅ Inject BusinessName using a stubbed OperatorList object
-                        OperatorList = new OperatorList
-                        {
-                            BusinessName = businessName
-                        },
-
-                        RFID = grp.Count(x => x.BookingStatus != "canceled"),
-                        ArrivalDate = first.ArrivalDate,
-                        BookingStatus = first.BookingStatus,
-                        Date = first.Date,
-                        QRText = first.QRText,
-                        QRBase64 = first.QRBase64,
-                        Batch = first.Batch
-                    };
-                })
-                .ToList();
-
-            // 5. Generate batch QR
-            string batchCode = reservedGuests.First().Batch;
-            string batchQrBase64 = GenerateQRCodeBase64(batchCode);
-
-            var vm = new GuestListViewModel
-            {
-                ReservedGuests = grouped,
-                BatchQrBase64 = batchQrBase64
-            };
-
-            return View(vm);
+            currentOperatorId = parsedId;
         }
 
-        // ---------- QR Helpers ----------
+        // 1. Get all operators from tbl_operator_mobile
+        var operators = await _context.Operators
+            .Select(o => new { o.Id, o.BusinessName })
+            .ToListAsync();
 
-        private string GenerateQRText(Guest guest)
+        // 2. Load reserved guests
+        var reservedGuestsQuery = _context.Guests
+            .Include(g => g.NationalityEntity)
+            .Where(g => g.BookingStatus == "reserved");
+
+        // ✅ Filter by current operator if user is Operator
+        if (currentOperatorId.HasValue)
+        {
+            reservedGuestsQuery = reservedGuestsQuery
+                .Where(g => g.OperatorId == currentOperatorId.Value);
+        }
+
+        var reservedGuests = await reservedGuestsQuery
+            .OrderBy(g => g.Id)
+            .ToListAsync();
+
+        if (!reservedGuests.Any())
+            return View(new GuestListViewModel());
+
+        // 3. Generate QR for each guest
+        foreach (var guest in reservedGuests)
+        {
+            guest.QRText = GenerateQRText(guest);
+            guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
+        }
+
+        // 4. Group guests by Batch and map Operator BusinessName
+        var grouped = reservedGuests
+            .GroupBy(g => g.Batch)
+            .Select(grp =>
+            {
+                var first = grp.First();
+
+                // ✅ Lookup Operator's BusinessName from tbl_operator_mobile
+                var businessName = operators
+                    .FirstOrDefault(o => o.Id == first.OperatorId)?.BusinessName ?? "N/A";
+
+                return new Guest
+                {
+                    Id = first.Id,
+                    Fullname = first.Fullname,
+                    Gender = first.Gender,
+                    NationalityEntity = first.NationalityEntity,
+                    OperatorId = first.OperatorId,
+
+                    // ✅ Inject BusinessName using a stubbed OperatorList object
+                    OperatorList = new OperatorList
+                    {
+                        BusinessName = businessName
+                    },
+
+                    RFID = grp.Count(x => x.BookingStatus != "canceled"),
+                    ArrivalDate = first.ArrivalDate,
+                    BookingStatus = first.BookingStatus,
+                    Date = first.Date,
+                    QRText = first.QRText,
+                    QRBase64 = first.QRBase64,
+                    Batch = first.Batch
+                };
+            })
+            .ToList();
+
+        // 5. Generate batch QR
+        string batchCode = reservedGuests.First().Batch;
+        string batchQrBase64 = GenerateQRCodeBase64(batchCode);
+
+        var vm = new GuestListViewModel
+        {
+            ReservedGuests = grouped,
+            BatchQrBase64 = batchQrBase64
+        };
+
+        return View(vm);
+    }
+
+    //[HttpGet]
+    //public async Task<IActionResult> GetGuestOfTheDay()
+    //{
+    //    var guest = await _context.Guests
+    //        .Include(g => g.NationalityEntity)
+    //        .OrderByDescending(g => g.ArrivalDate)
+    //        .FirstOrDefaultAsync();
+
+    //    if (guest == null)
+    //    {
+    //        return Content("<p class='text-danger'>No guest of the day found.</p>", "text/html");
+    //    }
+
+    //    // 🟢 Use same working operator lookup pattern
+    //    var operators = await _context.Operators
+    //        .Select(o => new { o.Id, o.BusinessName })
+    //        .ToListAsync();
+
+    //    var operatorName = operators
+    //        .FirstOrDefault(o => o.Id == guest.OperatorId)?.BusinessName ?? "N/A";
+
+    //    var vm = new GuestWithOperatorVM
+    //    {
+    //        Guest = guest,
+    //        OperatorName = operatorName
+    //    };
+
+    //    return PartialView("_GuestDetailsPartial", new List<GuestWithOperatorVM> { vm });
+    //}
+
+
+    //public async Task<IActionResult> reservebooking()
+    //{
+    //    // 1. Get all operators from tbl_operator_mobile
+    //    var operators = await _context.Operators
+    //        .Select(o => new { o.Id, o.BusinessName })
+    //        .ToListAsync();
+
+    //    // 2. Load reserved guests
+    //    var reservedGuests = await _context.Guests
+    //        .Include(g => g.NationalityEntity)
+    //        .Where(g => g.BookingStatus == "reserved")
+    //        .OrderBy(g => g.Id)
+    //        .ToListAsync();
+
+    //    if (!reservedGuests.Any())
+    //        return View(new GuestListViewModel());
+
+    //    // 3. Generate QR for each guest
+    //    foreach (var guest in reservedGuests)
+    //    {
+    //        guest.QRText = GenerateQRText(guest);
+    //        guest.QRBase64 = GenerateQRCodeBase64(guest.QRText);
+    //    }
+
+    //    // 4. Group guests by Batch and map Operator BusinessName
+    //    var grouped = reservedGuests
+    //        .GroupBy(g => g.Batch)
+    //        .Select(grp =>
+    //        {
+    //            var first = grp.First();
+
+    //            // ✅ Lookup Operator's BusinessName from tbl_operator_mobile
+    //            var businessName = operators
+    //                .FirstOrDefault(o => o.Id == first.OperatorId)?.BusinessName ?? "N/A";
+
+    //            return new Guest
+    //            {
+    //                Id = first.Id,
+    //                Fullname = first.Fullname,
+    //                Gender = first.Gender,
+    //                NationalityEntity = first.NationalityEntity,
+    //                OperatorId = first.OperatorId,
+
+    //                // ✅ Inject BusinessName using a stubbed OperatorList object
+    //                OperatorList = new OperatorList
+    //                {
+    //                    BusinessName = businessName
+    //                },
+
+    //                RFID = grp.Count(x => x.BookingStatus != "canceled"),
+    //                ArrivalDate = first.ArrivalDate,
+    //                BookingStatus = first.BookingStatus,
+    //                Date = first.Date,
+    //                QRText = first.QRText,
+    //                QRBase64 = first.QRBase64,
+    //                Batch = first.Batch
+    //            };
+    //        })
+    //        .ToList();
+
+    //    // 5. Generate batch QR
+    //    string batchCode = reservedGuests.First().Batch;
+    //    string batchQrBase64 = GenerateQRCodeBase64(batchCode);
+
+    //    var vm = new GuestListViewModel
+    //    {
+    //        ReservedGuests = grouped,
+    //        BatchQrBase64 = batchQrBase64
+    //    };
+
+    //    return View(vm);
+    //}
+
+    // ---------- QR Helpers ----------
+
+    private string GenerateQRText(Guest guest)
         {
             return $"Batch        : {guest.Batch}";
         }

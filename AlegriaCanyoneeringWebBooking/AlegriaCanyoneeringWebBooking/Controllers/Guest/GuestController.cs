@@ -436,46 +436,96 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         //    return View(model);
         //}
 
-        public async Task<IActionResult> saveguest()
+        //public async Task<IActionResult> saveguest()
+        //{
+        //    var anticipatedGuests = await _context.Guests
+        //        .Include(g => g.OperatorList)
+        //        .Where(g => g.BookingStatus == "anticipated")
+        //        .ToListAsync();
+
+        //    var grouped = anticipatedGuests
+        //        .GroupBy(g => g.OperatorId)
+        //        .Select(grp =>
+        //        {
+        //            var first = grp.First();
+        //            return new Guest
+        //            {
+        //                OperatorId = grp.Key,
+        //                OperatorList = first.OperatorList,
+        //                RFID = grp.Count(x => x.BookingStatus != "canceled"),
+        //                ArrivalDate = first.ArrivalDate,
+        //                BookingStatus = first.BookingStatus
+        //            };
+        //        })
+        //        .ToList();
+
+        //    var model = new GuestListViewModel
+        //    {
+        //        ReservedGuests = grouped,
+
+
+
+
+        //    };
+
+        //    return View(model);
+        //}
+
+
+
+public async Task<IActionResult> saveguest()
+    {
+        // ✅ Get current user's ID and Role from claims
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+        int? currentOperatorId = null;
+        if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
         {
-            var anticipatedGuests = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Where(g => g.BookingStatus == "anticipated")
-                .ToListAsync();
-
-            var grouped = anticipatedGuests
-                .GroupBy(g => g.OperatorId)
-                .Select(grp =>
-                {
-                    var first = grp.First();
-                    return new Guest
-                    {
-                        OperatorId = grp.Key,
-                        OperatorList = first.OperatorList,
-                        RFID = grp.Count(x => x.BookingStatus != "canceled"),
-                        ArrivalDate = first.ArrivalDate,
-                        BookingStatus = first.BookingStatus
-                    };
-                })
-                .ToList();
-
-            var model = new GuestListViewModel
-            {
-                ReservedGuests = grouped,
-
-
-
-
-            };
-
-            return View(model);
+            currentOperatorId = parsedId;
         }
 
+        // ✅ Fetch anticipated guests
+        var anticipatedGuestsQuery = _context.Guests
+            .Include(g => g.OperatorList)
+            .Where(g => g.BookingStatus == "anticipated");
 
-      
+        // ✅ If current user is an Operator, filter by their OperatorId
+        if (currentOperatorId.HasValue)
+        {
+            anticipatedGuestsQuery = anticipatedGuestsQuery
+                .Where(g => g.OperatorId == currentOperatorId.Value);
+        }
+
+        var anticipatedGuests = await anticipatedGuestsQuery.ToListAsync();
+
+        // ✅ Group guests by Operator
+        var grouped = anticipatedGuests
+            .GroupBy(g => g.OperatorId)
+            .Select(grp =>
+            {
+                var first = grp.First();
+                return new Guest
+                {
+                    OperatorId = grp.Key,
+                    OperatorList = first.OperatorList,
+                    RFID = grp.Count(x => x.BookingStatus != "canceled"),
+                    ArrivalDate = first.ArrivalDate,
+                    BookingStatus = first.BookingStatus
+                };
+            })
+            .ToList();
+
+        var model = new GuestListViewModel
+        {
+            ReservedGuests = grouped
+        };
+
+        return View(model);
+    }
 
 
-        private int GetCurrentOperatorId()
+    private int GetCurrentOperatorId()
         {
             int operatorId;
             if (int.TryParse(User.Identity?.Name, out operatorId))
