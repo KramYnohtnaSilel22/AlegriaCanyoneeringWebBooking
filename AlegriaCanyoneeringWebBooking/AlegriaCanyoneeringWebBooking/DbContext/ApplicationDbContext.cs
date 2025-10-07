@@ -142,15 +142,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.Property(e => e.Status).HasColumnName("status").IsRequired();
             });
 
-            // modelBuilder.Entity<GuestImage>()
-            //.HasKey(gi => gi.ImageId); // `imageid` as primary key
-
-            // modelBuilder.Entity<GuestImage>()
-            //     .HasOne(gi => gi.Guest)
-            //     .WithOne(g => g.GuestImages)
-            //     .HasForeignKey<GuestImage>(gi => gi.GuestId);  // `guestid` as foreign key linking to `id` in Guest
-
-
 
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
