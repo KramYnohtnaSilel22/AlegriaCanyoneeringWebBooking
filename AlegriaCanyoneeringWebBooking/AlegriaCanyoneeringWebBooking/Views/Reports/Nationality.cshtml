@@ -1,0 +1,145 @@
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.ViewModel.TourismReportViewModel>
+@{
+    var totalMale = ViewBag.TotalMale ?? 0;
+    var totalFemale = ViewBag.TotalFemale ?? 0;
+    var totalEnding = ViewBag.TotalEnding ?? 0;
+}
+
+<h2 class="text-center">Nationality Report</h2>
+
+<!-- Date filter form -->
+<form method="get" asp-action="Nationality" class="mb-4 text-center" style="width:600px;margin:auto;">
+    <label for="dateFrom">From: </label>
+    <input type="date" id="dateFrom" name="dateFrom" value="@ViewBag.DateFrom" class="mx-2" />
+    <label for="dateTo">To: </label>
+    <input type="date" id="dateTo" name="dateTo" value="@ViewBag.DateTo" class="mx-2" />
+    <button type="submit" class="btn btn-primary btn-sm mx-2">Filter</button>
+</form>
+
+<h3 class="text-center">
+    Republic of the Philippines<br />
+    Province of Cebu<br />
+    Municipality of Alegria
+</h3>
+<h4 class="text-center">CANYONERING</h4>
+<p class="text-center">
+    @DateTime.Parse(ViewBag.DateFrom).ToString("MMMM d, yyyy") -
+    @DateTime.Parse(ViewBag.DateTo).ToString("MMMM d, yyyy")
+</p>
+
+@if (Model.Any())
+{
+    <div class="mb-3 text-center" style="width:600px;margin:auto;">
+        <button type="button" id="exportExcel" class="btn btn-success btn-sm mx-1">Export Excel</button>
+        <button type="button" id="exportPdf" class="btn btn-danger btn-sm mx-1">Export PDF</button>
+    </div>
+
+    <div class="table-responsive" style="width:600px;margin:auto;">
+        <table id="nationalityReportTable" class="table table-bordered">
+            <thead>
+                <tr style="background:#eee;">
+                    <th>NATIONALITY</th>
+                    <th>MALE</th>
+                    <th>FEMALE</th>
+                    <th>ENDING TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Label</td>
+                        <td style="text-align:center;">@item.OtherProvinceMale</td>
+                        <td style="text-align:center;">@item.OtherProvinceFemale</td>
+                        <td style="text-align:center;">@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
+                    </tr>
+                }
+                <tr style="font-weight:bold;border-top:3px double #000;">
+                    <td>TOTAL:</td>
+                    <td style="text-align:center;">@totalMale</td>
+                    <td style="text-align:center;">@totalFemale</td>
+                    <td style="text-align:center;">@totalEnding</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center" style="width:600px;margin:auto;">No guest data found for the specified dates.</div>
+}
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- SheetJS (Excel export) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- jsPDF (PDF export, UMD version) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- jsPDF AutoTable plugin -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    $(function () {
+        // Excel Export
+        $("#exportExcel").click(function () {
+            var table = document.getElementById('nationalityReportTable');
+            var wb = XLSX.utils.table_to_book(table, { sheet: "Nationality Report" });
+            XLSX.writeFile(wb, "NationalityReport.xlsx");
+        });
+
+        // PDF Export (official format)
+        $("#exportPdf").click(function () {
+            const { jsPDF } = window.jspdf;
+            var doc = new jsPDF('l', 'pt', 'a4');
+            var y = 30;
+
+            // Official Report Headers
+            doc.setFontSize(12);
+            doc.text("Republic of the Philippines", 40, y);
+            doc.text("Province of Cebu", 40, y + 15);
+            doc.text("Municipality of Alegria", 40, y + 30);
+            doc.setFontSize(14);
+            doc.text("CANYONERING", 40, y + 55);
+            doc.setFontSize(12);
+            // Dynamic date range (from date pickers)
+            var dateFrom = $("#dateFrom").val();
+            var dateTo = $("#dateTo").val();
+            var dateString = "";
+            if (dateFrom && dateTo) {
+                var df = new Date(dateFrom);
+                var dt = new Date(dateTo);
+                dateString = df.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' }) + " - " +
+                             dt.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+            doc.text(dateString, 40, y + 75);
+
+            // Table columns and data
+            var columns = ["Nationality", "Male", "Female", "Ending Total"];
+            var rows = [];
+            $("#nationalityReportTable tbody tr").each(function () {
+                var row = [];
+                $(this).find("td").each(function () {
+                    row.push($(this).text().trim());
+                });
+                rows.push(row);
+            });
+
+            // Data table
+            doc.autoTable({
+                head: [columns],
+                body: rows,
+                startY: y + 95,
+                theme: 'grid',
+                headStyles: { fillColor: [220,220,220], halign: 'center', fontStyle: 'bold' },
+                bodyStyles: { halign: 'center' },
+                styles: { fontSize: 10 }
+            });
+
+            // Footer
+            doc.setFontSize(10);
+            doc.text("System Generated Report", 40, doc.lastAutoTable.finalY + 20);
+
+            doc.save("NationalityReport.pdf");
+        });
+    });
+</script>
