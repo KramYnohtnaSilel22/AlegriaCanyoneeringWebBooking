@@ -79,7 +79,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction(nameof(Login));
+            return RedirectToAction("About", "Home");
         }
 
 
