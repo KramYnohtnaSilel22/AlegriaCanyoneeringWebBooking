@@ -388,16 +388,18 @@
                 }
 
 
-                @* ✅ For Super Admin and Admin - Report For Nationality & Tourist *@
-                @if (User.IsInRole("Admin") || User.IsInRole("Super Admin"))
-                {
-                    <div class="section-title">Reports </div>
-                    <a asp-controller="Reports" asp-action="Tourist"><i class="bi bi-people-fill me-2"></i> <span>Tourist</span></a>
-                    <a asp-controller="Reports" asp-action="Nationality"><i class="bi bi-globe2 me-2"></i> <span>Nationality</span></a>
-
-                }
+             
                
             </div>
+
+            @* ✅ For Super Admin and Admin - Report For Nationality & Tourist *@
+            @if (User.IsInRole("Admin") || User.IsInRole("Super Admin"))
+            {
+                <div class="section-title">Reports </div>
+                <a asp-controller="Reports" asp-action="Tourist"><i class="bi bi-people-fill me-2"></i> <span>Tourist</span></a>
+                <a asp-controller="Reports" asp-action="Nationality"><i class="bi bi-globe2 me-2"></i> <span>Nationality</span></a>
+
+            }
         }
 
      
