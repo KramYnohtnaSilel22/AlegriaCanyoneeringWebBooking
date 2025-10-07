@@ -144,12 +144,50 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(report.OrderBy(r => r.Label).ToList());
         }
-        public IActionResult Nationality(DateTime? dateFrom, DateTime? dateTo)
+        public IActionResult Nationality(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
         {
-            var from = dateFrom ?? DateTime.Today.AddDays(-30);
-            var to = dateTo ?? DateTime.Today;
+            DateTime from, to;
+
+            // Handle automatic date range depending on filter
+            switch (filter.ToLower())
+            {
+                case "daily":
+                    from = dateFrom ?? DateTime.Today;
+                    to = dateTo ?? DateTime.Today;
+                    break;
+
+
+                case "weekly":
+                    var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + (int)DayOfWeek.Monday);
+                    from = dateFrom ?? startOfWeek;
+                    to = dateTo ?? startOfWeek.AddDays(6);
+                    break;
+
+                case "monthly":
+                    from = dateFrom ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                    to = dateTo ?? from.AddMonths(1).AddDays(-1);
+                    break;
+
+                case "quarterly":
+                    int currentQuarter = (DateTime.Today.Month - 1) / 3 + 1;
+                    from = dateFrom ?? new DateTime(DateTime.Today.Year, (currentQuarter - 1) * 3 + 1, 1);
+                    to = dateTo ?? from.AddMonths(3).AddDays(-1);
+                    break;
+
+                case "yearly":
+                    from = dateFrom ?? new DateTime(DateTime.Today.Year, 1, 1);
+                    to = dateTo ?? new DateTime(DateTime.Today.Year, 12, 31);
+                    break;
+
+                default:
+                    from = dateFrom ?? DateTime.Today;
+                    to = dateTo ?? DateTime.Today;
+                    break;
+            }
+
             ViewBag.DateFrom = from.ToString("yyyy-MM-dd");
             ViewBag.DateTo = to.ToString("yyyy-MM-dd");
+            ViewBag.Filter = filter;
 
             // Load all guests with Nationality
             var guests = _context.Guests.Include(g => g.NationalityEntity).ToList();
@@ -169,10 +207,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 })
                 .ToList();
 
-            // Group by nationality and calculate male/female counts
+            // Group by nationality and count male/female
             var grouped = filtered
                 .GroupBy(x => x.Nationality)
-                .Select(g => new AlegriaCanyoneeringWebBooking.ViewModel.TourismReportViewModel
+                .Select(g => new TourismReportViewModel
                 {
                     Label = g.Key,
                     OtherProvinceMale = g.Count(x => x.Gender == "male"),
@@ -187,22 +225,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             ViewBag.TotalEnding = grouped.Sum(x => x.OtherProvinceMale + x.OtherProvinceFemale);
 
             return View(grouped);
-        }
-
-
-
-        private bool TryParseAndCheckDate(string dateString, DateTime from, DateTime to)
-        {
-            var formats = new[]
-            {
-            "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy", "MMM dd, yyyy", "MMMM dd, yyyy"
-        };
-            if (DateTime.TryParseExact(dateString, formats,
-                CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
-            {
-                return parsedDate.Date >= from.Date && parsedDate.Date <= to.Date;
-            }
-            return false;
         }
     }
 
