@@ -374,24 +374,36 @@
                             <i class="bi bi-person-workspace me-2"></i> <span>User</span>
                         </a>
                     }
-                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="ChangePassword">
-                        <i class="bi bi-shield-lock-fill me-2"></i> <span>Change Password</span>
-                    </a>
+
                     <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="Edit">
                         <i class="bi bi-pencil-square me-2"></i> <span>Update Info</span>
                     </a>
+
+
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Authentication" asp-action="ChangePassword">
+                        <i class="bi bi-shield-lock-fill me-2"></i> <span>Change Password</span>
+                    </a>
+                 
             
                 }
-               
+
+
+             
                
             </div>
+
+            @* ✅ For Super Admin and Admin - Report For Nationality & Tourist *@
+            @if (User.IsInRole("Admin") || User.IsInRole("Super Admin"))
+            {
+                <div class="section-title">Reports </div>
+                <a asp-controller="Reports" asp-action="Tourist"><i class="bi bi-people-fill me-2"></i> <span>Tourist</span></a>
+                <a asp-controller="Reports" asp-action="Nationality"><i class="bi bi-globe2 me-2"></i> <span>Nationality</span></a>
+
+            }
         }
 
      
-        <div class="section-title">Reports </div>
-        <a asp-controller="Reports" asp-action="Tourist"><i class="bi bi-people-fill me-2"></i> <span>Tourist</span></a>
-        <a asp-controller="Reports" asp-action="Nationality"><i class="bi bi-globe2 me-2"></i> <span>Nationality</span></a>
-
+      
         <div class="section-title">Account</div>
         <a asp-controller="Home" asp-action="About"><i class="bi bi-info-circle-fill me-2"></i> <span>About Us</span></a>
         <a asp-controller="Authentication" asp-action="Logout"><i class="bi bi-box-arrow-right me-2"></i> <span>Logout</span></a>
