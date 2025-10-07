@@ -1,0 +1,390 @@
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.ViewModel.TourismReportViewModel>
+@{
+    var currentFilter = ViewBag.Filter as string ?? "daily";
+    var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    // Calculate totals
+    var totalThisProvinceMale = Model.Sum(x => x.ThisProvinceMale);
+    var totalThisProvinceFemale = Model.Sum(x => x.ThisProvinceFemale);
+    var totalOtherProvinceMale = Model.Sum(x => x.OtherProvinceMale);
+    var totalOtherProvinceFemale = Model.Sum(x => x.OtherProvinceFemale);
+    var totalForeignMale = Model.Sum(x => x.ForeignMale);
+    var totalForeignFemale = Model.Sum(x => x.ForeignFemale);
+    var grandTotalMale = totalThisProvinceMale + totalOtherProvinceMale + totalForeignMale;
+    var grandTotalFemale = totalThisProvinceFemale + totalOtherProvinceFemale + totalForeignFemale;
+    var grandTotal = grandTotalMale + grandTotalFemale;
+}
+
+<style>
+    .report-container {
+        background: white;
+        padding: 20px;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .report-title-box {
+        border: 2px solid #000;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+        .report-title-box h3 {
+            margin: 0 0 5px 0;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .report-title-box p {
+            margin: 0;
+            font-size: 12px;
+        }
+
+    .info-grid {
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .info-row {
+        display: table-row;
+    }
+
+    .info-cell {
+        display: table-cell;
+        border: 2px solid #000;
+        padding: 10px;
+    }
+
+    .info-label {
+        font-weight: bold;
+        width: 200px;
+        background-color: #f5f5f5;
+    }
+
+    #tourismReportTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+        #tourismReportTable th,
+        #tourismReportTable td {
+            border: 2px solid #000;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #tourismReportTable thead th {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+
+        #tourismReportTable tfoot td {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+
+    .note-text {
+        font-size: 12px;
+        margin-top: 10px;
+        font-style: italic;
+    }
+</style>
+
+<div class="card mt-4 shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5>Tourism Visitor Report (@currentFilter.ToUpper())</h5>
+        <div class="d-flex align-items-center">
+            <form method="get" asp-action="Index" id="filterForm" class="d-flex align-items-center me-3">
+                <label class="me-2 text-white fw-bold">Filter:</label>
+                <select name="filter" id="filterSelect" class="form-select me-2">
+                    <option value="daily" selected="@("daily" == currentFilter)">Daily</option>
+                    <option value="weekly" selected="@("weekly" == currentFilter)">Weekly</option>
+                    <option value="monthly" selected="@("monthly" == currentFilter)">Monthly</option>
+                    <option value="quarterly" selected="@("quarterly" == currentFilter)">Quarterly</option>
+                    <option value="yearly" selected="@("yearly" == currentFilter)">Yearly</option>
+                </select>
+
+                <label class="me-2 text-white fw-bold">From:</label>
+                <input type="date" name="dateFrom" id="dateFrom" value="@dateFrom" class="form-control me-2" />
+
+                <label class="me-2 text-white fw-bold">To:</label>
+                <input type="date" name="dateTo" id="dateTo" value="@dateTo" class="form-control me-2" />
+
+                <button type="submit" class="btn btn-light me-2">
+                    <i class="bi bi-filter"></i> Apply
+                </button>
+
+                <button type="button" id="btnReset" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </button>
+            </form>
+
+            <button class="btn btn-danger me-2" id="btnDownloadPDF">
+                <i class="bi bi-file-earmark-pdf"></i> Download PDF
+            </button>
+            <button class="btn btn-success" id="btnDownloadExcel">
+                <i class="bi bi-file-earmark-excel"></i> Download Excel
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body report-container">
+        <div class="report-title-box">
+            <h3>Tourism Attraction Visitor Record</h3>
+            <p>(This recording form can be used instead of just counting the visitors)</p>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-cell info-label">Date From:</div>
+                <div class="info-cell">@DateTime.Parse(dateFrom).ToString("dddd, MMMM d, yyyy")</div>
+            </div>
+            <div class="info-row">
+                <div class="info-cell info-label">Date To:</div>
+                <div class="info-cell">@DateTime.Parse(dateTo).ToString("dddd, MMMM d, yyyy")</div>
+            </div>
+            <div class="info-row">
+                <div class="info-cell info-label">Name of Municipality:</div>
+                <div class="info-cell">ALEGRIA, CEBU</div>
+            </div>
+            <div class="info-row">
+                <div class="info-cell info-label">Name of Attraction/Spot:</div>
+                <div class="info-cell">Canyoneering Adventure</div>
+            </div>
+       
+        </div>
+
+        <table id="tourismReportTable">
+            <thead>
+                <tr>
+                    <th rowspan="4">Seq.</th>
+                    <th rowspan="4">Date<br />Week Day<br />(Mon-Sun)</th>
+                    <th colspan="9">***Place of Residences</th>
+                    <th colspan="3" rowspan="2">Grand Total Number of Visitors</th>
+                </tr>
+                <tr>
+                    <th colspan="6">Philippines</th>
+                    <th colspan="3" rowspan="2">Foreign Country Residence</th>
+                </tr>
+                <tr>
+                    <th colspan="3">This province</th>
+                    <th colspan="3">Other Province</th>
+                </tr>
+                <tr>
+                    <th>Male</th>
+                    <th>Female</th>
+                    <th>Total</th>
+                    <th>Male</th>
+                    <th>Female</th>
+                    <th>Total</th>
+                    <th>Male</th>
+                    <th>Female</th>
+                    <th>Total</th>
+                    <th>Male</th>
+                    <th>Female</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    int seq = 1;
+                }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@seq</td>
+                        <td>@item.Label</td>
+                        <td>@item.ThisProvinceMale</td>
+                        <td>@item.ThisProvinceFemale</td>
+                        <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
+
+                        <td>@item.OtherProvinceMale</td>
+                        <td>@item.OtherProvinceFemale</td>
+                        <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
+
+                        <td>@item.ForeignMale</td>
+                        <td>@item.ForeignFemale</td>
+                        <td>@(item.ForeignMale + item.ForeignFemale)</td>
+
+                        <td>@item.TotalMale</td>
+                        <td>@item.TotalFemale</td>
+                        <td>@item.GrandTotal</td>
+                    </tr>
+                    seq++;
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">Total of this Month ***</td>
+                    <td>@totalThisProvinceMale</td>
+                    <td>@totalThisProvinceFemale</td>
+                    <td>@(totalThisProvinceMale + totalThisProvinceFemale)</td>
+
+                    <td>@totalOtherProvinceMale</td>
+                    <td>@totalOtherProvinceFemale</td>
+                    <td>@(totalOtherProvinceMale + totalOtherProvinceFemale)</td>
+
+                    <td>@totalForeignMale</td>
+                    <td>@totalForeignFemale</td>
+                    <td>@(totalForeignMale + totalForeignFemale)</td>
+
+                    <td>@grandTotalMale</td>
+                    <td>@grandTotalFemale</td>
+                    <td>@grandTotal</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <p class="note-text">
+            Note: "Total number must be recorded" Set & "Residence entries are optional Total number of this month must be recorded.
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <script>
+        function setDateRange(filter) {
+            const today = new Date();
+            let start, end;
+
+            switch (filter) {
+                case "daily":
+                    start = end = today;
+                    break;
+                case "weekly":
+                    const day = today.getDay();
+                    start = new Date(today);
+                    start.setDate(today.getDate() - day);
+                    end = new Date(start);
+                    end.setDate(start.getDate() + 6);
+                    break;
+                case "monthly":
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case "quarterly":
+                    const quarter = Math.floor(today.getMonth() / 3);
+                    start = new Date(today.getFullYear(), quarter * 3, 1);
+                    end = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+                    break;
+                case "yearly":
+                    start = new Date(today.getFullYear(), 0, 1);
+                    end = new Date(today.getFullYear(), 11, 31);
+                    break;
+            }
+
+            $("#dateFrom").val(start.toISOString().slice(0, 10));
+            $("#dateTo").val(end.toISOString().slice(0, 10));
+        }
+
+        $("#filterSelect").on("change", function () {
+            setDateRange(this.value);
+        });
+
+        $("#btnReset").on("click", function () {
+            const currentFilter = $("#filterSelect").val();
+            setDateRange(currentFilter);
+            $("#filterForm").submit();
+        });
+
+        $(document).ready(function () {
+            const from = $("#dateFrom").val();
+            const to = $("#dateTo").val();
+            if (!from || !to) {
+                setDateRange($("#filterSelect").val());
+            }
+        });
+
+        $("#btnDownloadPDF").on("click", function () {
+            const filter = $("#filterSelect").val().toUpperCase();
+            const element = document.querySelector('.report-container');
+
+            const opt = {
+                margin: 10,
+                filename: `TourismReport_${filter}_${new Date().toISOString().slice(0, 10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        });
+
+                   $("#btnDownloadExcel").on("click", function () {
+            var table = document.getElementById("tourismReportTable");
+            var wb = XLSX.utils.book_new();
+
+            // Format dates
+            function formatDate(dateStr) {
+                const date = new Date(dateStr);
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('en-US', options);
+            }
+
+            var dateFrom = formatDate($("#dateFrom").val());
+            var dateTo = formatDate($("#dateTo").val());
+            var municipality = "ALEGRIA, CEBU";
+            var attraction = "Canyoneering Adventure";
+
+            // Header rows: each info in its own row
+            var headerRows = [
+                [{v: "Tourism Attraction Visitor Record", s: {alignment: {horizontal: "center"}}}], // Title
+                [{v: "Date From", s: {alignment: {horizontal: "center"}}}, {v: dateFrom, s: {alignment: {horizontal: "center"}}}],
+                [{v: "Date To", s: {alignment: {horizontal: "center"}}}, {v: dateTo, s: {alignment: {horizontal: "center"}}}],
+                [{v: "Municipality", s: {alignment: {horizontal: "center"}}}, {v: municipality}],
+                [{v: "Attraction Spot", s: {alignment: {horizontal: "center"}}}, {v: attraction}],
+                [] // empty row before table
+            ];
+
+            // Convert header to worksheet
+            var ws = XLSX.utils.aoa_to_sheet(headerRows);
+
+            // Convert table to sheet
+            var wsTable = XLSX.utils.table_to_sheet(table);
+
+            // Append table below header
+            var rowOffset = headerRows.length;
+            var range = XLSX.utils.decode_range(wsTable['!ref']);
+            for (var R = range.s.r; R <= range.e.r; ++R) {
+                for (var C = range.s.c; C <= range.e.c; ++C) {
+                    var cellAddress = {c: C, r: R + rowOffset};
+                    var origCell = wsTable[XLSX.utils.encode_cell({c: C, r: R})];
+                    if (origCell) ws[XLSX.utils.encode_cell(cellAddress)] = origCell;
+                }
+            }
+
+            // Update sheet range
+            var newRange = XLSX.utils.decode_range(wsTable['!ref']);
+            newRange.e.r += rowOffset;
+            ws['!ref'] = XLSX.utils.encode_range(newRange);
+
+            // Center header cells
+            for (let i = 0; i < headerRows.length; i++) {
+                for (let j = 0; j < headerRows[i].length; j++) {
+                    var cell = ws[XLSX.utils.encode_cell({c: j, r: i})];
+                    if (cell) {
+                        cell.s = cell.s || {};
+                        cell.s.alignment = { horizontal: "center", vertical: "center" };
+                    }
+                }
+            }
+
+            // Append worksheet and download
+            XLSX.utils.book_append_sheet(wb, ws, "Tourism Report");
+            var filter = $("#filterSelect").val().toUpperCase();
+            XLSX.writeFile(wb, `TourismReport_${filter}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+
+    </script>
+}
