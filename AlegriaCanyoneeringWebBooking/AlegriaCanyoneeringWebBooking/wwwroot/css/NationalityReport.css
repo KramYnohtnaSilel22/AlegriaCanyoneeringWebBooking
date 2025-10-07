@@ -1,0 +1,26 @@
+﻿.filter-form {
+    max-width: 900px;
+}
+
+.nationality-table-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+@media print {
+    .btn, .form-select, .form-control {
+        display: none !important;
+    }s
+
+    .nationality-table-wrapper {
+        margin-top: 1rem;
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    body {
+        -webkit-print-color-adjust: exact !important;
+    }
+}

@@ -1,156 +1,115 @@
-﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.ViewModel.TourismReportViewModel>
-@{
-    var totalMale = ViewBag.TotalMale ?? 0;
-    var totalFemale = ViewBag.TotalFemale ?? 0;
-    var totalEnding = ViewBag.TotalEnding ?? 0;
-    var currentFilter = ViewBag.Filter as string ?? "daily";
-}
+﻿        @model IEnumerable<AlegriaCanyoneeringWebBooking.ViewModel.TourismReportViewModel>
 
-<h2 class="text-center">Nationality Report</h2>
+        @{
+            var totalMale = ViewBag.TotalMale ?? 0;
+            var totalFemale = ViewBag.TotalFemale ?? 0;
+            var totalEnding = ViewBag.TotalEnding ?? 0;
+            var currentFilter = ViewBag.Filter as string ?? "daily";
+        }
 
-<!-- Filter Form -->
-<form method="get" asp-action="Nationality" class="mb-4 text-center" style="width:700px;margin:auto;">
-    <label for="filter">Filter: </label>
-    <select id="filter" name="filter" class="form-select d-inline-block w-auto mx-2">
-        <option value="daily" selected="@(currentFilter == "daily" ? "selected" : null)">Daily</option>
-        <option value="weekly" selected="@(currentFilter == "weekly" ? "selected" : null)">Weekly</option>
-        <option value="monthly" selected="@(currentFilter == "monthly" ? "selected" : null)">Monthly</option>
-        <option value="quarterly" selected="@(currentFilter == "quarterly" ? "selected" : null)">Quarterly</option>
-        <option value="yearly" selected="@(currentFilter == "yearly" ? "selected" : null)">Yearly</option>
-    </select>
+            <link rel="stylesheet" href="~/css/NationalityReport.css" asp-append-version="true" />
+        
 
-    <label for="dateFrom">From: </label>
-    <input type="date" id="dateFrom" name="dateFrom" value="@ViewBag.DateFrom" class="mx-2" />
-    <label for="dateTo">To: </label>
-    <input type="date" id="dateTo" name="dateTo" value="@ViewBag.DateTo" class="mx-2" />
+        <div class="container my-5">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">Nationality Report</h2>
+            </div>
 
-    <button type="submit" class="btn btn-primary btn-sm mx-2">Apply</button>
-</form>
+            <!-- Filter Form -->
+            <form method="get" asp-action="Nationality" class="filter-form mx-auto mb-4">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label for="filter" class="form-label">Filter</label>
+                        <select id="filter" name="filter" class="form-select">
+                            <option value="daily" selected="@("daily" == currentFilter)">Daily</option>
+                            <option value="weekly" selected="@("weekly" == currentFilter)">Weekly</option>
+                            <option value="monthly" selected="@("monthly" == currentFilter)">Monthly</option>
+                            <option value="quarterly" selected="@("quarterly" == currentFilter)">Quarterly</option>
+                            <option value="yearly" selected="@("yearly" == currentFilter)">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dateFrom" class="form-label">From</label>
+                        <input type="date" id="dateFrom" name="dateFrom" class="form-control" value="@ViewBag.DateFrom" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dateTo" class="form-label">To</label>
+                        <input type="date" id="dateTo" name="dateTo" class="form-control" value="@ViewBag.DateTo" />
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-filter"></i> Apply Filter
+                        </button>
+                    </div>
+                </div>
+            </form>
 
-<h3 class="text-center">
-    Republic of the Philippines<br />
-    Province of Cebu<br />
-    Municipality of Alegria
-</h3>
-<h4 class="text-center">CANYONERING</h4>
-<p class="text-center">
-    @DateTime.Parse(ViewBag.DateFrom).ToString("MMMM d, yyyy") -
-    @DateTime.Parse(ViewBag.DateTo).ToString("MMMM d, yyyy")
-</p>
+            <!-- Municipality Header -->
+            <div class="text-center mb-3">
+                <h5 class="mb-0">Republic of the Philippines</h5>
+                <h6 class="mb-0">Province of Cebu</h6>
+                <h6 class="mb-0">Municipality of Alegria</h6>
+                <h5 class="fw-bold mt-2">CANYONEERING</h5>
+                <p class="text-muted">
+                    @DateTime.Parse(ViewBag.DateFrom).ToString("MMMM d, yyyy") -
+                    @DateTime.Parse(ViewBag.DateTo).ToString("MMMM d, yyyy")
+                </p>
+            </div>
 
-@if (Model.Any())
-{
-    <div class="mb-3 text-center" style="width:700px;margin:auto;">
-        <button type="button" id="exportExcel" class="btn btn-success btn-sm mx-1">Export Excel</button>
-        <button type="button" id="exportPdf" class="btn btn-danger btn-sm mx-1">Export PDF</button>
-    </div>
+            @if (Model.Any())
+            {
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <button id="exportExcel" class="btn btn-success">
+                        <i class="bi bi-file-earmark-excel"></i> Export Excel
+                    </button>
+                    <button id="exportPdf" class="btn btn-danger">
+                        <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                    </button>
+                </div>
 
-    <div class="table-responsive" style="width:700px;margin:auto;">
-        <table id="nationalityReportTable" class="table table-bordered">
-            <thead>
-                <tr style="background:#eee;">
-                    <th>NATIONALITY</th>
-                    <th>MALE</th>
-                    <th>FEMALE</th>
-                    <th>ENDING TOTAL</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@item.Label</td>
-                        <td class="text-center">@item.OtherProvinceMale</td>
-                        <td class="text-center">@item.OtherProvinceFemale</td>
-                        <td class="text-center">@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
-                    </tr>
-                }
-                <tr style="font-weight:bold;border-top:3px double #000;">
-                    <td>TOTAL:</td>
-                    <td class="text-center">@totalMale</td>
-                    <td class="text-center">@totalFemale</td>
-                    <td class="text-center">@totalEnding</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-}
-else
-{
-    <div class="alert alert-info text-center" style="width:700px;margin:auto;">
-        No guest data found for the specified dates.
-    </div>
-}
-
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<!-- SheetJS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js"></script>
-
-<script>
-    $(function () {
-        // Excel Export
-        $("#exportExcel").click(function () {
-            var table = document.getElementById('nationalityReportTable');
-            var wb = XLSX.utils.table_to_book(table, { sheet: "Nationality Report" });
-            XLSX.writeFile(wb, "NationalityReport.xlsx");
-        });
-
-        // PDF Export
-        $("#exportPdf").click(function () {
-            const { jsPDF } = window.jspdf;
-            var doc = new jsPDF('l', 'pt', 'a4');
-            doc.text("Nationality Report", 40, 40);
-            doc.autoTable({ html: "#nationalityReportTable", startY: 60 });
-            doc.save("NationalityReport.pdf");
-        });
-
-        // Set Date Fields Automatically on Filter Change
-        function setDateRange(filter) {
-            const today = new Date();
-            let start, end;
-            switch (filter) {
-                case "daily":
-                    start = end = today;
-                    break;
-                case "weekly":
-                    const weekDay = today.getDay();
-                    start = new Date(today);
-                    start.setDate(today.getDate() - weekDay + 1); // Monday as first day
-                    end = new Date(start);
-                    end.setDate(start.getDate() + 6);
-                    break;
-                case "monthly":
-                    start = new Date(today.getFullYear(), today.getMonth(), 1);
-                    end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                    break;
-                case "quarterly":
-                    const quarter = Math.floor(today.getMonth() / 3);
-                    start = new Date(today.getFullYear(), quarter * 3, 1);
-                    end = new Date(today.getFullYear(), quarter * 3 + 3, 0);
-                    break;
-                case "yearly":
-                    start = new Date(today.getFullYear(), 0, 1);
-                    end = new Date(today.getFullYear(), 11, 31);
-                    break;
+                <div class="table-responsive nationality-table-wrapper">
+                    <table id="nationalityReportTable" class="table table-bordered text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nationality</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th>Ending Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.Label</td>
+                                    <td>@item.OtherProvinceMale</td>
+                                    <td>@item.OtherProvinceFemale</td>
+                                    <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
+                                </tr>
+                            }
+                            <tr class="fw-bold border-top border-dark">
+                                <td>Total</td>
+                                <td>@totalMale</td>
+                                <td>@totalFemale</td>
+                                <td>@totalEnding</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             }
-            $("#dateFrom").val(start.toISOString().slice(0, 10));
-            $("#dateTo").val(end.toISOString().slice(0, 10));
-        }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    No guest data found for the specified dates.
+                </div>
+            }
+        </div>
 
-        // On page load: if date fields empty, set range for current filter
-        const from = $("#dateFrom").val();
-        const to = $("#dateTo").val();
-        if (!from || !to) {
-            setDateRange($("#filter").val());
-        }
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js"></script>
 
-        // On filter change, update dates
-        $("#filter").on("change", function () {
-            setDateRange(this.value);
-        });
-    });
-</script>
+    <script src="~/js/nationality-report.js" asp-append-version="true"></script>
+}
