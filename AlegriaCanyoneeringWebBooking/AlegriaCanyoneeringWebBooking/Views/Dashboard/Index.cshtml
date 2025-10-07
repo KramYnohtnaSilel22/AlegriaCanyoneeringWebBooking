@@ -5,6 +5,8 @@
     var yearLabels = ViewBag.YearLabels as List<string>;
     var yearlyGuestCounts = ViewBag.YearlyGuestCounts as List<int>;
 }
+<link href="~/css/Dashboard.css" rel="stylesheet" />
+
 
 <div class="container-fluid py-4">
     <!-- Header -->
@@ -95,30 +97,6 @@
     </div>
 </div>
 
-
-    <style>
-        .card {
-            transition: transform 0.2s ease-in-out;
-        }
-
-            .card:hover {
-                transform: translateY(-2px);
-            }
-
-        .card-body {
-            padding: 1.5rem;
-        }
-
-        .card-title {
-            font-size: 1.75rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .card-subtitle {
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-    </style>
 
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -1,0 +1,79 @@
+﻿
+.report-container {
+    background: white;
+    padding: 20px;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.report-title-box {
+    border: 2px solid #000;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+    .report-title-box h3 {
+        margin: 0 0 5px 0;
+        font-weight: bold;
+        font-size: 24px;
+    }
+
+    .report-title-box p {
+        margin: 0;
+        font-size: 12px;
+    }
+
+.info-grid {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.info-row {
+    display: table-row;
+}
+
+.info-cell {
+    display: table-cell;
+    border: 2px solid #000;
+    padding: 10px;
+}
+
+.info-label {
+    font-weight: bold;
+    width: 200px;
+    background-color: #f5f5f5;
+}
+
+#tourismReportTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+    #tourismReportTable th,
+    #tourismReportTable td {
+        border: 2px solid #000;
+        padding: 10px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #tourismReportTable thead th {
+        background-color: #e0e0e0;
+        font-weight: bold;
+    }
+
+    #tourismReportTable tfoot td {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+.note-text {
+    font-size: 12px;
+    margin-top: 10px;
+    font-style: italic;
+}
+
