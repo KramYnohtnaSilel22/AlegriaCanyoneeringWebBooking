@@ -318,7 +318,7 @@
             <!-- Operator -->
             @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
             {
-                <a asp-controller="Reserve" asp-action="FinalBookingBatch"><i class="bi bi-clipboard-check me-2"></i> <span>Booked Guest</span></a>
+                <a asp-controller="Reserve" asp-action="BookedGuest"><i class="bi bi-clipboard-check me-2"></i> <span>Booked Guest</span></a>
             
             }
         }

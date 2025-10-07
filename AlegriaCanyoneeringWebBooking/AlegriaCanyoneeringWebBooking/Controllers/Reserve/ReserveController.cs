@@ -312,10 +312,12 @@ public async Task<IActionResult> reservebooking()
 
 
         // GET: FinalBookingBatch
-        public IActionResult FinalBookingBatch()
+        public IActionResult BookedGuest()
         {
             return View();
         }
+
+
         [HttpGet]
         public async Task<IActionResult> GetGuestsByBatch(string batchCode)
         {
@@ -437,7 +439,7 @@ public async Task<IActionResult> reservebooking()
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> FinalBookingBatch(string BatchCode)
+        public async Task<IActionResult> BookedGuest(string BatchCode)
         {
             if (string.IsNullOrEmpty(BatchCode))
             {

@@ -1,13 +1,29 @@
 ﻿@model List<AlegriaCanyoneeringWebBooking.ViewModel.GuestWithOperatorVM>
 
-<div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true">
+<style>
+    @@media (max-width: 767.98px) {
+        .table-responsive
+
+    {
+        overflow-x: auto;
+    }
+
+    }
+
+    .modal-header {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        padding: 1rem 1.5rem;
+    }
+</style>
+
+<div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title fw-bold" id="guestDetailsModalLabel">
                     🧾 Guests of the Day - @DateTime.Today.ToString("MMMM dd, yyyy")
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <!-- Export / Action Buttons -->
@@ -22,6 +38,11 @@
 
             <!-- Body -->
             <div class="modal-body" id="guestDetailsContent">
+                <!-- Batch Search Input -->
+                <div class="mb-3">
+                    <input type="text" id="batchSearchInput" class="form-control" placeholder="Search by Batch" />
+                </div>
+
                 @if (Model != null && Model.Any())
                 {
                     var grouped = Model.GroupBy(g => g.Guest.Batch);
@@ -32,46 +53,20 @@
                         var companionsVM = batchGroup.Skip(1).ToList();
 
                         <div class="card shadow-sm mb-4 border-0">
-                            <div class="card-header bg-success text-white d-flex justify-content-between">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-2 px-3 rounded-top">
                                 <div>
                                     <i class="fas fa-users me-2"></i>
-                                    <strong>Batch:</strong> @batchGroup.Key
-                                    <span class="ms-2 small">(Operator: @primaryGuestVM.OperatorName)</span>
+                                    <strong>Batch:</strong>
+                                    <span class="badge bg-warning text-dark ms-1">@batchGroup.Key</span>
+                                    <small class="text-light ms-3">(Operator: @primaryGuestVM.OperatorName)</small>
                                 </div>
-                                <span>@primaryGuestVM.Guest.ArrivalDate</span>
+                                <span class="badge bg-info">@primaryGuestVM.Guest.ArrivalDate</span>
                             </div>
 
-                            <div class="card-body">
-                                <h6 class="text-primary mb-3"><i class="fas fa-user"></i> Primary Guest</h6>
-                                <table class="table table-bordered table-striped align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Full Name</th>
-                                            <th>Age</th>
-                                            <th>Contact</th>
-                                            <th>Gender</th>
-                                            <th>Nationality</th>
-                                            <th>Area</th>
-                                            <th>Arrival Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr class="table-success">
-                                            <td>@primaryGuestVM.Guest.Fullname</td>
-                                            <td>@primaryGuestVM.Guest.Age</td>
-                                            <td>@primaryGuestVM.Guest.ContactNumber</td>
-                                            <td>@primaryGuestVM.Guest.Gender</td>
-                                            <td>@(primaryGuestVM.Guest.NationalityEntity?.NatName ?? "N/A")</td>
-                                            <td>@primaryGuestVM.Guest.Area</td>
-                                            <td>@primaryGuestVM.Guest.ArrivalDate</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                @if (companionsVM.Any())
-                                {
-                                    <h6 class="text-secondary mt-4 mb-2"><i class="fas fa-users"></i> Companion Guests</h6>
-                                    <table class="table table-bordered table-hover align-middle">
+                            <div class="card-body px-4 py-3">
+                                <h6 class="text-primary mb-3"><i class="fas fa-user me-2"></i> Primary Guest</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped align-middle mb-4">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>Full Name</th>
@@ -79,21 +74,52 @@
                                                 <th>Contact</th>
                                                 <th>Gender</th>
                                                 <th>Nationality</th>
+                                                <th>Area</th>
+                                                <th>Arrival Date</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var vm in companionsVM)
-                                            {
-                                                <tr>
-                                                    <td>@vm.Guest.Fullname</td>
-                                                    <td>@vm.Guest.Age</td>
-                                                    <td>@vm.Guest.ContactNumber</td>
-                                                    <td>@vm.Guest.Gender</td>
-                                                    <td>@(vm.Guest.NationalityEntity?.NatName ?? "N/A")</td>
-                                                </tr>
-                                            }
+                                            <tr class="table-success">
+                                                <td>@primaryGuestVM.Guest.Fullname</td>
+                                                <td>@primaryGuestVM.Guest.Age</td>
+                                                <td>@primaryGuestVM.Guest.ContactNumber</td>
+                                                <td>@primaryGuestVM.Guest.Gender</td>
+                                                <td>@primaryGuestVM.Guest.NationalityType</td>
+                                                <td>@primaryGuestVM.Guest.Area</td>
+                                                <td>@primaryGuestVM.Guest.ArrivalDate</td>
+                                            </tr>
                                         </tbody>
                                     </table>
+                                </div>
+
+                                @if (companionsVM.Any())
+                                {
+                                    <h6 class="text-secondary mt-4 mb-2"><i class="fas fa-users me-2"></i> Companion Guests</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Full Name</th>
+                                                    <th>Age</th>
+                                                    <th>Contact</th>
+                                                    <th>Gender</th>
+                                                    <th>Nationality Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var vm in companionsVM)
+                                                {
+                                                    <tr>
+                                                        <td>@vm.Guest.Fullname</td>
+                                                        <td>@vm.Guest.Age</td>
+                                                        <td>@vm.Guest.ContactNumber</td>
+                                                        <td>@vm.Guest.Gender</td>
+                                                        <td>@(vm.Guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 }
                                 else
                                 {
@@ -112,16 +138,24 @@
     </div>
 </div>
 
-<!-- Include jsPDF + html2canvas -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
     async function downloadGuestDetailsPdf() {
+        const btn = document.querySelector('.btn-danger');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Generating...`;
+
         const { jsPDF } = window.jspdf;
         const content = document.getElementById("guestDetailsContent");
 
-        if (!content) return alert("No data available to export.");
+        if (!content) {
+            alert("No data available to export.");
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-file-pdf"></i> Download PDF`;
+            return;
+        }
 
         html2canvas(content, { scale: 2, useCORS: true }).then(canvas => {
             const pdf = new jsPDF("p", "mm", "a4");
@@ -130,6 +164,23 @@
 
             pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
             pdf.save("DailyGuestReport.pdf");
+
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-file-pdf"></i> Download PDF`;
         });
     }
+
+    // Batch Search Filter
+    document.getElementById('batchSearchInput')?.addEventListener('input', function(e) {
+        const query = e.target.value.trim().toLowerCase();
+        const cards = document.querySelectorAll('#guestDetailsContent .card');
+        cards.forEach(card => {
+            const headerText = card.querySelector('.card-header')?.textContent.toLowerCase() || '';
+            if (headerText.includes(query)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
 </script>

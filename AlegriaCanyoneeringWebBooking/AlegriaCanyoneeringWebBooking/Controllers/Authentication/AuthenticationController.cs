@@ -324,7 +324,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await _context.SaveChangesAsync();
 
             TempData["UpdateSuccess"] = "Operator information updated successfully.";
-            return RedirectToAction("Index", "Home"); // or wherever you want to go after saving
+            return RedirectToAction("Index", "Dashboard"); // or wherever you want to go after saving
         }
 
 

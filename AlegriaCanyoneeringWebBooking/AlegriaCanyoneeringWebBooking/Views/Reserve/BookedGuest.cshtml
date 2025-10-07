@@ -5,23 +5,21 @@
 }
 
 <div class="container my-4">
-
-    <!-- Page Title and Guest of the Day Button -->
+    <!-- Title & Guest of the Day Button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary m-0 d-flex align-items-center gap-2">
-            <i class="fas fa-user-check"></i> Booked Guest
+            <i class="fas fa-user-check"></i> Booked Guests
         </h2>
 
         @if (User.IsInRole("Super Admin") || User.IsInRole("Admin"))
         {
-            <button id="btnViewGuestOfDay" class="btn btn-primary shadow-sm"
-                    data-bs-toggle="tooltip" data-bs-placement="top" title="View all guests of the day">
+            <button id="btnViewGuestOfDay" class="btn btn-outline-primary shadow-sm">
                 <i class="fas fa-star me-1 text-warning"></i> Guest of the Day
             </button>
         }
     </div>
 
-    <!-- Sticky Date Range Filter Form -->
+    <!-- Filter Form -->
     <form id="filterForm" class="row row-cols-1 row-cols-md-auto g-3 align-items-end mb-4 sticky-top bg-white py-3 shadow-sm rounded" style="top: 80px; z-index: 1020;">
         <div>
             <label for="startDate" class="form-label fw-semibold">Start Date</label>
@@ -43,13 +41,12 @@
     <div id="batchesTableContainer" class="card shadow-sm border-0" style="display: none;">
         <div class="card-body p-3 position-relative">
 
-            <!-- Loader Overlay -->
+            <!-- Loader -->
             <div id="tableLoader" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1050; display:none;">
-                <div class="spinner-border text-primary" role="status" style="width:3rem; height:3rem;">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
+                <div class="spinner-border text-primary" role="status" style="width:3rem; height:3rem;"></div>
             </div>
 
+            <!-- Table -->
             <div class="table-responsive">
                 <table id="batchesTable" class="table table-hover align-middle w-100">
                     <thead class="table-light">
@@ -65,7 +62,7 @@
                 </table>
             </div>
 
-            <!-- Animated Empty State -->
+            <!-- Empty State -->
             <div id="emptyState" class="text-center text-muted py-4" style="display: none; opacity: 0; transition: opacity 0.5s;">
                 <i class="fas fa-user-slash fa-3x mb-3"></i>
                 <p class="mb-0 fs-5">No guest batches found for the selected date range.</p>
@@ -73,17 +70,15 @@
         </div>
     </div>
 
-    <!-- Modal Container -->
+    <!-- Modal Injection Container -->
     <div id="guestDetailsModalContainer"></div>
 </div>
 
-<!-- Toast Notification Container -->
+<!-- Toast -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
     <div id="liveToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
-            <div class="toast-body" id="toastMessage">
-                <!-- Toast message goes here -->
-            </div>
+            <div class="toast-body" id="toastMessage"></div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     </div>
@@ -95,13 +90,12 @@
             var table = null;
             var toast = new bootstrap.Toast(document.getElementById('liveToast'));
 
-            // Show toast with custom message
             function showToast(message) {
                 $('#toastMessage').text(message);
                 toast.show();
             }
 
-            // Guest of the Day button click
+            // Guest of the Day Button
             $('#btnViewGuestOfDay').on('click', function () {
                 const modalContainer = $('#guestDetailsModalContainer');
                 modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
@@ -109,23 +103,19 @@
                 $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
                     .done(function (html) {
                         modalContainer.html(html);
-                        var modalElement = document.getElementById('guestDetailsModal');
-                        var guestModal = new bootstrap.Modal(modalElement, {
-                            backdrop: 'static',
-                            keyboard: true
-                        });
-                        guestModal.show();
+                        const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
+                        modal.show();
 
-                        modalElement.addEventListener('hidden.bs.modal', function () {
+                        $('#guestDetailsModal').on('hidden.bs.modal', function () {
                             modalContainer.empty();
                         });
                     })
                     .fail(function () {
-                        showToast('Failed to load guest of the day.');
+                        showToast('Failed to load Guest of the Day.');
                     });
             });
 
-            // Filter form submit handler
+            // Filter Form Submit
             $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
 
@@ -137,10 +127,12 @@
                     return;
                 }
 
-                // Show loader
+                // Fade Guest of the Day Button
+                $('#btnViewGuestOfDay').fadeOut();
+
                 $('#tableLoader').show();
 
-                // Destroy existing DataTable if exists
+                // Reset table
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
                     table.destroy();
                     $('#batchesTable').empty().append(`
@@ -157,7 +149,7 @@
                     `);
                 }
 
-                // Initialize DataTable
+                // Reinitialize DataTable
                 table = $('#batchesTable').DataTable({
                     processing: true,
                     serverSide: true,
@@ -166,7 +158,6 @@
                         type: 'POST',
                         data: { startDate, endDate },
                         dataSrc: function (json) {
-                            // Hide loader
                             $('#tableLoader').hide();
 
                             if (json.data && json.data.length > 0) {
@@ -176,55 +167,46 @@
                                 $('#batchesTableContainer').show();
                                 $('#emptyState').show().css('opacity', '1');
                             }
+
                             return json.data;
                         }
                     },
                     columns: [
-                        { data: 'batchCode', title: 'Batch' },
-                        { data: 'totalGuests', title: 'Total Guests' },
+                        { data: 'batchCode' },
+                        { data: 'totalGuests' },
                         {
                             data: 'operatorName',
-                            title: 'Operator',
                             render: function (data) {
-                                return data?.trim()?.length > 0 ? data : '<span class="text-muted">N/A</span>';
+                                return data?.trim() ? data : '<span class="text-muted">N/A</span>';
                             }
                         },
-                        {
-                            data: 'arrivalDate',
-                            title: 'Arrival Date',
-                            render: function (data) {
-                                return data || '';
-                            }
-                        },
+                        { data: 'arrivalDate' },
                         {
                             data: 'status',
-                            title: 'Status',
                             render: function (data) {
                                 if (!data) return '';
-                                let badgeClass = 'secondary';
-                                switch (data.toLowerCase()) {
-                                    case 'confirmed': badgeClass = 'success'; break;
-                                    case 'anticipated': badgeClass = 'info'; break;
-                                    case 'cancelled': badgeClass = 'danger'; break;
-                                }
-                                return `<span class="badge bg-${badgeClass} text-uppercase">${data}</span>`;
+                                const status = data.toLowerCase();
+                                const badgeMap = {
+                                    confirmed: 'success',
+                                    anticipated: 'info',
+                                    cancelled: 'danger'
+                                };
+                                return `<span class="badge bg-${badgeMap[status] || 'secondary'} text-uppercase">${data}</span>`;
                             }
                         },
                         {
                             data: 'batchCode',
-                            title: 'Actions',
                             orderable: false,
                             searchable: false,
                             render: function (data) {
                                 return `
-                                    <button type="button" class="btn btn-primary btn-sm view-guest-details" data-batch="${data}">
+                                    <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
                                         <i class="fas fa-eye me-1"></i> View
                                     </button>`;
                             }
                         }
                     ],
                     pageLength: 10,
-                    lengthMenu: [[10, 20, 50], [10, 20, 50]],
                     responsive: true,
                     autoWidth: false,
                     language: {
@@ -233,23 +215,19 @@
                 });
             });
 
-            // View Guests by Batch - Modal
+            // View Batch Guest Details
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
-                var batchCode = $(this).data('batch');
+                const batchCode = $(this).data('batch');
                 const modalContainer = $('#guestDetailsModalContainer');
                 modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
 
-                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode: batchCode })
+                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
                     .done(function (html) {
                         modalContainer.html(html);
-                        var modalElement = document.getElementById('guestDetailsModal');
-                        var guestModal = new bootstrap.Modal(modalElement, {
-                            backdrop: 'static',
-                            keyboard: true
-                        });
-                        guestModal.show();
+                        const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
+                        modal.show();
 
-                        modalElement.addEventListener('hidden.bs.modal', function () {
+                        $('#guestDetailsModal').on('hidden.bs.modal', function () {
                             modalContainer.empty();
                         });
                     })

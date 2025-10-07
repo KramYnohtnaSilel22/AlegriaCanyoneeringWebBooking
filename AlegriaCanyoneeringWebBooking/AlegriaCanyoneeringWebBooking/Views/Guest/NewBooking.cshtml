@@ -63,7 +63,7 @@
         </div>
 
         <!-- Form for Guest Info -->
-        <form asp-action="NewBooking" method="post" id="guestForm" enctype="multipart/form-data">
+        <form asp-action="NewBooking" method="post" id="guestForm" enctype="multipart/form-data" class="needs-validation" novalidate>
             @Html.AntiForgeryToken()
             <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
             <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
@@ -197,6 +197,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 
 <script>
+ 
     function validateImage(input) {
          const file = input.files[0];
          const errorDiv = document.getElementById("fileError");
