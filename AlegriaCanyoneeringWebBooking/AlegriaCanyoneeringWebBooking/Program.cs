@@ -109,7 +109,7 @@ app.MapControllers();  // This maps the controllers to the routes.
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Authentication}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=About}/{id?}");
 
 // Map SignalR Hub
 app.MapHub<BatchCodeHub>("/batchCodeHub");
