@@ -81,34 +81,37 @@
                                 </span>
                             </td>
                             <td class="text-center">
-                                <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-1">
+                                <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
                                     <!-- 🔍 View Details -->
-                                    <button class="btn btn-primary" onclick="loadBookingDetails(@guest.Id)">
-                                        <i class="fas fa-eye"></i> View
+                                    <button class="btn btn-sm btn-primary d-flex align-items-center px-3 py-2"
+                                            onclick="loadBookingDetails(@guest.Id)">
+                                        <i class="fas fa-eye me-1"></i> View
                                     </button>
-
 
                                     @if (!User.IsInRole("Admin"))
                                     {
-                                        <!-- 📷 View QR Code (Per Guest) -->
-                                        <button type="button" class="btn btn-sm btn-info d-flex align-items-center"
+                                        <!-- 📷 View QR Code -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-info d-flex align-items-center px-3 py-2"
                                                 onclick="showQrModal('@guest.Id')">
-                                            <i class="fas fa-qrcode me-1"></i> View QR Code
+                                            <i class="fas fa-qrcode me-1"></i> QR Code
                                         </button>
 
-                                        <!-- ✅ Confirm Booking (per guest OR batch scan) -->
+                                        <!-- ✅ Confirm Booking -->
                                         <form method="post"
                                               asp-action="FinalBookingBatch"
                                               asp-controller="Reserve"
                                               class="m-0 batch-form"
                                               data-batch="@guest.Batch">
                                             <input type="hidden" name="BatchCode" value="@guest.Batch" />
-                                            <button type="submit" class="btn btn-sm btn-success d-flex align-items-center">
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-success d-flex align-items-center px-3 py-2">
                                                 <i class="fas fa-check me-1"></i> Confirm
                                             </button>
                                         </form>
                                     }
                                 </div>
+
                             </td>
                         </tr>
                     }

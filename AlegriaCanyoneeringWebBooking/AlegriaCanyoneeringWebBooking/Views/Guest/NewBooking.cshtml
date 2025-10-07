@@ -197,25 +197,21 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 
 <script>
-     // This function is called when the user selects a file
     function validateImage(input) {
-        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-        const file = input.files[0]; // Get the file that was selected
-        const fileError = document.getElementById("fileError");
+         const file = input.files[0];
+         const errorDiv = document.getElementById("fileError");
+         errorDiv.textContent = ""; // Clear previous error
 
-        // Clear previous error message
-        fileError.textContent = "";
+         if (!file) return;
 
-        if (file) {
-            // Check if the file size exceeds the max allowed size (5MB)
-            if (file.size > maxSize) {
-                fileError.textContent = "File size exceeds the 5MB limit. Please select a smaller file.";
-                input.value = ""; // Clear the file input to prevent submitting the large file
-            } else {
-                fileError.textContent = ""; // Clear error if file is within size limit
-            }
-        }
-    }
+         const maxSizeMB = 1; // Set to 1MB
+         const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+         if (file.size > maxSizeBytes) {
+             errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
+             input.value = ""; // Clear the input
+         }
+     }
 
     $(function () {
         const $type = $('#NationalityType');
