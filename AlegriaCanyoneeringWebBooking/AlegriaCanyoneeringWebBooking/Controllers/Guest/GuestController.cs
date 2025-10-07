@@ -335,7 +335,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
+        public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null, IFormFile Photo = null)
         {
             string batchId = !string.IsNullOrEmpty(batch) ? batch : await GenerateBatchCode();
 
@@ -346,15 +346,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (batchGuests != null && batchGuests.Count > 0)
                 {
                     int insertedCount = 0;
+                    string generatedRFIDCode = GenerateRFIDCode(); // Will be reused for the image
 
                     foreach (var guest in batchGuests)
                     {
-                        // Allow adding even if a guest with the same name and operator already exists
                         guest.BookingStatus = "anticipated";
                         guest.Batch = batchId;
                         guest.RFID = 1;
-
-                        guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
+                        guest.RFIDCode = generatedRFIDCode;
                         guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
                         guest.Month = DateTime.Today.ToString("MMMM");
                         guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
@@ -365,36 +364,102 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         insertedCount++;
                     }
 
-                    if (insertedCount > 0)
+                    // ✅ Save guests first
+                    await _context.SaveChangesAsync();
+
+                    // ✅ If there's a photo uploaded, save to tbl_guestimage
+                    if (Photo != null && Photo.Length > 0)
                     {
-                        await _context.SaveChangesAsync();
+                        using (var ms = new MemoryStream())
+                        {
+                            await Photo.CopyToAsync(ms);
+                            var guestImage = new GuestImage
+                            {
+                                WristbondGuestCode = generatedRFIDCode,
+                                Image = ms.ToArray()
+                            };
 
-                        var guestsForOperator = await _context.Guests
-                            .Where(g => g.OperatorId == batchGuests.First().OperatorId && g.BookingStatus != "canceled")
-                            .ToListAsync();
-
-                  
-                        await _context.SaveChangesAsync();
-
-                        TempData["ToastMessage"] = $"Guests added successfully";
-                        TempData["ToastType"] = "success";
+                            _context.Add(guestImage);
+                            await _context.SaveChangesAsync();
+                        }
                     }
-                    else
-                    {
-                        TempData["ToastMessage"] = "Please add at least one guest before saving!";
-                        TempData["ToastType"] = "warning";
-                    }
+
+                    TempData["ToastMessage"] = "Guests added successfully";
+                    TempData["ToastType"] = "success";
 
                     return RedirectToAction("saveguest", new { batch = batchId, id = id });
                 }
 
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
-                TempData["ToastType"] = "danger";
+                TempData["ToastType"] = "warning";
             }
 
             await PopulateDropdowns();
             return View(model);
         }
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
+        //{
+        //    string batchId = !string.IsNullOrEmpty(batch) ? batch : await GenerateBatchCode();
+
+        //    if (!string.IsNullOrWhiteSpace(model.BatchGuestsJson))
+        //    {
+        //        var batchGuests = JsonSerializer.Deserialize<List<Guest>>(model.BatchGuestsJson);
+
+        //        if (batchGuests != null && batchGuests.Count > 0)
+        //        {
+        //            int insertedCount = 0;
+
+        //            foreach (var guest in batchGuests)
+        //            {
+        //                // Allow adding even if a guest with the same name and operator already exists
+        //                guest.BookingStatus = "anticipated";
+        //                guest.Batch = batchId;
+        //                guest.RFID = 1;
+
+        //                guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
+        //                guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
+        //                guest.Month = DateTime.Today.ToString("MMMM");
+        //                guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
+        //                guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
+        //                guest.Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
+
+        //                _context.Guests.Add(guest);
+        //                insertedCount++;
+        //            }
+
+        //            if (insertedCount > 0)
+        //            {
+        //                await _context.SaveChangesAsync();
+
+        //                var guestsForOperator = await _context.Guests
+        //                    .Where(g => g.OperatorId == batchGuests.First().OperatorId && g.BookingStatus != "canceled")
+        //                    .ToListAsync();
+
+
+        //                await _context.SaveChangesAsync();
+
+        //                TempData["ToastMessage"] = $"Guests added successfully";
+        //                TempData["ToastType"] = "success";
+        //            }
+        //            else
+        //            {
+        //                TempData["ToastMessage"] = "Please add at least one guest before saving!";
+        //                TempData["ToastType"] = "warning";
+        //            }
+
+        //            return RedirectToAction("saveguest", new { batch = batchId, id = id });
+        //        }
+
+        //        TempData["ToastMessage"] = "Please add at least one guest before saving!";
+        //        TempData["ToastType"] = "danger";
+        //    }
+
+        //    await PopulateDropdowns();
+        //    return View(model);
+        //}
 
         private async Task<string> GenerateBatchCode()
         {

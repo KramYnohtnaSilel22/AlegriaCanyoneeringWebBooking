@@ -6,6 +6,27 @@
     var serializedBatch = JsonSerializer.Serialize(batchDetails);
     bool isReadonly = ViewBag.IsReadonly ?? false;
 }
+
+<!-- Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="feedbackModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- The message from TempData will be inserted here -->
+                <p id="modalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="overlay" id="loadingOverlay">
     <div class="spinner"></div>
     <div class="success-message" id="successMessage"></div>
@@ -138,15 +159,17 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary">Upload Guest Photo</label>
-                            <input type="file" name="Photo" class="form-control" accept="image/*" capture="environment"
-                                   onchange="validateImage(this)" max="5242880" />
-                       
-
-                            <!-- Image Preview -->
-                            <div id="photoPreview" class="mt-2"></div>
+                            <label for="photoInput" class="form-label fw-semibold text-secondary">Upload Guest Photo</label>
+                            <input type="file"
+                                   name="Photo"
+                                   id="photoInput"
+                                   class="form-control"
+                                   accept="image/jpeg,image/png,image/webp,image/jpg"
+                                   capture="environment"
+                                   onchange="validateImage(this)" />
                             <div id="fileError" class="text-danger small mt-1"></div>
                         </div>
+
                     </fieldset>
                 </div>
             </div>
@@ -174,35 +197,26 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 
 <script>
+     // This function is called when the user selects a file
     function validateImage(input) {
-          const errorDiv = document.getElementById('fileError');
-          const preview = document.getElementById('photoPreview');
-          errorDiv.textContent = '';
-          preview.innerHTML = '';
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        const file = input.files[0]; // Get the file that was selected
+        const fileError = document.getElementById("fileError");
 
-          if (input.files && input.files[0]) {
-              const file = input.files[0];
-              const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        // Clear previous error message
+        fileError.textContent = "";
 
-              if (file.size > maxSize) {
-                  errorDiv.textContent = `File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum allowed: 5MB.`;
-                  input.value = ''; // Clear the file input
-                  return;
-              }
+        if (file) {
+            // Check if the file size exceeds the max allowed size (5MB)
+            if (file.size > maxSize) {
+                fileError.textContent = "File size exceeds the 5MB limit. Please select a smaller file.";
+                input.value = ""; // Clear the file input to prevent submitting the large file
+            } else {
+                fileError.textContent = ""; // Clear error if file is within size limit
+            }
+        }
+    }
 
-              // Preview image if valid
-              const reader = new FileReader();
-              reader.onload = function(e) {
-                  const img = document.createElement('img');
-                  img.src = e.target.result;
-                  img.style.maxWidth = '200px';
-                  img.style.maxHeight = '200px';
-                  img.className = 'img-thumbnail';
-                  preview.appendChild(img);
-              }
-              reader.readAsDataURL(input.files[0]);
-          }
-      }
     $(function () {
         const $type = $('#NationalityType');
         const $list = $('#NationalityId');

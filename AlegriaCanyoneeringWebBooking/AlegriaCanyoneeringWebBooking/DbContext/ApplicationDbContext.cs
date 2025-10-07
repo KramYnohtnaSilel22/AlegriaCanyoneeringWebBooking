@@ -10,7 +10,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public DbSet<Batch> Batches { get; set; }
         public DbSet<Guest> Guests { get; set; }
         public DbSet<OperatorList> OperatorLists { get; set; }
-
+        public DbSet<GuestImage> GuestImage { get; set; }
         public DbSet<Nationality> Nationalities { get; set; }
   
         // //public DbSet<Driver> Drivers { get; set; }
@@ -141,6 +141,16 @@ namespace AlegriaCanyoneeringWebBooking.Models
                 entity.Property(e => e.Location).HasColumnName("location").HasMaxLength(1000).IsRequired();
                 entity.Property(e => e.Status).HasColumnName("status").IsRequired();
             });
+
+            // modelBuilder.Entity<GuestImage>()
+            //.HasKey(gi => gi.ImageId); // `imageid` as primary key
+
+            // modelBuilder.Entity<GuestImage>()
+            //     .HasOne(gi => gi.Guest)
+            //     .WithOne(g => g.GuestImages)
+            //     .HasForeignKey<GuestImage>(gi => gi.GuestId);  // `guestid` as foreign key linking to `id` in Guest
+
+
 
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
