@@ -1,10 +1,66 @@
 ﻿$(function () {
     // Export to Excel
     $("#exportExcel").click(function () {
-        var table = document.getElementById('nationalityReportTable');
-        var wb = XLSX.utils.table_to_book(table, { sheet: "Nationality Report" });
+        function formatDate(dateStr) {
+            if (!dateStr) return "";
+            var d = new Date(dateStr);
+            return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        // Multi-row headers
+        var excelHeaders = [
+            ["Republic of the Philippines"],
+            ["Province of Cebu"],
+            ["Municipality of Alegria"],
+            [],
+            ["CANYONEERING"],
+            [
+                $("#dateFrom").val() && $("#dateTo").val()
+                    ? formatDate($("#dateFrom").val()) + " - " + formatDate($("#dateTo").val())
+                    : ""
+            ],
+            [],
+            ["NATIONALITY", "MALE", "FEMALE", "ENDING TOTAL"]
+        ];
+        // Get table data rows
+        var tableRows = [];
+        $("#nationalityReportTable tbody tr").each(function () {
+            var row = [];
+            $(this).find("td").each(function () {
+                row.push($(this).text().trim());
+            });
+            if (row.length) tableRows.push(row);
+        });
+        var exportRows = excelHeaders.concat(tableRows);
+
+        // Sheet setup
+        var ws = XLSX.utils.aoa_to_sheet(exportRows);
+
+        // Merge header cells
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } },
+            { s: { r: 4, c: 0 }, e: { r: 4, c: 3 } },
+            { s: { r: 5, c: 0 }, e: { r: 5, c: 3 } }
+        ];
+        ws['!cols'] = [
+            { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 16 }
+        ];
+
+        // Center align header cells
+        ['A1', 'A2', 'A3', 'A5', 'A6'].forEach(function (cellRef) {
+            if (ws[cellRef]) {
+                ws[cellRef].s = ws[cellRef].s || {};
+                ws[cellRef].s.alignment = { horizontal: "center" };
+            }
+        });
+
+
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Nationality Report");
         XLSX.writeFile(wb, "NationalityReport.xlsx");
     });
+
 
     // Export to PDF
     $("#exportPdf").click(function () {
