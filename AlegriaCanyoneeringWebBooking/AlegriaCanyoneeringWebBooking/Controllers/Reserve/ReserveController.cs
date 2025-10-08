@@ -342,52 +342,61 @@ public async Task<IActionResult> reservebooking()
             return PartialView("_GuestDetailsPartial", guestsWithOperatorName);
         }
 
-
         [HttpPost]
-        public async Task<IActionResult> GetGuestsData()
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GetGuestsData(string startDate, string endDate)
         {
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault();
 
-            // Get user id & role
+            DateTime? startDateValue = null;
+            DateTime? endDateValue = null;
+
+            if (DateTime.TryParse(startDate, out DateTime sd))
+                startDateValue = sd.Date;
+
+            if (DateTime.TryParse(endDate, out DateTime ed))
+                endDateValue = ed.Date.AddDays(1).AddTicks(-1);
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
             int? currentOperatorId = null;
-
             if (userRole == "Operator" && int.TryParse(userId, out int operatorId))
-            {
                 currentOperatorId = operatorId;
-            }
 
-            // Base query with BookingStatus = "confirmed"
             var query = _context.Guests
                 .Where(g => g.BookingStatus.ToLower() == "confirmed");
 
-            // Filter by operator if current user is operator
             if (currentOperatorId.HasValue)
-            {
                 query = query.Where(g => g.OperatorId == currentOperatorId.Value);
+
+            // Materialize query BEFORE parsing string dates
+            var allGuests = await query.ToListAsync();
+
+            if (startDateValue.HasValue && endDateValue.HasValue)
+            {
+                allGuests = allGuests
+                    .Where(g => DateTime.TryParse(g.ArrivalDate, out DateTime arrival) &&
+                                arrival >= startDateValue.Value &&
+                                arrival <= endDateValue.Value)
+                    .ToList();
             }
 
-            // Search filter on Batch or Fullname
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(g =>
-                    g.Batch.Contains(search) ||
-                    g.Fullname.Contains(search)
-                );
+                allGuests = allGuests
+                    .Where(g => g.Batch.Contains(search) || g.Fullname.Contains(search))
+                    .ToList();
             }
 
-            // Get operators list for name mapping
             var operators = await _context.Operators
                 .Select(o => new { o.Id, o.BusinessName })
                 .ToListAsync();
 
-            // Group by Batch + OperatorId + BookingStatus (confirmed)
-            var groupedRaw = await query
+            var groupedRaw = allGuests
                 .GroupBy(g => new { g.Batch, g.OperatorId })
                 .Select(grp => new
                 {
@@ -402,15 +411,13 @@ public async Task<IActionResult> reservebooking()
                 .ThenBy(g => g.Batch)
                 .Skip(start)
                 .Take(length)
-                .ToListAsync();
+                .ToList();
 
-            // Total records count
-            var recordsTotal = await query
+            var recordsTotal = allGuests
                 .Select(g => new { g.Batch, g.OperatorId })
                 .Distinct()
-                .CountAsync();
+                .Count();
 
-            // Map operator names
             var grouped = groupedRaw.Select(g =>
             {
                 var businessName = operators
@@ -435,6 +442,7 @@ public async Task<IActionResult> reservebooking()
                 data = grouped
             });
         }
+
 
 
         [HttpPost]
@@ -526,66 +534,6 @@ public async Task<IActionResult> reservebooking()
             return RedirectToAction("ReserveBooking", new { batchCode = BatchCode });
         }
 
-
-        public async Task<IActionResult> SaveGuest(DateTime? startDate, DateTime? endDate)
-        {
-            var model = new GuestListViewModel();
-
-            if (startDate.HasValue && endDate.HasValue)
-            {
-                // Include full day for endDate
-                var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
-
-                // Load guests with related data
-                var guests = await _context.Guests
-                    .Include(g => g.OperatorList)
-                    .Include(g => g.NationalityEntity)
-                    .ToListAsync();
-
-                // Helper: convert Unix timestamp string to DateTime?
-                DateTime? ConvertUnixTimestampToDateTime(string unixTimestamp)
-                {
-                    if (long.TryParse(unixTimestamp, out var seconds))
-                    {
-                        return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
-                    }
-                    return null;
-                }
-
-                // Filter guests by ArrivalDate inside range
-                var filteredGuests = guests
-                    .Select(g => new
-                    {
-                        Guest = g,
-                        ArrivalDate = ConvertUnixTimestampToDateTime(g.ArrivalDate)
-                    })
-                    .Where(x => x.ArrivalDate.HasValue
-                                && x.ArrivalDate.Value >= startDate.Value.Date
-                                && x.ArrivalDate.Value <= endDateInclusive)
-                    .OrderBy(x => x.ArrivalDate.Value)
-                    .Select(x => x.Guest)
-                    .ToList();
-
-                // Group by Batch code
-                model.BatchGuests = filteredGuests
-                    .GroupBy(g => g.Batch)
-                    .ToDictionary(g => g.Key, g => g.ToList());
-
-                // Pass batch codes to ViewBag
-                ViewBag.AllBatches = model.BatchGuests.Keys.ToList();
-
-                // If no bookings found, add a flag for frontend
-                ViewBag.HasBookings = model.BatchGuests.Any();
-            }
-            else
-            {
-                model.BatchGuests = new Dictionary<string, List<Guest>>();
-                ViewBag.AllBatches = new List<string>();
-                ViewBag.HasBookings = false;
-            }
-
-            return View(model);
-        }
 
 
 

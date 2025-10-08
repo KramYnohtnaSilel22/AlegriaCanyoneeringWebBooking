@@ -1,5 +1,8 @@
-﻿@{
-    ViewData["Title"] = "Booked Guest";
+﻿
+
+
+@{
+    ViewData["Title"] = "Booked Guests";
     var startDate = Context.Request.Query["startDate"].FirstOrDefault();
     var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
@@ -21,6 +24,8 @@
 
     <!-- Filter Form -->
     <form id="filterForm" class="row row-cols-1 row-cols-md-auto g-3 align-items-end mb-4 sticky-top bg-white py-3 shadow-sm rounded" style="top: 80px; z-index: 1020;">
+        @Html.AntiForgeryToken()
+
         <div>
             <label for="startDate" class="form-label fw-semibold">Start Date</label>
             <input type="date" class="form-control" id="startDate" name="startDate" value="@startDate" required />
@@ -85,22 +90,34 @@
 </div>
 
 @section Scripts {
+
     <script>
-        $(document).ready(function () {
-            var table = null;
-            var toast = new bootstrap.Toast(document.getElementById('liveToast'));
+                   // Guest of the Day Button
+                  $('#btnViewGuestOfDay').on('click', function () {
+                      const modalContainer = $('#guestDetailsModalContainer');
+                      modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
 
-            function showToast(message) {
-                $('#toastMessage').text(message);
-                toast.show();
-            }
+                      $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
+                          .done(function (html) {
+                              modalContainer.html(html);
+                              const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
+                              modal.show();
 
-            // Guest of the Day Button
-            $('#btnViewGuestOfDay').on('click', function () {
+                              $('#guestDetailsModal').on('hidden.bs.modal', function () {
+                                  modalContainer.empty();
+                              });
+                          })
+                          .fail(function () {
+                              showToast('Failed to load Guest of the Day.');
+                          });
+                  });
+            // View Batch Guest Details
+            $('#batchesTableContainer').on('click', '.view-guest-details', function () {
+                const batchCode = $(this).data('batch');
                 const modalContainer = $('#guestDetailsModalContainer');
                 modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
 
-                $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
+                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
                     .done(function (html) {
                         modalContainer.html(html);
                         const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
@@ -111,11 +128,19 @@
                         });
                     })
                     .fail(function () {
-                        showToast('Failed to load Guest of the Day.');
+                        showToast('Failed to load guest details.');
                     });
             });
+        
+        $(document).ready(function () {
+            var table = null;
+            var toast = new bootstrap.Toast(document.getElementById('liveToast'));
 
-            // Filter Form Submit
+            function showToast(message) {
+                $('#toastMessage').text(message);
+                toast.show();
+            }
+
             $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
 
@@ -127,12 +152,9 @@
                     return;
                 }
 
-                // Fade Guest of the Day Button
                 $('#btnViewGuestOfDay').fadeOut();
-
                 $('#tableLoader').show();
 
-                // Reset table
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
                     table.destroy();
                     $('#batchesTable').empty().append(`
@@ -149,25 +171,31 @@
                     `);
                 }
 
-                // Reinitialize DataTable
                 table = $('#batchesTable').DataTable({
                     processing: true,
                     serverSide: true,
                     ajax: {
                         url: '@Url.Action("GetGuestsData", "Reserve")',
                         type: 'POST',
-                        data: { startDate, endDate },
+                        data: function (d) {
+                            d.startDate = startDate;
+                            d.endDate = endDate;
+                            d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                        },
+                        error: function(xhr, error, thrown) {
+                            $('#tableLoader').hide();
+                            showToast('Error loading data. Check console.');
+                            console.error(xhr.responseText);
+                        },
                         dataSrc: function (json) {
                             $('#tableLoader').hide();
-
                             if (json.data && json.data.length > 0) {
                                 $('#batchesTableContainer').show();
-                                $('#emptyState').css('opacity', '0').hide();
+                                $('#emptyState').hide().css('opacity', 0);
                             } else {
                                 $('#batchesTableContainer').show();
-                                $('#emptyState').show().css('opacity', '1');
+                                $('#emptyState').show().css('opacity', 1);
                             }
-
                             return json.data;
                         }
                     },
@@ -214,27 +242,8 @@
                     }
                 });
             });
-
-            // View Batch Guest Details
-            $('#batchesTableContainer').on('click', '.view-guest-details', function () {
-                const batchCode = $(this).data('batch');
-                const modalContainer = $('#guestDetailsModalContainer');
-                modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
-
-                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
-                    .done(function (html) {
-                        modalContainer.html(html);
-                        const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
-                        modal.show();
-
-                        $('#guestDetailsModal').on('hidden.bs.modal', function () {
-                            modalContainer.empty();
-                        });
-                    })
-                    .fail(function () {
-                        showToast('Failed to load guest details.');
-                    });
-            });
         });
     </script>
 }
+
+       
