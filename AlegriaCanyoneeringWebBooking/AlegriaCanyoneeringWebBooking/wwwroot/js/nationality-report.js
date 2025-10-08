@@ -9,11 +9,66 @@
     // Export to PDF
     $("#exportPdf").click(function () {
         const { jsPDF } = window.jspdf;
-        var doc = new jsPDF('landscape');
-        doc.text("Nationality Report", 40, 40);
-        doc.autoTable({ html: "#nationalityReportTable", startY: 60 });
+        var doc = new jsPDF('landscape', 'pt', 'a4');
+        var pageWidth = doc.internal.pageSize.getWidth();
+
+        // Multi-line headers just like the Excel (2nd image)
+        var headerLines = [
+            "Republic of the Philippines",
+            "Province of Cebu",
+            "Municipality of Alegria",
+            "CANYONEERING",
+            $("#dateFrom").val() && $("#dateTo").val()
+                ? `${formatDate($("#dateFrom").val())} - ${formatDate($("#dateTo").val())}`
+                : ""
+        ];
+
+        // Draw the headers
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+
+        headerLines.forEach(function (line, idx) {
+            if (line.trim().length === 0) return;
+            // Dynamic y-position by line
+            doc.text(line, pageWidth / 2, 30 + idx * 20, { align: "center" });
+        });
+
+        // Add space after headers
+        let startY = 140;
+
+        // AutoTable options
+        doc.autoTable({
+            html: "#nationalityReportTable",
+            theme: 'grid',
+            startY: startY,
+            headStyles: {
+                fillColor: [221, 221, 221],
+                textColor: 40,
+                fontSize: 12,
+                fontStyle: 'bold'
+            },
+            styles: {
+                font: "helvetica",
+                fontSize: 11,
+                halign: 'center',
+                valign: 'middle'
+            },
+            didDrawPage: function (data) {
+                // Optionally, can add a border or any extra styling here
+            }
+        });
+
         doc.save("NationalityReport.pdf");
     });
+
+    // Helper to reformat date string
+    function formatDate(isoDate) {
+        if (!isoDate) return "";
+        var date = new Date(isoDate);
+        const options = { year: "numeric", month: "long", day: "numeric" };
+        return date.toLocaleDateString(undefined, options);
+    }
+
 
     // Auto set date range based on filter
     function setDateRange(filter) {
