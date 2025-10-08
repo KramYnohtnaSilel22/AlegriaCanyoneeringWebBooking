@@ -1,20 +1,5 @@
 ﻿@model List<AlegriaCanyoneeringWebBooking.ViewModel.GuestWithOperatorVM>
-
-<style>
-    @@media (max-width: 767.98px) {
-        .table-responsive
-
-    {
-        overflow-x: auto;
-    }
-
-    }
-
-    .modal-header {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        padding: 1rem 1.5rem;
-    }
-</style>
+<link href="/css/GuestDetails.css" rel="stylesheet" />
 
 <div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -24,8 +9,8 @@
                     🧾 Guests of the Day - @DateTime.Today.ToString("MMMM dd, yyyy")
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
+     
+        </div>
             <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-light border-bottom">
                 <span class="fw-semibold text-muted">
                     Total Guests: <strong class="text-dark">@Model.Count()</strong>
@@ -41,11 +26,12 @@
             </div>
 
 
-            <!-- Body -->
-            <div class="modal-body" id="guestDetailsContent">
-                <!-- Batch Search Input -->
+            <!-- Modal Body -->
+            <div class="modal-body bg-white text-black" id="guestDetailsContent">
+
+                <!-- Batch Search -->
                 <div class="mb-3">
-                    <input type="text" id="batchSearchInput" class="form-control" placeholder="Search by Batch" />
+                    <input type="text" id="batchSearchInput" class="form-control" placeholder="Search by Batch..." />
                 </div>
 
                 @if (Model != null && Model.Any())
@@ -57,23 +43,24 @@
                         var primaryGuestVM = batchGroup.First();
                         var companionsVM = batchGroup.Skip(1).ToList();
 
-                        <div class="card shadow-sm mb-4 border-0">
-                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-2 px-3 rounded-top">
+                        <div class="card border mb-4">
+                            <!-- Header -->
+                            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2 px-3">
                                 <div>
-                                    <i class="fas fa-users me-2"></i>
                                     <strong>Batch:</strong>
-                                    <span class="badge bg-warning text-dark ms-1">@batchGroup.Key</span>
-                                    <small class="text-light ms-3">(Operator: @primaryGuestVM.OperatorName)</small>
+                                    <span class="text-muted">@batchGroup.Key</span>
+                                    <small class="ms-3">(Operator: @primaryGuestVM.OperatorName)</small>
                                 </div>
-                                <span class="badge bg-info">@primaryGuestVM.Guest.ArrivalDate</span>
+                                <span class="text-muted">@primaryGuestVM.Guest.ArrivalDate</span>
                             </div>
 
-                            <div class="card-body px-4 py-3">
-                                <h6 class="text-primary mb-3"><i class="fas fa-user me-2"></i> Primary Guest</h6>
+                            <!-- Body -->
+                            <div class="card-body px-3 py-3">
+                                <h6 class="fw-bold mb-3">Primary Guest</h6>
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-striped align-middle mb-4" id="guestDetailsContent ">
-                                        <thead class="table-light">
-                                            <tr>
+                                    <table class="table table-sm table-hover">
+                                        <thead>
+                                            <tr class="table-light">
                                                 <th>Full Name</th>
                                                 <th>Age</th>
                                                 <th>Contact</th>
@@ -84,7 +71,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr class="table-success">
+                                            <tr>
                                                 <td>@primaryGuestVM.Guest.Fullname</td>
                                                 <td>@primaryGuestVM.Guest.Age</td>
                                                 <td>@primaryGuestVM.Guest.ContactNumber</td>
@@ -99,11 +86,11 @@
 
                                 @if (companionsVM.Any())
                                 {
-                                    <h6 class="text-secondary mt-4 mb-2"><i class="fas fa-users me-2"></i> Companion Guests</h6>
+                                    <h6 class="fw-bold mt-4 mb-2">Companion Guests</h6>
                                     <div class="table-responsive">
-                                        <table class="table table-bordered table-hover align-middle">
-                                            <thead class="table-light">
-                                                <tr>
+                                        <table class="table table-sm table-hover" id="example2">
+                                            <thead>
+                                                <tr class="table-light">
                                                     <th>Full Name</th>
                                                     <th>Age</th>
                                                     <th>Contact</th>
@@ -128,7 +115,7 @@
                                 }
                                 else
                                 {
-                                    <p class="text-muted">No companions for this batch.</p>
+                                    <p class="text-muted">No companions in this batch.</p>
                                 }
                             </div>
                         </div>
@@ -136,262 +123,25 @@
                 }
                 else
                 {
-                    <p class="text-danger">No guest arrivals found today.</p>
+                    <p class="text-muted">No guest arrivals found today.</p>
                 }
             </div>
+
         </div>
     </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
-<script>
-    
-            async function downloadGuestDetailsPdf() {
-        const btn = document.querySelector('.btn-danger');
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Generating...`;
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF("p", "mm", "a4");
-
-        const date = new Date().toLocaleDateString();
-        doc.setFontSize(18);
-        doc.setTextColor("#333");
-        doc.text("Daily Guest Report", 14, 20);
-        doc.setFontSize(11);
-        doc.text(`Date: ${date}`, 14, 28);
-
-        let currentY = 35;
-
-        // Get all batch cards
-        const batchCards = document.querySelectorAll("#guestDetailsContent .card");
-
-        if (!batchCards.length) {
-            alert("No data available to export.");
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fas fa-file-pdf"></i> Download PDF`;
-            return;
-        }
-
-        for (const card of batchCards) {
-            const header = card.querySelector(".card-header");
-            const primaryTable = card.querySelector("table");
-
-            // --- Add Batch Title ---
-            const batchTitle = header?.innerText?.trim() || "Batch Info";
-            doc.setFontSize(13);
-            doc.setTextColor(0);
-            doc.text(batchTitle, 14, currentY);
-            currentY += 7;
-
-            // --- Get Headers ---
-            const headers = [];
-            primaryTable.querySelectorAll("thead tr th").forEach(th => {
-                headers.push(th.innerText.trim());
-            });
-
-            // --- Get Rows ---
-            const rows = [];
-            primaryTable.querySelectorAll("tbody tr").forEach(tr => {
-                const row = [];
-                tr.querySelectorAll("td").forEach(td => {
-                    row.push(td.innerText.trim());
-                });
-                rows.push(row);
-            });
-
-            // --- Add Primary Guest Table ---
-            doc.autoTable({
-                startY: currentY,
-                head: [headers],
-                body: rows,
-                theme: 'grid',
-                styles: { fontSize: 10, cellPadding: 3 },
-                headStyles: {
-                    fillColor: [41, 128, 185],
-                    textColor: 255,
-                    halign: 'center',
-                },
-                alternateRowStyles: { fillColor: [245, 245, 245] },
-                didDrawPage: function (data) {
-                    const pageCount = doc.internal.getNumberOfPages();
-                    doc.setFontSize(9);
-                    doc.text(`Page ${data.pageNumber} of ${pageCount}`, doc.internal.pageSize.getWidth() - 30, doc.internal.pageSize.getHeight() - 10);
-                },
-            });
-
-            currentY = doc.lastAutoTable.finalY + 10;
-
-            // --- Check for Companion Table ---
-            const companionTable = card.querySelectorAll("table")[1];
-            if (companionTable) {
-                const companionHeaders = [];
-                const companionBody = [];
-
-                companionTable.querySelectorAll("thead tr th").forEach(th => {
-                    companionHeaders.push(th.innerText.trim());
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script>
+                        $('#example2').DataTable({
+                    paging: false,
+                    searching: false,
+                    info: false
                 });
 
-                companionTable.querySelectorAll("tbody tr").forEach(tr => {
-                    const row = [];
-                    tr.querySelectorAll("td").forEach(td => {
-                        row.push(td.innerText.trim());
-                    });
-                    companionBody.push(row);
-                });
-
-                doc.setFontSize(12);
-                doc.setTextColor(80);
-                doc.text("Companion Guests", 14, currentY);
-                currentY += 5;
-
-                doc.autoTable({
-                    startY: currentY,
-                    head: [companionHeaders],
-                    body: companionBody,
-                    theme: 'grid',
-                    styles: { fontSize: 10, cellPadding: 3 },
-                    headStyles: {
-                        fillColor: [108, 117, 125],
-                        textColor: 255,
-                        halign: 'center',
-                    },
-                    alternateRowStyles: { fillColor: [248, 248, 248] },
-                    didDrawPage: function (data) {
-                        const pageCount = doc.internal.getNumberOfPages();
-                        doc.setFontSize(9);
-                        doc.text(`Page ${data.pageNumber} of ${pageCount}`, doc.internal.pageSize.getWidth() - 30, doc.internal.pageSize.getHeight() - 10);
-                    },
-                });
-
-                currentY = doc.lastAutoTable.finalY + 10;
-            }
-
-            // Add space before next batch
-            if (currentY > 250) {
-                doc.addPage();
-                currentY = 20;
-            }
-        }
-
-        doc.save("DailyGuestReport.pdf");
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fas fa-file-pdf"></i> Download PDF`;
-    }
-
-       function downloadGuestDetailsExcel() {
-    const wb = XLSX.utils.book_new();
-                // Add Title and Date (optional)
-            rows.push([`Guests of the Day - ${new Date().toLocaleDateString()}`]);
-            rows.push([header]);
-            rows.push([]); // empty row for spacing
-    // Headers for combined table
-    const headers = [
-        "Batch", "Operator", "Full Name", "Age", "Contact", "Gender", "Nationality", "Area", "Arrival Date"
-    ];
-
-    // Initialize rows with headers
-    const rows = [headers];
-
-    // Select all batch cards
-    const batchCards = document.querySelectorAll("#guestDetailsContent .card");
-
-    if (!batchCards.length) {
-        alert("No data available to export.");
-        return;
-    }
-
-    batchCards.forEach(card => {
-        // Extract batch name and operator from card header
-        const cardHeader = card.querySelector(".card-header");
-        const batchMatch = cardHeader?.innerText.match(/Batch:\s*(\S+)/i);
-        const batch = batchMatch ? batchMatch[1] : "N/A";
-
-        const operatorMatch = cardHeader?.innerText.match(/\(Operator:\s*(.+?)\)/i);
-        const operator = operatorMatch ? operatorMatch[1] : "N/A";
-
-        // Extract primary guest row
-        const primaryTable = card.querySelector("table");
-        if (primaryTable) {
-            primaryTable.querySelectorAll("tbody tr").forEach(tr => {
-                const cols = tr.querySelectorAll("td");
-                const row = [
-                    batch,
-                    operator,
-                    cols[0]?.innerText.trim() || "",
-                    cols[1]?.innerText.trim() || "",
-                    cols[2]?.innerText.trim() || "",
-                    cols[3]?.innerText.trim() || "",
-                    cols[4]?.innerText.trim() || "",
-                    cols[5]?.innerText.trim() || "",
-                    cols[6]?.innerText.trim() || "",
-                ];
-                rows.push(row);
-            });
-        }
-
-        // Extract companion guests if any (second table)
-        const companionsTable = card.querySelectorAll("table")[1];
-        if (companionsTable) {
-            companionsTable.querySelectorAll("tbody tr").forEach(tr => {
-                const cols = tr.querySelectorAll("td");
-                // Companions don't have Area and ArrivalDate columns, so keep blank
-                const row = [
-                    batch,
-                    operator,
-                    cols[0]?.innerText.trim() || "",
-                    cols[1]?.innerText.trim() || "",
-                    cols[2]?.innerText.trim() || "",
-                    cols[3]?.innerText.trim() || "",
-                    cols[4]?.innerText.trim() || "",
-                    "", // Area blank
-                    "", // ArrivalDate blank
-                ];
-                rows.push(row);
-            });
-        }
-    });
-
-    // Create worksheet from combined rows
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-
-    // Optional: set column widths for better readability
-    ws['!cols'] = [
-        { wch: 10 }, // Batch
-        { wch: 20 }, // Operator
-        { wch: 25 }, // Full Name
-        { wch: 5 },  // Age
-        { wch: 15 }, // Contact
-        { wch: 8 },  // Gender
-        { wch: 15 }, // Nationality
-        { wch: 15 }, // Area
-        { wch: 15 }  // Arrival Date
-    ];
-
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Guests of the Day");
-
-    // Save the Excel file
-    XLSX.writeFile(wb, "DailyGuestReport.xlsx");
-}
-
-
-    // Batch Search Filter
-    document.getElementById('batchSearchInput')?.addEventListener('input', function(e) {
-        const query = e.target.value.trim().toLowerCase();
-        const cards = document.querySelectorAll('#guestDetailsContent .card');
-        cards.forEach(card => {
-            const headerText = card.querySelector('.card-header')?.textContent.toLowerCase() || '';
-            if (headerText.includes(query)) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    });
-</script>
+        </script>
+    <script src="~/js/GuestPDF.js" asp-append-version="true"></script>
+<script src="~/js/GuestExcel.js" asp-append-version="true"></script>

@@ -1,0 +1,40 @@
+﻿
+@media (max-width: 767.98px) {
+    .table-responsive {
+        overflow-x: auto;
+    }
+}
+
+.modal-header {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    padding: 1rem 1.5rem;
+}
+.card {
+    background-color: #fff;
+    color: #000;
+    border-radius: 6px;
+}
+
+.card-header {
+    font-weight: 500;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+.table th,
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    color: #000;
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+
