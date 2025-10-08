@@ -26,15 +26,20 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Export / Action Buttons -->
             <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-light border-bottom">
                 <span class="fw-semibold text-muted">
                     Total Guests: <strong class="text-dark">@Model.Count()</strong>
                 </span>
-                <button class="btn btn-danger btn-sm" onclick="downloadGuestDetailsPdf()">
-                    <i class="fas fa-file-pdf"></i> Download PDF
-                </button>
+                <div>
+                    <button class="btn btn-danger btn-sm" onclick="downloadGuestDetailsPdf()">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </button>
+                    <button class="btn btn-success btn-sm ms-2" onclick="downloadGuestDetailsExcel()">
+                        <i class="fas fa-file-excel"></i> Download Excel
+                    </button>
+                </div>
             </div>
+
 
             <!-- Body -->
             <div class="modal-body" id="guestDetailsContent">
@@ -140,10 +145,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+    
             async function downloadGuestDetailsPdf() {
         const btn = document.querySelector('.btn-danger');
         btn.disabled = true;
@@ -276,6 +283,102 @@
         btn.disabled = false;
         btn.innerHTML = `<i class="fas fa-file-pdf"></i> Download PDF`;
     }
+
+       function downloadGuestDetailsExcel() {
+    const wb = XLSX.utils.book_new();
+                // Add Title and Date (optional)
+            rows.push([`Guests of the Day - ${new Date().toLocaleDateString()}`]);
+            rows.push([header]);
+            rows.push([]); // empty row for spacing
+    // Headers for combined table
+    const headers = [
+        "Batch", "Operator", "Full Name", "Age", "Contact", "Gender", "Nationality", "Area", "Arrival Date"
+    ];
+
+    // Initialize rows with headers
+    const rows = [headers];
+
+    // Select all batch cards
+    const batchCards = document.querySelectorAll("#guestDetailsContent .card");
+
+    if (!batchCards.length) {
+        alert("No data available to export.");
+        return;
+    }
+
+    batchCards.forEach(card => {
+        // Extract batch name and operator from card header
+        const cardHeader = card.querySelector(".card-header");
+        const batchMatch = cardHeader?.innerText.match(/Batch:\s*(\S+)/i);
+        const batch = batchMatch ? batchMatch[1] : "N/A";
+
+        const operatorMatch = cardHeader?.innerText.match(/\(Operator:\s*(.+?)\)/i);
+        const operator = operatorMatch ? operatorMatch[1] : "N/A";
+
+        // Extract primary guest row
+        const primaryTable = card.querySelector("table");
+        if (primaryTable) {
+            primaryTable.querySelectorAll("tbody tr").forEach(tr => {
+                const cols = tr.querySelectorAll("td");
+                const row = [
+                    batch,
+                    operator,
+                    cols[0]?.innerText.trim() || "",
+                    cols[1]?.innerText.trim() || "",
+                    cols[2]?.innerText.trim() || "",
+                    cols[3]?.innerText.trim() || "",
+                    cols[4]?.innerText.trim() || "",
+                    cols[5]?.innerText.trim() || "",
+                    cols[6]?.innerText.trim() || "",
+                ];
+                rows.push(row);
+            });
+        }
+
+        // Extract companion guests if any (second table)
+        const companionsTable = card.querySelectorAll("table")[1];
+        if (companionsTable) {
+            companionsTable.querySelectorAll("tbody tr").forEach(tr => {
+                const cols = tr.querySelectorAll("td");
+                // Companions don't have Area and ArrivalDate columns, so keep blank
+                const row = [
+                    batch,
+                    operator,
+                    cols[0]?.innerText.trim() || "",
+                    cols[1]?.innerText.trim() || "",
+                    cols[2]?.innerText.trim() || "",
+                    cols[3]?.innerText.trim() || "",
+                    cols[4]?.innerText.trim() || "",
+                    "", // Area blank
+                    "", // ArrivalDate blank
+                ];
+                rows.push(row);
+            });
+        }
+    });
+
+    // Create worksheet from combined rows
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Optional: set column widths for better readability
+    ws['!cols'] = [
+        { wch: 10 }, // Batch
+        { wch: 20 }, // Operator
+        { wch: 25 }, // Full Name
+        { wch: 5 },  // Age
+        { wch: 15 }, // Contact
+        { wch: 8 },  // Gender
+        { wch: 15 }, // Nationality
+        { wch: 15 }, // Area
+        { wch: 15 }  // Arrival Date
+    ];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Guests of the Day");
+
+    // Save the Excel file
+    XLSX.writeFile(wb, "DailyGuestReport.xlsx");
+}
 
 
     // Batch Search Filter
