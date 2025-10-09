@@ -4,9 +4,10 @@
     var monthlyGuestCounts = ViewBag.MonthlyGuestCounts as List<int>;
     var yearLabels = ViewBag.YearLabels as List<string>;
     var yearlyGuestCounts = ViewBag.YearlyGuestCounts as List<int>;
+    var guestDates = ViewBag.GuestDates as List<string>; // Unix timestamps
 }
-<link href="~/css/Dashboard.css" rel="stylesheet" />
 
+<link href="~/css/Dashboard.css" rel="stylesheet" />
 
 <div class="container-fluid py-4">
     <!-- Header -->
@@ -18,14 +19,14 @@
         </div>
     </div>
 
-    <!-- Stats Cards - Cleaner Design -->
+    <!-- Stats Cards -->
     <div class="row g-3 mb-5">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <h6 class="card-subtitle text-muted mb-2">Guest Today</h6>
+                            <h6 class="card-subtitle text-muted mb-2">Guests Today</h6>
                             <h2 class="card-title fw-bold text-primary">@ViewBag.GuestsToday</h2>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-2 rounded">
@@ -97,116 +98,150 @@
     </div>
 </div>
 
+    @section Scripts {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Convert Unix timestamp to human-readable date
+            function convertUnixToDate(unixTimestamp) {
+                var date = new Date(unixTimestamp * 1000); // Convert from seconds to milliseconds
+                return date.toLocaleDateString(); // Format as MM/DD/YYYY
+            }
 
+            // Display guest dates in human-readable format
+            const guestDates = @Html.Raw(Json.Serialize(ViewBag.GuestDates));
+            console.log(guestDates.map(timestamp => convertUnixToDate(timestamp)));
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Clean minimal chart options
-            const chartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 10,
-                        cornerRadius: 6
-                    }
+            // Example: Using Chart.js to display monthly and yearly trends
+            const monthlyGuestCounts = @Html.Raw(Json.Serialize(monthlyGuestCounts));
+            const monthLabels = @Html.Raw(Json.Serialize(monthLabels));
+
+            // Create gradient line for monthly trend
+            const ctx = document.getElementById('monthlyGuestTrendChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(0, 123, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 123, 255, 0.1)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: [{
+                        label: 'Monthly Guests',
+                        data: monthlyGuestCounts,
+                        borderColor: gradient,
+                        backgroundColor: gradient,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(0, 123, 255, 0.7)',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        borderWidth: 3
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)',
-                            drawBorder: false
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#fff',
+                            borderWidth: 1,
                         },
-                        ticks: {
-                            color: '#6c757d',
-                            font: {
-                                size: 11
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Arial',
+                                    size: 14
+                                }
                             }
                         }
                     },
-                    x: {
-                        grid: {
-                            display: false
+                    scales: {
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 14
+                                }
+                            }
                         },
-                        ticks: {
-                            color: '#6c757d',
-                            font: {
-                                size: 11
+                        y: {
+                            ticks: {
+                                font: {
+                                    size: 14
+                                }
                             }
                         }
-                    }
-                },
-                elements: {
-                    point: {
-                        radius: 4,
-                        hoverRadius: 6,
-                        backgroundColor: '#ffffff',
-                        borderWidth: 2
                     }
                 }
-            };
-
-            // Monthly Chart
-            const ctxMonth = document.getElementById('monthlyGuestTrendChart').getContext('2d');
-            const gradientMonth = ctxMonth.createLinearGradient(0, 0, 0, 300);
-            gradientMonth.addColorStop(0, 'rgba(13, 110, 253, 0.2)');
-            gradientMonth.addColorStop(1, 'rgba(13, 110, 253, 0.02)');
-
-            new Chart(ctxMonth, {
-                type: 'line',
-                data: {
-                    labels: @Html.Raw(Json.Serialize(monthLabels)),
-                    datasets: [{
-                        label: 'Guests',
-                        data: @Html.Raw(Json.Serialize(monthlyGuestCounts)),
-                        fill: true,
-                        backgroundColor: gradientMonth,
-                        borderColor: '#0d6efd',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#0d6efd',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        tension: 0.4
-                    }]
-                },
-                options: chartOptions
             });
 
-            // Yearly Chart
-            const ctxYear = document.getElementById('yearlyGuestTrendChart').getContext('2d');
-            const gradientYear = ctxYear.createLinearGradient(0, 0, 0, 300);
-            gradientYear.addColorStop(0, 'rgba(32, 201, 151, 0.2)');
-            gradientYear.addColorStop(1, 'rgba(32, 201, 151, 0.02)');
+            const yearlyGuestCounts = @Html.Raw(Json.Serialize(yearlyGuestCounts));
+            const yearLabels = @Html.Raw(Json.Serialize(yearLabels));
 
-            new Chart(ctxYear, {
+            // Create gradient line for yearly trend
+            const ctxYearly = document.getElementById('yearlyGuestTrendChart').getContext('2d');
+            const gradientYearly = ctxYearly.createLinearGradient(0, 0, 0, 400);
+            gradientYearly.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
+            gradientYearly.addColorStop(1, 'rgba(40, 167, 69, 0.1)');
+
+            new Chart(ctxYearly, {
                 type: 'line',
                 data: {
-                    labels: @Html.Raw(Json.Serialize(yearLabels)),
+                    labels: yearLabels,
                     datasets: [{
-                        label: 'Guests',
-                        data: @Html.Raw(Json.Serialize(yearlyGuestCounts)),
+                        label: 'Yearly Guests',
+                        data: yearlyGuestCounts,
+                        borderColor: gradientYearly,
+                        backgroundColor: gradientYearly,
                         fill: true,
-                        backgroundColor: gradientYear,
-                        borderColor: '#20c997',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#20c997',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        tension: 0.4
+                        pointBackgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        borderWidth: 3
                     }]
                 },
-                options: chartOptions
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#fff',
+                            borderWidth: 1,
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Arial',
+                                    size: 14
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        }
+                    }
+                }
             });
-        });
-    </script>
+        </script>
+    }

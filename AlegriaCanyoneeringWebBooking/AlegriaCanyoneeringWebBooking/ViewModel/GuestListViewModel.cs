@@ -20,9 +20,9 @@ namespace AlegriaCanyoneeringWebBooking.ViewModel
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
         public int TotalRecords { get; set; }
-
-
-
+        // Add ArrivalDateUnixTimestamp to the ViewModel
+   public string ArrivalDate { get; set; } // Human-readable arrival date from user input
+    public long ArrivalDateUnixTimestamp { get; set; }  // Store Unix timestamp (not in the database)
         // ✅ Add properties for HTML5 date inputs
         public string Html5BookingDate => DateTime.TryParse(NewGuest.Date, out var bookingDate)
             ? bookingDate.ToString("yyyy-MM-dd")

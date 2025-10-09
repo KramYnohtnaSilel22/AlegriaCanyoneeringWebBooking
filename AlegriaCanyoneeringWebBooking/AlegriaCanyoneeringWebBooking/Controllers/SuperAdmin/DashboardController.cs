@@ -2,6 +2,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -15,72 +20,68 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var today = DateTime.Today;
+            try
+            {
+                // Fetch all guests and their ArrivalDate stored as Unix timestamps
+                var guests = await _context.Guests
+                    .Where(g => !string.IsNullOrEmpty(g.ArrivalDate)) // Ensure ArrivalDate is not null or empty
+                    .Select(g => new
+                    {
+                        g.ArrivalDate // We'll pass this directly to the view
+                    })
+                    .ToListAsync();
 
-            // Guests Today
-            ViewBag.GuestsToday = _context.Guests
-                .AsEnumerable()
-                .Count(g => !string.IsNullOrEmpty(g.ArrivalDate) &&
-                            DateTime.Parse(g.ArrivalDate).Date == today);
+                // Get stats for today, this month, and previous month
+                var guestsToday = guests.Count(g => ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Date == DateTime.Today);
+                var guestsThisMonth = guests.Count(g => ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Month == DateTime.Now.Month && ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Year == DateTime.Now.Year);
+                var guestsPrevMonth = guests.Count(g => ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Month == DateTime.Now.AddMonths(-1).Month && ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Year == DateTime.Now.AddMonths(-1).Year);
 
-            // Guests This Month
-            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
-            ViewBag.GuestsThisMonth = _context.Guests
-                .AsEnumerable()
-                .Count(g => !string.IsNullOrEmpty(g.ArrivalDate) &&
-                            DateTime.Parse(g.ArrivalDate) >= firstDayOfMonth);
-
-            // Guests Previous Month
-            var prevMonth = today.AddMonths(-1);
-            var firstDayPrevMonth = new DateTime(prevMonth.Year, prevMonth.Month, 1);
-            var lastDayPrevMonth = firstDayOfMonth.AddDays(-1);
-            ViewBag.GuestsPrevMonth = _context.Guests
-                .AsEnumerable()
-                .Count(g => !string.IsNullOrEmpty(g.ArrivalDate) &&
-                            DateTime.Parse(g.ArrivalDate) >= firstDayPrevMonth &&
-                            DateTime.Parse(g.ArrivalDate) <= lastDayPrevMonth);
-
-            // Monthly Guests for this year
-            ViewBag.MonthLabels = Enumerable.Range(1, 12)
-                .Select(m => new DateTime(today.Year, m, 1).ToString("MMM"))
-                .ToList();
-
-            ViewBag.MonthlyGuestCounts = Enumerable.Range(1, 12)
-                .Select(m =>
+                // Fetch monthly guest counts for the current year
+                var monthlyGuestCounts = new List<int>();
+                var monthLabels = new List<string>();
+                for (int i = 1; i <= 12; i++)
                 {
-                    var firstDay = new DateTime(today.Year, m, 1);
-                    var lastDay = firstDay.AddMonths(1).AddDays(-1);
-                    return _context.Guests
-                        .AsEnumerable()
-                        .Count(g => !string.IsNullOrEmpty(g.ArrivalDate) &&
-                                    DateTime.Parse(g.ArrivalDate).Date >= firstDay &&
-                                    DateTime.Parse(g.ArrivalDate).Date <= lastDay);
-                })
-                .ToList();
+                    monthLabels.Add(DateTimeFormatInfo.CurrentInfo.GetAbbreviatedMonthName(i));
+                    monthlyGuestCounts.Add(guests.Count(g => ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Month == i && ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Year == DateTime.Now.Year));
+                }
 
-            // Yearly Guests (last 5 years)
-            int yearsToShow = 5;
-            ViewBag.YearLabels = Enumerable.Range(today.Year - yearsToShow + 1, yearsToShow)
-                .Select(y => y.ToString())
-                .ToList();
-
-            ViewBag.YearlyGuestCounts = Enumerable.Range(today.Year - yearsToShow + 1, yearsToShow)
-                .Select(y =>
+                // Fetch yearly guest counts for the last 5 years
+                var yearlyGuestCounts = new List<int>();
+                var yearLabels = new List<string>();
+                for (int i = 0; i < 5; i++)
                 {
-                    var firstDay = new DateTime(y, 1, 1);
-                    var lastDay = new DateTime(y, 12, 31);
-                    return _context.Guests
-                        .AsEnumerable()
-                        .Count(g => !string.IsNullOrEmpty(g.ArrivalDate) &&
-                                    DateTime.Parse(g.ArrivalDate).Date >= firstDay &&
-                                    DateTime.Parse(g.ArrivalDate).Date <= lastDay);
-                })
-                .ToList();
+                    var year = DateTime.Now.AddYears(-i).Year;
+                    yearLabels.Add(year.ToString());
+                    yearlyGuestCounts.Add(guests.Count(g => ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Year == year));
+                }
 
-            return View();
+                // Pass all data to the view
+                ViewBag.GuestsToday = guestsToday;
+                ViewBag.GuestsThisMonth = guestsThisMonth;
+                ViewBag.GuestsPrevMonth = guestsPrevMonth;
+                ViewBag.MonthLabels = monthLabels;
+                ViewBag.MonthlyGuestCounts = monthlyGuestCounts;
+                ViewBag.YearLabels = yearLabels;
+                ViewBag.YearlyGuestCounts = yearlyGuestCounts;
+                ViewBag.GuestDates = guests.Select(g => g.ArrivalDate).ToList(); // Pass Unix timestamps to the view
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                // Handle error and provide feedback
+                Console.WriteLine($"Error in DashboardController: {ex.Message}");
+                ViewBag.ErrorMessage = "An error occurred while loading dashboard data. Please try again later.";
+                return View();
+            }
         }
 
+        // Helper method to convert Unix timestamp to DateTime (if needed in other places)
+        private DateTime ConvertUnixToDateTime(long unixTimestamp)
+        {
+            return DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
+        }
     }
 }

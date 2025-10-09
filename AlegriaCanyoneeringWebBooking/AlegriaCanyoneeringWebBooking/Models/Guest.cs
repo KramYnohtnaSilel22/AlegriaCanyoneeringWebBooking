@@ -48,8 +48,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [StringLength(100, ErrorMessage = "Arrival date cannot exceed 100 characters")]
         [Display(Name = "Arrival Date")]
         [Column("arrivaldate")]
-        public string? ArrivalDate { get; set; } // <-- Remove [Required] for batch
-
+        public string? ArrivalDate { get; set; }  // This stores the Unix timestamp as a string
         public string? Month { get; set; }
 
         [StringLength(100, ErrorMessage = "Short date cannot exceed 100 characters")]
@@ -91,5 +90,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [NotMapped] public string? QRBase64 { get; set; }
         [NotMapped] public string? QRText { get; set; }
+  
     }
 }

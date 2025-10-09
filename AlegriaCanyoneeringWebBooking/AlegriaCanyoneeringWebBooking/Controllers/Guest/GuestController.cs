@@ -116,15 +116,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 };
             });
 
+            // ✅ Return the response to DataTables with the required structure
             return Json(new
             {
-                draw,
+                draw = draw,
                 recordsFiltered = recordsTotal,
-                recordsTotal,
+                recordsTotal = recordsTotal,
                 data = grouped
             });
         }
-
 
         //[HttpPost]
         //public async Task<IActionResult> GetGuestsData()
@@ -248,7 +248,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return 1;
         }
-
         [HttpGet]
         public async Task<IActionResult> NewBooking(string batch, int? id)
         {
@@ -284,7 +283,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Fetch anticipated guests
             var anticipatedGuests = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated)  // Use 0 (anticipated)
+                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated)
                 .ToListAsync();
 
             // Prepare ViewModel
@@ -300,8 +299,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         {
                             OperatorId = grp.Key,
                             OperatorList = first.OperatorList,
-                            RFID = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),  // Exclude canceled guests
-                            ArrivalDate = first.ArrivalDate,
+                            RFID = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
+                            ArrivalDate = first.ArrivalDate, // This is still Unix timestamp
                             Date = first.Date,
                             BookingStatus = first.BookingStatus
                         };
@@ -323,14 +322,27 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     model.NewGuest.OperatorId = batchDetails.OperatorId;
                     model.NewGuest.Date = batchDetails.Date;
-                    model.NewGuest.ArrivalDate = batchDetails.ArrivalDate;
+                    model.NewGuest.ArrivalDate = batchDetails.ArrivalDate; // Still in Unix timestamp format
                     model.NewGuest.Area = batchDetails.Area;
                 }
+            }
+
+            // Convert ArrivalDate (Unix timestamp) to a human-readable format for the view
+            if (!string.IsNullOrEmpty(model.NewGuest.ArrivalDate) && long.TryParse(model.NewGuest.ArrivalDate, out long unixTimestamp))
+            {
+                model.NewGuest.ArrivalDate = ConvertUnixToDateTime(unixTimestamp).ToString("MMMM dd, yyyy"); // Human-readable format
             }
 
             ViewBag.IsReadonly = !string.IsNullOrEmpty(batch);
 
             return View(model);
+        }
+
+        // Helper method to convert Unix timestamp to DateTime
+        private DateTime ConvertUnixToDateTime(long unixTimestamp)
+        {
+            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
+            return dateTime.ToLocalTime();  // Convert to server's local time
         }
 
 
@@ -351,14 +363,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     foreach (var guest in batchGuests)
                     {
-                        // Use BookingStatusEnum.anticipated (which is 0) instead of "anticipated"
                         guest.BookingStatus = (int)Guest.BookingStatusEnum.anticipated;  // 0 = anticipated
                         guest.Batch = batchId;
                         guest.RFID = 1;
                         guest.RFIDCode = generatedRFIDCode;
                         guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
                         guest.Month = DateTime.Today.ToString("MMMM");
-                        guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
+
+                        // Generate the current Unix timestamp
+                        long unixTimestamp = GetCurrentUnixTimestamp();
+                        guest.ArrivalDate = unixTimestamp.ToString(); // Save Unix timestamp as string
+                        Console.WriteLine($"Generated Unix Timestamp: {guest.ArrivalDate}");  // Debugging line
+
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
                         guest.Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
 
@@ -366,10 +382,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         insertedCount++;
                     }
 
-                    // ✅ Save guests first
+                    // Save guests first
                     await _context.SaveChangesAsync();
 
-                    // ✅ If there's a photo uploaded, save to tbl_guestimage
+                    // If a photo was uploaded, save to tbl_guestimage
                     if (Photo != null && Photo.Length > 0)
                     {
                         using (var ms = new MemoryStream())
@@ -399,6 +415,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await PopulateDropdowns();
             return View(model);
         }
+
+        // Helper method to generate the current Unix timestamp
+        private long GetCurrentUnixTimestamp()
+        {
+            DateTime utcNow = DateTime.UtcNow; // Get current UTC time
+            return (long)(utcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+        }
+
 
 
         private async Task<string> GenerateBatchCode()
