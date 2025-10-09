@@ -1,4 +1,5 @@
 ﻿using AlegriaCanyoneeringWebBooking.Models;
+using static AlegriaCanyoneeringWebBooking.Models.Guest;
 
 namespace AlegriaCanyoneeringWebBooking.ViewModel
 {
