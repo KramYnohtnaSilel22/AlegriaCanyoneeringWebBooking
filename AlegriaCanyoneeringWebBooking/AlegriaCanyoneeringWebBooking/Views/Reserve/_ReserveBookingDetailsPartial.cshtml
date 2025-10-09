@@ -13,13 +13,14 @@
 
         </div>
 
-            <span class="badge
-                                        @(Model.Guest.BookingStatus == "reserve" ? "bg-success text-light" : "bg-success")
-                                        text-capitalize px-3 py-2 rounded-pill">
-                @Model.Guest.BookingStatus
-            </span>
-        </div>
 
+        <!-- Change: Display "anticipated" based on integer value 0 (instead of string) -->
+        <span class="badge
+                    @(Model.Guest.BookingStatus == 0 ? "bg-warning text-dark" : "bg-secondary")
+                    text-capitalize px-3 py-2 rounded-pill">
+            @(Model.Guest.BookingStatus == 2 ? "Reserved" : Model.Guest.BookingStatus)
+        </span>
+    </div>
         <div class="card-body p-4">
             <h2 class="fw-bold text-dark mb-3">@Model.Guest.Fullname</h2>
 
@@ -59,15 +60,7 @@
 
 
 
-    <!-- Companions Section -->
-    <h3 class="fw-bold text-secondary border-bottom pb-2 mb-4 d-flex align-items-center">
-        <i class="fas fa-users me-2"></i> Companions
-        <span class="text-muted fs-6 ms-2" id="guestCount">
-            (@Model.GuestsInBatch?.Count(g => g.BookingStatus != "canceled"))
-        </span>
-    </h3>
-
-    @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any(g => g.BookingStatus != "canceled"))
+    @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any(g => g.BookingStatus != 1))  // Exclude canceled guests (1)
     {
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-0">
@@ -75,7 +68,7 @@
                     <table id="companionsTable" class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                              
+                                <th class="text-center" style="width: 70px;">Action</th>
                                 <th>Full Name</th>
                                 <th>Age</th>
                                 <th>Gender</th>
@@ -83,10 +76,17 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var guest in Model.GuestsInBatch.Where(g => g.BookingStatus != "canceled"))
+                            @foreach (var guest in Model.GuestsInBatch.Where(g => g.BookingStatus != 1))  // Exclude canceled guests (1)
                             {
                                 <tr data-guest-row="@guest.Id">
-                               
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm rounded-circle cancel-btn"
+                                                data-guest-id="@guest.Id"
+                                                title="Cancel this companion">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
                                     <td>@guest.Fullname</td>
                                     <td>@guest.Age</td>
                                     <td>@guest.Gender</td>

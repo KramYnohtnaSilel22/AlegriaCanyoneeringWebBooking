@@ -58,8 +58,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault();
 
+            // Change the filter to use integer BookingStatus = 0 (anticipated)
             var query = _context.Guests
-                .Where(g => g.BookingStatus == "anticipated");
+                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated);
 
             if (!string.IsNullOrEmpty(search))
             {
@@ -81,9 +82,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     Batch = grp.Key.Batch,
                     OperatorId = grp.Key.OperatorId,
-                    TotalGuests = grp.Count(g => g.BookingStatus != "canceled"),
+                    TotalGuests = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
                     ArrivalDate = grp.Min(x => x.ArrivalDate),
-                    Status = "anticipated",
+                    Status = "anticipated",  // This is still a string value for display
                     MainGuestId = grp.OrderBy(x => x.Id).First().Id
                 })
                 .OrderBy(g => g.OperatorId)
@@ -111,7 +112,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     operatorName = businessName,
                     totalGuests = g.TotalGuests,
                     arrivalDate = g.ArrivalDate,
-                    bookingStatus = g.Status
+                    bookingStatus = g.Status  // Keep it as string "anticipated" for display
                 };
             });
 
@@ -123,6 +124,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 data = grouped
             });
         }
+
 
         //[HttpPost]
         //public async Task<IActionResult> GetGuestsData()
@@ -259,8 +261,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (userRole == "Operator")
             {
                 if (int.TryParse(userId, out int operatorId))
-
-
                 {
                     // Only include the logged-in operator’s own business
                     operators = await _context.Operators
@@ -284,7 +284,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Fetch anticipated guests
             var anticipatedGuests = await _context.Guests
                 .Include(g => g.OperatorList)
-                .Where(g => g.BookingStatus == "anticipated")
+                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated)  // Use 0 (anticipated)
                 .ToListAsync();
 
             // Prepare ViewModel
@@ -300,7 +300,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         {
                             OperatorId = grp.Key,
                             OperatorList = first.OperatorList,
-                            RFID = grp.Count(g => g.BookingStatus != "canceled"),
+                            RFID = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),  // Exclude canceled guests
                             ArrivalDate = first.ArrivalDate,
                             Date = first.Date,
                             BookingStatus = first.BookingStatus
@@ -333,6 +333,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(model);
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null, IFormFile Photo = null)
@@ -350,7 +351,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     foreach (var guest in batchGuests)
                     {
-                        guest.BookingStatus = "anticipated";
+                        // Use BookingStatusEnum.anticipated (which is 0) instead of "anticipated"
+                        guest.BookingStatus = (int)Guest.BookingStatusEnum.anticipated;  // 0 = anticipated
                         guest.Batch = batchId;
                         guest.RFID = 1;
                         guest.RFIDCode = generatedRFIDCode;
@@ -398,68 +400,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(model);
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null)
-        //{
-        //    string batchId = !string.IsNullOrEmpty(batch) ? batch : await GenerateBatchCode();
-
-        //    if (!string.IsNullOrWhiteSpace(model.BatchGuestsJson))
-        //    {
-        //        var batchGuests = JsonSerializer.Deserialize<List<Guest>>(model.BatchGuestsJson);
-
-        //        if (batchGuests != null && batchGuests.Count > 0)
-        //        {
-        //            int insertedCount = 0;
-
-        //            foreach (var guest in batchGuests)
-        //            {
-        //                // Allow adding even if a guest with the same name and operator already exists
-        //                guest.BookingStatus = "anticipated";
-        //                guest.Batch = batchId;
-        //                guest.RFID = 1;
-
-        //                guest.RFIDCode = guest.RFIDCode ?? GenerateRFIDCode();
-        //                guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
-        //                guest.Month = DateTime.Today.ToString("MMMM");
-        //                guest.ArrivalDate = DateTime.Today.ToString("MMM dd, yyyy");
-        //                guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
-        //                guest.Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
-
-        //                _context.Guests.Add(guest);
-        //                insertedCount++;
-        //            }
-
-        //            if (insertedCount > 0)
-        //            {
-        //                await _context.SaveChangesAsync();
-
-        //                var guestsForOperator = await _context.Guests
-        //                    .Where(g => g.OperatorId == batchGuests.First().OperatorId && g.BookingStatus != "canceled")
-        //                    .ToListAsync();
-
-
-        //                await _context.SaveChangesAsync();
-
-        //                TempData["ToastMessage"] = $"Guests added successfully";
-        //                TempData["ToastType"] = "success";
-        //            }
-        //            else
-        //            {
-        //                TempData["ToastMessage"] = "Please add at least one guest before saving!";
-        //                TempData["ToastType"] = "warning";
-        //            }
-
-        //            return RedirectToAction("saveguest", new { batch = batchId, id = id });
-        //        }
-
-        //        TempData["ToastMessage"] = "Please add at least one guest before saving!";
-        //        TempData["ToastType"] = "danger";
-        //    }
-
-        //    await PopulateDropdowns();
-        //    return View(model);
-        //}
 
         private async Task<string> GenerateBatchCode()
         {
@@ -487,110 +427,68 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private string GenerateRFIDCode()
         {
-            var bytes = new byte[6];
+            var bytes = new byte[26];  // 26 bytes * 2 characters per byte = 52 characters
             new Random().NextBytes(bytes);
-            return BitConverter.ToString(bytes).Replace("-", " ");
+            string rfidCode = BitConverter.ToString(bytes).Replace("-", " ");
+
+            // Trim to exactly 51 characters
+            return rfidCode.Substring(0, 51);
         }
-        //public IActionResult saveguest()
-        //{
-        //    var model = new GuestListViewModel
-        //    {
-        //        ReservedGuests = new List<Guest>() // empty list para di mag-null
-        //    };
-
-        //    return View(model);
-        //}
-
-        //public async Task<IActionResult> saveguest()
-        //{
-        //    var anticipatedGuests = await _context.Guests
-        //        .Include(g => g.OperatorList)
-        //        .Where(g => g.BookingStatus == "anticipated")
-        //        .ToListAsync();
-
-        //    var grouped = anticipatedGuests
-        //        .GroupBy(g => g.OperatorId)
-        //        .Select(grp =>
-        //        {
-        //            var first = grp.First();
-        //            return new Guest
-        //            {
-        //                OperatorId = grp.Key,
-        //                OperatorList = first.OperatorList,
-        //                RFID = grp.Count(x => x.BookingStatus != "canceled"),
-        //                ArrivalDate = first.ArrivalDate,
-        //                BookingStatus = first.BookingStatus
-        //            };
-        //        })
-        //        .ToList();
-
-        //    var model = new GuestListViewModel
-        //    {
-        //        ReservedGuests = grouped,
 
 
-
-
-        //    };
-
-        //    return View(model);
-        //}
-
-
-
-public async Task<IActionResult> saveguest()
-    {
-        // ✅ Get current user's ID and Role from claims
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var userRole = User.FindFirstValue(ClaimTypes.Role);
-
-        int? currentOperatorId = null;
-        if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
+        public async Task<IActionResult> saveguest()
         {
-            currentOperatorId = parsedId;
-        }
+            // ✅ Get current user's ID and Role from claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-        // ✅ Fetch anticipated guests
-        var anticipatedGuestsQuery = _context.Guests
-            .Include(g => g.OperatorList)
-            .Where(g => g.BookingStatus == "anticipated");
-
-        // ✅ If current user is an Operator, filter by their OperatorId
-        if (currentOperatorId.HasValue)
-        {
-            anticipatedGuestsQuery = anticipatedGuestsQuery
-                .Where(g => g.OperatorId == currentOperatorId.Value);
-        }
-
-        var anticipatedGuests = await anticipatedGuestsQuery.ToListAsync();
-
-        // ✅ Group guests by Operator
-        var grouped = anticipatedGuests
-            .GroupBy(g => g.OperatorId)
-            .Select(grp =>
+            int? currentOperatorId = null;
+            if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
             {
-                var first = grp.First();
-                return new Guest
+                currentOperatorId = parsedId;
+            }
+
+            // ✅ Fetch anticipated guests using the BookingStatusEnum
+            var anticipatedGuestsQuery = _context.Guests
+                .Include(g => g.OperatorList)
+                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated); // Use integer value for anticipated status
+
+            // ✅ If current user is an Operator, filter by their OperatorId
+            if (currentOperatorId.HasValue)
+            {
+                anticipatedGuestsQuery = anticipatedGuestsQuery
+                    .Where(g => g.OperatorId == currentOperatorId.Value);
+            }
+
+            var anticipatedGuests = await anticipatedGuestsQuery.ToListAsync();
+
+            // ✅ Group guests by Operator
+            var grouped = anticipatedGuests
+                .GroupBy(g => g.OperatorId)
+                .Select(grp =>
                 {
-                    OperatorId = grp.Key,
-                    OperatorList = first.OperatorList,
-                    RFID = grp.Count(x => x.BookingStatus != "canceled"),
-                    ArrivalDate = first.ArrivalDate,
-                    BookingStatus = first.BookingStatus
-                };
-            })
-            .ToList();
+                    var first = grp.First();
+                    return new Guest
+                    {
+                        OperatorId = grp.Key,
+                        OperatorList = first.OperatorList,
+                        RFID = grp.Count(x => x.BookingStatus != (int)Guest.BookingStatusEnum.canceled),  // Count non-canceled guests
+                        ArrivalDate = first.ArrivalDate,
+                        BookingStatus = first.BookingStatus
+                    };
+                })
+                .ToList();
 
-        var model = new GuestListViewModel
-        {
-            ReservedGuests = grouped
-        };
+            var model = new GuestListViewModel
+            {
+                ReservedGuests = grouped
+            };
 
-        return View(model);
-    }
+            return View(model);
+        }
 
 
-    private int GetCurrentOperatorId()
+        private int GetCurrentOperatorId()
         {
             int operatorId;
             if (int.TryParse(User.Identity?.Name, out operatorId))
@@ -623,50 +521,6 @@ public async Task<IActionResult> saveguest()
             }
         }
 
-        public async Task<IActionResult> UpdateStatus(int id, string status)
-        {
-            var guest = await _context.Guests.FindAsync(id);
-            if (guest == null)
-            {
-                return NotFound();
-            }
-
-            // Get all guests with the same OperatorId and same BookingStatus as the current guest (ex: anticipated)
-            var operatorGuests = await _context.Guests
-// ✅ CORRECT: Updates ONLY guests with same Batch
-.Where(g => g.Batch == guest.Batch && g.BookingStatus == guest.BookingStatus)
-                .ToListAsync();
-
-            if (!operatorGuests.Any())
-            {
-                return NotFound("No guests found for this operator.");
-            }
-
-            // **Do NOT generate a new batch code**
-            // Keep the existing batch code from the first guest in the group
-            string existingBatchCode = guest.Batch;
-
-            // Update status and keep the same batch code
-            foreach (var g in operatorGuests)
-            {
-                g.BookingStatus = status;
-                g.Batch = existingBatchCode;  // Keep old batch code
-            }
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return Conflict("Concurrency conflict: guests may have been modified by another process.");
-            }
-
-            return RedirectToAction("reservebooking", "Reserve");
-
-
-
-        }
 
 
         private string GenerateBatchCode(int? operatorId)
@@ -691,32 +545,88 @@ public async Task<IActionResult> saveguest()
             if (guest == null)
                 return Json(new { success = false, message = "Guest not found" });
 
-            // Store batch before deletion
+            // Store batch before updating
             var batch = guest.Batch;
 
-            // Remove the guest permanently
-            _context.Guests.Remove(guest);
-            await _context.SaveChangesAsync();
+            // Set the guest's BookingStatus to 'canceled' (integer 1)
+            guest.BookingStatus = 1;  // 1 = Canceled
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new { success = false, message = "An error occurred while updating the guest status." });
+            }
 
             // Recalculate RFID for remaining guests in the batch
             var updatedGuestCount = await _context.Guests
-                .Where(g => g.Batch == batch && g.BookingStatus != "canceled")
+                .Where(g => g.Batch == batch && g.BookingStatus != 1) // Not canceled
                 .CountAsync();
 
             var guestsInBatch = await _context.Guests
                 .Where(g => g.Batch == batch)
                 .ToListAsync();
 
+            // Update RFID for all guests in the batch
             foreach (var g in guestsInBatch)
             {
                 g.RFID = updatedGuestCount;
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new { success = false, message = "An error occurred while updating RFID for guests." });
+            }
 
             return Json(new { success = true, guestId = GuestId });
         }
 
+        public async Task<IActionResult> UpdateStatus(int id, int status)
+        {
+            var guest = await _context.Guests.FindAsync(id);
+            if (guest == null)
+            {
+                return NotFound();
+            }
+
+            // Change the status of the selected guest to Reserved (2) automatically
+            guest.BookingStatus = 2;  // Set status to Reserved (2)
+
+            // Fetch all guests in the same batch as the current guest
+            var operatorGuests = await _context.Guests
+                .Where(g => g.Batch == guest.Batch && g.BookingStatus != 2) // Don't update already reserved guests
+                .ToListAsync();
+
+            if (!operatorGuests.Any())
+            {
+                return NotFound("No other guests found for this batch.");
+            }
+
+            // Update the status of all guests in this batch to Reserved (2)
+            foreach (var g in operatorGuests)
+            {
+                g.BookingStatus = 2;  // Set status to Reserved (2)
+            }
+
+            try
+            {
+                // Save all changes
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict("Concurrency conflict: guests may have been modified by another process.");
+            }
+
+            // Redirect back to the ReserveBooking page
+            return RedirectToAction("ReserveBooking", "Reserve");
+        }
 
 
         public IActionResult DownloadQRCode(string base64Image, string fileName)

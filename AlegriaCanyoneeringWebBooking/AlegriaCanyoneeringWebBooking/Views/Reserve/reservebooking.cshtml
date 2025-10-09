@@ -49,7 +49,6 @@
             </div>
         </div>
     }
-
     @if (Model.ReservedGuests != null && Model.ReservedGuests.Any())
     {
         <div class="table-responsive">
@@ -68,9 +67,18 @@
                     {
                         var badgeClass = guest.BookingStatus switch
                         {
-                            "anticipated" => "info",
-                            "reserved" => "success",
-                            _ => "secondary"
+                         
+                            2 => "success",  // reserved (2)
+                     
+                            _ => "secondary"  // Default class for other statuses
+                        };
+
+                        var bookingStatusDisplay = guest.BookingStatus switch
+                        {
+                          
+                            2 => "Reserved",
+                         
+                            _ => "Unknown"
                         };
 
                         <tr>
@@ -79,7 +87,7 @@
                             <td>@guest.Date</td>
                             <td>
                                 <span class="badge bg-@badgeClass text-uppercase px-2 py-1">
-                                    @guest.BookingStatus
+                                    @bookingStatusDisplay
                                 </span>
                             </td>
                             <td class="text-center">
@@ -113,7 +121,6 @@
                                         </form>
                                     }
                                 </div>
-
                             </td>
                         </tr>
                     }
@@ -122,6 +129,7 @@
         </div>
     }
     else
+  
     {
         <div class="d-flex flex-column align-items-center justify-content-center py-5">
             <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>

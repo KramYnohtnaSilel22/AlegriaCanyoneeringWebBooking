@@ -79,67 +79,64 @@
         }
             const isAdmin = @User.IsInRole("Admin").ToString().ToLower(); // true/false in JS
         $(document).ready(function () {
-            $('#guestsTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: '@Url.Action("GetGuestsData", "Guest")',
-                    type: 'POST'
-                },
-                columns: [
-                    { data: 'operatorName', title: 'Operator' },
-                    { data: 'totalGuests', title: 'Total Guests' },
+                    $('#guestsTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '@Url.Action("GetGuestsData", "Guest")',
+                type: 'POST'
+            },
+            columns: [
+                { data: 'operatorName', title: 'Operator' },
+                { data: 'totalGuests', title: 'Total Guests' },
                 {
-            data: 'arrivalDate',
-            title: 'Arrival Date',
-            render: function(data) {
-                if (!data) return '';
-                const d = new Date(data);
-                if (isNaN(d.getTime())) return ''; // returns blank if invalid
-                const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                return d.toLocaleDateString('en-US', options);
-            }
-        },
-
-                    {
-                        data: 'bookingStatus',
-                        title: 'Status',
-                        render: function (data) {
-                            let badge = data === "reserved" ? "success" : "info";
-                            return `<span class="badge bg-${badge}">${data}</span>`;
-                        }
-                    },
-                    {
-                        data: 'id',
-                        title: 'Actions',
-                        orderable: false,
-                        searchable: false,
-                        render: function (data, type, row) {
-                            return `
-                              <button type="button" class="btn btn-sm btn-primary me-1"
-                onclick="loadBookingDetails(${data})"
-                data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
-            <i class="fas fa-eye me-1"></i> View
-        </button>
-                             ${row.bookingStatus === 'anticipated' && !isAdmin ? `
-            <form method="post" action="/Guest/UpdateStatus" style="display:inline">
-                <input type="hidden" name="id" value="${data}" />
-                <input type="hidden" name="status" value="reserved" />
-                <button type="submit" class="btn btn-sm btn-success">Submit</button>
-            </form>
-        ` : ''}
-                            `;
-                        }
+                    data: 'arrivalDate',
+                    title: 'Arrival Date',
+                    render: function(data) {
+                        if (!data) return '';
+                        return data;  // Directly display the formatted date from the server
                     }
-                ],
-                pageLength: 10,
-                lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
-                responsive: true,
-                autoWidth: false,
-                language: {
-                    emptyTable: "No guests found."
+                },
+                {
+                    data: 'bookingStatus',
+                    title: 'Status',
+                    render: function (data) {
+                        let badge = data === "reserved" ? "success" : "info";
+                        return `<span class="badge bg-${badge}">${data}</span>`;
+                    }
+                },
+                {
+                    data: 'id',
+                    title: 'Actions',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        return `
+                            <button type="button" class="btn btn-sm btn-primary me-1"
+                                onclick="loadBookingDetails(${data})"
+                                data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
+                                <i class="fas fa-eye me-1"></i> View
+                            </button>
+                            ${row.bookingStatus === 'anticipated' ? `
+                                <form method="post" action="/Guest/UpdateStatus" style="display:inline">
+                                    <input type="hidden" name="id" value="${data}" />
+                                    <input type="hidden" name="status" value="reserved" />
+                                    <button type="submit" class="btn btn-sm btn-success">Submit</button>
+                                </form>
+                            ` : ''}
+                        `;
+                    }
                 }
-            });
+            ],
+            pageLength: 10,
+            lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
+            responsive: true,
+            autoWidth: false,
+            language: {
+                emptyTable: "No guests found."
+            }
+        });
+
 
             // ✅ Toast Message Handling
             var toastElement = document.getElementById('toastMessage');

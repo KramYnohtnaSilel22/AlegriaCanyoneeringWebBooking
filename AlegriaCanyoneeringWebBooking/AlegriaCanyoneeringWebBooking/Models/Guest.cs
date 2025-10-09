@@ -67,9 +67,16 @@ namespace AlegriaCanyoneeringWebBooking.Models
             public string? Year { get; set; }
 
         [Column("status")]
-        [StringLength(50)]
-        public string BookingStatus { get; set; } = "anticipated";
+        public int BookingStatus { get; set; } = 0; // Default to 'anticipated' (0)
 
+
+        public enum BookingStatusEnum
+        {
+            anticipated = 0,  // 'anticipated' instead of 'Anticipated'
+            canceled = 1,     // 'canceled' instead of 'Canceled'
+            reserved = 2,     // 'reserved' instead of 'Reserved'
+            confirmed = 3     // 'confirmed' instead of 'Confirmed'
+        }
 
 
         [Column("Area")]

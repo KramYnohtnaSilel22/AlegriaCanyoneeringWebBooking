@@ -81,8 +81,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
                 entity.Property(e => e.BookingStatus)
                     .HasColumnName("status")
-                    .HasMaxLength(50)
-                    .HasDefaultValue("anticipated");
+                     .HasDefaultValue(0); // Set default value to 0 (representing "anticipated")
 
                 entity.Property(e => e.RFID)
     .HasColumnName("rfid");
