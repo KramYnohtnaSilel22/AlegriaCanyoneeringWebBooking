@@ -83,7 +83,7 @@
                     <table id="companionsTable" class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="text-center" style="width: 70px;">Action</th>
+                                <th class="text-center"></th>
                                 <th>Full Name</th>
                                 <th>Age</th>
                                 <th>Gender</th>
@@ -95,12 +95,7 @@
                             {
                                 <tr data-guest-row="@guest.Id">
                                     <td class="text-center">
-                                        <button type="button"
-                                                class="btn btn-outline-danger btn-sm rounded-circle cancel-btn"
-                                                data-guest-id="@guest.Id"
-                                                title="Cancel this companion">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                       
                                     </td>
                                     <td>@guest.Fullname</td>
                                     <td>@guest.Age</td>
