@@ -58,53 +58,54 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault();
 
-            // Initialize the query to fetch only guests with the 'anticipated' booking status.
+            // Filter guests: BookingStatus = anticipated AND Status != 3
             var query = _context.Guests
-                .Include(g => g.OperatorList) // Include the related OperatorList to get Operator's name
-                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated)
+                .Include(g => g.OperatorList)
+                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated
+                            && g.BookingStatus != 3) // <-- exclude guests already confirmed
                 .AsQueryable();
 
-            // Apply search filter if there is a search term
+            // Search filter
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(g =>
                     g.Fullname.Contains(search) ||
                     g.Batch.Contains(search) ||
-                    (g.OperatorList != null && g.OperatorList.BusinessName.Contains(search)) // Search within operator names
+                    (g.OperatorList != null && g.OperatorList.BusinessName.Contains(search))
                 );
             }
 
-            // Count the total number of records (for DataTable)
+            // Total records
             var recordsTotal = await query.CountAsync();
 
-            // Apply pagination and ordering (DataTable will handle these via 'start' and 'length')
+            // Apply pagination and grouping
             var data = await query
-                .OrderBy(g => g.OperatorId) // You can modify this based on user preferences (e.g., dynamic sorting)
+                .OrderBy(g => g.OperatorId)
                 .ThenBy(g => g.Batch)
                 .Skip(start)
                 .Take(length)
-                .GroupBy(g => new { g.Batch, g.OperatorId }) // Group by Batch and OperatorId
+                .GroupBy(g => new { g.Batch, g.OperatorId })
                 .Select(grp => new
                 {
                     Batch = grp.Key.Batch,
                     OperatorId = grp.Key.OperatorId,
-                    TotalGuests = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled), // Count guests not canceled
-                    ArrivalDate = grp.Min(x => x.ArrivalDate), // Get the earliest arrival date in the group
-                    Status = "anticipated", // Hard-coded status as 'anticipated'
-                    MainGuestId = grp.OrderBy(x => x.Id).First().Id // Select the first guest ID in the group
+                    TotalGuests = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
+                    ArrivalDate = grp.Min(x => x.ArrivalDate),
+                    Status = "anticipated",
+                    MainGuestId = grp.OrderBy(x => x.Id).First().Id
                 })
                 .ToListAsync();
 
-            // Map operator names from tbl_operator_mobile
+            // Get operator names
             var operators = await _context.Operators
                 .Select(o => new { o.Id, o.BusinessName })
                 .ToListAsync();
 
-            // Map the group data and add the operator name
+            // Map operator names
             var grouped = data.Select(g =>
             {
                 var businessName = operators
-                    .FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "No Operator"; // Get operator name, or "No Operator" if not found
+                    .FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "No Operator";
 
                 return new
                 {
@@ -112,12 +113,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     batch = g.Batch,
                     operatorName = businessName,
                     totalGuests = g.TotalGuests,
-                    arrivalDate = g.ArrivalDate, // Format date as string
-                    bookingStatus = g.Status // Keep the status as "anticipated" for display
+                    arrivalDate = g.ArrivalDate,
+                    bookingStatus = g.Status
                 };
             }).ToList();
 
-            // Return paginated and filtered data along with the total record count
+            // Return JSON for DataTables
             return Json(new
             {
                 draw,
@@ -126,6 +127,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 data = grouped
             });
         }
+
 
         //[HttpPost]
         //public async Task<IActionResult> GetGuestsData()
@@ -463,7 +465,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         public async Task<IActionResult> saveguest()
         {
-            // ✅ Get current user's ID and Role from claims
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
@@ -473,12 +474,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 currentOperatorId = parsedId;
             }
 
-            // ✅ Fetch anticipated guests using the BookingStatusEnum
             var anticipatedGuestsQuery = _context.Guests
                 .Include(g => g.OperatorList)
-                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated); // Use integer value for anticipated status
+                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated
+                            && g.BookingStatus != 3); // <-- exclude confirmed
 
-            // ✅ If current user is an Operator, filter by their OperatorId
             if (currentOperatorId.HasValue)
             {
                 anticipatedGuestsQuery = anticipatedGuestsQuery
@@ -487,7 +487,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var anticipatedGuests = await anticipatedGuestsQuery.ToListAsync();
 
-            // ✅ Group guests by Operator
             var grouped = anticipatedGuests
                 .GroupBy(g => g.OperatorId)
                 .Select(grp =>
@@ -497,7 +496,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     {
                         OperatorId = grp.Key,
                         OperatorList = first.OperatorList,
-                        RFID = grp.Count(x => x.BookingStatus != (int)Guest.BookingStatusEnum.canceled),  // Count non-canceled guests
+                        RFID = grp.Count(x => x.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus
                     };

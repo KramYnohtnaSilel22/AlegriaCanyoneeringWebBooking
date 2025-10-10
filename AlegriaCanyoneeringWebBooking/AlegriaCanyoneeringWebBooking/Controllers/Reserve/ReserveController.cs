@@ -31,63 +31,78 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
-
-
         [HttpGet]
-        public async Task<IActionResult> GetBookingDetails(int id)
+        public async Task<IActionResult> GetGuestOfTheDay(int pageNumber = 1, int pageSize = 50, string batchFilter = null)
         {
-            var guest = await _context.Guests
+            var query = _context.Guests
                 .Include(g => g.NationalityEntity)
-                .Include(g => g.OperatorList) // optional if you use operator in partial
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .AsQueryable();
 
-            if (guest == null)
-                return Content("<p class='text-danger'>Guest not found.</p>", "text/html");
-
-            var guestsInBatch = await _context.Guests
-                .Where(g => g.Batch == guest.Batch && g.Id != guest.Id)
-                .Include(g => g.NationalityEntity)
-                .ToListAsync();
-
-            var vm = new GuestDetailsViewModel
+            if (!string.IsNullOrEmpty(batchFilter))
             {
-                Guest = guest,
-                GuestsInBatch = guestsInBatch
-            };
-
-            // Ensure the partial name matches the file you created:
-            return PartialView("_ReserveBookingDetailsPartial", vm);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetGuestOfTheDay()
-        {
-            // 🟢 Fetch all guests ordered by ArrivalDate (latest first)
-            var guests = await _context.Guests
-                .Include(g => g.NationalityEntity)
-                .OrderByDescending(g => g.ArrivalDate)
-                .ToListAsync();
-
-            if (guests == null || !guests.Any())
-            {
-                return Content("<p class='text-danger'>No guests found.</p>", "text/html");
+                query = query.Where(g => g.Batch.Contains(batchFilter));
             }
 
-            // 🟢 Fetch all operators once (avoid N+1 queries)
+            query = query.OrderByDescending(g => g.ArrivalDate);
+
+            var totalGuests = await query.CountAsync();
+
+            var guests = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            if (!guests.Any())
+                return Content("<p class='text-danger'>No guests found.</p>", "text/html");
+
+            var operatorIds = guests.Select(g => g.OperatorId).Distinct().ToList();
             var operators = await _context.Operators
+                .Where(o => operatorIds.Contains(o.Id))
                 .Select(o => new { o.Id, o.BusinessName })
                 .ToListAsync();
 
-            // 🟢 Build a list of GuestWithOperatorVM
             var vmList = guests.Select(g => new GuestWithOperatorVM
             {
                 Guest = g,
                 OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
             }).ToList();
 
-            // ✅ Return all guests to the partial view
-            return PartialView("_GuestDetailsPartial", vmList);
+            var model = new GuestPaginationViewModel
+            {
+                Guests = vmList,
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalGuests
+            };
+
+            return PartialView("_GuestDetailsPartial", model);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetGuestsByBatch(string batchCode)
+        {
+            if (string.IsNullOrEmpty(batchCode))
+                return BadRequest("Batch code is required.");
+
+            var operators = await _context.Operators
+                .Select(o => new { o.Id, o.BusinessName })
+                .ToListAsync();
+
+            var guests = await _context.Guests
+                      .Include(g => g.NationalityEntity) // Include Nationality
+                .Where(g => g.Batch == batchCode)
+                .ToListAsync();
+
+            var guestsWithOperatorName = guests.Select(g => new GuestWithOperatorVM
+            {
+                Guest = g,
+                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
+            }).ToList();
+
+            return PartialView("ViewGuestDetails", guestsWithOperatorName);
+        }
+
+  
 
         public async Task<IActionResult> reservebooking()
         {
@@ -172,6 +187,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             string batchCode = reservedGuests.First().Batch;
             string batchQrBase64 = GenerateQRCodeBase64(batchCode);
 
+
             var vm = new GuestListViewModel
             {
                 ReservedGuests = grouped,
@@ -215,30 +231,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> GetGuestsByBatch(string batchCode)
-        {
-            if (string.IsNullOrEmpty(batchCode))
-                return BadRequest("Batch code is required.");
-
-            var operators = await _context.Operators
-                .Select(o => new { o.Id, o.BusinessName })
-                .ToListAsync();
-
-            var guests = await _context.Guests
-                      .Include(g => g.NationalityEntity) // Include Nationality
-                .Where(g => g.Batch == batchCode)
-                .ToListAsync();
-
-            var guestsWithOperatorName = guests.Select(g => new GuestWithOperatorVM
-            {
-                Guest = g,
-                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
-            }).ToList();
-
-            return PartialView("_GuestDetailsPartial", guestsWithOperatorName);
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GetGuestsData(string? startDate, string? endDate)
@@ -248,52 +240,76 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault();
 
-            // 🔹 Convert from string to DateTime
+            // ✅ Get current user's ID and Role
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            int? currentOperatorId = null;
+            if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
+            {
+                currentOperatorId = parsedId;
+            }
+
+            // 🔹 Convert date filters
             DateTime? startDateValue = null;
             DateTime? endDateValue = null;
-
             if (DateTime.TryParse(startDate, out DateTime sd))
                 startDateValue = sd.Date;
-
             if (DateTime.TryParse(endDate, out DateTime ed))
                 endDateValue = ed.Date.AddDays(1).AddTicks(-1);
 
-            // 🔹 Load Guests first (BookingStatus = 3 = confirmed)
-            var guests = await _context.Guests
-                .Include(g => g.OperatorList)
-                .Where(g => g.BookingStatus == 3)
-                .ToListAsync();
+            // 🔹 Query with join to ensure operator names are always available
+            var query = from g in _context.Guests
+                        join o in _context.Operators on g.OperatorId equals o.Id
+                        where g.BookingStatus == 3
+                        select new
+                        {
+                            Guest = g,
+                            OperatorName = o.BusinessName
+                        };
 
-            // 🔹 Convert Unix timestamp to DateTime & filter in-memory
-            var filteredGuests = guests
-                .Where(g =>
-                {
-                    if (string.IsNullOrEmpty(g.ArrivalDate))
-                        return false;
+            // ✅ Filter by operator role
+            if (currentOperatorId.HasValue)
+            {
+                query = query.Where(x => x.Guest.OperatorId == currentOperatorId.Value);
+            }
 
-                    if (!long.TryParse(g.ArrivalDate, out var unix))
-                        return false;
+            // 🔹 Search filter
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(x =>
+                    x.Guest.Fullname.Contains(search) ||
+                    x.Guest.Batch.Contains(search) ||
+                    x.OperatorName.Contains(search));
+            }
 
-                    // Convert Unix → DateTime (UTC → local)
-                    var arrival = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
+            var guestsList = await query.ToListAsync();
 
-                    if (startDateValue.HasValue && endDateValue.HasValue)
+            // 🔹 Date filter in-memory
+            if (startDateValue.HasValue && endDateValue.HasValue)
+            {
+                guestsList = guestsList
+                    .Where(x =>
+                    {
+                        if (string.IsNullOrEmpty(x.Guest.ArrivalDate) || !long.TryParse(x.Guest.ArrivalDate, out var unix))
+                            return false;
+
+                        var arrival = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
                         return arrival >= startDateValue.Value && arrival <= endDateValue.Value;
-
-                    return true;
-                })
-                .ToList();
+                    })
+                    .ToList();
+            }
 
             // 🔹 Group by Batch
-            var groupedData = filteredGuests
-                .GroupBy(g => g.Batch)
+            var groupedData = guestsList
+                .GroupBy(x => new { x.Guest.Batch, x.OperatorName })
                 .Select(g => new
                 {
-                    batch = g.Key,
+                    batch = g.Key.Batch,
+                    operatorName = g.Key.OperatorName,
                     totalGuests = g.Count(),
-                    operatorName = g.FirstOrDefault()?.OperatorList?.BusinessName ?? "N/A",
                     arrivalDate = DateTimeOffset.FromUnixTimeSeconds(
-                        long.Parse(g.FirstOrDefault()?.ArrivalDate ?? "0")).DateTime.ToString("yyyy-MM-dd"),
+                        long.Parse(g.First().Guest.ArrivalDate ?? "0")).DateTime.ToString("yyyy-MM-dd"),
                     status = "Confirmed"
                 })
                 .ToList();
@@ -309,6 +325,35 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 data = pagedData
             });
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetBookingDetails(int id)
+        {
+            var guest = await _context.Guests
+                .Include(g => g.NationalityEntity)
+                .Include(g => g.OperatorList) // optional if you use operator in partial
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            if (guest == null)
+                return Content("<p class='text-danger'>Guest not found.</p>", "text/html");
+
+            var guestsInBatch = await _context.Guests
+                .Where(g => g.Batch == guest.Batch && g.Id != guest.Id)
+                .Include(g => g.NationalityEntity)
+                .ToListAsync();
+
+            var vm = new GuestDetailsViewModel
+            {
+                Guest = guest,
+                GuestsInBatch = guestsInBatch
+            };
+
+            // Ensure the partial name matches the file you created:
+            return PartialView("_ReserveBookingDetailsPartial", vm);
+        }
+
+       
 
 
         [HttpPost]
