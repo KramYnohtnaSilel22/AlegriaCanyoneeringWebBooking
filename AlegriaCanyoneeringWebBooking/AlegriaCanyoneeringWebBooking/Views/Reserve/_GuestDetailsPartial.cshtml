@@ -1,6 +1,21 @@
 ﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestPaginationViewModel
 <link href="/css/GuestDetails.css" rel="stylesheet" />
 
+@{
+    // Helper function to format ArrivalDate
+    string FormatArrivalDate(string unixTimestamp)
+    {
+        if (string.IsNullOrEmpty(unixTimestamp)) return "N/A";
+
+        if (long.TryParse(unixTimestamp, out var unix))
+        {
+            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+        }
+
+        return unixTimestamp;
+    }
+}
 
 <div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -48,7 +63,7 @@
                                     <span class="text-muted">@batchGroup.Key</span>
                                     <small class="ms-3">(Operator: @primaryGuestVM.OperatorName)</small>
                                 </div>
-                                <span class="text-muted">@primaryGuestVM.Guest.ArrivalDate</span>
+                                <span class="text-muted">@FormatArrivalDate(primaryGuestVM.Guest.ArrivalDate)</span>
                             </div>
 
                             <div class="card-body px-3 py-3">
@@ -74,7 +89,7 @@
                                                 <td>@primaryGuestVM.Guest.Gender</td>
                                                 <td>@primaryGuestVM.Guest.NationalityType</td>
                                                 <td>@primaryGuestVM.Guest.Area</td>
-                                                <td>@primaryGuestVM.Guest.ArrivalDate</td>
+                                                <td>@FormatArrivalDate(primaryGuestVM.Guest.ArrivalDate)</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -84,7 +99,7 @@
                                 {
                                     <h6 class="fw-bold mt-4 mb-2">Companion Guests</h6>
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-hover" id="example2">
+                                        <table class="table table-sm table-hover">
                                             <thead>
                                                 <tr class="table-light">
                                                     <th>Full Name</th>
@@ -126,16 +141,16 @@
                 <nav aria-label="Guest pagination">
                     <ul class="pagination justify-content-center">
                         <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
-                            <a class="page-link" href="#" onclick="loadGuestPage(@(Model.CurrentPage - 1))">Previous</a>
+                            <a class="page-link" href="javascript:void(0)" onclick="loadGuestPage(@(Model.CurrentPage - 1))">Previous</a>
                         </li>
                         @for (var i = 1; i <= Model.TotalPages; i++)
                         {
                             <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
-                                <a class="page-link" href="#" onclick="loadGuestPage(@i)">@i</a>
+                                <a class="page-link" href="javascript:void(0)" onclick="loadGuestPage(@i)">@i</a>
                             </li>
                         }
                         <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
-                            <a class="page-link" href="#" onclick="loadGuestPage(@(Model.CurrentPage + 1))">Next</a>
+                            <a class="page-link" href="javascript:void(0)" onclick="loadGuestPage(@(Model.CurrentPage + 1))">Next</a>
                         </li>
                     </ul>
                 </nav>
@@ -144,22 +159,25 @@
     </div>
 </div>
 
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="~/js/GuestPDF.js" asp-append-version="true" defer></script>
 <script src="~/js/GuestExcel.js" asp-append-version="true" defer></script>
-    <script>
-                  let currentPage = 1;
-    const pageSize = 50;
+
+<script>
+    let currentPage = @Model.CurrentPage;
+    const pageSize = @Model.PageSize;
 
     function loadGuestPage(pageNumber) {
         const batchFilter = $('#batchSearchInput').val();
 
-        $.get('@Url.Action("GetGuestOfTheDay")', { pageNumber, pageSize, batchFilter }, function (data) {
+        $.get('@Url.Action("GetGuestOfTheDay", "Reserve")', {
+            pageNumber: pageNumber,
+            pageSize: pageSize,
+            batchFilter: batchFilter
+        }, function (data) {
             $('#guestDetailsModal .modal-content').html(data);
         });
     }
@@ -171,5 +189,4 @@
             loadGuestPage(1);
         });
     });
-        </script>
-
+</script>

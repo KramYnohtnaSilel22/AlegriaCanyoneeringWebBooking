@@ -72,11 +72,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 Guests = vmList,
                 CurrentPage = pageNumber,
                 PageSize = pageSize,
-                TotalCount = totalGuests
+                TotalCount = totalGuests,
+                TotalPages = (int)Math.Ceiling(totalGuests / (double)pageSize),
+                BatchFilter = batchFilter
             };
 
             return PartialView("_GuestDetailsPartial", model);
         }
+
 
         [HttpGet]
         public async Task<IActionResult> GetGuestsByBatch(string batchCode)

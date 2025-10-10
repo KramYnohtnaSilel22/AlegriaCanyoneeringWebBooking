@@ -1,6 +1,25 @@
 ﻿@model AlegriaCanyoneeringWebBooking.ViewModel.GuestDetailsViewModel
 
 @Html.AntiForgeryToken()
+@{
+    // Helper function to format ArrivalDate
+    string FormatArrivalDate(string unixTimestamp)
+    {
+        if (string.IsNullOrEmpty(unixTimestamp))
+            return "N/A";
+
+        if (long.TryParse(unixTimestamp, out var unix))
+        {
+            // Convert Unix timestamp to local time
+            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
+
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+        }
+
+        return unixTimestamp;
+    }
+}
+
 
 <div class="container py-5">
 
@@ -45,7 +64,7 @@
             </div>
             <div class="col-md-6">
                 <small class="text-muted">Arrival Date</small>
-                <div>@Model.Guest.ArrivalDate</div>
+                <div>@FormatArrivalDate(Model.Guest.ArrivalDate)</div>
             </div>
         </div>
     </div>
