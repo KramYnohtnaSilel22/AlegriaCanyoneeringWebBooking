@@ -88,10 +88,9 @@
         </div>
     </div>
 </div>
-
 @section Scripts {
-
     <script>
+
                    // Guest of the Day Button
                   $('#btnViewGuestOfDay').on('click', function () {
                       const modalContainer = $('#guestDetailsModalContainer');
@@ -131,16 +130,20 @@
                         showToast('Failed to load guest details.');
                     });
             });
-        
+
         $(document).ready(function () {
             var table = null;
             var toast = new bootstrap.Toast(document.getElementById('liveToast'));
 
+            // 🔔 Reusable Toast
             function showToast(message) {
                 $('#toastMessage').text(message);
                 toast.show();
             }
 
+            // ===========================
+            // 🔍 FILTER FORM SUBMIT
+            // ===========================
             $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
 
@@ -155,6 +158,7 @@
                 $('#btnViewGuestOfDay').fadeOut();
                 $('#tableLoader').show();
 
+                // 🧹 Reset DataTable if already initialized
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
                     table.destroy();
                     $('#batchesTable').empty().append(`
@@ -171,6 +175,7 @@
                     `);
                 }
 
+                // ⚡ Initialize DataTable
                 table = $('#batchesTable').DataTable({
                     processing: true,
                     serverSide: true,
@@ -182,9 +187,9 @@
                             d.endDate = endDate;
                             d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
                         },
-                        error: function(xhr, error, thrown) {
+                        error: function (xhr) {
                             $('#tableLoader').hide();
-                            showToast('Error loading data. Check console.');
+                            showToast('Error loading data.');
                             console.error(xhr.responseText);
                         },
                         dataSrc: function (json) {
@@ -200,30 +205,64 @@
                         }
                     },
                     columns: [
-                        { data: 'batchCode' },
+                        { data: 'batch' },
                         { data: 'totalGuests' },
                         {
                             data: 'operatorName',
                             render: function (data) {
-                                return data?.trim() ? data : '<span class="text-muted">N/A</span>';
+                                return data && data.trim()
+                                    ? data
+                                    : '<span class="text-muted">N/A</span>';
                             }
                         },
-                        { data: 'arrivalDate' },
+                             {
+            data: 'arrivalDate',
+            render: function (data) {
+                // ✅ Handle null or undefined
+                if (!data) return '<span class="text-muted">N/A</span>';
+
+                let date;
+
+                if (!isNaN(data)) {
+                    // ✅ Unix timestamp (in seconds)
+                    date = new Date(parseInt(data) * 1000);
+                } else {
+                    // ✅ Fallback for ISO/UTC date strings
+                    date = new Date(data);
+                }
+
+                // ❌ If still invalid, just return the raw data
+                if (isNaN(date.getTime())) return data;
+
+                // ✅ Format date with full month name, time, and AM/PM
+                var formattedDate = date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',  // Full month name
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true     // 12-hour format
+                });
+
+                return formattedDate;
+            }
+        },
+
+                        
                         {
                             data: 'status',
                             render: function (data) {
                                 if (!data) return '';
-                                const status = data.toLowerCase();
                                 const badgeMap = {
                                     confirmed: 'success',
                                     anticipated: 'info',
                                     cancelled: 'danger'
                                 };
-                                return `<span class="badge bg-${badgeMap[status] || 'secondary'} text-uppercase">${data}</span>`;
+                                return `<span class="badge bg-${badgeMap[data.toLowerCase()] || 'secondary'} text-uppercase">${data}</span>`;
                             }
                         },
                         {
-                            data: 'batchCode',
+                            data: 'batch',
                             orderable: false,
                             searchable: false,
                             render: function (data) {
@@ -242,8 +281,10 @@
                     }
                 });
             });
+
+   
         });
     </script>
 }
 
-       
+ *

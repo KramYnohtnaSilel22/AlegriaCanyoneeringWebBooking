@@ -241,13 +241,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GetGuestsData(string startDate, string endDate)
+        public async Task<IActionResult> GetGuestsData(string? startDate, string? endDate)
         {
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault();
 
+            // 🔹 Convert from string to DateTime
             DateTime? startDateValue = null;
             DateTime? endDateValue = null;
 
@@ -257,90 +258,57 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (DateTime.TryParse(endDate, out DateTime ed))
                 endDateValue = ed.Date.AddDays(1).AddTicks(-1);
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userRole = User.FindFirstValue(ClaimTypes.Role);
-
-            int? currentOperatorId = null;
-            if (userRole == "Operator" && int.TryParse(userId, out int operatorId))
-                currentOperatorId = operatorId;
-
-            // Change here: filter by BookingStatus == 3 (confirmed)
-            var query = _context.Guests
-                .Where(g => g.BookingStatus == 3);
-
-            if (currentOperatorId.HasValue)
-                query = query.Where(g => g.OperatorId == currentOperatorId.Value);
-
-            // Materialize query BEFORE parsing string dates
-            var allGuests = await query.ToListAsync();
-
-            if (startDateValue.HasValue && endDateValue.HasValue)
-            {
-                allGuests = allGuests
-                    .Where(g => DateTime.TryParse(g.ArrivalDate, out DateTime arrival) &&
-                                arrival >= startDateValue.Value &&
-                                arrival <= endDateValue.Value)
-                    .ToList();
-            }
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                allGuests = allGuests
-                    .Where(g => g.Batch.Contains(search) || g.Fullname.Contains(search))
-                    .ToList();
-            }
-
-            var operators = await _context.Operators
-                .Select(o => new { o.Id, o.BusinessName })
+            // 🔹 Load Guests first (BookingStatus = 3 = confirmed)
+            var guests = await _context.Guests
+                .Include(g => g.OperatorList)
+                .Where(g => g.BookingStatus == 3)
                 .ToListAsync();
 
-            var groupedRaw = allGuests
-                .GroupBy(g => new { g.Batch, g.OperatorId })
-                .Select(grp => new
+            // 🔹 Convert Unix timestamp to DateTime & filter in-memory
+            var filteredGuests = guests
+                .Where(g =>
                 {
-                    Batch = grp.Key.Batch,
-                    OperatorId = grp.Key.OperatorId,
-                    TotalGuests = grp.Count(g => g.BookingStatus != 1),  // 1 = canceled
-                    ArrivalDate = grp.Min(x => x.ArrivalDate),
-                    Status = "confirmed",
-                    MainGuestId = grp.OrderBy(x => x.Id).First().Id
+                    if (string.IsNullOrEmpty(g.ArrivalDate))
+                        return false;
+
+                    if (!long.TryParse(g.ArrivalDate, out var unix))
+                        return false;
+
+                    // Convert Unix → DateTime (UTC → local)
+                    var arrival = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
+
+                    if (startDateValue.HasValue && endDateValue.HasValue)
+                        return arrival >= startDateValue.Value && arrival <= endDateValue.Value;
+
+                    return true;
                 })
-                .OrderBy(g => g.OperatorId)
-                .ThenBy(g => g.Batch)
-                .Skip(start)
-                .Take(length)
                 .ToList();
 
-            var recordsTotal = allGuests
-                .Select(g => new { g.Batch, g.OperatorId })
-                .Distinct()
-                .Count();
-
-            var grouped = groupedRaw.Select(g =>
-            {
-                var businessName = operators
-                    .FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A";
-
-                return new
+            // 🔹 Group by Batch
+            var groupedData = filteredGuests
+                .GroupBy(g => g.Batch)
+                .Select(g => new
                 {
-                    id = g.MainGuestId,
-                    batchCode = g.Batch,
-                    operatorName = businessName,
-                    totalGuests = g.TotalGuests,
-                    arrivalDate = g.ArrivalDate,
-                    status = g.Status
-                };
-            });
+                    batch = g.Key,
+                    totalGuests = g.Count(),
+                    operatorName = g.FirstOrDefault()?.OperatorList?.BusinessName ?? "N/A",
+                    arrivalDate = DateTimeOffset.FromUnixTimeSeconds(
+                        long.Parse(g.FirstOrDefault()?.ArrivalDate ?? "0")).DateTime.ToString("yyyy-MM-dd"),
+                    status = "Confirmed"
+                })
+                .ToList();
+
+            // 🔹 Apply pagination
+            var pagedData = groupedData.Skip(start).Take(length);
 
             return Json(new
             {
                 draw,
-                recordsFiltered = recordsTotal,
-                recordsTotal,
-                data = grouped
+                recordsTotal = groupedData.Count,
+                recordsFiltered = groupedData.Count,
+                data = pagedData
             });
         }
-
 
 
         [HttpPost]
