@@ -17,7 +17,7 @@ namespace AlegriaCanyoneeringWebBooking
             _context = context;
         }
 
-        public IActionResult Tourist(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
+        public IActionResult Guest(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
         {
             // Set default dates
             var fromDate = dateFrom ?? DateTime.Today;
