@@ -12,17 +12,17 @@
     var totalOtherProvinceFemale = Model.Sum(x => x.OtherProvinceFemale);
     var totalForeignMale = Model.Sum(x => x.ForeignMale);
     var totalForeignFemale = Model.Sum(x => x.ForeignFemale);
+
     var grandTotalMale = totalThisProvinceMale + totalOtherProvinceMale + totalForeignMale;
     var grandTotalFemale = totalThisProvinceFemale + totalOtherProvinceFemale + totalForeignFemale;
     var grandTotal = grandTotalMale + grandTotalFemale;
 }
 
-
 <div class="card mt-4 shadow">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <h5>Tourism Visitor Report (@currentFilter.ToUpper())</h5>
         <div class="d-flex align-items-center">
-            <form method="get" asp-action="Tourist" id="filterForm" class="d-flex align-items-center me-3">
+            <form method="get" asp-action="Guest" id="filterForm" class="d-flex align-items-center me-3">
                 <label class="me-2 text-white fw-bold">Filter:</label>
                 <select name="filter" id="filterSelect" class="form-select me-2">
                     <option value="daily" selected="@("daily" == currentFilter)">Daily</option>
@@ -79,7 +79,6 @@
                 <div class="info-cell info-label">Name of Attraction/Spot:</div>
                 <div class="info-cell">Canyoneering Adventure</div>
             </div>
-       
         </div>
 
         <table id="tourismReportTable">
@@ -116,31 +115,34 @@
             <tbody>
                 @{
                     int seq = 1;
-                }
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@seq</td>
-                        <td>@item.Label</td>
-                        <td>@item.ThisProvinceMale</td>
-                        <td>@item.ThisProvinceFemale</td>
-                        <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
 
-                        <td>@item.OtherProvinceMale</td>
-                        <td>@item.OtherProvinceFemale</td>
-                        <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
+                    // For all views: just iterate through the Model
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@seq</td>
+                            <td>@item.Label</td>
+                            <td>@item.ThisProvinceMale</td>
+                            <td>@item.ThisProvinceFemale</td>
+                            <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
 
-                        <td>@item.ForeignMale</td>
-                        <td>@item.ForeignFemale</td>
-                        <td>@(item.ForeignMale + item.ForeignFemale)</td>
+                            <td>@item.OtherProvinceMale</td>
+                            <td>@item.OtherProvinceFemale</td>
+                            <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
 
-                        <td>@item.TotalMale</td>
-                        <td>@item.TotalFemale</td>
-                        <td>@item.GrandTotal</td>
-                    </tr>
-                    seq++;
+                            <td>@item.ForeignMale</td>
+                            <td>@item.ForeignFemale</td>
+                            <td>@(item.ForeignMale + item.ForeignFemale)</td>
+
+                            <td>@item.TotalMale</td>
+                            <td>@item.TotalFemale</td>
+                            <td>@item.GrandTotal</td>
+                        </tr>
+                        seq++;
+                    }
                 }
             </tbody>
+
             <tfoot>
                 <tr>
                     <td colspan="2">Total of this Month ***</td>

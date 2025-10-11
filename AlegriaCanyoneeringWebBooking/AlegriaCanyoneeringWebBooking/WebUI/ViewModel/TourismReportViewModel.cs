@@ -4,6 +4,8 @@
     {
         public string Label { get; set; } = string.Empty;
 
+        public DateTime Date { get; set; }
+
         // This Province
         public int ThisProvinceMale { get; set; }
         public int ThisProvinceFemale { get; set; }
