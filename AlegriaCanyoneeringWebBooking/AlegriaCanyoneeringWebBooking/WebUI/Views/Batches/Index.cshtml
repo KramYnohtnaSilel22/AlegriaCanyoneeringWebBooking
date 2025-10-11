@@ -1,0 +1,53 @@
+﻿@model IEnumerable<Batch>
+
+@{
+    ViewData["Title"] = "Batches";
+}
+
+<h2 class="mb-3">Batches</h2>
+
+@* <p>
+    <a asp-action="Create" class="btn btn-primary">Create New Batch</a>
+</p> *@
+
+<table class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Batch ID</th>
+            <th>Operator</th>
+            <th>Local Guests</th>
+            <th>Foreign Guests</th>
+            <th>Tour Guides</th>
+            <th>Drivers</th>
+            <th>Total Guests</th>
+            <th>Arrival Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.BatchId</td>
+                <td>@item.OperatorList?.OwnerName</td> <!-- shows Operator name if loaded -->
+                <td>@item.NoOfLocalGuest</td>
+                <td>@item.NoOfForeignGuest</td>
+                <td>@item.NoOfTGuide</td>
+                <td>@item.NoOfMDriver</td>
+                <td>@item.TotalNoOfGuest</td>
+                <td>@item.ArrivalDate</td>
+                <td>
+                 
+                    <a asp-action="Edit" asp-route-id="@item.BatchId" class="btn btn-warning btn-sm me-1" title="Edit Batch">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <form asp-action="Delete" asp-route-id="@item.BatchId" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this batch?');">
+                        <button type="submit" class="btn btn-danger btn-sm" title="Delete Batch">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

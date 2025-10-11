@@ -1,0 +1,107 @@
+﻿@model Operator
+
+@{
+    ViewData["Title"] = "Create User";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create New User</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" novalidate>
+                        <div class="row g-4">
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <!-- Full Name -->
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label">Full Name</label>
+                                    <input asp-for="Name" class="form-control" placeholder="Enter full name" />
+                                    <span asp-validation-for="Name" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Business Name -->
+                                <div class="mb-3">
+                                    <label asp-for="BusinessName" class="form-label">Business Name</label>
+                                    <input asp-for="BusinessName" class="form-control" placeholder="e.g. Adventure Co." />
+                                    <span asp-validation-for="BusinessName" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Age -->
+                                <div class="mb-3">
+                                    <label asp-for="Age" class="form-label">Age</label>
+                                    <input asp-for="Age" class="form-control" type="number" min="18" placeholder="e.g. 30" />
+                                    <span asp-validation-for="Age" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Gender -->
+                                <div class="mb-3">
+                                    <label asp-for="Gender" class="form-label">Gender</label>
+                                    <select asp-for="Gender" class="form-select">
+                                        <option value="">-- Select Gender --</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                    <span asp-validation-for="Gender" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <!-- Username -->
+                                <div class="mb-3">
+                                    <label asp-for="Username" class="form-label">Username</label>
+                                    <input asp-for="Username" class="form-control" placeholder="Choose a username" />
+                                    <span asp-validation-for="Username" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Password -->
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label">Password</label>
+                                    <input asp-for="Password" class="form-control" type="password" placeholder="Enter password" />
+                                    <span asp-validation-for="Password" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="mb-3">
+                                    <label asp-for="EmailAddress" class="form-label">Email Address</label>
+                                    <input asp-for="EmailAddress" class="form-control" type="email" placeholder="user@example.com" />
+                                    <span asp-validation-for="EmailAddress" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Role -->
+                                <div class="mb-3">
+                                    <label asp-for="RoleId" class="form-label">User Role</label>
+                                    <select asp-for="RoleId" class="form-select" asp-items="ViewBag.RoleId">
+                                        <option value="">-- Select Role --</option>
+                                    </select>
+                                    <span asp-validation-for="RoleId" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus me-1"></i> Create User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

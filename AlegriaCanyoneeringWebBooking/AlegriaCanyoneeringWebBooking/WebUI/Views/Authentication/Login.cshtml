@@ -1,0 +1,89 @@
+﻿@model LoginViewModel
+@{
+    Layout = "Layout_Login";
+    ViewData["Title"] = "Login";
+}
+<style>
+    .eye-icon {
+        color: #6c757d;
+        font-size: 20px;
+    }
+
+        .eye-icon:hover {
+            color: #007bff;
+        }
+
+    .login-container {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    body, html {
+        overflow: hidden;
+        height: 100%;
+    }
+</style>
+
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <!-- Logo / Brand -->
+                        <div class="text-center mb-4">
+                            <img src="/images/alegrialogo2025.jpeg" alt="Logo" class="img-fluid" style="max-height: 100px;" />
+                        </div>
+                        <h4 class="text-center fw-bold mb-4">Login</h4>
+                        <form asp-action="Login" asp-controller="Authentication" method="post" novalidate>
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label asp-for="Username" class="form-label"><i class="fa fa-user"></i> Username</label>
+                                <input asp-for="Username" class="form-control rounded-3" placeholder="Enter Username" aria-required="true" />
+                                <span asp-validation-for="Username" class="text-danger"></span>
+                            </div>
+                            <div class="mb-3 position-relative">
+                                <label asp-for="Password" class="form-label"><i class="fa fa-lock"></i> Password</label>
+                                <div class="position-relative">
+                                    <input asp-for="Password" type="password" class="form-control rounded-3" placeholder="Enter Password" aria-required="true" id="passwordField" />
+                                    <i class="fas fa-eye eye-icon" id="open" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
+                                    <i class="fas fa-eye-slash eye-icon d-none" id="closed" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Log In</button>
+                            </div>
+                            <!-- Optional: "Forgot password?" link -->
+                            <div class="text-center mt-3">
+                                <a asp-action="ForgotPassword" asp-controller="Authentication">Forgot password?</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="~/custom/bootstrap-icons/font/bootstrap-icons.css" asp-append-version="true" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+<script>
+    function togglePassword() {
+        const passwordField = document.getElementById('passwordField');
+        const openEyeIcon = document.getElementById('open');
+        const closedEyeIcon = document.getElementById('closed');
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            openEyeIcon.classList.add('d-none');
+            closedEyeIcon.classList.remove('d-none');
+        } else {
+            passwordField.type = "password";
+            openEyeIcon.classList.remove('d-none');
+            closedEyeIcon.classList.add('d-none');
+        }
+    }
+</script>

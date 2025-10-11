@@ -1,0 +1,9 @@
+﻿
+
+namespace AlegriaCanyoneeringWebBooking
+{
+    public interface IGuestService
+    {
+        Guest GetGuestOfTheDay();
+    }
+}
