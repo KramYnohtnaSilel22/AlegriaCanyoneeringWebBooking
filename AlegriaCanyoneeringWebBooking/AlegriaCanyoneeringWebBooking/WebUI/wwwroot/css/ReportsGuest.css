@@ -1,5 +1,4 @@
-﻿
-.report-container {
+﻿.report-container {
     background: white;
     padding: 20px;
     max-width: 100%;
@@ -29,10 +28,12 @@
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
+    page-break-inside: avoid;
 }
 
 .info-row {
     display: table-row;
+    page-break-inside: avoid;
 }
 
 .info-cell {
@@ -51,6 +52,7 @@
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
+    page-break-inside: avoid;
 }
 
     #tourismReportTable th,
@@ -61,9 +63,29 @@
         vertical-align: middle;
     }
 
+    #tourismReportTable thead {
+        page-break-after: avoid;
+        display: table-header-group;
+    }
+
+    #tourismReportTable tbody {
+        page-break-inside: avoid;
+    }
+
+    #tourismReportTable tfoot {
+        page-break-before: avoid;
+        display: table-footer-group;
+    }
+
+    #tourismReportTable tr {
+        page-break-inside: avoid;
+    }
+
     #tourismReportTable thead th {
         background-color: #e0e0e0;
         font-weight: bold;
+        position: sticky;
+        top: 0;
     }
 
     #tourismReportTable tfoot td {
@@ -75,5 +97,34 @@
     font-size: 12px;
     margin-top: 10px;
     font-style: italic;
+    page-break-inside: avoid;
 }
 
+/* PDF-specific styles */
+@media print {
+    .report-container {
+        page-break-inside: avoid;
+    }
+
+    .report-title-box {
+        page-break-inside: avoid;
+    }
+
+    #tourismReportTable {
+        page-break-inside: avoid;
+    }
+
+        #tourismReportTable thead {
+            display: table-header-group;
+            page-break-after: avoid;
+        }
+
+        #tourismReportTable tfoot {
+            display: table-footer-group;
+            page-break-before: avoid;
+        }
+
+        #tourismReportTable tbody tr {
+            page-break-inside: avoid;
+        }
+}
