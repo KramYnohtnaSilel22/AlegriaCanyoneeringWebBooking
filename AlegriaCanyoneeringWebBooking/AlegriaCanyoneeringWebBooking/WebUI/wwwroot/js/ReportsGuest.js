@@ -47,6 +47,8 @@ $(document).ready(function () {
     const to = $("#dateTo").val();
     if (!from || !to) {
         setDateRange($("#filterSelect").val());
+        // Auto-submit form on page load to fetch today's data
+        $("#filterForm").submit();
     }
 });
 

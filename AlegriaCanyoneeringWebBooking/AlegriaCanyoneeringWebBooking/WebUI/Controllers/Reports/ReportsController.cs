@@ -25,24 +25,25 @@ namespace AlegriaCanyoneeringWebBooking
             ViewBag.DateFrom = fromDate.ToString("yyyy-MM-dd");
             ViewBag.DateTo = toDate.ToString("yyyy-MM-dd");
 
-            // Load all guests and parse dates first
-            var guests = _context.Guests
+            // Load all guests first
+            var allGuests = _context.Guests
                  .Include(g => g.NationalityEntity)
                  .AsEnumerable()
+                 .ToList();
+
+            // Filter by parsing the date and comparing
+            var guests = allGuests
                  .Where(g =>
                  {
-                     if (DateTime.TryParse(g.Date, out var parsed))
+                     try
                      {
-                         // Compare only the date part, ignore time
-                         return parsed.Date >= fromDate.Date && parsed.Date <= toDate.Date;
+                         var guestDate = DateTime.Parse(g.Date);
+                         return guestDate.Date >= fromDate.Date && guestDate.Date <= toDate.Date;
                      }
-                     return false;
-                 })
-                 .Select(g =>
-                 {
-                     var parsedDate = DateTime.Parse(g.Date).Date; // Get just the date, no time
-                     g.Date = parsedDate.ToString("yyyy-MM-dd");
-                     return g;
+                     catch
+                     {
+                         return false;
+                     }
                  })
                  .ToList();
 
@@ -51,7 +52,6 @@ namespace AlegriaCanyoneeringWebBooking
             switch (filter.ToLower())
             {
                 case "weekly":
-                    // For weekly: group by individual dates within the range
                     report = guests
                         .GroupBy(g => DateTime.Parse(g.Date).Date)
                         .OrderBy(g => g.Key)
@@ -63,14 +63,13 @@ namespace AlegriaCanyoneeringWebBooking
                             ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
                             OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
                             OtherProvinceFemale = g.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
-                            ForeignMale = g.Count(x => x.NationalityId == 3 && x.Gender == "Male"),
-                            ForeignFemale = g.Count(x => x.NationalityId == 3 && x.Gender == "Female")
+                            ForeignMale = g.Count(x => x.NationalityId > 2 && x.Gender == "Male"),
+                            ForeignFemale = g.Count(x => x.NationalityId > 2 && x.Gender == "Female")
                         })
                         .ToList();
                     break;
 
                 case "monthly":
-                    // For monthly: show each day in the month
                     report = guests
                         .GroupBy(g => DateTime.Parse(g.Date).Date)
                         .OrderBy(g => g.Key)
@@ -82,8 +81,8 @@ namespace AlegriaCanyoneeringWebBooking
                             ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
                             OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
                             OtherProvinceFemale = g.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
-                            ForeignMale = g.Count(x => x.NationalityId == 3 && x.Gender == "Male"),
-                            ForeignFemale = g.Count(x => x.NationalityId == 3 && x.Gender == "Female")
+                            ForeignMale = g.Count(x => x.NationalityId > 2 && x.Gender == "Male"),
+                            ForeignFemale = g.Count(x => x.NationalityId > 2 && x.Gender == "Female")
                         })
                         .ToList();
                     break;
@@ -111,8 +110,8 @@ namespace AlegriaCanyoneeringWebBooking
                                 ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
                                 OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
                                 OtherProvinceFemale = g.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
-                                ForeignMale = g.Count(x => x.NationalityId == 3 && x.Gender == "Male"),
-                                ForeignFemale = g.Count(x => x.NationalityId == 3 && x.Gender == "Female")
+                                ForeignMale = g.Count(x => x.NationalityId > 2 && x.Gender == "Male"),
+                                ForeignFemale = g.Count(x => x.NationalityId > 2 && x.Gender == "Female")
                             };
                         })
                         .ToList();
@@ -153,8 +152,8 @@ namespace AlegriaCanyoneeringWebBooking
                             ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
                             OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
                             OtherProvinceFemale = g.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
-                            ForeignMale = g.Count(x => x.NationalityId == 3 && x.Gender == "Male"),
-                            ForeignFemale = g.Count(x => x.NationalityId == 3 && x.Gender == "Female")
+                            ForeignMale = g.Count(x => x.NationalityId > 2 && x.Gender == "Male"),
+                            ForeignFemale = g.Count(x => x.NationalityId > 2 && x.Gender == "Female")
                         })
                         .ToList();
                     break;
@@ -162,7 +161,6 @@ namespace AlegriaCanyoneeringWebBooking
 
             return View(report.OrderBy(r => r.Date).ToList());
         }
-
         public IActionResult Nationality(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
         {
             DateTime from, to;
