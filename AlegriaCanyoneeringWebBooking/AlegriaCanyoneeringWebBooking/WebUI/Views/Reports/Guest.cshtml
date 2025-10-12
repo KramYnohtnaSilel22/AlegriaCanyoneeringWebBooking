@@ -117,28 +117,37 @@
                     int seq = 1;
 
                     // For all views: just iterate through the Model
-                    foreach (var item in Model)
+                    if (Model.Count() == 0)
                     {
                         <tr>
-                            <td>@seq</td>
-                            <td>@item.Label</td>
-                            <td>@item.ThisProvinceMale</td>
-                            <td>@item.ThisProvinceFemale</td>
-                            <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
-
-                            <td>@item.OtherProvinceMale</td>
-                            <td>@item.OtherProvinceFemale</td>
-                            <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
-
-                            <td>@item.ForeignMale</td>
-                            <td>@item.ForeignFemale</td>
-                            <td>@(item.ForeignMale + item.ForeignFemale)</td>
-
-                            <td>@item.TotalMale</td>
-                            <td>@item.TotalFemale</td>
-                            <td>@item.GrandTotal</td>
+                            <td colspan="14" style="text-align: center; padding: 20px;">No data available for the selected date range</td>
                         </tr>
-                        seq++;
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@seq</td>
+                                <td>@item.Label</td>
+                                <td>@item.ThisProvinceMale</td>
+                                <td>@item.ThisProvinceFemale</td>
+                                <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
+
+                                <td>@item.OtherProvinceMale</td>
+                                <td>@item.OtherProvinceFemale</td>
+                                <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
+
+                                <td>@item.ForeignMale</td>
+                                <td>@item.ForeignFemale</td>
+                                <td>@(item.ForeignMale + item.ForeignFemale)</td>
+
+                                <td>@item.TotalMale</td>
+                                <td>@item.TotalFemale</td>
+                                <td>@item.GrandTotal</td>
+                            </tr>
+                            seq++;
+                        }
                     }
                 }
             </tbody>
