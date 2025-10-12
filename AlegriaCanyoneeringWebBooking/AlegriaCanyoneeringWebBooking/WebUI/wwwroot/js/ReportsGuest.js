@@ -56,16 +56,28 @@ $("#btnDownloadPDF").on("click", function () {
     const filter = $("#filterSelect").val().toUpperCase();
     const element = document.querySelector('.report-container');
 
+    // Temporarily reduce padding for PDF generation
+    const originalPadding = element.style.padding;
+    element.style.padding = '5px';
+
     const opt = {
-        margin: 10,
+        margin: [5, 5, 5, 5], // top, left, bottom, right - minimal margins
         filename: `GuestReport_${filter}_${new Date().toISOString().slice(0, 10)}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: 'avoid', before: [] },
+        compress: true
     };
 
-    html2pdf().set(opt).from(element).save();
+    html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .finally(() => {
+            // Restore original padding
+            element.style.padding = originalPadding;
+        });
 });
 
 $("#btnDownloadExcel").on("click", function () {

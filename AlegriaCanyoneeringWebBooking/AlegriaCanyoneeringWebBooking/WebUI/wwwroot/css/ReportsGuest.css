@@ -10,6 +10,7 @@
     padding: 20px;
     text-align: center;
     margin-bottom: 20px;
+    page-break-inside: avoid;
 }
 
     .report-title-box h3 {
@@ -103,16 +104,45 @@
 /* PDF-specific styles */
 @media print {
     .report-container {
+        padding: 10px;
         page-break-inside: avoid;
     }
 
     .report-title-box {
+        margin-bottom: 10px;
+        padding: 10px;
         page-break-inside: avoid;
     }
 
-    #tourismReportTable {
+        .report-title-box h3 {
+            font-size: 18px;
+            margin: 0 0 3px 0;
+        }
+
+        .report-title-box p {
+            font-size: 10px;
+        }
+
+    .info-grid {
+        margin-bottom: 10px;
         page-break-inside: avoid;
     }
+
+    .info-cell {
+        padding: 5px;
+        font-size: 11px;
+    }
+
+    #tourismReportTable {
+        font-size: 10px;
+        page-break-inside: avoid;
+    }
+
+        #tourismReportTable th,
+        #tourismReportTable td {
+            padding: 4px;
+            border: 1px solid #000;
+        }
 
         #tourismReportTable thead {
             display: table-header-group;
@@ -127,4 +157,10 @@
         #tourismReportTable tbody tr {
             page-break-inside: avoid;
         }
+
+    .note-text {
+        font-size: 9px;
+        margin-top: 5px;
+        page-break-inside: avoid;
+    }
 }

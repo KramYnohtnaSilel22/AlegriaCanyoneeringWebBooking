@@ -88,24 +88,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     break;
 
                 case "quarterly":
+                    // Group by year and month to show individual months
                     report = guests
                         .GroupBy(g =>
                         {
                             var d = DateTime.Parse(g.Date).Date;
-                            int quarter = (d.Month - 1) / 3 + 1;
-                            return new { d.Year, Quarter = quarter };
+                            return new { d.Year, d.Month };
                         })
+                        .OrderBy(g => g.Key.Year)
+                        .ThenBy(g => g.Key.Month)
                         .Select(g =>
                         {
-                            int startMonth = (g.Key.Quarter - 1) * 3 + 1;
-                            int endMonth = startMonth + 2;
-                            var qStart = new DateTime(g.Key.Year, startMonth, 1);
-                            var qEnd = new DateTime(g.Key.Year, endMonth,
-                                DateTime.DaysInMonth(g.Key.Year, endMonth));
+                            var monthStart = new DateTime(g.Key.Year, g.Key.Month, 1);
+                            var monthEnd = new DateTime(g.Key.Year, g.Key.Month, DateTime.DaysInMonth(g.Key.Year, g.Key.Month));
                             return new TourismReportViewModel
                             {
-                                Date = qStart,
-                                Label = $"Q{g.Key.Quarter} ({qStart:MMMM d} – {qEnd:MMMM d, yyyy})",
+                                Date = monthStart,
+                                Label = $"{monthStart:MMMM 1} – {monthEnd:MMMM d, yyyy}",
                                 ThisProvinceMale = g.Count(x => x.NationalityId == 1 && x.Gender == "Male"),
                                 ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
                                 OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
@@ -118,25 +117,37 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     break;
 
                 case "yearly":
-                    report = guests
-                        .GroupBy(g => DateTime.Parse(g.Date).Year)
-                        .Select(g =>
+                    // Show all 12 months of the year
+                    var yearToDisplay = guests.Count > 0
+                        ? DateTime.Parse(guests.First().Date).Year
+                        : DateTime.Now.Year;
+
+                    var allMonthsOfYear = new List<TourismReportViewModel>();
+                    for (int month = 1; month <= 12; month++)
+                    {
+                        var monthStart = new DateTime(yearToDisplay, month, 1);
+                        var monthEnd = new DateTime(yearToDisplay, month, DateTime.DaysInMonth(yearToDisplay, month));
+
+                        var monthGuests = guests.Where(g =>
                         {
-                            int year = g.Key;
-                            var yearStart = new DateTime(year, 1, 1);
-                            return new TourismReportViewModel
-                            {
-                                Date = yearStart,
-                                Label = $"{year} (Jan 1 – Dec 31)",
-                                ThisProvinceMale = g.Count(x => x.NationalityId == 1 && x.Gender == "Male"),
-                                ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
-                                OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
-                                OtherProvinceFemale = g.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
-                                ForeignMale = g.Count(x => x.NationalityId == 3 && x.Gender == "Male"),
-                                ForeignFemale = g.Count(x => x.NationalityId == 3 && x.Gender == "Female")
-                            };
-                        })
-                        .ToList();
+                            var gDate = DateTime.Parse(g.Date).Date;
+                            return gDate.Year == yearToDisplay && gDate.Month == month;
+                        }).ToList();
+
+                        allMonthsOfYear.Add(new TourismReportViewModel
+                        {
+                            Date = monthStart,
+                            Label = $"{monthStart:MMMM 1} – {monthEnd:MMMM d, yyyy}",
+                            ThisProvinceMale = monthGuests.Count(x => x.NationalityId == 1 && x.Gender == "Male"),
+                            ThisProvinceFemale = monthGuests.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
+                            OtherProvinceMale = monthGuests.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
+                            OtherProvinceFemale = monthGuests.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
+                            ForeignMale = monthGuests.Count(x => x.NationalityId > 2 && x.Gender == "Male"),
+                            ForeignFemale = monthGuests.Count(x => x.NationalityId > 2 && x.Gender == "Female")
+                        });
+                    }
+
+                    report = allMonthsOfYear;
                     break;
 
                 default:
@@ -161,6 +172,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(report.OrderBy(r => r.Date).ToList());
         }
+
         public IActionResult Nationality(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
         {
             DateTime from, to;
