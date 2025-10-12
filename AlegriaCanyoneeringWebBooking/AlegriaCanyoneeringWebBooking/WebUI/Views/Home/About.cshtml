@@ -2,182 +2,251 @@
     ViewData["Title"] = "About Us";
     Layout = "Layout_Login";
 }
-<link href="~/css/about.css" rel="stylesheet" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Alegria Canyoneering</title>
 
-<div class="d-flex justify-content-between align-items-start w-100 pt-3 px-4" style="position:relative; z-index:10;">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        },
+                        accent: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
-    @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
-    {
-        <a asp-area="" asp-controller="Dashboard" asp-action="Index"
-           class="btn btn-outline-secondary btn-lg rounded-pill px-4 d-flex align-items-center gap-2 shadow-sm">
-            <i class="bi bi-arrow-left"></i> Back
-        </a>
-    }
-    else
-    {
-        <div class="ms-auto">
-            <a href="/Authentication/Login"
-               class="btn btn-outline-primary btn-lg rounded-pill px-4 d-flex align-items-center gap-2 shadow-sm">
-                <i class="bi bi-box-arrow-in-right"></i> Login
-            </a>
-        </div>
-    }
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
 
-</div>
+        .gradient-text {
+            background: linear-gradient(135deg, #2563eb 0%, #16a34a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
+        .card-hover {
+            transition: all 0.3s ease;
+        }
 
+            .card-hover:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+        @@keyframes fade {
+            from
 
-<div class="container py-5">
-    <!-- Header -->
-    <div class="text-center mb-5">
-        <h1 class="fw-bold display-4 mb-3 animate-fade text-dark">
-            Transforming Guest Booking — One Click at a Time.
-        </h1>
-        <p class="text-muted fs-5 w-lg-75 mx-auto animate-fade-slow">
-            Simplifying guest management through seamless online booking — designed for operators, made for convenience.
-        </p>
-    </div>
+        {
+            opacity: 0;
+            transform: translateY(10px);
+        }
 
-    <div class="row justify-content-center g-4">
-        <!-- The App Section -->
-        <div class="col-lg-10">
-            <div class="card p-4 animate-rise">
-                <div class="card-body">
-                    <h4 class="fw-semibold text-secondary mb-3">
-                        <i class="bi bi-window me-2 text-primary"></i> What is This App?
-                    </h4>
-                    <p class="text-muted fs-5 lh-lg">
-                        This app focuses on web booking and helps operators manage <strong>New Bookings</strong>,
-                        <strong>Reservations</strong>, and <strong>Guest Booked</strong> efficiently.
-                        It bridges the gap between operators and guests — allowing easy coordination, faster response,
-                        and better guest experience.
-                    </p>
-                    <div class="alert alert-primary bg-gradient mt-3 mb-0" style="color:black;">
-                        <i class="bi bi-lightbulb me-2"></i>
-                        <strong >Did You Know?</strong> Over 90% of guests prefer booking online when the process is quick and user-friendly!
-                    </div>
-                </div>
-            </div>
-        </div>
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-        <!-- Mission & Vision -->
-        <div class="col-lg-5">
-            <div class="card p-4 animate-rise delay-1">
-                <div class="card-body">
-                    <h4 class="fw-semibold text-secondary mb-3">
-                        <i class="bi bi-bullseye me-2 text-danger"></i> Our Mission
-                    </h4>
-                    <p class="text-muted fs-5 lh-lg">
-                        To deliver a seamless and efficient booking system that empowers operators and enhances the guest journey through technology and reliability.
-                    </p>
-                </div>
-            </div>
-        </div>
+        }
 
-        <div class="col-lg-5">
-            <div class="card p-4 animate-rise delay-2">
-                <div class="card-body">
-                    <h4 class="fw-semibold text-secondary mb-3">
-                        <i class="bi bi-eye me-2 text-info"></i> Our Vision
-                    </h4>
-                    <p class="text-muted fs-5 lh-lg">
-                        To be the most trusted web booking solution across the tourism and hospitality industry — connecting guests and operators effortlessly.
-                    </p>
-                </div>
-            </div>
-        </div>
+        .animate-fade {
+            animation: fade 0.8s ease-out forwards;
+        }
 
-        <!-- Testimonial Carousel -->
-        <div class="col-lg-10">
-            <div class="card p-4 animate-rise delay-3">
-                <div class="card-body text-center">
-                    <h4 class="fw-semibold text-secondary mb-4">
-                        <i class="bi bi-chat-square-quote me-2 text-success"></i> What Our Users Say
-                    </h4>
-                    <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner text-center">
-                            <div class="carousel-item active">
-                                <blockquote class="blockquote">
-                                    <p class="fs-5 fst-italic text-muted">“This app streamlined our entire booking process. It’s so intuitive!”</p>
-                                    <footer class="blockquote-footer">Jane Santos, <cite title="Company">Sunset Inn</cite></footer>
-                                </blockquote>
-                            </div>
-                            <div class="carousel-item">
-                                <blockquote class="blockquote">
-                                    <p class="fs-5 fst-italic text-muted">“Our response time improved by 50%. Highly recommended!”</p>
-                                    <footer class="blockquote-footer">Carlos D., <cite title="Company">Eco Adventure Tours</cite></footer>
-                                </blockquote>
-                            </div>
-                            <div class="carousel-item">
-                                <blockquote class="blockquote">
-                                    <p class="fs-5 fst-italic text-muted">“A guest-friendly platform that actually works. Simple and effective.”</p>
-                                    <footer class="blockquote-footer">Maria L., <cite title="Company">BlueWave Beach Resort</cite></footer>
-                                </blockquote>
-                            </div>
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon bg-dark rounded-circle"></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon bg-dark rounded-circle"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        .animate-rise {
+            animation: fade 1s ease-out forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.4s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.6s;
+        }
+
+        .delay-4 {
+            animation-delay: 0.8s;
+        }
+
+        .delay-5 {
+            animation-delay: 1s;
+        }
+    </style>
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+</head>
+
+<body class="bg-gray-50">
+
+    <!-- Top Bar with Logo and Button -->
+    <div class="flex justify-between items-center w-full px-6 pt-6 mb-8">
+        <!-- Logo -->
+        <div class="flex items-center gap-4">
+            <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-16 w-auto object-contain" />
 
     
+        </div>
 
-        <!-- Contact Section -->
-        <div class="col-lg-10">
-            <div class="card p-4 animate-rise delay-4">
-                <div class="card-body">
-                    <h4 class="fw-semibold text-secondary mb-3">
-                        <i class="bi bi-chat-dots me-2 text-success"></i> Get in Touch
-                    </h4>
-                    <p class="text-muted fs-5 lh-lg mb-3">
-                        Have an idea to make our app even better? We’d love to hear from you!
-                    </p>
-                    <ul class="list-unstyled fs-5 text-muted">
-                        <li><i class="bi bi-envelope me-2 text-success"></i>Email: <a href="mailto:lelis.markanthony@gmail.com" class="text-decoration-none text-dark fw-semibold">lelis.markanthony@gmail.com</a></li>
-                        <li>
-                            <i class="bi bi-telephone me-2 text-success"></i>
-                            Phone:
-                            <a href="tel:+6324175154" class="fw-semibold text-decoration-none text-dark">
-                                (032) 417-5154
-                            </a>
-                        </li>
-                    </ul>
-                    <div class="mt-3">
-                        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=lelis.markanthony@gmail.com&su=Inquiry&body=Hello, I would like to get in touch with you."
-                           target="_blank"
-                           class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm">
-                            <i class="bi bi-chat-dots-fill me-2"></i> Let's Talk
-                        </a>
+        <!-- Back/Login Button -->
+        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
+        {
+            <a asp-area="" asp-controller="Dashboard" asp-action="Index"
+               class="btn btn-outline-secondary btn-lg rounded-pill px-4 flex items-center gap-2 shadow-sm">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        }
+        else
+        {
+            <a href="/Authentication/Login"
+               class="btn btn-outline-primary btn-lg rounded-pill px-4 flex items-center gap-2 shadow-sm">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+        }
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-6">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-extrabold gradient-text mb-4 animate-fade">
+                Transforming Guest Booking — One Click at a Time.
+            </h1>
+            <p class="text-gray-600 text-lg max-w-3xl mx-auto animate-fade delay-1">
+                Simplifying guest management through seamless online booking — designed for operators, made for convenience.
+            </p>
+        </div>
+
+        <!-- App Purpose -->
+        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise mb-10">
+            <h4 class="text-xl font-semibold text-primary-600 mb-3 flex items-center">
+                <i class="bi bi-window me-2 text-primary-600"></i> What is This App?
+            </h4>
+            <p class="text-gray-700 text-lg leading-relaxed">
+                This app focuses on web booking and helps operators manage <strong>New Bookings</strong>,
+                <strong>Reservations</strong>, and <strong>Guest Booked</strong> efficiently.
+                It bridges the gap between operators and guests — allowing easy coordination, faster response,
+                and better guest experience.
+            </p>
+            <div class="bg-primary-100 text-black mt-4 p-4 rounded-lg">
+                <i class="bi bi-lightbulb me-2 text-primary-600"></i>
+                <strong>Did You Know?</strong> Over 90% of guests prefer booking online when the process is quick and user-friendly!
+            </div>
+        </div>
+
+        <!-- Mission and Vision -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-1">
+                <h4 class="text-xl font-semibold text-red-600 mb-3 flex items-center">
+                    <i class="bi bi-bullseye me-2"></i> Our Mission
+                </h4>
+                <p class="text-gray-700 text-lg">
+                    To deliver a seamless and efficient booking system that empowers operators and enhances the guest journey through technology and reliability.
+                </p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-2">
+                <h4 class="text-xl font-semibold text-cyan-600 mb-3 flex items-center">
+                    <i class="bi bi-eye me-2"></i> Our Vision
+                </h4>
+                <p class="text-gray-700 text-lg">
+                    To be the most trusted web booking solution across the tourism and hospitality industry — connecting guests and operators effortlessly.
+                </p>
+            </div>
+        </div>
+
+        <!-- Testimonials -->
+        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-3 mb-10 text-center">
+            <h4 class="text-xl font-semibold text-green-600 mb-4">
+                <i class="bi bi-chat-square-quote me-2"></i> What Our Users Say
+            </h4>
+            <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner text-center">
+                    <div class="carousel-item active">
+                        <blockquote class="text-gray-600 text-lg italic">“This app streamlined our entire booking process. It’s so intuitive!”</blockquote>
+                        <footer class="mt-2 text-sm text-gray-500">— Jane Santos, Sunset Inn</footer>
+                    </div>
+                    <div class="carousel-item">
+                        <blockquote class="text-gray-600 text-lg italic">“Our response time improved by 50%. Highly recommended!”</blockquote>
+                        <footer class="mt-2 text-sm text-gray-500">— Carlos D., Eco Adventure Tours</footer>
+                    </div>
+                    <div class="carousel-item">
+                        <blockquote class="text-gray-600 text-lg italic">“A guest-friendly platform that actually works. Simple and effective.”</blockquote>
+                        <footer class="mt-2 text-sm text-gray-500">— Maria L., BlueWave Beach Resort</footer>
                     </div>
                 </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon bg-dark rounded-circle"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon bg-dark rounded-circle"></span>
+                </button>
             </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-4 mb-10">
+            <h4 class="text-xl font-semibold text-green-700 mb-3 flex items-center">
+                <i class="bi bi-chat-dots me-2"></i> Get in Touch
+            </h4>
+            <p class="text-gray-700 text-lg mb-3">
+                Have an idea to make our app even better? We’d love to hear from you!
+            </p>
+            <ul class="text-gray-700 text-lg space-y-2">
+                <li><i class="bi bi-envelope me-2 text-success"></i>Email: <a href="mailto:lelis.markanthony@gmail.com" class="text-primary-600 font-semibold hover:underline">lelis.markanthony@gmail.com</a></li>
+                <li><i class="bi bi-telephone me-2 text-success"></i>Phone: <a href="tel:+6324175154" class="text-primary-600 font-semibold hover:underline">(032) 417-5154</a></li>
+            </ul>
+            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=lelis.markanthony@gmail.com&su=Inquiry&body=Hello, I would like to get in touch with you."
+               target="_blank"
+               class="mt-4 inline-block bg-primary-600 text-white px-6 py-3 rounded-full shadow hover:bg-primary-700 transition">
+                <i class="bi bi-chat-dots-fill me-2"></i> Let's Talk
+            </a>
         </div>
 
         <!-- Imprint -->
-        <div class="col-lg-10">
-            <div class="card p-4 animate-rise delay-4">
-                <div class="card-body">
-                    <h4 class="fw-semibold text-secondary mb-3">
-                        <i class="bi bi-building me-2 text-warning"></i> Imprint
-                    </h4>
-                    <p class="text-muted fs-5 lh-lg mb-0">
-                        Published by <strong>JustClick Integrated Solutions Inc.</strong><br />
-                        171 N. Bacalso Avenue, Cebu City<br />
-                        Developed by <strong>Dendo Pulgo</strong> and <strong>Darius Cumpio</strong><br />
-                        Responsible: <strong>Mark Anthony P. Lelis</strong><br />
-                        On behalf of: <strong>Municipality of Alegria, Cebu</strong>
-                    </p>
-                </div>
-            </div>
+        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-5">
+            <h4 class="text-xl font-semibold text-yellow-600 mb-3 flex items-center">
+                <i class="bi bi-building me-2"></i> Imprint
+            </h4>
+            <p class="text-gray-700 text-lg leading-relaxed">
+                Published by <strong>JustClick Integrated Solutions Inc.</strong><br />
+                171 N. Bacalso Avenue, Cebu City<br />
+                Developed by <strong>Dendo Pulgo</strong> and <strong>Darius Cumpio</strong><br />
+                Responsible: <strong>Mark Anthony P. Lelis</strong><br />
+                On behalf of: <strong>Municipality of Alegria, Cebu</strong>
+            </p>
         </div>
     </div>
-</div>
 
-<!-- Bootstrap Icons -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Bootstrap JS (required for carousel) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
