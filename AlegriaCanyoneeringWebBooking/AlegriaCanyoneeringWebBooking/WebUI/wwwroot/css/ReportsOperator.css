@@ -3,13 +3,15 @@
     padding: 20px;
     max-width: 100%;
     overflow-x: auto;
+    border: 2px solid #000;
+    box-sizing: border-box;
 }
 
 .report-title-box {
     border: 2px solid #000;
     padding: 20px;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* This adds space below the title box */
     page-break-inside: avoid;
 }
 
@@ -28,7 +30,7 @@
     display: table;
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Space below info grid */
     page-break-inside: avoid;
 }
 
@@ -49,53 +51,50 @@
     background-color: #f5f5f5;
 }
 
-.operator-table {
+#tourismReportTable {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
+    margin-top: 20px; /* ADDED: Space above the main table */
     page-break-inside: avoid;
 }
 
-    .operator-table th,
-    .operator-table td {
+    #tourismReportTable th,
+    #tourismReportTable td {
         border: 2px solid #000;
         padding: 10px;
         text-align: center;
         vertical-align: middle;
     }
 
-    .operator-table thead {
+    #tourismReportTable thead {
         page-break-after: avoid;
         display: table-header-group;
     }
 
-    .operator-table tbody {
+    #tourismReportTable tbody {
         page-break-inside: avoid;
     }
 
-    .operator-table tfoot {
+    #tourismReportTable tfoot {
         page-break-before: avoid;
         display: table-footer-group;
     }
 
-    .operator-table tr {
+    #tourismReportTable tr {
         page-break-inside: avoid;
     }
 
-    .operator-table thead th {
+    #tourismReportTable thead th {
         background-color: #e0e0e0;
         font-weight: bold;
         position: sticky;
         top: 0;
     }
 
-    .operator-table tfoot td {
+    #tourismReportTable tfoot td {
         background-color: #f5f5f5;
         font-weight: bold;
-    }
-
-    .operator-table tbody td:nth-child(2) {
-        text-align: left;
     }
 
 .note-text {
@@ -110,6 +109,7 @@
     .report-container {
         padding: 10px;
         page-break-inside: avoid;
+        border: 2px solid #000 !important;
     }
 
     .report-title-box {
@@ -137,28 +137,29 @@
         font-size: 11px;
     }
 
-    .operator-table {
+    #tourismReportTable {
         font-size: 10px;
+        margin-top: 10px;
         page-break-inside: avoid;
     }
 
-        .operator-table th,
-        .operator-table td {
+        #tourismReportTable th,
+        #tourismReportTable td {
             padding: 4px;
             border: 1px solid #000;
         }
 
-        .operator-table thead {
+        #tourismReportTable thead {
             display: table-header-group;
             page-break-after: avoid;
         }
 
-        .operator-table tfoot {
+        #tourismReportTable tfoot {
             display: table-footer-group;
             page-break-before: avoid;
         }
 
-        .operator-table tbody tr {
+        #tourismReportTable tbody tr {
             page-break-inside: avoid;
         }
 

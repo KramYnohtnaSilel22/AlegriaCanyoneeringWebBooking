@@ -51,30 +51,31 @@ $(document).ready(function () {
     }
 });
 
+// FIXED: PDF download - preserves outer border
 $("#btnDownloadPDF").on("click", function () {
     const filter = $("#filterSelect").val().toUpperCase();
     const element = document.querySelector('.report-container');
-
-    const originalPadding = element.style.padding;
-    element.style.padding = '5px';
 
     const opt = {
         margin: [5, 5, 5, 5],
         filename: `OperatorReport_${filter}_${new Date().toISOString().slice(0, 10)}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: 'avoid', before: [] },
+        pagebreak: { mode: 'avoid-all' },
         compress: true
     };
 
     html2pdf()
         .set(opt)
         .from(element)
-        .save()
-        .finally(() => {
-            element.style.padding = originalPadding;
-        });
+        .save();
 });
 
 $("#btnDownloadExcel").on("click", function () {
@@ -92,12 +93,13 @@ $("#btnDownloadExcel").on("click", function () {
     var municipality = "ALEGRIA, CEBU";
     var attraction = "Canyoneering Adventure";
 
+    // Simplified header rows
     var headerRows = [
-        [{ v: "Operator Visitor Record", s: { alignment: { horizontal: "center" } } }],
-        [{ v: "Date From", s: { alignment: { horizontal: "center" } } }, { v: dateFrom, s: { alignment: { horizontal: "center" } } }],
-        [{ v: "Date To", s: { alignment: { horizontal: "center" } } }, { v: dateTo, s: { alignment: { horizontal: "center" } } }],
-        [{ v: "Municipality", s: { alignment: { horizontal: "center" } } }, { v: municipality }],
-        [{ v: "Attraction Spot", s: { alignment: { horizontal: "center" } } }, { v: attraction }],
+        ["Operator Visitor Record"],
+        ["Date From", dateFrom],
+        ["Date To", dateTo],
+        ["Municipality", municipality],
+        ["Attraction Spot", attraction],
         []
     ];
 
@@ -126,15 +128,25 @@ $("#btnDownloadExcel").on("click", function () {
         { wch: 10 }
     ];
 
+    // Merge title row across all columns (5 columns for operator report)
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }
+    ];
+
+    // Style header cells
     for (let i = 0; i < headerRows.length; i++) {
         for (let j = 0; j < headerRows[i].length; j++) {
-            var cell = ws[XLSX.utils.encode_cell({ c: j, r: i })];
-            if (cell) {
-                cell.s = cell.s || {};
-                cell.s.alignment = { horizontal: "center", vertical: "center" };
-                if (i === 0) {
-                    cell.s.font = { bold: true, size: 14 };
-                }
+            var cellRef = XLSX.utils.encode_cell({ c: j, r: i });
+            if (!ws[cellRef]) {
+                ws[cellRef] = { t: 's', v: '' };
+            }
+            ws[cellRef].s = ws[cellRef].s || {};
+            ws[cellRef].s.alignment = { horizontal: "center", vertical: "center" };
+
+            if (i === 0) {
+                ws[cellRef].s.font = { bold: true, size: 14 };
+            } else if (j === 0 && i < 5) {
+                ws[cellRef].s.font = { bold: true };
             }
         }
     }

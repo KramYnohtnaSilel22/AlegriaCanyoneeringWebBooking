@@ -52,32 +52,31 @@ $(document).ready(function () {
     }
 });
 
+// FIXED: PDF download - preserves outer border
 $("#btnDownloadPDF").on("click", function () {
     const filter = $("#filterSelect").val().toUpperCase();
     const element = document.querySelector('.report-container');
 
-    // Temporarily reduce padding for PDF generation
-    const originalPadding = element.style.padding;
-    element.style.padding = '5px';
-
     const opt = {
-        margin: [5, 5, 5, 5], // top, left, bottom, right - minimal margins
+        margin: [5, 5, 5, 5],
         filename: `GuestReport_${filter}_${new Date().toISOString().slice(0, 10)}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: 'avoid', before: [] },
+        pagebreak: { mode: 'avoid-all' },
         compress: true
     };
 
     html2pdf()
         .set(opt)
         .from(element)
-        .save()
-        .finally(() => {
-            // Restore original padding
-            element.style.padding = originalPadding;
-        });
+        .save();
 });
 
 $("#btnDownloadExcel").on("click", function () {
@@ -86,7 +85,7 @@ $("#btnDownloadExcel").on("click", function () {
 
     // Format dates
     function formatDate(dateStr) {
-        const date = new Date(dateStr + "T00:00:00"); // Add time to ensure correct date parsing
+        const date = new Date(dateStr + "T00:00:00");
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         return date.toLocaleDateString('en-US', options);
     }
@@ -96,14 +95,14 @@ $("#btnDownloadExcel").on("click", function () {
     var municipality = "ALEGRIA, CEBU";
     var attraction = "Canyoneering Adventure";
 
-    // Header rows: each info in its own row
+    // Header rows
     var headerRows = [
-        [{ v: "Tourism Attraction Visitor Record", s: { alignment: { horizontal: "center" } } }], // Title
-        [{ v: "Date From", s: { alignment: { horizontal: "center" } } }, { v: dateFrom, s: { alignment: { horizontal: "center" } } }],
-        [{ v: "Date To", s: { alignment: { horizontal: "center" } } }, { v: dateTo, s: { alignment: { horizontal: "center" } } }],
-        [{ v: "Municipality", s: { alignment: { horizontal: "center" } } }, { v: municipality }],
-        [{ v: "Attraction Spot", s: { alignment: { horizontal: "center" } } }, { v: attraction }],
-        [] // empty row before table
+        ["Tourism Attraction Visitor Record"],
+        ["Date From", dateFrom],
+        ["Date To", dateTo],
+        ["Municipality", municipality],
+        ["Attraction Spot", attraction],
+        []
     ];
 
     // Convert header to worksheet
@@ -128,35 +127,32 @@ $("#btnDownloadExcel").on("click", function () {
     newRange.e.r += rowOffset;
     ws['!ref'] = XLSX.utils.encode_range(newRange);
 
-    // Set column widths for better readability
+    // Set column widths
     ws['!cols'] = [
-        { wch: 8 },   // Seq
-        { wch: 20 },  // Date
-        { wch: 10 },  // Male
-        { wch: 10 },  // Female
-        { wch: 10 },  // Total
-        { wch: 10 },  // Male
-        { wch: 10 },  // Female
-        { wch: 10 },  // Total
-        { wch: 10 },  // Male
-        { wch: 10 },  // Female
-        { wch: 10 },  // Total
-        { wch: 10 },  // Male
-        { wch: 10 },  // Female
-        { wch: 10 }   // Total
+        { wch: 8 }, { wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }
     ];
 
-    // Center and style header cells
+    // Merge title row across all columns
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }
+    ];
+
+    // Style header cells
     for (let i = 0; i < headerRows.length; i++) {
         for (let j = 0; j < headerRows[i].length; j++) {
-            var cell = ws[XLSX.utils.encode_cell({ c: j, r: i })];
-            if (cell) {
-                cell.s = cell.s || {};
-                cell.s.alignment = { horizontal: "center", vertical: "center" };
-                if (i === 0) {
-                    // Make title bold
-                    cell.s.font = { bold: true, size: 14 };
-                }
+            var cellRef = XLSX.utils.encode_cell({ c: j, r: i });
+            if (!ws[cellRef]) {
+                ws[cellRef] = { t: 's', v: '' };
+            }
+            ws[cellRef].s = ws[cellRef].s || {};
+            ws[cellRef].s.alignment = { horizontal: "center", vertical: "center" };
+
+            if (i === 0) {
+                ws[cellRef].s.font = { bold: true, size: 14 };
+            } else if (j === 0 && i < 5) {
+                ws[cellRef].s.font = { bold: true };
             }
         }
     }
