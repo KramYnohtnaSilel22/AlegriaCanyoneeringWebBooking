@@ -1,0 +1,134 @@
+﻿@model List<TourismReportViewModel>
+<link href="/css/ReportsGuest.css" rel="stylesheet" />
+
+@{
+    var currentFilter = ViewBag.Filter as string ?? "daily";
+    var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    int totalMale = ViewBag.TotalMale ?? 0;
+    int totalFemale = ViewBag.TotalFemale ?? 0;
+    int grandTotal = ViewBag.GrandTotal ?? 0;
+}
+
+<div class="card mt-4 shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5>Operator Report (@currentFilter.ToUpper())</h5>
+        <div class="d-flex align-items-center">
+            <form method="get" asp-action="Operator" id="filterForm" class="d-flex align-items-center me-3">
+                <label class="me-2 text-white fw-bold">Filter:</label>
+                <select name="filter" id="filterSelect" class="form-select me-2">
+                    <option value="daily" selected="@("daily" == currentFilter)">Daily</option>
+                    <option value="weekly" selected="@("weekly" == currentFilter)">Weekly</option>
+                    <option value="monthly" selected="@("monthly" == currentFilter)">Monthly</option>
+                    <option value="quarterly" selected="@("quarterly" == currentFilter)">Quarterly</option>
+                    <option value="yearly" selected="@("yearly" == currentFilter)">Yearly</option>
+                </select>
+
+                <label class="me-2 text-white fw-bold">From:</label>
+                <input type="date" name="dateFrom" id="dateFrom" value="@dateFrom" class="form-control me-2" />
+
+                <label class="me-2 text-white fw-bold">To:</label>
+                <input type="date" name="dateTo" id="dateTo" value="@dateTo" class="form-control me-2" />
+
+                <button type="submit" class="btn btn-light me-2">
+                    <i class="bi bi-filter"></i> Apply
+                </button>
+
+                <button type="button" id="btnReset" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </button>
+            </form>
+
+            <button class="btn btn-danger me-2" id="btnDownloadPDF">
+                <i class="bi bi-file-earmark-pdf"></i> Download PDF
+            </button>
+            <button class="btn btn-success" id="btnDownloadExcel">
+                <i class="bi bi-file-earmark-excel"></i> Download Excel
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body report-container">
+        <div class="report-title-box">
+            <h3>Operator Visitor Record</h3>
+            <p>(Summary of visitors by operator)</p>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-cell info-label">Date From:</div>
+                <div class="info-cell">@DateTime.Parse(dateFrom).ToString("dddd, MMMM d, yyyy")</div>
+            </div>
+            <div class="info-row">
+                <div class="info-cell info-label">Date To:</div>
+                <div class="info-cell">@DateTime.Parse(dateTo).ToString("dddd, MMMM d, yyyy")</div>
+            </div>
+            <div class="info-row">
+                <div class="info-cell info-label">Name of Municipality:</div>
+                <div class="info-cell">ALEGRIA, CEBU</div>
+            </div>
+            <div class="info-row">
+                <div class="info-cell info-label">Name of Attraction/Spot:</div>
+                <div class="info-cell">Canyoneering Adventure</div>
+            </div>
+        </div>
+
+        <table id="tourismReportTable">
+            <thead>
+                <tr>
+                    <th>Seq.</th>
+                    <th>OPERATOR</th>
+                    <th>MALE</th>
+                    <th>FEMALE</th>
+                    <th>TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px;">No data available for the selected date range</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        int seq = 1;
+                        foreach (var item in Model)
+                        {
+                            int total = item.ThisProvinceMale + item.ThisProvinceFemale;
+                            <tr>
+                                <td>@seq</td>
+                                <td>@item.Label</td>
+                                <td>@item.ThisProvinceMale</td>
+                                <td>@item.ThisProvinceFemale</td>
+                                <td>@total</td>
+                            </tr>
+                            seq++;
+                        }
+                    }
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">TOTAL:</td>
+                    <td>@totalMale</td>
+                    <td>@totalFemale</td>
+                    <td>@grandTotal</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <p class="note-text">
+            Note: Report generated on @DateTime.Today.ToString("MMMM dd, yyyy")
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="~/js/ReportsOperator.js" asp-append-version="true"></script>
+}

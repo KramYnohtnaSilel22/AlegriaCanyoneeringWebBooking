@@ -255,6 +255,69 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(grouped);
         }
+
+        public IActionResult Operator(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
+        {
+            var fromDate = dateFrom ?? DateTime.Today;
+            var toDate = dateTo ?? DateTime.Today;
+
+            ViewBag.Filter = filter;
+            ViewBag.DateFrom = fromDate.ToString("yyyy-MM-dd");
+            ViewBag.DateTo = toDate.ToString("yyyy-MM-dd");
+
+            // Load all guests with operator information
+            var allGuests = _context.Guests
+                .Include(g => g.OperatorList)
+                .AsEnumerable()
+                .ToList();
+
+            // Filter by date range
+            var guests = allGuests
+                .Where(g =>
+                {
+                    try
+                    {
+                        var guestDate = DateTime.Parse(g.Date);
+                        return guestDate.Date >= fromDate.Date && guestDate.Date <= toDate.Date;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                })
+                .ToList();
+
+            // Group by operator
+            var operatorReport = guests
+                .Where(g => g.OperatorId.HasValue && g.OperatorList != null)
+                .GroupBy(g => new { g.OperatorId, g.OperatorList.BusinessName })
+                .Select((g, index) => new
+                {
+                    Seq = index + 1,
+                    OperatorName = g.Key.BusinessName,
+                    Male = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "male"),
+                    Female = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "female"),
+                    Total = g.Count()
+                })
+                .OrderByDescending(x => x.Total)
+                .ToList();
+
+            // Calculate totals
+            ViewBag.TotalMale = operatorReport.Sum(x => x.Male);
+            ViewBag.TotalFemale = operatorReport.Sum(x => x.Female);
+            ViewBag.GrandTotal = operatorReport.Sum(x => x.Total);
+
+            // Convert to ViewModel for consistency
+            var viewModel = operatorReport.Select(x => new TourismReportViewModel
+            {
+                Label = x.OperatorName,
+                ThisProvinceMale = x.Male,
+                ThisProvinceFemale = x.Female,
+                OtherProvinceMale = x.Total
+            }).ToList();
+
+            return View(viewModel);
+        }
     }
 
 }
