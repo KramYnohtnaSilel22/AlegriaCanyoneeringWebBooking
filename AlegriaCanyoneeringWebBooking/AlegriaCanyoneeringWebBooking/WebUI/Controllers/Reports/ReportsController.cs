@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
-namespace AlegriaCanyoneeringWebBooking
+namespace AlegriaCanyoneeringWebBooking.Controllers 
 {
     [Authorize(Roles = "Super Admin")]
     public class ReportsController : Controller

@@ -20,11 +20,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
+using AlegriaCanyoneeringWebBooking.Models;
 
 
-
-
-namespace AlegriaCanyoneeringWebBooking
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin,Admin,Operator")]
     public class GuestController : Controller
@@ -421,6 +420,8 @@ namespace AlegriaCanyoneeringWebBooking
                     model.NewGuest.Date = batchDetails.Date;
                     model.NewGuest.ArrivalDate = batchDetails.ArrivalDate; // Still in Unix timestamp format
                     model.NewGuest.Area = batchDetails.Area;
+                    model.NewGuest.Batch = batchDetails.Batch;
+
                 }
             }
 

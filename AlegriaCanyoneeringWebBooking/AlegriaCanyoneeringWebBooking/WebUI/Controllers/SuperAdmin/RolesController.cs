@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using AlegriaCanyoneeringWebBooking.Models;
 
-namespace AlegriaCanyoneeringWebBooking
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin")]
     public class RolesController : Controller

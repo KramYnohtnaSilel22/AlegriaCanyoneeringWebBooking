@@ -1,6 +1,6 @@
 ﻿
-
-using static AlegriaCanyoneeringWebBooking.Guest;
+using AlegriaCanyoneeringWebBooking.Models;
+using static AlegriaCanyoneeringWebBooking.Models.Guest;
 
 namespace AlegriaCanyoneeringWebBooking
 {

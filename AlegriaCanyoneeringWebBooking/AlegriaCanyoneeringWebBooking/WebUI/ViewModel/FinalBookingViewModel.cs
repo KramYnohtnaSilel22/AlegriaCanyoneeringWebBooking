@@ -1,5 +1,7 @@
 ﻿
 
+using AlegriaCanyoneeringWebBooking.Models;
+
 namespace AlegriaCanyoneeringWebBooking
 {
     public class FinalBookingViewModel

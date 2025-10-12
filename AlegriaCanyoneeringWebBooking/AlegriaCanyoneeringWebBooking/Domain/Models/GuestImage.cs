@@ -2,6 +2,9 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
+
+namespace AlegriaCanyoneeringWebBooking.Models;
+
 [Table("tbl_guestimage")]
 public class GuestImage
 {

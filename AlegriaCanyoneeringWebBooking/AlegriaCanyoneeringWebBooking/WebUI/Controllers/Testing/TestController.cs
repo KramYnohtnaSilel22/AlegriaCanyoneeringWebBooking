@@ -5,7 +5,7 @@ using System.Linq;
 
 
 
-namespace AlegriaCanyoneeringWebBooking
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     public class TestController : Controller
     {

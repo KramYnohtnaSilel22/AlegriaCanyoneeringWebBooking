@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using System.Security.Claims;
 using System.Text;
-
-namespace AlegriaCanyoneeringWebBooking
+using AlegriaCanyoneeringWebBooking.Models;
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     public class ReserveController : Controller
     {

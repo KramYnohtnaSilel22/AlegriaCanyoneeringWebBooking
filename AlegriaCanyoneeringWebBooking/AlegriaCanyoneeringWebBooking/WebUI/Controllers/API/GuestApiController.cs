@@ -7,8 +7,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-
-namespace AlegriaCanyoneeringWebBooking
+using AlegriaCanyoneeringWebBooking.Models;
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Route("api/guestapi")]  // This will make sure the base URL is 'api/guestapi'
     [ApiController]

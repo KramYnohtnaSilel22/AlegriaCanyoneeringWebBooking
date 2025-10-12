@@ -1,8 +1,8 @@
 using System.Diagnostics;
-
+using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AlegriaCanyoneeringWebBooking
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     public class HomeController : Controller
     {

@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-
-namespace AlegriaCanyoneeringWebBooking
+using AlegriaCanyoneeringWebBooking.Models;
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin")]
     public class BatchesController : Controller

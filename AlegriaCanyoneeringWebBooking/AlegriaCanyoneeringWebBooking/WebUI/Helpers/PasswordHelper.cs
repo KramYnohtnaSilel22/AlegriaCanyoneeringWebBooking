@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
+namespace AlegriaCanyoneeringWebBooking.Helpers;
 public static class PasswordHelper
 {
     public static string HashPassword(string password)

@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace AlegriaCanyoneeringWebBooking
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin,Admin,Operator")]
     public class DashboardController : Controller

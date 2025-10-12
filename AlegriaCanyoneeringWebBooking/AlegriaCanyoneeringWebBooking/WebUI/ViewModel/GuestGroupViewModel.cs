@@ -1,4 +1,6 @@
 ﻿
+using AlegriaCanyoneeringWebBooking.Models;
+
 
 namespace AlegriaCanyoneeringWebBooking
 {

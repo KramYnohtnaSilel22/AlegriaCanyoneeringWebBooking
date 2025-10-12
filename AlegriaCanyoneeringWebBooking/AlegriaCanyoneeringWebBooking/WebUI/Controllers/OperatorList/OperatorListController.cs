@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-
-namespace AlegriaCanyoneeringWebBooking
+using AlegriaCanyoneeringWebBooking.Models;
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin,Admin")]
     public class OperatorListController : Controller

@@ -1,5 +1,7 @@
 ﻿
+using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace AlegriaCanyoneeringWebBooking;
 

@@ -1,4 +1,5 @@
 ﻿
+using AlegriaCanyoneeringWebBooking.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace AlegriaCanyoneeringWebBooking

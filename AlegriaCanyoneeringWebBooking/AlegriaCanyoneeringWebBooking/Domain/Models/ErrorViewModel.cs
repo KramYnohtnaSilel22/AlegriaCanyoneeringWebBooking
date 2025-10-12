@@ -1,4 +1,4 @@
-namespace AlegriaCanyoneeringWebBooking
+namespace AlegriaCanyoneeringWebBooking.Models
 {
     public class ErrorViewModel
     {

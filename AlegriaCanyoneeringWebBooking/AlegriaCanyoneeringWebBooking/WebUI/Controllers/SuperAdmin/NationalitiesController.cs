@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-namespace AlegriaCanyoneeringWebBooking
+using AlegriaCanyoneeringWebBooking.Models;
+namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin")]
     public class NationalitiesController : Controller

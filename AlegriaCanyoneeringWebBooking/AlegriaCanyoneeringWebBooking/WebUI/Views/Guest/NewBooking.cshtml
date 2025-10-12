@@ -74,7 +74,7 @@
                 <div class="col-md-6">
                     <fieldset>
                         <legend>Guest Info</legend>
-                      
+
                         <div class="mb-3">
                             <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
                             <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"
@@ -183,139 +183,157 @@
 
     </div>
 </div>
+<!-- Add these before your existing scripts -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+<!-- Bootstrap Datepicker JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
-<!-- Styles loaded in <head> - move to layout for best practice -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<!-- Add Bootstrap Datepicker -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 
-<!-- Scripts at end of body with defer or async -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js" defer></script>
+<script>
 
-<script defer>
     function validateImage(input) {
-            const file = input.files[0];
-            const errorDiv = document.getElementById("fileError");
-            errorDiv.textContent = ""; // Clear previous error
+         const file = input.files[0];
+         const errorDiv = document.getElementById("fileError");
+         errorDiv.textContent = ""; // Clear previous error
 
-            if (!file) return;
+         if (!file) return;
 
-            const maxSizeMB = 1; // Set to 1MB
-            const maxSizeBytes = maxSizeMB * 1024 * 1024;
+         const maxSizeMB = 1; // Set to 1MB
+         const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
-            if (file.size > maxSizeBytes) {
-                errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
-                input.value = ""; // Clear the input
+         if (file.size > maxSizeBytes) {
+             errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
+             input.value = ""; // Clear the input
+         }
+     }
+
+    $(function () {
+        const $type = $('#NationalityType');
+        const $list = $('#NationalityId');
+        const $operatorInput = $('#OperatorInput');
+        const $tourAreaInput = $('#TourAreaInput');
+        const $bookingDateInput = $('#BookingDateInput');
+        const $arrivalDateInput = $('#ArrivalDateInput');
+        const $batchGuestsJson = $('#BatchGuestsJson');
+        const $saveBtn = $('#saveBtn');
+        const $totalGuestsCount = $('#totalGuestsCount');
+        const $currentBatch = $('#CurrentBatch');
+
+        let foreignNationalitiesCache = null;
+        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+        const selectedNationalityId = '@Model.NewGuest.NationalityId';
+
+        function updateNationalityIdOptions(choice) {
+            $list.empty();
+            if (choice === 'Local') {
+                // ✅ CHANGED: Use 1 and 2 instead of 1000 and 1001
+                $list.append(new Option('Within Cebu Province', '1'));
+                $list.append(new Option('Outside Cebu Province', '2'));
+
+                // Set selected value if matches
+                if (selectedNationalityId === '1' || selectedNationalityId === '2') {
+                    $list.val(selectedNationalityId);
+                }
+            } else if (choice === 'Foreign') {
+                $list.append(new Option('Loading...', ''));
+                $.getJSON(getNationalitiesUrl)
+                    .done(function (data) {
+                        $list.empty();
+                        $list.append(new Option('-- Select Nationality --', ''));
+                        data.forEach(function (item) {
+                            const option = new Option(item.natName, item.id);
+                            if (selectedNationalityId === item.id.toString()) option.selected = true;
+                            $list.append(option);
+                        });
+                    })
+                    .fail(function () {
+                        $list.empty().append(new Option('Error loading', ''));
+                    });
+            } else {
+                $list.append(new Option('-- Select --', ''));
             }
         }
-    document.addEventListener('DOMContentLoaded', () => {
-      // Cache selectors once outside handlers to avoid duplication
-      const $type = $('#NationalityType');
-      const $list = $('#NationalityId');
-      const $operatorInput = $('#OperatorInput');
-      const $tourAreaInput = $('#TourAreaInput');
-      const $bookingDateInput = $('#BookingDateInput');
-      const $arrivalDateInput = $('#ArrivalDateInput');
-      const $batchGuestsJson = $('#BatchGuestsJson');
-      const $saveBtn = $('#saveBtn');
-      const $totalGuestsCount = $('#totalGuestsCount');
-      const $currentBatch = $('#CurrentBatch');
 
-      const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-      const selectedNationalityId = '@Model.NewGuest.NationalityId';
-      let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
+        // Initialize nationalities
+        updateNationalityIdOptions($type.val());
 
-      // Functions
-      function updateNationalityIdOptions(choice) {
-        $list.empty();
-        if (choice === 'Local') {
-          $list.append(new Option('Within Cebu Province', '1'));
-          $list.append(new Option('Outside Cebu Province', '2'));
-          if (selectedNationalityId === '1' || selectedNationalityId === '2') {
-            $list.val(selectedNationalityId);
-          }
-        } else if (choice === 'Foreign') {
-          $list.append(new Option('Loading...', ''));
-          $.getJSON(getNationalitiesUrl)
-            .done(data => {
-              $list.empty();
-              $list.append(new Option('-- Select Nationality --', ''));
-              data.forEach(item => {
-                const option = new Option(item.natName, item.id);
-                if (selectedNationalityId === item.id.toString()) option.selected = true;
-                $list.append(option);
-              });
-            })
-            .fail(() => {
-              $list.empty().append(new Option('Error loading', ''));
-            });
-        } else {
-          $list.append(new Option('-- Select --', ''));
-        }
-      }
+        // Debounce for nationality type switch
+        let nationalityTypeChangeTimeout;
+        $type.on('change', function () {
+            clearTimeout(nationalityTypeChangeTimeout);
+            nationalityTypeChangeTimeout = setTimeout(() => {
+                updateNationalityIdOptions($(this).val());
+            }, 250);
+        });
 
-      function updateTotalGuestsDisplay() {
-        $totalGuestsCount.text(guestsBatch.length);
-        $saveBtn.prop('disabled', guestsBatch.length < 1);
-      }
-
-      // Initialize nationalities
-      updateNationalityIdOptions($type.val());
-
-      // Debounce for nationality type switch
-      let nationalityTypeChangeTimeout;
-      $type.on('change', () => {
-        clearTimeout(nationalityTypeChangeTimeout);
-        nationalityTypeChangeTimeout = setTimeout(() => {
-          updateNationalityIdOptions($type.val());
-        }, 250);
-      });
-
-      // Apply readonly styles if readonly
-      const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
-      if (isReadonly) {
-        [$operatorInput, $tourAreaInput].forEach($el => $el.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' }));
-        [$bookingDateInput, $arrivalDateInput].forEach($el => $el.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' }));
-      }
-
-      // Add guest handler
-      $('#addGuestBtn').click(() => {
-        const guest = {
-          OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
-          Fullname: $('[name="NewGuest.Fullname"]').val(),
-          Age: $('[name="NewGuest.Age"]').val(),
-          Gender: $('[name="NewGuest.Gender"]').val(),
-          ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
-          NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-          NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
-          Area: $('[name="NewGuest.Area"]').val(),
-          Date: $('[name="NewGuest.Date"]').val(),
-          ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
-        };
-
-        if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
-            !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
-          alert('Please fill in all required fields.');
-          return;
+        // Apply readonly if set from ViewBag
+        const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
+        if (isReadonly) {
+            $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $bookingDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
         }
 
-        guestsBatch.push(guest);
-        localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
+        // ===============================
+        // ✅ LOCAL STORAGE LOGIC START
+        // ===============================
+
+        let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
+
+        function updateTotalGuestsDisplay() {
+            $totalGuestsCount.text(guestsBatch.length);
+            $saveBtn.prop('disabled', guestsBatch.length < 1);
+        }
+
+        $('#addGuestBtn').click(function () {
+            const guest = {
+                OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
+                Fullname: $('[name="NewGuest.Fullname"]').val(),
+                Age: $('[name="NewGuest.Age"]').val(),
+                Gender: $('[name="NewGuest.Gender"]').val(),
+                ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
+                NationalityType: $('[name="NewGuest.NationalityType"]').val(),
+                // ✅ FIXED: Now uses 1 and 2 for Local nationalities
+                NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
+                Area: $('[name="NewGuest.Area"]').val(),
+                Date: $('[name="NewGuest.Date"]').val(),
+                ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
+            };
+
+            if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
+                !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            guestsBatch.push(guest);
+            localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
+            updateTotalGuestsDisplay();
+
+            // Lock inputs after adding first guest
+            $bookingDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $currentBatch.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+        });
+
+        $('#guestForm').on('submit', function () {
+            $batchGuestsJson.val(JSON.stringify(guestsBatch));
+            localStorage.removeItem('guestsBatch');
+        });
+
         updateTotalGuestsDisplay();
 
-        // Lock inputs after adding first guest
-        [$bookingDateInput, $arrivalDateInput, $operatorInput, $tourAreaInput, $currentBatch]
-          .forEach($el => $el.prop('readonly', true).prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' }));
-      });
-
-      $('#guestForm').on('submit', () => {
-        $batchGuestsJson.val(JSON.stringify(guestsBatch));
-        localStorage.removeItem('guestsBatch');
-      });
-
-      updateTotalGuestsDisplay();
-
-      // Hide loading overlay quickly once DOM and scripts are ready
-      $('#loadingOverlay').fadeOut(150);
+        // Hide overlay after load
+        $('#loadingOverlay').fadeOut(300);
     });
 </script>
