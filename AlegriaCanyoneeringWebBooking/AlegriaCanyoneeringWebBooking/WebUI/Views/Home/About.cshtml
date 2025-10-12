@@ -39,6 +39,7 @@
 
     <style>
         @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -58,19 +59,17 @@
                 transform: translateY(-4px);
                 box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             }
+
         @@keyframes fade {
-            from
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
 
-        {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .animate-fade {
@@ -100,6 +99,68 @@
         .delay-5 {
             animation-delay: 1s;
         }
+
+        /* Floating Buttons Container */
+        .floating-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 9999;
+        }
+
+        /* Common floating button styles */
+        .floating-btn {
+            background-color: #2563eb; /* primary-600 */
+            color: white;
+            border-radius: 9999px; /* fully rounded */
+            width: 56px;
+            height: 56px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .floating-btn:hover {
+                background-color: #1d4ed8; /* primary-700 */
+            }
+
+            /* Messenger icon (Bootstrap Icons) */
+            .floating-btn i {
+                font-size: 1.5rem;
+            }
+
+        /* Map container for embedded map */
+        #floatingMap {
+            position: fixed;
+            bottom: 80px;
+            right: 2rem;
+            width: 300px;
+            height: 200px;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+            display: none;
+            z-index: 9998;
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 640px) {
+            #floatingMap
+
+        {
+            width: 90vw;
+            right: 5%;
+            bottom: 90px;
+            height: 180px;
+        }
+
+        }
     </style>
 
     <!-- Bootstrap Icons -->
@@ -113,8 +174,6 @@
         <!-- Logo -->
         <div class="flex items-center gap-4">
             <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-16 w-auto object-contain" />
-
-    
         </div>
 
         <!-- Back/Login Button -->
@@ -246,7 +305,48 @@
         </div>
     </div>
 
+    <!-- Floating Buttons Container -->
+    <div class="floating-container">
+        <!-- Messenger button: opens Messenger chat link -->
+        <a href="https://m.me/YourPageID" target="_blank" aria-label="Messenger Chat" class="floating-btn" title="Chat on Messenger">
+            <i class="bi bi-messenger"></i>
+        </a>
+
+        <!-- Map button: toggles embedded map -->
+        <button aria-label="Toggle Map" title="Show Map" class="floating-btn" id="mapToggleBtn">
+            <i class="bi bi-geo-alt"></i>
+        </button>
+    </div>
+    <!-- Floating Map Container -->
+    <div id="floatingMap">
+        <iframe src="https://www.google.com/maps?q=Alegria+Barangay+Rd,+Alegría,+Cebu,+Philippines&hl=en&z=15&output=embed"
+                width="300"
+                height="200"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+    </div>
+
+
     <!-- Bootstrap JS (required for carousel) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Toggle map visibility
+        const mapToggleBtn = document.getElementById('mapToggleBtn');
+        const floatingMap = document.getElementById('floatingMap');
+
+        mapToggleBtn.addEventListener('click', () => {
+            if (floatingMap.style.display === 'none' || floatingMap.style.display === '') {
+                floatingMap.style.display = 'block';
+                mapToggleBtn.title = "Hide Map";
+            } else {
+                floatingMap.style.display = 'none';
+                mapToggleBtn.title = "Show Map";
+            }
+        });
+    </script>
 </body>
 </html>
