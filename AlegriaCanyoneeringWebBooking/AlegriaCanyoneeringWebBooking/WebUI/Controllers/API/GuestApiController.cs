@@ -232,17 +232,30 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             try
             {
+                // ✅ TEMPORARILY REMOVE THE ERROR FOR TESTING
+                // throw new Exception("Test 500 error - API is working but forcing error for testing");
+
                 var reservedGuests = await _context.Guests
                     .Where(g => g.BookingStatus == 2 || g.BookingStatus == 0)
                     .OrderBy(g => g.Id)
                     .ToListAsync();
+
+                if (!reservedGuests.Any())
+                {
+                    return Ok(new ApiResponse<object>
+                    {
+                        Success = true,
+                        Message = "No reserved guests found",
+                        Data = new List<object>()
+                    });
+                }
 
                 var batchLeaders = reservedGuests
                     .GroupBy(g => g.Batch)
                     .Select(batch => new
                     {
                         Id = batch.OrderBy(x => x.Id).First().Id,
-                        Operator = batch.OrderBy(x => x.Id).First().OperatorList,
+                        Operator = batch.OrderBy(x => x.Id).First().OperatorList?.BusinessName ?? "No Operator",
                         TotalGuests = batch.Count(),
                         DateShort = batch.OrderBy(x => x.Id).First().DateShort,
                         BookingStatus = batch.OrderBy(x => x.Id).First().BookingStatus,
@@ -250,7 +263,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         Name = batch.OrderBy(x => x.Id).First().Fullname,
                         Age = batch.OrderBy(x => x.Id).First().Age,
                         ContactNumber = batch.OrderBy(x => x.Id).First().ContactNumber,
-                        Nationality = batch.OrderBy(x => x.Id).First().NationalityEntity
+                        Nationality = batch.OrderBy(x => x.Id).First().NationalityEntity?.NatName ?? "Unknown"
                     })
                     .ToList();
 
@@ -630,6 +643,224 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // This could use libraries like QRCoder
             // For now, return a placeholder or implement your existing QR generation
             return $"data:image/png;base64,PLACEHOLDER_FOR_QR_CODE_{batchCode}";
+        }
+
+
+
+
+
+
+
+        // GET: api/v1/guests/booked-guests
+        [HttpGet("booked-guests")]
+        public async Task<IActionResult> GetBookedGuests([FromQuery] string startDate, [FromQuery] string endDate)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(startDate) || string.IsNullOrEmpty(endDate))
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Start date and end date are required",
+                        Data = null
+                    });
+                }
+
+                // Parse input dates
+                if (!DateTime.TryParse(startDate, out DateTime start) || !DateTime.TryParse(endDate, out DateTime end))
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Invalid date format",
+                        Data = null
+                    });
+                }
+
+                // Adjust end date to include the entire day
+                end = end.Date.AddDays(1).AddSeconds(-1);
+
+                // Get all guests first, then filter in memory
+                var allGuests = await _context.Guests
+                    .Where(g => g.ArrivalDate != null)
+                    .OrderByDescending(g => g.Id)
+                    .ToListAsync();
+
+                // Filter by date range in memory
+                var bookedGuests = allGuests
+                    .Where(g => DateTime.TryParse(g.ArrivalDate, out DateTime arrival) &&
+                               arrival >= start && arrival <= end)
+                    .ToList();
+
+                var batchLeaders = bookedGuests
+                    .GroupBy(g => g.Batch)
+                    .Select(batch => new
+                    {
+                        Batch = batch.Key,
+                        TotalGuests = batch.Count(),
+                        OperatorName = batch.OrderBy(x => x.Id).First().OperatorList?.BusinessName ?? "No Operator",
+                        ArrivalDate = batch.OrderBy(x => x.Id).First().ArrivalDate,
+                        Status = GetStatusText(batch.OrderBy(x => x.Id).First().BookingStatus)
+                    })
+                    .ToList();
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Booked guests retrieved successfully",
+                    Data = batchLeaders
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving booked guests");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving booked guests",
+                    Data = null
+                });
+            }
+        }
+
+
+        private string GetStatusText(int bookingStatus)
+        {
+            return bookingStatus switch
+            {
+                0 => "anticipated",
+                1 => "cancelled",
+                2 => "confirmed",
+                3 => "booked",
+                _ => "unknown"
+            };
+        }
+
+
+
+
+
+
+
+
+        // GET: api/v1/guests/guest-of-the-day
+        [HttpGet("guest-of-the-day")]
+        public async Task<IActionResult> GetGuestOfTheDay()
+        {
+            try
+            {
+                var today = DateTime.Today.ToString("yyyy-MM-dd");
+
+                var guestOfTheDay = await _context.Guests
+                    .Where(g => g.ArrivalDate == today)
+                    .OrderByDescending(g => g.Id)
+                    .FirstOrDefaultAsync();
+
+                if (guestOfTheDay == null)
+                {
+                    return Ok(new ApiResponse<object>
+                    {
+                        Success = true,
+                        Message = "No guest of the day found",
+                        Data = null
+                    });
+                }
+
+                var guestDetails = new
+                {
+                    Id = guestOfTheDay.Id,
+                    Fullname = guestOfTheDay.Fullname,
+                    Age = guestOfTheDay.Age,
+                    Gender = guestOfTheDay.Gender,
+                    ContactNumber = guestOfTheDay.ContactNumber,
+                    Nationality = guestOfTheDay.NationalityEntity?.NatName ?? "Unknown",
+                    Operator = guestOfTheDay.OperatorList?.BusinessName ?? "Unknown",
+                    Area = guestOfTheDay.Area,
+                    ArrivalDate = guestOfTheDay.ArrivalDate,
+                    Batch = guestOfTheDay.Batch
+                };
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Guest of the day retrieved successfully",
+                    Data = guestDetails
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving guest of the day");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving guest of the day",
+                    Data = null
+                });
+            }
+        }
+
+        // GET: api/v1/guests/batch/{batchCode}
+        [HttpGet("batch/{batchCode}")]
+        public async Task<IActionResult> GetGuestsByBatch(string batchCode)
+        {
+            try
+            {
+                var guestsInBatch = await _context.Guests
+                    .Include(g => g.OperatorList)
+                    .Include(g => g.NationalityEntity)
+                    .Where(g => g.Batch == batchCode)
+                    .OrderBy(g => g.Id)
+                    .Select(g => new
+                    {
+                        Id = g.Id,
+                        Fullname = g.Fullname,
+                        Age = g.Age,
+                        Gender = g.Gender,
+                        ContactNumber = g.ContactNumber,
+                        Nationality = g.NationalityEntity != null ? g.NationalityEntity.NatName : "Unknown",
+                        Operator = g.OperatorList != null ? g.OperatorList.BusinessName : "Unknown",
+                        Area = g.Area,
+                        ArrivalDate = g.ArrivalDate,
+                        BookingStatus = g.BookingStatus,
+                        Status = "Confirmed" // Always return "Confirmed"
+                    })
+                    .ToListAsync();
+
+                if (!guestsInBatch.Any())
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Batch not found",
+                        Data = null
+                    });
+                }
+
+                var batchDetails = new
+                {
+                    BatchCode = batchCode,
+                    TotalGuests = guestsInBatch.Count,
+                    Guests = guestsInBatch
+                };
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Batch details retrieved successfully",
+                    Data = batchDetails
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving batch {BatchCode}", batchCode);
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving batch details",
+                    Data = null
+                });
+            }
         }
     }
 }
