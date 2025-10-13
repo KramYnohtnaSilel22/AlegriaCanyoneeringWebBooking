@@ -49,7 +49,7 @@
         @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
         {
             <!-- Admin-specific links -->
-            <a asp-controller="Guest" asp-action="saveguest"><i class="bi bi-person-plus-fill me-2"></i> <span>Save Guest</span></a>
+            <a asp-controller="Guest" asp-action="SaveGuest"><i class="bi bi-person-plus-fill me-2"></i> <span>Save Guest</span></a>
             <a asp-controller="Reserve" asp-action="ReserveBooking"><i class="bi bi-journal-check me-2"></i> <span>Reserve Bookings</span></a>
             <!-- Operator -->
             @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
