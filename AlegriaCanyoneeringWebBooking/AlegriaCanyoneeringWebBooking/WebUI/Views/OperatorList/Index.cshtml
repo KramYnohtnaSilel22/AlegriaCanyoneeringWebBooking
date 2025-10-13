@@ -4,7 +4,7 @@
 
 <h2 class="fw-bold mb-4 text-primary">Operators</h2>
 
-<a asp-action="CreateOperator" class="btn btn-primary mb-3">Create New Operator</a>
+<a asp-action="Create" class="btn btn-primary mb-3">Create New Operator</a>
 
 <table id="mainTable" class="table table-bordered table-striped">
     <thead class="table-light">
@@ -55,7 +55,7 @@
                         orderable: false,
                         searchable: false,
                         render: function (data) {
-                            return `<a href="/Operator/EditOperator/${data}" class="btn btn-sm btn-warning">Edit</a>`;
+                            return `<a href="/OperatorList/Edit/${data}" class="btn btn-sm btn-warning">Edit</a>`;
                         }
                     }
                 ],

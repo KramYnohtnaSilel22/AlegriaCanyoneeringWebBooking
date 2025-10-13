@@ -8,7 +8,7 @@
 <div class="container">
     <h2>Create New Operator</h2>
 
-    <form asp-action="CreateOperator" method="post">
+    <form asp-action="Create" method="post">
         <div class="mb-3">
             <label asp-for="OwnerName" class="form-label"></label>
             <input asp-for="OwnerName" class="form-control" />
@@ -54,7 +54,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary">Create</button>
-        <a asp-action="Operators" class="btn btn-secondary">Cancel</a>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
 
