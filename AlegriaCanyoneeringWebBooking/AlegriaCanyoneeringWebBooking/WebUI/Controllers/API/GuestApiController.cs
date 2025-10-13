@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.Domain.Models;
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Route("api/guestapi")]  // This will make sure the base URL is 'api/guestapi'
@@ -15,10 +16,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
     public class GuestApiController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<HomeController> _logger;
 
-        public GuestApiController(ApplicationDbContext context)
+        public GuestApiController(ApplicationDbContext context, ILogger<HomeController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet("test")]
@@ -27,102 +30,247 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return Ok(new { message = "API is working!" });
         }
 
-        [HttpPost("new-booking")]
-        public async Task<IActionResult> NewBookingApi([FromBody] GuestListViewModel model)
+        // POST: api/v1/guests/bookings
+        [HttpPost("bookings")]
+        public async Task<IActionResult> CreateBooking([FromBody] object request)
         {
-            // Check if BatchGuestsJson is provided
-            if (string.IsNullOrWhiteSpace(model.BatchGuestsJson))
-            {
-                return BadRequest(new { message = "Batch guest data cannot be empty", status = "error" });
-            }
-
-            List<Guest> batchGuests;
             try
             {
-                // Log the received JSON to see what was sent
-                Console.WriteLine("Received BatchGuestsJson: " + model.BatchGuestsJson);
+                // Parse the request manually without DTOs
+                var requestJson = JsonSerializer.Serialize(request);
+                var jsonDocument = JsonDocument.Parse(requestJson);
 
-                // Deserialize JSON into a list of guests
-                batchGuests = JsonSerializer.Deserialize<List<Guest>>(model.BatchGuestsJson);
-
-                // If no valid guest data is found, return bad request
-                if (batchGuests == null || batchGuests.Count == 0)
+                if (!jsonDocument.RootElement.TryGetProperty("guests", out var guestsElement) ||
+                    guestsElement.ValueKind != JsonValueKind.Array)
                 {
-                    return BadRequest(new { message = "No valid guest data found", status = "error" });
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Guest data is required",
+                        Data = null
+                    });
                 }
-            }
-            catch (JsonException ex)
-            {
-                // Log any JSON errors
-                Console.WriteLine("JSON Error: " + ex.Message);
-                return BadRequest(new { message = "Invalid JSON format for guest data", status = "error" });
-            }
 
-            string batchId = DateTime.Now.ToString("yyyyMMddHHmmss");
+                var guests = new List<Guest>();
+                string batchId = DateTime.Now.ToString("yyyyMMddHHmmss");
 
-            // Add each guest to the database
-            foreach (var guest in batchGuests)
-            {
-                guest.BookingStatus = 0;
-                guest.Batch = batchId;
-                //guest.RFID = RfdId;
-                guest.Month = DateTime.Today.ToString("yyyy-MM");
-                guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
+                foreach (var guestElement in guestsElement.EnumerateArray())
+                {
+                    // Validate required fields
+                    if (!guestElement.TryGetProperty("fullname", out var fullnameElement) ||
+                        string.IsNullOrWhiteSpace(fullnameElement.GetString()))
+                    {
+                        return BadRequest(new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = "Guest name is required for all guests",
+                            Data = null
+                        });
+                    }
 
-                _context.Guests.Add(guest);
-            }
+                    if (!guestElement.TryGetProperty("age", out var ageElement) ||
+                        !ageElement.TryGetInt32(out int age) || age <= 0)
+                    {
+                        return BadRequest(new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = "Valid age is required for all guests",
+                            Data = null
+                        });
+                    }
 
-            try
-            {
-                // Save new guests to the database
+                    if (!guestElement.TryGetProperty("operatorId", out var operatorIdElement) ||
+                        !operatorIdElement.TryGetInt32(out int operatorId) || operatorId <= 0)
+                    {
+                        return BadRequest(new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = "Operator is required for all guests",
+                            Data = null
+                        });
+                    }
+
+                    if (!guestElement.TryGetProperty("nationalityId", out var nationalityIdElement) ||
+                        !nationalityIdElement.TryGetInt32(out int nationalityId) || nationalityId <= 0)
+                    {
+                        return BadRequest(new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = "Nationality is required for all guests",
+                            Data = null
+                        });
+                    }
+
+                    // Create guest entity
+                    var guest = new Guest
+                    {
+                        Fullname = fullnameElement.GetString(),
+
+                        // Fix for CS0029: Cannot implicitly convert type 'int' to 'string'  
+                        // Update the `Age` property assignment to convert the integer `age` to a string.  
+
+                        Age = age.ToString(),
+                
+                        Gender = guestElement.TryGetProperty("gender", out var genderElement) ? genderElement.GetString() : "Male",
+                        ContactNumber = guestElement.TryGetProperty("contactNumber", out var contactElement) ? contactElement.GetString() : null,
+                        NationalityType = guestElement.TryGetProperty("nationalityType", out var nationalityTypeElement) ? nationalityTypeElement.GetString() : "Local",
+                        NationalityId = nationalityId,
+                        OperatorId = operatorId,
+                        Area = guestElement.TryGetProperty("area", out var areaElement) ? areaElement.GetString() : "Wonder Falls",
+                        Date = guestElement.TryGetProperty("date", out var dateElement) ? dateElement.GetString() : DateTime.Today.ToString("yyyy-MM-dd"),
+                        ArrivalDate = guestElement.TryGetProperty("arrivalDate", out var arrivalDateElement) ? arrivalDateElement.GetString() : DateTime.Today.ToString("yyyy-MM-dd"),
+                        BookingStatus = 0, // Active/Anticipated
+                        Batch = batchId,
+                        Month = DateTime.Today.ToString("yyyy-MM"),
+                        DateShort = DateTime.Today.ToString("MMM dd, yyyy"),
+                      
+                    };
+
+                    guests.Add(guest);
+                    _context.Guests.Add(guest);
+                }
+
                 await _context.SaveChangesAsync();
 
-                // Fetch updated list of anticipated guests
+                _logger.LogInformation("Created booking batch {BatchId} with {GuestCount} guests", batchId, guests.Count);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Booking created successfully",
+                    Data = new
+                    {
+                        batchId,
+                        guestCount = guests.Count,
+                        createdAt = DateTime.UtcNow
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating booking");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while creating booking",
+                    Data = null
+                });
+            }
+        }
+
+        // GET: api/v1/guests/nationalities
+        [HttpGet("nationalities")]
+        public async Task<IActionResult> GetNationalities()
+        {
+            try
+            {
+                var nationalities = await _context.Nationalities
+                    .Where(n => n.NatName != "Within Cebu Province" && n.NatName != "Outside Cebu Province")
+                    .OrderBy(n => n.NatName)
+                    .Select(n => new
+                    {
+                        id = n.id,
+                        name = n.NatName
+                    })
+                    .ToListAsync();
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Nationalities retrieved successfully",
+                    Data = nationalities
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving nationalities");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving nationalities",
+                    Data = null
+                });
+            }
+        }
+
+        // GET: api/v1/guests/operators
+        [HttpGet("operators")]
+        public async Task<IActionResult> GetOperators()
+        {
+            try
+            {
+                var operators = await _context.Operators
+                    .OrderBy(o => o.BusinessName)
+                    .Select(o => new
+                    {
+                        id = o.Id,
+                        name = o.BusinessName
+                    })
+                    .ToListAsync();
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Operators retrieved successfully",
+                    Data = operators
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving operators");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving operators",
+                    Data = null
+                });
+            }
+        }
+
+        [HttpGet("reserved-guests")]
+        public async Task<IActionResult> GetReservedGuestsApi()
+        {
+            try
+            {
                 var reservedGuests = await _context.Guests
-                    .Where(g => g.BookingStatus == 0)
+                    .Where(g => g.BookingStatus == 2 || g.BookingStatus == 0)
                     .OrderBy(g => g.Id)
                     .ToListAsync();
 
                 var batchLeaders = reservedGuests
                     .GroupBy(g => g.Batch)
-                    .Select(batch => batch.OrderBy(x => x.Id).First())
+                    .Select(batch => new
+                    {
+                        Id = batch.OrderBy(x => x.Id).First().Id,
+                        Operator = batch.OrderBy(x => x.Id).First().OperatorList,
+                        TotalGuests = batch.Count(),
+                        DateShort = batch.OrderBy(x => x.Id).First().DateShort,
+                        BookingStatus = batch.OrderBy(x => x.Id).First().BookingStatus,
+                        Batch = batch.Key,
+                        Name = batch.OrderBy(x => x.Id).First().Fullname,
+                        Age = batch.OrderBy(x => x.Id).First().Age,
+                        ContactNumber = batch.OrderBy(x => x.Id).First().ContactNumber,
+                        Nationality = batch.OrderBy(x => x.Id).First().NationalityEntity
+                    })
                     .ToList();
 
-
-
-
-                // Return successful response with details
-                return Ok(new
+                return Ok(new ApiResponse<object>
                 {
-                    message = "Guests added successfully!",
-                    status = "success",
-                    batchId,
-                    guestCount = batchGuests.Count,
-                    anticipatedGuests = batchLeaders // Return the updated list of anticipated guests
+                    Success = true,
+                    Message = "Reserved guests retrieved successfully",
+                    Data = batchLeaders
                 });
             }
             catch (Exception ex)
             {
-                // Log any errors and return a server error response
-                return StatusCode(500, new { message = $"An error occurred while saving guests: {ex.Message}", status = "error" });
+                _logger.LogError(ex, "Error retrieving reserved guests");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving reserved guests",
+                    Data = null
+                });
             }
-        }
-
-
-        [HttpGet("reserved-guests")]
-        public async Task<IActionResult> GetReservedGuestsApi()
-        {
-            var reservedGuests = await _context.Guests
-                .Where(g => g.BookingStatus == 2 || g.BookingStatus == 0)
-                .OrderBy(g => g.Id)
-                .ToListAsync();
-
-            var batchLeaders = reservedGuests
-                .GroupBy(g => g.Batch)
-                .Select(batch => batch.OrderBy(x => x.Id).First())
-                .ToList();
-
-            return Ok(batchLeaders);
         }
 
         // POST: api/guest/update-status/{id}
@@ -221,7 +369,267 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
-        // Helper Methods
-        private string GenerateRFID() => "RFID" + Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
+
+
+
+
+
+
+
+
+
+
+
+
+        // GET: api/v1/guests/reserved-batches
+        [HttpGet("reserved-batches")]
+        public async Task<IActionResult> GetReservedBatches()
+        {
+            try
+            {
+                var reservedGuests = await _context.Guests
+                    .Where(g => g.BookingStatus == 2 || g.BookingStatus == 0) // Reserved or Anticipated
+                    .OrderByDescending(g => g.Id)
+                    .ToListAsync();
+
+                var batchLeaders = reservedGuests
+                    .GroupBy(g => g.Batch)
+                    .Select(batch => new
+                    {
+                        Id = batch.OrderBy(x => x.Id).First().Id,
+                        Batch = batch.Key,
+                        OperatorName = batch.OrderBy(x => x.Id).First().OperatorList?.BusinessName ?? "No Operator",
+                        RegistrationDate = batch.OrderBy(x => x.Id).First().DateShort,
+                        TotalGuests = batch.Count(),
+                        BookingStatus = batch.OrderBy(x => x.Id).First().BookingStatus == 2 ? "reserved" : "anticipated",
+                        QrBase64 = GenerateBatchQrCode(batch.Key) // You'll need to implement this
+                    })
+                    .ToList();
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Reserved batches retrieved successfully",
+                    Data = batchLeaders
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving reserved batches");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving reserved batches",
+                    Data = null
+                });
+            }
+        }
+
+        // POST: api/v1/guests/confirm-batch
+        [HttpPost("confirm-batch")]
+        public async Task<IActionResult> ConfirmBatch([FromBody] object request)
+        {
+            try
+            {
+                // Parse the request manually without DTOs
+                var requestJson = JsonSerializer.Serialize(request);
+                var jsonDocument = JsonDocument.Parse(requestJson);
+
+                if (!jsonDocument.RootElement.TryGetProperty("batchCode", out var batchCodeElement) ||
+                    string.IsNullOrWhiteSpace(batchCodeElement.GetString()))
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Batch code is required",
+                        Data = null
+                    });
+                }
+
+                string batchCode = batchCodeElement.GetString();
+
+                // Find all guests in the batch
+                var batchGuests = await _context.Guests
+                    .Where(g => g.Batch == batchCode)
+                    .ToListAsync();
+
+                if (!batchGuests.Any())
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Batch not found",
+                        Data = null
+                    });
+                }
+
+                // Update booking status for all guests in the batch
+                foreach (var guest in batchGuests)
+                {
+                    guest.BookingStatus = 3; // Assuming 3 = Confirmed/Booked
+                    guest.ArrivalDate = DateTime.UtcNow.ToString("yy/mm/dd/tt");
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Batch {BatchCode} confirmed with {GuestCount} guests", batchCode, batchGuests.Count);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Batch confirmed successfully",
+                    Data = new
+                    {
+                        batchCode = batchCode,
+                        confirmedGuests = batchGuests.Count,
+                        confirmedAt = DateTime.UtcNow
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error confirming batch");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while confirming batch",
+                    Data = null
+                });
+            }
+        }
+
+        // GET: api/v1/guests/batch-details/{guestId}
+        [HttpGet("batch-details/{guestId}")]
+        public async Task<IActionResult> GetBatchDetails(int guestId)
+        {
+            try
+            {
+                var mainGuest = await _context.Guests
+                    .Include(g => g.OperatorList)
+                    .Include(g => g.NationalityEntity)
+                    .FirstOrDefaultAsync(g => g.Id == guestId);
+
+                if (mainGuest == null)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Guest not found",
+                        Data = null
+                    });
+                }
+
+                var guestsInBatch = await _context.Guests
+                    .Include(g => g.OperatorList)
+                    .Include(g => g.NationalityEntity)
+                    .Where(g => g.Batch == mainGuest.Batch)
+                    .OrderBy(g => g.Id)
+                    .Select(g => new
+                    {
+                        Id = g.Id,
+                        Fullname = g.Fullname,
+                        Age = g.Age,
+                        Gender = g.Gender,
+                        ContactNumber = g.ContactNumber,
+                        Nationality = g.NationalityEntity != null ? g.NationalityEntity.NatName : "Unknown",
+                        Operator = g.OperatorList != null ? g.OperatorList.BusinessName : "Unknown",
+                        Area = g.Area,
+                        Date = g.Date,
+                        ArrivalDate = g.ArrivalDate,
+                        BookingStatus = g.BookingStatus
+                    })
+                    .ToListAsync();
+
+                var batchDetails = new
+                {
+                    MainGuest = new
+                    {
+                        Id = mainGuest.Id,
+                        Fullname = mainGuest.Fullname,
+                        Age = mainGuest.Age,
+                        Gender = mainGuest.Gender,
+                        ContactNumber = mainGuest.ContactNumber,
+                        Nationality = mainGuest.NationalityEntity != null ? mainGuest.NationalityEntity.NatName : "Unknown",
+                        Operator = mainGuest.OperatorList != null ? mainGuest.OperatorList.BusinessName : "Unknown",
+                        Area = mainGuest.Area,
+                        Date = mainGuest.Date,
+                        ArrivalDate = mainGuest.ArrivalDate,
+                        Batch = mainGuest.Batch
+                    },
+                    GuestsInBatch = guestsInBatch,
+                
+                };
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Batch details retrieved successfully",
+                    Data = batchDetails
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving batch details for guest {GuestId}", guestId);
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving batch details",
+                    Data = null
+                });
+            }
+        }
+
+        // GET: api/v1/guests/batch-qr/{batchCode}
+        [HttpGet("batch-qr/{batchCode}")]
+        public async Task<IActionResult> GetBatchQrCode(string batchCode)
+        {
+            try
+            {
+                var batchExists = await _context.Guests.AnyAsync(g => g.Batch == batchCode);
+                if (!batchExists)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Batch not found",
+                        Data = null
+                    });
+                }
+
+                // Generate QR code (you'll need to implement this)
+                var qrCodeData = GenerateBatchQrCode(batchCode);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "QR code generated successfully",
+                    Data = new
+                    {
+                        batchCode = batchCode,
+                        qrBase64 = qrCodeData,
+                        generatedAt = DateTime.UtcNow
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating QR code for batch {BatchCode}", batchCode);
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "An error occurred while generating QR code",
+                    Data = null
+                });
+            }
+        }
+
+        // Helper method for QR code generation (you need to implement this)
+        private string GenerateBatchQrCode(string batchCode)
+        {
+            // TODO: Implement your QR code generation logic
+            // This could use libraries like QRCoder
+            // For now, return a placeholder or implement your existing QR generation
+            return $"data:image/png;base64,PLACEHOLDER_FOR_QR_CODE_{batchCode}";
+        }
     }
 }

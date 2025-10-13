@@ -28,6 +28,140 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
+
+        // GET: Reserve/Index (Original View)
+        public IActionResult Index()
+        {
+            var viewModel = new GuestListViewModel
+            {
+                ReservedGuests = new List<Guest>() // Empty for AJAX loading
+            };
+            return View(viewModel);
+        }
+        [HttpPost]
+        public async Task<IActionResult> GetReservedGuestsData()
+        {
+            try
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
+                var length = Math.Min(int.Parse(Request.Form["length"].FirstOrDefault() ?? "10"), 100);
+                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower();
+
+                // Get current user info
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+                int? currentOperatorId = null;
+                if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
+                    currentOperatorId = parsedId;
+
+                // Base query for reserved guests (status = 2)
+                var query = from g in _context.Guests.AsNoTracking()
+                            join o in _context.Operators.AsNoTracking()
+                                on g.OperatorId equals o.Id into opGroup
+                            from operatorItem in opGroup.DefaultIfEmpty()
+                            where g.BookingStatus == 2
+                            select new
+                            {
+                                Guest = g,
+                                OperatorName = operatorItem != null ? operatorItem.BusinessName : "No Operator"
+                            };
+
+                // Filter by operator role if applicable
+                if (currentOperatorId.HasValue)
+                {
+                    query = query.Where(x => x.Guest.OperatorId == currentOperatorId.Value);
+                }
+
+                // Apply search filter
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    query = query.Where(x =>
+                        x.Guest.Fullname.ToLower().Contains(searchValue) ||
+                        x.OperatorName.ToLower().Contains(searchValue) ||
+                        x.Guest.Batch.ToLower().Contains(searchValue));
+                }
+
+                // ✅ FIXED: Execute operations sequentially
+                var recordsTotal = await query.CountAsync();
+
+                var totalBatchesQuery = query
+                    .GroupBy(x => new { x.Guest.Batch, x.Guest.OperatorId })
+                    .Select(grp => grp.Key);
+
+                var recordsFiltered = await totalBatchesQuery.CountAsync();
+
+                // Get paginated data
+                var groupedData = await query
+                    .OrderBy(x => x.Guest.OperatorId)
+                    .ThenBy(x => x.Guest.Batch)
+                    .GroupBy(x => new { x.Guest.Batch, x.Guest.OperatorId, x.OperatorName })
+                    .Select(grp => new
+                    {
+                        Batch = grp.Key.Batch,
+                        OperatorId = grp.Key.OperatorId,
+                        OperatorName = grp.Key.OperatorName,
+                        TotalGuests = grp.Count(),
+                        ArrivalDate = grp.Min(x => x.Guest.ArrivalDate),
+                        RegistrationDate = grp.Min(x => x.Guest.Date),
+                        MainGuestId = grp.OrderBy(x => x.Guest.Id).First().Guest.Id,
+                        FirstGuest = grp.OrderBy(x => x.Guest.Id).First().Guest
+                    })
+                    .Skip(start)
+                    .Take(length)
+                    .ToListAsync();
+
+                // ✅ FIXED: Sequential processing
+                var result = groupedData.Select(g => new
+                {
+                    id = g.MainGuestId,
+                    batch = g.Batch,
+                    operatorName = g.OperatorName ?? "No Operator",
+                    totalGuests = g.TotalGuests,
+                    arrivalDate = g.ArrivalDate,
+                    registrationDate = g.RegistrationDate,
+                    bookingStatus = "reserved",
+                    rfid = g.FirstGuest?.RFID ?? 0,
+                    qrBase64 = GenerateQrCode(g.Batch)
+                }).ToList();
+
+                return Json(new
+                {
+                    draw = draw,
+                    recordsFiltered = recordsFiltered,
+                    recordsTotal = recordsTotal,
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    draw = Request.Form["draw"].FirstOrDefault(),
+                    recordsTotal = 0,
+                    recordsFiltered = 0,
+                    data = new List<object>(),
+                    error = ex.Message
+                });
+            }
+        }
+        // ✅ Keep this method synchronous
+        private string GenerateQrCode(string batchCode)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batchCode)) return "";
+                string qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BATCH-{Uri.EscapeDataString(batchCode)}&format=png";
+                return qrUrl;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"QR Generation Error: {ex.Message}");
+                return "";
+            }
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetGuestOfTheDay(int pageNumber = 1, int pageSize = 50, string batchFilter = null)
         {
@@ -332,12 +466,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        public IActionResult Index()
-        {
-            return View();
-        }
-
-
+   
 
 
 
@@ -535,98 +664,202 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         //    });
         //}
 
-
         [HttpGet]
         public async Task<IActionResult> GetBookingDetails(int id)
         {
-            var guest = await _context.Guests
-                .Include(g => g.NationalityEntity)
-                .Include(g => g.OperatorList) // optional if you use operator in partial
-                .FirstOrDefaultAsync(g => g.Id == id);
-
-            if (guest == null)
-                return Content("<p class='text-danger'>Guest not found.</p>", "text/html");
-
-            var guestsInBatch = await _context.Guests
-                .Where(g => g.Batch == guest.Batch && g.Id != guest.Id)
-                .Include(g => g.NationalityEntity)
-                .ToListAsync();
-
-            var vm = new GuestDetailsViewModel
+            try
             {
-                Guest = guest,
-                GuestsInBatch = guestsInBatch
-            };
+                var guest = await _context.Guests
+                    .Include(g => g.NationalityEntity)
+                    .Include(g => g.OperatorList)
+                    .FirstOrDefaultAsync(g => g.Id == id);
 
-            // Ensure the partial name matches the file you created:
-            return PartialView("_ReserveBookingDetailsPartial", vm);
+                if (guest == null)
+                    return Content(@"
+                <div class='text-center p-4'>
+                    <i class='fas fa-exclamation-triangle fa-2x text-warning mb-3'></i>
+                    <h5 class='text-warning'>Guest Not Found</h5>
+                    <p class='text-muted'>The requested guest could not be found.</p>
+                </div>", "text/html");
+
+                var guestsInBatch = await _context.Guests
+                    .Where(g => g.Batch == guest.Batch && g.Id != guest.Id && g.BookingStatus != 1) // Exclude canceled guests
+                    .Include(g => g.NationalityEntity)
+                    .ToListAsync();
+
+                var vm = new GuestDetailsViewModel
+                {
+                    Guest = guest,
+                    GuestsInBatch = guestsInBatch
+                };
+
+                return PartialView("_ReserveBookingDetailsPartial", vm);
+            }
+            catch (Exception ex)
+            {
+                return Content(@"
+            <div class='text-center p-4'>
+                <i class='fas fa-exclamation-triangle fa-2x text-danger mb-3'></i>
+                <h5 class='text-danger'>Error Loading Details</h5>
+                <p class='text-muted'>An error occurred while loading guest details.</p>
+                <p class='text-muted small'>Error: " + ex.Message + @"</p>
+            </div>", "text/html");
+            }
         }
 
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BookedGuest(string? BatchCode)
+        public async Task<IActionResult> BookedGuest(string BatchCode)
         {
-            // ✅ Get current user's info
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userRole = User.FindFirstValue(ClaimTypes.Role);
-
-            int? currentOperatorId = null;
-            if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
-                currentOperatorId = parsedId;
-
-            // ✅ If no batch code is provided, auto-generate starting at 10001
-            if (string.IsNullOrEmpty(BatchCode))
+            try
             {
-                var lastBatch = await _context.Guests
-                    .OrderByDescending(g => g.Id)
-                    .Select(g => g.Batch)
-                    .FirstOrDefaultAsync();
+                // ✅ Get current user's info
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-                int newBatchNumber = 10000; // base value
+                int? currentOperatorId = null;
+                if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
+                    currentOperatorId = parsedId;
 
-                if (int.TryParse(lastBatch, out int lastNum))
-                    newBatchNumber = lastNum + 1; // increment last batch
-                else
-                    newBatchNumber = 10001; // first batch ever
+                // ✅ If no batch code is provided, auto-generate starting at 10001
+                if (string.IsNullOrEmpty(BatchCode))
+                {
+                    var lastBatch = await _context.Guests
+                        .OrderByDescending(g => g.Id)
+                        .Select(g => g.Batch)
+                        .FirstOrDefaultAsync();
 
-                BatchCode = newBatchNumber.ToString();
+                    int newBatchNumber = 10000; // base value
 
-                TempData["ToastMessage"] = $"⚠️ No batch code provided. Auto-generated batch code: {BatchCode}";
-                TempData["ToastType"] = "warning";
-            }
+                    if (int.TryParse(lastBatch, out int lastNum))
+                        newBatchNumber = lastNum + 1; // increment last batch
+                    else
+                        newBatchNumber = 10001; // first batch ever
 
-            // ✅ Find all guests with this batch that are not yet confirmed
-            var guestsToFinalize = await _context.Guests
-                .Where(g => g.Batch == BatchCode && g.BookingStatus != 3)
-                .ToListAsync();
+                    BatchCode = newBatchNumber.ToString();
 
-            if (guestsToFinalize.Any())
-            {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"No batch code provided. Auto-generated batch code: {BatchCode}. Please scan a valid QR code."
+                    });
+                }
+
+                // ✅ Find all guests with this batch that are reserved (status = 2)
+                var guestsToFinalize = await _context.Guests
+                    .Where(g => g.Batch == BatchCode && g.BookingStatus == 2) // Only reserved guests
+                    .ToListAsync();
+
+                if (!guestsToFinalize.Any())
+                {
+                    return Json(new { success = false, message = "No reserved guests found for this batch." });
+                }
+
+                // ✅ Optional: Filter by operator role if applicable
+                if (currentOperatorId.HasValue)
+                {
+                    // Check if the operator has permission to confirm this batch
+                    var operatorGuests = guestsToFinalize.Where(g => g.OperatorId == currentOperatorId.Value).ToList();
+                    if (!operatorGuests.Any())
+                    {
+                        return Json(new
+                        {
+                            success = false,
+                            message = "You don't have permission to confirm this batch. This batch belongs to another operator."
+                        });
+                    }
+                }
+
                 foreach (var guest in guestsToFinalize)
                 {
-                    guest.BookingStatus = 3; // Confirmed
+                    guest.BookingStatus = 3; // Confirmed status
+                                             // You can add additional fields like confirmation date if needed
+                                             // guest.ConfirmedDate = DateTime.Now;
+                                             // guest.ConfirmedBy = userId; // Track who confirmed the booking
                 }
 
                 await _context.SaveChangesAsync();
 
-                TempData["ToastMessage"] = $"✅ Successfully confirmed ";
-                TempData["ToastType"] = "success";
+                // ✅ Log the confirmation (optional)
+                Console.WriteLine($"Batch {BatchCode} confirmed by user {userId} (Role: {userRole})");
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"Successfully confirmed"
+                });
             }
-            else
+            catch (Exception ex)
             {
-                // If no guests found, still mark confirmation success
-                TempData["ToastMessage"] = $"✅  Confirmed successfully ";
-                TempData["ToastType"] = "success";
+                // Log the actual error
+                Console.WriteLine($"Error in BookedGuest: {ex.Message}");
+                return Json(new { success = false, message = "Error confirming booking. Please try again." });
             }
-
-            // ✅ Optional: reload operators list
-            var operators = await _context.Operators.ToListAsync();
-            ViewBag.OperatorList = new SelectList(operators, "Id", "BusinessName");
-
-            // ✅ Redirect to ReserveBooking with batchCode
-            return RedirectToAction("ReserveBooking", new { batch = BatchCode });
         }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> BookedGuest(string? BatchCode)
+        //{
+        //    // ✅ Get current user's info
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+        //    int? currentOperatorId = null;
+        //    if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
+        //        currentOperatorId = parsedId;
+
+        //    // ✅ If no batch code is provided, auto-generate starting at 10001
+        //    if (string.IsNullOrEmpty(BatchCode))
+        //    {
+        //        var lastBatch = await _context.Guests
+        //            .OrderByDescending(g => g.Id)
+        //            .Select(g => g.Batch)
+        //            .FirstOrDefaultAsync();
+
+        //        int newBatchNumber = 10000; // base value
+
+        //        if (int.TryParse(lastBatch, out int lastNum))
+        //            newBatchNumber = lastNum + 1; // increment last batch
+        //        else
+        //            newBatchNumber = 10001; // first batch ever
+
+        //        BatchCode = newBatchNumber.ToString();
+
+        //        TempData["ToastMessage"] = $"⚠️ No batch code provided. Auto-generated batch code: {BatchCode}";
+        //        TempData["ToastType"] = "warning";
+        //    }
+
+        //    // ✅ Find all guests with this batch that are not yet confirmed
+        //    var guestsToFinalize = await _context.Guests
+        //        .Where(g => g.Batch == BatchCode && g.BookingStatus != 3)
+        //        .ToListAsync();
+
+        //    if (guestsToFinalize.Any())
+        //    {
+        //        foreach (var guest in guestsToFinalize)
+        //        {
+        //            guest.BookingStatus = 3; // Confirmed
+        //        }
+
+        //        await _context.SaveChangesAsync();
+
+        //        TempData["ToastMessage"] = $"✅ Successfully confirmed ";
+        //        TempData["ToastType"] = "success";
+        //    }
+        //    else
+        //    {
+        //        // If no guests found, still mark confirmation success
+        //        TempData["ToastMessage"] = $"✅  Confirmed successfully ";
+        //        TempData["ToastType"] = "success";
+        //    }
+
+        //    // ✅ Optional: reload operators list
+        //    var operators = await _context.Operators.ToListAsync();
+        //    ViewBag.OperatorList = new SelectList(operators, "Id", "BusinessName");
+
+        //    // ✅ Redirect to ReserveBooking with batchCode
+        //    return RedirectToAction("ReserveBooking", new { batch = BatchCode });
+        //}
 
 
 

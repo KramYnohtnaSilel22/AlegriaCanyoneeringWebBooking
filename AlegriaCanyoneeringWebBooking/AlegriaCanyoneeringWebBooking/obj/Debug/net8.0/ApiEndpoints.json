@@ -35,7 +35,7 @@
     "Parameters": [
       {
         "Name": "model",
-        "Type": "AlegriaCanyoneeringWebBooking.ViewModel.GuestListViewModel",
+        "Type": "AlegriaCanyoneeringWebBooking.GuestListViewModel",
         "IsRequired": true
       }
     ],

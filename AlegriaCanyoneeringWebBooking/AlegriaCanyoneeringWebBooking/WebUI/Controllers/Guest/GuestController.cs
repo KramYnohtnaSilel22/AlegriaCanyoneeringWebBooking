@@ -664,11 +664,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (guest == null)
                 return Json(new { success = false, message = "Guest not found" });
 
-            // Store batch before updating
+            // Store batch before deleting
             var batch = guest.Batch;
 
-            // Set the guest's BookingStatus to 'canceled' (integer 1)
-            guest.BookingStatus = 1;  // 1 = Canceled
+            // Permanent delete the guest
+            _context.Guests.Remove(guest);
 
             try
             {
@@ -676,12 +676,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                return Json(new { success = false, message = "An error occurred while updating the guest status." });
+                return Json(new { success = false, message = "An error occurred while deleting the guest." });
             }
 
             // Recalculate RFID for remaining guests in the batch
             var updatedGuestCount = await _context.Guests
-                .Where(g => g.Batch == batch && g.BookingStatus != 1) // Not canceled
+                .Where(g => g.Batch == batch)
                 .CountAsync();
 
             var guestsInBatch = await _context.Guests
@@ -705,7 +705,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return Json(new { success = true, guestId = GuestId });
         }
-
         public async Task<IActionResult> UpdateStatus(int id, int status)
         {
             var guest = await _context.Guests.FindAsync(id);

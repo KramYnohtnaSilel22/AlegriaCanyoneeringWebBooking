@@ -32,7 +32,7 @@
 
         <!-- Booking Status Badge -->
         <span class="badge
-                    @(Model.Guest.BookingStatus == 0 ? "bg-warning text-dark" : "bg-secondary")
+                    @(Model.Guest.BookingStatus == 0 ? "bg-warning text-dark" : "bg-success")
                     text-capitalize px-3 py-2 rounded-pill">
             @(Model.Guest.BookingStatus == 2 ? "Reserved" : Model.Guest.BookingStatus)
         </span>
@@ -69,11 +69,11 @@
         </div>
     </div>
 
-    <div class="card-footer bg-white d-flex rounded-bottom-4 p-3">
+ @*    <div class="card-footer bg-white d-flex rounded-bottom-4 p-3">
         <a asp-action="reservebooking" class="btn btn-outline-secondary rounded-pill px-4 d-flex align-items-center gap-2 ms-auto">
             <i class="fas fa-arrow-left"></i> Back
         </a>
-    </div>
+    </div> *@
 
     @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any(g => g.BookingStatus != 1)) // Exclude canceled guests
     {
@@ -123,19 +123,3 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-<script>
-    $(document).ready(function () {
-        $('#companionsTable').DataTable({
-            responsive: true,
-            pageLength: 5,
-            lengthMenu: [5, 10, 25],
-            columnDefs: [
-                { orderable: false, targets: 0 }
-            ],
-            language: {
-                searchPlaceholder: "Search companion...",
-                search: ""
-            }
-        });
-    });
-</script>
