@@ -1,60 +1,60 @@
-﻿        @{
-            ViewData["Title"] = "Saved Batch Leaders";
+﻿@{
+    ViewData["Title"] = "Saved Batch Leaders";
 
-        }
+}
 
-        <h2 class="fw-bold mb-4 text-primary">
-            <i class="bi bi-bookmark-check-fill me-2"></i> Saved Guests
-        </h2>
+<h2 class="fw-bold mb-4 text-primary">
+    <i class="bi bi-bookmark-check-fill me-2"></i> Saved Guests
+</h2>
 
-        <!-- Booking Details Modal -->
-        <div class="modal fade" id="bookingDetailsModal" tabindex="-1" aria-labelledby="bookingDetailsLabel" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                <div class="modal-content border-0 shadow-lg rounded-4">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="bookingDetailsLabel">
-                            <i class="fas fa-clipboard-list me-2"></i> Booking Details
-                        </h5>
-              
-                    </div>
+<!-- Booking Details Modal -->
+<div class="modal fade" id="bookingDetailsModal" tabindex="-1" aria-labelledby="bookingDetailsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="bookingDetailsLabel">
+                    <i class="fas fa-clipboard-list me-2"></i> Booking Details
+                </h5>
 
-                    <div class="modal-body" id="bookingDetailsBody">
-                        <div class="text-center py-5 text-muted">
-                            <div class="spinner-border text-primary mb-3" role="status"></div>
-                            Loading...
-                        </div>
-                    </div>
+            </div>
+
+            <div class="modal-body" id="bookingDetailsBody">
+                <div class="text-center py-5 text-muted">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    Loading...
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
 
-        <table id="guestsTable" class="table table-bordered table-striped">
-            <thead class="table-light">
-                <tr>
-                    <th>Operator</th>
-                    <th>Total Guests</th>
-                    <th>Arrival Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-        </table>
+<table id="guestsTable" class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Operator</th>
+            <th>Total Guests</th>
+            <th>Arrival Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+</table>
 
-        <!-- ✅ Toast Message -->
-        @if (TempData["ToastMessage"] != null)
-        {
-            <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-                <div id="toastMessage" class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <i class="fas fa-check-circle me-2"></i> @TempData["ToastMessage"]
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
+<!-- ✅ Toast Message -->
+@if (TempData["ToastMessage"] != null)
+{
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="toastMessage" class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i> @TempData["ToastMessage"]
                 </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-        }
+        </div>
+    </div>
+}
 
 @section Scripts {
     <script>
@@ -132,7 +132,7 @@
                 if (isNaN(date.getTime())) return data;
 
                 // ✅ Format date with full month name, time, and AM/PM
-                var formattedDate = date.toLocaleString('en-US', {  
+                var formattedDate = date.toLocaleString('en-US', {
                     year: 'numeric',
                     month: 'long',  // Full month name
                     day: 'numeric',
