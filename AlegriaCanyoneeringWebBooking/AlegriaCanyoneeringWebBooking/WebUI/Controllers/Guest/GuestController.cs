@@ -558,7 +558,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        public async Task<IActionResult> SaveGuest()
+        public async Task<IActionResult> saveguest()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
