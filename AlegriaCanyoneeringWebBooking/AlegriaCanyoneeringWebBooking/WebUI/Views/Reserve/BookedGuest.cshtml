@@ -5,6 +5,7 @@
     var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
 
+
 <div class="container my-4">
     <!-- Title & Guest of the Day Button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -208,42 +209,34 @@
                                     : '<span class="text-muted">N/A</span>';
                             }
                         },
-                             {
+             {
             data: 'arrivalDate',
             render: function (data) {
                 // ✅ Handle null or undefined
                 if (!data) return '<span class="text-muted">N/A</span>';
 
-                let date;
-
+                // ✅ Check if it's a Unix timestamp (numeric string)
                 if (!isNaN(data)) {
-                    // ✅ Unix timestamp (in seconds)
-                    date = new Date(parseInt(data) * 1000);
+                    // ✅ Convert Unix timestamp to Philippines time
+                    const date = new Date(parseInt(data) * 1000);
+
+                    // ✅ Format date with Philippines timezone
+                    var formattedDate = date.toLocaleString('en-US', {
+                        timeZone: 'Asia/Manila',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+
+                    return formattedDate;
                 } else {
-                    // ✅ Fallback for ISO/UTC date strings
-                    date = new Date(data);
+                    return data;
                 }
-
-                // ❌ If still invalid, just return the raw data
-                if (isNaN(date.getTime())) return data;
-
-                // ✅ Format date with full month name, time, and AM/PM
-                var formattedDate = date.toLocaleString('en-US', {
-                    year: 'numeric',
-                    month: 'long',  // Full month name
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true     // 12-hour format
-                });
-
-                return formattedDate;
             }
-        },
-
-                        
-                        {
-                            data: 'status',
+        },            {   data: 'status',
                             render: function (data) {
                                 if (!data) return '';
                                 const badgeMap = {

@@ -546,8 +546,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     batch = g.Key.Batch,
                     operatorName = g.Key.OperatorName,
                     totalGuests = g.Count(),
-                    arrivalDate = DateTimeOffset.FromUnixTimeSeconds(
-                        long.Parse(g.First().Guest.ArrivalDate ?? "0")).DateTime.ToString("yyyy-MM-dd"),
+                    // In your CreateBooking method
+                    // ✅ CORRECT - Use the actual stored ArrivalDate
+                    arrivalDate = g.First().Guest.ArrivalDate, // Use the stored Unix timestamp
                     status = "Confirmed"
                 })
                 .ToList();
