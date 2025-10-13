@@ -47,6 +47,23 @@
             margin-right: 4px;
         }
 </style>
+@{
+    // Helper function to format ArrivalDate
+    string FormatArrivalDate(string unixTimestamp)
+    {
+        if (string.IsNullOrEmpty(unixTimestamp))
+            return "N/A";
+
+        if (long.TryParse(unixTimestamp, out var unix))
+        {
+            // Convert Unix timestamp to local time
+            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+        }
+
+        return unixTimestamp;
+    }
+}
 
 <div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -96,18 +113,7 @@
                                     <td>@primaryGuestVM.Guest.Gender</td>
                                     <td>@(primaryGuestVM.Guest.NationalityEntity?.NatName ?? "N/A")</td>
                                     <td>@primaryGuestVM.Guest.Area</td>
-                                    <td>
-                                        @{
-                                            if (DateTime.TryParse(primaryGuestVM.Guest.ArrivalDate, out var arrivalDt))
-                                            {
-                                                @arrivalDt.ToString("MMM dd, yyyy")
-                                            }
-                                            else
-                                            {
-                                                @primaryGuestVM.Guest.ArrivalDate
-                                            }
-                                        }
-                                    </td>
+                                    <td>@FormatArrivalDate(primaryGuestVM.Guest.ArrivalDate)</td>
                                 </tr>
                             </tbody>
                         </table>
