@@ -49,7 +49,7 @@
         @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
         {
             <!-- Admin-specific links -->
-            <a asp-controller="Guest" asp-action="saveguest"><i class="bi bi-person-plus-fill me-2"></i> <span>Save Guest</span></a>
+            <a asp-controller="Guest" asp-action="SaveGuest"><i class="bi bi-person-plus-fill me-2"></i> <span>Save Guest</span></a>
             <a asp-controller="Reserve" asp-action="ReserveBooking"><i class="bi bi-journal-check me-2"></i> <span>Reserve Bookings</span></a>
             <!-- Operator -->
             @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
@@ -90,8 +90,8 @@
               @*       <a class="d-block py-1 text-white text-decoration-none" asp-controller="Drivers" asp-action="Index">
                         <i class="bi bi-truck-front me-2"></i> <span>Driver Details</span>
                     </a> *@
-                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="OperatorList" asp-action="Operators">
-                        <i class="bi bi-people-fill me-2"></i> <span>OperatorsList</span>
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="OperatorList" asp-action="Index">
+                        <i class="bi bi-people-fill me-2"></i> <span>Operators List</span>
                     </a>
                     <a class="d-block py-1 text-white text-decoration-none" asp-controller="Nationalities" asp-action="Index">
                         <i class="bi bi-flag-fill me-2"></i> <span>Nationality</span>
@@ -134,6 +134,7 @@
                 <div class="section-title">Reports </div>
                 <a asp-controller="Reports" asp-action="Guest"><i class="bi bi-people-fill me-2"></i> <span>Guest</span></a>
                 <a asp-controller="Reports" asp-action="Nationality"><i class="bi bi-globe2 me-2"></i> <span>Nationality</span></a>
+                <a asp-controller="Reports" asp-action="Operator"><i class="bi bi-building me-2"></i> <span>Operator</span></a>
 
             }
         }

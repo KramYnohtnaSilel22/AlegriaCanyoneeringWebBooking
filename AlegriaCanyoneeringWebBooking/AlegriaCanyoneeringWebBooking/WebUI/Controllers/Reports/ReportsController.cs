@@ -88,24 +88,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     break;
 
                 case "quarterly":
+                    // Group by year and month to show individual months
                     report = guests
                         .GroupBy(g =>
                         {
                             var d = DateTime.Parse(g.Date).Date;
-                            int quarter = (d.Month - 1) / 3 + 1;
-                            return new { d.Year, Quarter = quarter };
+                            return new { d.Year, d.Month };
                         })
+                        .OrderBy(g => g.Key.Year)
+                        .ThenBy(g => g.Key.Month)
                         .Select(g =>
                         {
-                            int startMonth = (g.Key.Quarter - 1) * 3 + 1;
-                            int endMonth = startMonth + 2;
-                            var qStart = new DateTime(g.Key.Year, startMonth, 1);
-                            var qEnd = new DateTime(g.Key.Year, endMonth,
-                                DateTime.DaysInMonth(g.Key.Year, endMonth));
+                            var monthStart = new DateTime(g.Key.Year, g.Key.Month, 1);
+                            var monthEnd = new DateTime(g.Key.Year, g.Key.Month, DateTime.DaysInMonth(g.Key.Year, g.Key.Month));
                             return new TourismReportViewModel
                             {
-                                Date = qStart,
-                                Label = $"Q{g.Key.Quarter} ({qStart:MMMM d} – {qEnd:MMMM d, yyyy})",
+                                Date = monthStart,
+                                Label = $"{monthStart:MMMM 1} – {monthEnd:MMMM d, yyyy}",
                                 ThisProvinceMale = g.Count(x => x.NationalityId == 1 && x.Gender == "Male"),
                                 ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
                                 OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
@@ -118,25 +117,37 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     break;
 
                 case "yearly":
-                    report = guests
-                        .GroupBy(g => DateTime.Parse(g.Date).Year)
-                        .Select(g =>
+                    // Show all 12 months of the year
+                    var yearToDisplay = guests.Count > 0
+                        ? DateTime.Parse(guests.First().Date).Year
+                        : DateTime.Now.Year;
+
+                    var allMonthsOfYear = new List<TourismReportViewModel>();
+                    for (int month = 1; month <= 12; month++)
+                    {
+                        var monthStart = new DateTime(yearToDisplay, month, 1);
+                        var monthEnd = new DateTime(yearToDisplay, month, DateTime.DaysInMonth(yearToDisplay, month));
+
+                        var monthGuests = guests.Where(g =>
                         {
-                            int year = g.Key;
-                            var yearStart = new DateTime(year, 1, 1);
-                            return new TourismReportViewModel
-                            {
-                                Date = yearStart,
-                                Label = $"{year} (Jan 1 – Dec 31)",
-                                ThisProvinceMale = g.Count(x => x.NationalityId == 1 && x.Gender == "Male"),
-                                ThisProvinceFemale = g.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
-                                OtherProvinceMale = g.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
-                                OtherProvinceFemale = g.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
-                                ForeignMale = g.Count(x => x.NationalityId == 3 && x.Gender == "Male"),
-                                ForeignFemale = g.Count(x => x.NationalityId == 3 && x.Gender == "Female")
-                            };
-                        })
-                        .ToList();
+                            var gDate = DateTime.Parse(g.Date).Date;
+                            return gDate.Year == yearToDisplay && gDate.Month == month;
+                        }).ToList();
+
+                        allMonthsOfYear.Add(new TourismReportViewModel
+                        {
+                            Date = monthStart,
+                            Label = $"{monthStart:MMMM 1} – {monthEnd:MMMM d, yyyy}",
+                            ThisProvinceMale = monthGuests.Count(x => x.NationalityId == 1 && x.Gender == "Male"),
+                            ThisProvinceFemale = monthGuests.Count(x => x.NationalityId == 1 && x.Gender == "Female"),
+                            OtherProvinceMale = monthGuests.Count(x => x.NationalityId == 2 && x.Gender == "Male"),
+                            OtherProvinceFemale = monthGuests.Count(x => x.NationalityId == 2 && x.Gender == "Female"),
+                            ForeignMale = monthGuests.Count(x => x.NationalityId > 2 && x.Gender == "Male"),
+                            ForeignFemale = monthGuests.Count(x => x.NationalityId > 2 && x.Gender == "Female")
+                        });
+                    }
+
+                    report = allMonthsOfYear;
                     break;
 
                 default:
@@ -161,87 +172,155 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(report.OrderBy(r => r.Date).ToList());
         }
+
+
         public IActionResult Nationality(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
         {
-            DateTime from, to;
+            var fromDate = dateFrom ?? DateTime.Today;
+            var toDate = dateTo ?? DateTime.Today;
 
-            // Handle automatic date range depending on filter
+            // 🔹 Determine date range based on filter (SAME AS OPERATOR)
             switch (filter.ToLower())
             {
                 case "daily":
-                    from = dateFrom ?? DateTime.Today;
-                    to = dateTo ?? DateTime.Today;
+                    fromDate = dateFrom ?? DateTime.Today;
+                    toDate = dateTo ?? DateTime.Today;
                     break;
-
-
                 case "weekly":
                     var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + (int)DayOfWeek.Monday);
-                    from = dateFrom ?? startOfWeek;
-                    to = dateTo ?? startOfWeek.AddDays(6);
+                    fromDate = dateFrom ?? startOfWeek;
+                    toDate = dateTo ?? startOfWeek.AddDays(6);
                     break;
-
                 case "monthly":
-                    from = dateFrom ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-                    to = dateTo ?? from.AddMonths(1).AddDays(-1);
+                    fromDate = dateFrom ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                    toDate = dateTo ?? fromDate.AddMonths(1).AddDays(-1);
                     break;
-
                 case "quarterly":
                     int currentQuarter = (DateTime.Today.Month - 1) / 3 + 1;
-                    from = dateFrom ?? new DateTime(DateTime.Today.Year, (currentQuarter - 1) * 3 + 1, 1);
-                    to = dateTo ?? from.AddMonths(3).AddDays(-1);
+                    fromDate = dateFrom ?? new DateTime(DateTime.Today.Year, (currentQuarter - 1) * 3 + 1, 1);
+                    toDate = dateTo ?? fromDate.AddMonths(3).AddDays(-1);
                     break;
-
                 case "yearly":
-                    from = dateFrom ?? new DateTime(DateTime.Today.Year, 1, 1);
-                    to = dateTo ?? new DateTime(DateTime.Today.Year, 12, 31);
+                    fromDate = dateFrom ?? new DateTime(DateTime.Today.Year, 1, 1);
+                    toDate = dateTo ?? new DateTime(DateTime.Today.Year, 12, 31);
                     break;
-
                 default:
-                    from = dateFrom ?? DateTime.Today;
-                    to = dateTo ?? DateTime.Today;
+                    fromDate = dateFrom ?? DateTime.Today;
+                    toDate = dateTo ?? DateTime.Today;
                     break;
             }
 
-            ViewBag.DateFrom = from.ToString("yyyy-MM-dd");
-            ViewBag.DateTo = to.ToString("yyyy-MM-dd");
             ViewBag.Filter = filter;
+            ViewBag.DateFrom = fromDate.ToString("yyyy-MM-dd");
+            ViewBag.DateTo = toDate.ToString("yyyy-MM-dd");
 
-            // Load all guests with Nationality
-            var guests = _context.Guests.Include(g => g.NationalityEntity).ToList();
+            // 🔹 Load all guests with nationality information
+            var allGuests = _context.Guests
+                .Include(g => g.NationalityEntity)
+                .ToList();
 
-            // Filter by date and exclude "Within Cebu Province" (Id = 1)
-            var filtered = guests
-                .Where(g => !string.IsNullOrWhiteSpace(g.Date)
-                            && DateTime.TryParse(g.Date, out var parsedDate)
-                            && parsedDate.Date >= from.Date
-                            && parsedDate.Date <= to.Date
-                            && g.NationalityEntity != null
-                            && g.NationalityEntity.id != 1) // exclude Cebu
-                .Select(g => new
+            // 🔹 Filter by date range and exclude Cebu (id = 1)
+            var guests = allGuests
+                .Where(g => g.NationalityEntity != null
+                            && g.NationalityEntity.id != 1
+                            && DateTime.TryParse(g.Date, out var guestDate)
+                            && guestDate.Date >= fromDate.Date
+                            && guestDate.Date <= toDate.Date)
+                .ToList();
+
+            // 🔹 Group by nationality
+            var nationalityReport = guests
+                .Where(g => !string.IsNullOrWhiteSpace(g.Gender))
+                .GroupBy(g => g.NationalityEntity.NatName.Trim())
+                .Select((g, index) => new
                 {
-                    Nationality = g.NationalityEntity.NatName,
-                    Gender = (g.Gender ?? "").Trim().ToLowerInvariant()
+                    Seq = index + 1,
+                    NationalityName = g.Key,
+                    Male = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "male"),
+                    Female = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "female"),
+                    Total = g.Count()
+                })
+                .OrderByDescending(x => x.Total)
+                .ToList();
+
+            // 🔹 Calculate totals
+            ViewBag.TotalMale = nationalityReport.Sum(x => x.Male);
+            ViewBag.TotalFemale = nationalityReport.Sum(x => x.Female);
+            ViewBag.TotalEnding = nationalityReport.Sum(x => x.Total);
+
+            // 🔹 Convert to ViewModel
+            var viewModel = nationalityReport.Select(x => new TourismReportViewModel
+            {
+                Label = x.NationalityName,
+                OtherProvinceMale = x.Male,
+                OtherProvinceFemale = x.Female
+            }).ToList();
+
+            return View(viewModel);
+        }
+
+
+        public IActionResult Operator(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
+        {
+            var fromDate = dateFrom ?? DateTime.Today;
+            var toDate = dateTo ?? DateTime.Today;
+
+            ViewBag.Filter = filter;
+            ViewBag.DateFrom = fromDate.ToString("yyyy-MM-dd");
+            ViewBag.DateTo = toDate.ToString("yyyy-MM-dd");
+
+            // Load all guests with operator information
+            var allGuests = _context.Guests
+                .Include(g => g.OperatorList)
+                .AsEnumerable()
+                .ToList();
+
+            // Filter by date range
+            var guests = allGuests
+                .Where(g =>
+                {
+                    try
+                    {
+                        var guestDate = DateTime.Parse(g.Date);
+                        return guestDate.Date >= fromDate.Date && guestDate.Date <= toDate.Date;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
                 })
                 .ToList();
 
-            // Group by nationality and count male/female
-            var grouped = filtered
-                .GroupBy(x => x.Nationality)
-                .Select(g => new TourismReportViewModel
+            // Group by operator
+            var operatorReport = guests
+                .Where(g => g.OperatorId.HasValue && g.OperatorList != null)
+                .GroupBy(g => new { g.OperatorId, g.OperatorList.BusinessName })
+                .Select((g, index) => new
                 {
-                    Label = g.Key,
-                    OtherProvinceMale = g.Count(x => x.Gender == "male"),
-                    OtherProvinceFemale = g.Count(x => x.Gender == "female")
+                    Seq = index + 1,
+                    OperatorName = g.Key.BusinessName,
+                    Male = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "male"),
+                    Female = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "female"),
+                    Total = g.Count()
                 })
-                .OrderByDescending(x => x.OtherProvinceMale + x.OtherProvinceFemale)
+                .OrderByDescending(x => x.Total)
                 .ToList();
 
-            // Totals
-            ViewBag.TotalMale = grouped.Sum(x => x.OtherProvinceMale);
-            ViewBag.TotalFemale = grouped.Sum(x => x.OtherProvinceFemale);
-            ViewBag.TotalEnding = grouped.Sum(x => x.OtherProvinceMale + x.OtherProvinceFemale);
+            // Calculate totals
+            ViewBag.TotalMale = operatorReport.Sum(x => x.Male);
+            ViewBag.TotalFemale = operatorReport.Sum(x => x.Female);
+            ViewBag.GrandTotal = operatorReport.Sum(x => x.Total);
 
-            return View(grouped);
+            // Convert to ViewModel for consistency
+            var viewModel = operatorReport.Select(x => new TourismReportViewModel
+            {
+                Label = x.OperatorName,
+                ThisProvinceMale = x.Male,
+                ThisProvinceFemale = x.Female,
+                OtherProvinceMale = x.Total
+            }).ToList();
+
+            return View(viewModel);
         }
     }
 

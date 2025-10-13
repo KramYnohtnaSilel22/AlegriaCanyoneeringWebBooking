@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -73,14 +72,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // GET: Admin/Operators
-        public async Task<IActionResult> Operators()
+        public async Task<IActionResult> Index()
         {
             var operators = await _context.OperatorLists.ToListAsync();
             return View(operators);
         }
 
         // GET: Admin/CreateOperator
-        public IActionResult CreateOperator()
+        public IActionResult Create()
         {
             return View();
         }
@@ -88,7 +87,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Admin/CreateOperator
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateOperator(OperatorList operatorModel)
+        public async Task<IActionResult> Create(OperatorList operatorModel)
         {
             if (ModelState.IsValid)
             {
@@ -96,13 +95,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 _context.Add(operatorModel);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Operators));
+                return RedirectToAction(nameof(Index));
             }
             return View(operatorModel);
         }
 
         // GET: Admin/EditOperator/5
-        public async Task<IActionResult> EditOperator(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             var operatorModel = await _context.OperatorLists.FindAsync(id);
             if (operatorModel == null)
@@ -115,7 +114,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // POST: Admin/EditOperator/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditOperator(int id, OperatorList operatorModel)
+        public async Task<IActionResult> Edit(int id, OperatorList operatorModel)
         {
             if (id != operatorModel.OperatorId)
             {
@@ -140,7 +139,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Operators));
+                return RedirectToAction(nameof(Index));
             }
             return View(operatorModel);
         }

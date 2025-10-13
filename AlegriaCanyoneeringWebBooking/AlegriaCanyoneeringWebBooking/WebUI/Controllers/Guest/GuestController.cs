@@ -503,7 +503,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     TempData["ToastMessage"] = "Guests added successfully";
                     TempData["ToastType"] = "success";
 
-                    return RedirectToAction("saveguest", new { batch = batchId, id });
+                    return RedirectToAction("SaveGuest", new { batch = batchId, id });
                 }
 
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
@@ -558,7 +558,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        public async Task<IActionResult> saveguest()
+        public async Task<IActionResult> SaveGuest()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);

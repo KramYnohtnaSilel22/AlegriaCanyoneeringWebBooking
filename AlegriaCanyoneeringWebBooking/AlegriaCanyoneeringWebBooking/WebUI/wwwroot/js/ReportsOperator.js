@@ -7,9 +7,9 @@
             start = end = today;
             break;
         case "weekly":
-            const day = today.getDay(); // 0 (Sun) to 6 (Sat)
+            const day = today.getDay();
             start = new Date(today);
-            start.setDate(today.getDate() - ((day + 6) % 7)); // Monday start
+            start.setDate(today.getDate() - ((day + 6) % 7));
             end = new Date(start);
             end.setDate(start.getDate() + 6);
             break;
@@ -47,7 +47,6 @@ $(document).ready(function () {
     const to = $("#dateTo").val();
     if (!from || !to) {
         setDateRange($("#filterSelect").val());
-        // Auto-submit form on page load to fetch today's data
         $("#filterForm").submit();
     }
 });
@@ -59,7 +58,7 @@ $("#btnDownloadPDF").on("click", function () {
 
     const opt = {
         margin: [5, 5, 5, 5],
-        filename: `GuestReport_${filter}_${new Date().toISOString().slice(0, 10)}.pdf`,
+        filename: `OperatorReport_${filter}_${new Date().toISOString().slice(0, 10)}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
             scale: 2,
@@ -83,7 +82,6 @@ $("#btnDownloadExcel").on("click", function () {
     var table = document.getElementById("tourismReportTable");
     var wb = XLSX.utils.book_new();
 
-    // Format dates
     function formatDate(dateStr) {
         const date = new Date(dateStr + "T00:00:00");
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -95,9 +93,9 @@ $("#btnDownloadExcel").on("click", function () {
     var municipality = "ALEGRIA, CEBU";
     var attraction = "Canyoneering Adventure";
 
-    // Header rows
+    // Simplified header rows
     var headerRows = [
-        ["Tourism Attraction Visitor Record"],
+        ["Operator Visitor Record"],
         ["Date From", dateFrom],
         ["Date To", dateTo],
         ["Municipality", municipality],
@@ -105,13 +103,9 @@ $("#btnDownloadExcel").on("click", function () {
         []
     ];
 
-    // Convert header to worksheet
     var ws = XLSX.utils.aoa_to_sheet(headerRows);
-
-    // Convert table to sheet
     var wsTable = XLSX.utils.table_to_sheet(table);
 
-    // Append table below header
     var rowOffset = headerRows.length;
     var range = XLSX.utils.decode_range(wsTable['!ref']);
     for (var R = range.s.r; R <= range.e.r; ++R) {
@@ -122,21 +116,21 @@ $("#btnDownloadExcel").on("click", function () {
         }
     }
 
-    // Update sheet range
     var newRange = XLSX.utils.decode_range(wsTable['!ref']);
     newRange.e.r += rowOffset;
     ws['!ref'] = XLSX.utils.encode_range(newRange);
 
-    // Set column widths
     ws['!cols'] = [
-        { wch: 8 }, { wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }
+        { wch: 8 },
+        { wch: 35 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 }
     ];
 
-    // Merge title row across all columns
+    // Merge title row across all columns (5 columns for operator report)
     ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } }
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }
     ];
 
     // Style header cells
@@ -157,8 +151,7 @@ $("#btnDownloadExcel").on("click", function () {
         }
     }
 
-    // Append worksheet and download
-    XLSX.utils.book_append_sheet(wb, ws, "Guest Report");
+    XLSX.utils.book_append_sheet(wb, ws, "Operator Report");
     var filter = $("#filterSelect").val().toUpperCase();
-    XLSX.writeFile(wb, `GuestReport_${filter}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `OperatorReport_${filter}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 });

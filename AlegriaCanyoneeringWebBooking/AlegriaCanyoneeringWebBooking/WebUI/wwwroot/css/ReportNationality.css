@@ -3,7 +3,6 @@
     padding: 20px;
     max-width: 100%;
     overflow-x: auto;
-    /* REMOVED: border: 2px solid #000; */
     box-sizing: border-box;
 }
 
@@ -56,7 +55,6 @@
     border-collapse: collapse;
     margin-bottom: 20px;
     margin-top: 20px;
-    page-break-inside: avoid;
 }
 
     #tourismReportTable th,
@@ -68,55 +66,62 @@
     }
 
     #tourismReportTable thead {
+        background-color: #e0e0e0;
+        font-weight: bold;
         page-break-after: avoid;
         display: table-header-group;
     }
+
+        #tourismReportTable thead th {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
 
     #tourismReportTable tbody {
         page-break-inside: avoid;
     }
 
+        #tourismReportTable tbody tr {
+            page-break-inside: avoid;
+        }
+
     #tourismReportTable tfoot {
+        background-color: #f5f5f5;
         page-break-before: avoid;
         display: table-footer-group;
     }
 
-    #tourismReportTable tr {
-        page-break-inside: avoid;
-    }
-
-    #tourismReportTable thead th {
-        background-color: #e0e0e0;
-        font-weight: bold;
-        position: sticky;
-        top: 0;
-    }
-
-    #tourismReportTable tfoot td {
-        background-color: #f5f5f5;
-        font-weight: bold;
-    }
+        #tourismReportTable tfoot td {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
 
 .note-text {
     font-size: 12px;
     margin-top: 10px;
-    margin-bottom: 0; /* ADDED: Remove extra space at bottom */
+    margin-bottom: 0;
     font-style: italic;
     page-break-inside: avoid;
 }
 
 /* PDF-specific styles */
 @media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
     .report-container {
         padding: 10px;
         page-break-inside: avoid;
-        /* REMOVED: border: 2px solid #000 !important; */
+        background: white;
     }
 
     .report-title-box {
         margin-bottom: 10px;
         padding: 10px;
         page-break-inside: avoid;
+        border: 2px solid #000;
     }
 
         .report-title-box h3 {
@@ -131,43 +136,86 @@
     .info-grid {
         margin-bottom: 10px;
         page-break-inside: avoid;
+        width: 100%;
+        display: table;
+        border-collapse: collapse;
+    }
+
+    .info-row {
+        display: table-row;
+        page-break-inside: avoid;
     }
 
     .info-cell {
         padding: 5px;
         font-size: 11px;
+        border: 2px solid #000;
+        display: table-cell;
+    }
+
+    .info-label {
+        background-color: #f5f5f5;
+        font-weight: bold;
+        width: 200px;
     }
 
     #tourismReportTable {
         font-size: 10px;
         margin-top: 10px;
         page-break-inside: avoid;
+        width: 100%;
+        border-collapse: collapse;
     }
 
         #tourismReportTable th,
         #tourismReportTable td {
             padding: 4px;
             border: 1px solid #000;
+            text-align: center;
         }
 
         #tourismReportTable thead {
+            background-color: #e0e0e0;
             display: table-header-group;
             page-break-after: avoid;
         }
 
+            #tourismReportTable thead th {
+                background-color: #e0e0e0;
+                font-weight: bold;
+            }
+
+        #tourismReportTable tbody {
+            display: table-row-group;
+        }
+
+            #tourismReportTable tbody tr {
+                page-break-inside: avoid;
+                display: table-row;
+            }
+
         #tourismReportTable tfoot {
+            background-color: #f5f5f5;
             display: table-footer-group;
             page-break-before: avoid;
         }
 
-        #tourismReportTable tbody tr {
-            page-break-inside: avoid;
-        }
+            #tourismReportTable tfoot td {
+                background-color: #f5f5f5;
+                font-weight: bold;
+            }
 
     .note-text {
         font-size: 9px;
         margin-top: 5px;
         margin-bottom: 0;
         page-break-inside: avoid;
+    }
+
+    /* Hide non-print elements */
+    .card-header,
+    .btn,
+    form {
+        display: none !important;
     }
 }
