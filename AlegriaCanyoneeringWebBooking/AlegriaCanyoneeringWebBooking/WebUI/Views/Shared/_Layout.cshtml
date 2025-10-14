@@ -33,10 +33,20 @@
     <nav class="sidebar" id="sidebar" role="navigation" aria-label="Sidebar Navigation">
         <div class="text-center mb-4">
 
-            <a class="navbar-brand fw-bold text-white" asp-area="" asp-controller="Dashboard" asp-action="Index" style="display: inline-block; text-decoration: none;">
-                <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" />
-                <span class="fs-6 d-block">Alegria Canyoneering</span>
-            </a>
+            @if (User.IsInRole("Operator") || User.IsInRole("Super Admin") || User.IsInRole("Admin"))
+            {
+                <span class="navbar-brand fw-bold text-white" style="display: inline-block; text-decoration: none; cursor: default;">
+                    <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" />
+                    <span class="fs-6 d-block">Alegria Canyoneering</span>
+                </span>
+            }
+            else
+            {
+                <a class="navbar-brand fw-bold text-white" asp-area="" asp-controller="Dashboard" asp-action="Index" style="display: inline-block; text-decoration: none;">
+                    <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" />
+                    <span class="fs-6 d-block">Alegria Canyoneering</span>
+                </a>
+            }
         </div>
 
         <!-- Para sa Super Admin ug Operator -->
