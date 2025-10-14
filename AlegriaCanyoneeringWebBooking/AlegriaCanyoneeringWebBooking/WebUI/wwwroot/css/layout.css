@@ -287,13 +287,13 @@ body {
 #siteFooter {
     position: fixed;
     bottom: 0;
-    left: 250px; /* Sidebar width */
+    left: auto; /* Sidebar width */
     width: calc(100% - 250px);
     z-index: 1000;
 }
 
 /* Responsive for smaller screens */
-@@media (max-width: 768px) {
+@media (max-width: 768px) {
     #siteFooter {
         position: fixed;
         bottom: 0;
