@@ -71,6 +71,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Set TempData for login success
             TempData["LoginSuccess"] = "Login successful! Welcome back.";
+            // Redirect Operator to Guest NewBooking page
+            if (op.Roles?.Name == "Operator")
+            {
+                return RedirectToAction("NewBooking", "Guest");
+            }
+
+            // Otherwise, redirect to Dashboard (or any default page)
             return RedirectToAction("Index", "Dashboard");
         }
 
