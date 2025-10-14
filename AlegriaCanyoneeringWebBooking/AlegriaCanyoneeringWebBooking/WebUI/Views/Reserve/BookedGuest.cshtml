@@ -90,20 +90,21 @@
 @section Scripts {
     <script>
 
-                        // 🟢 When user clicks "View Guest of the Day" button
-        $('#btnViewGuestOfDay').on('click', function () {
+          $('#btnViewGuestOfDay').on('click', function () {
             const modalContainer = $('#guestDetailsModalContainer');
-            modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Loading guest details...</p></div>');
+            modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary"></div><p class="mt-2">Loading...</p></div>');
 
             $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
                 .done(function (html) {
                     modalContainer.html(html);
-                    $('#guestDetailsModal').modal('show'); // open modal once partial is loaded
+                    const modal = new bootstrap.Modal(document.getElementById('guestOfTheDayModal'));
+                    modal.show();
                 })
                 .fail(function () {
                     modalContainer.html('<p class="text-danger text-center mt-4">Error fetching data. Please try again.</p>');
                 });
         });
+
             // View Batch Guest Details
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
                 const batchCode = $(this).data('batch');
