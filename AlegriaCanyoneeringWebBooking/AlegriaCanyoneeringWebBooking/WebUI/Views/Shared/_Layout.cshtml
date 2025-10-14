@@ -53,14 +53,11 @@
         @if (User.IsInRole("Super Admin") || User.IsInRole("Operator"))
         {
 
-            <!-- Para sa Super Admin ug Operator -->
-            @if (User.IsInRole("Super Admin") || User.IsInRole("Admin"))
-            {
                 <div class="section-title">Main</div>
                 <a asp-controller="Dashboard" asp-action="Index">
                     <i class="bi bi-speedometer2 me-2"></i> <span>Dashboard</span>
             </a>
-            }
+            
             <a asp-controller="Guest" asp-action="NewBooking"><i class="bi bi-calendar-plus-fill me-2"></i> <span>New Booking</span></a>
         }
         <!-- Para sa Admin ug Super Admin -->
