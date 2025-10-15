@@ -271,7 +271,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Load all guests with operator information
             var allGuests = _context.Guests
-                .Include(g => g.OperatorList)
+                .Include(g => g.Operators)
                 .AsEnumerable()
                 .ToList();
 
@@ -293,8 +293,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // Group by operator
             var operatorReport = guests
-                .Where(g => g.OperatorId.HasValue && g.OperatorList != null)
-                .GroupBy(g => new { g.OperatorId, g.OperatorList.BusinessName })
+                .Where(g => g.OperatorId.HasValue && g.Operators != null)
+                .GroupBy(g => new { g.OperatorId, g.Operators.BusinessName })
                 .Select((g, index) => new
                 {
                     Seq = index + 1,

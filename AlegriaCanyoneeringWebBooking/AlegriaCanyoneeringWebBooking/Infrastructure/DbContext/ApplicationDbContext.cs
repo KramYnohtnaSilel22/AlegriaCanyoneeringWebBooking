@@ -119,7 +119,11 @@ namespace AlegriaCanyoneeringWebBooking
                     .HasConstraintName("FK_Guest_Nationality")
                     .OnDelete(DeleteBehavior.Restrict)
                     .IsRequired(false);
-
+                modelBuilder.Entity<Guest>()
+        .HasOne(g => g.Operators)
+        .WithMany(o => o.Guests)
+        .HasForeignKey(g => g.OperatorId)
+        .OnDelete(DeleteBehavior.Restrict); // Or Cascade, if you prefer
                 // ====== Indexes ======
                 entity.HasIndex(e => e.Fullname).HasDatabaseName("IX_guests_fullname");
                 entity.HasIndex(e => e.RFID).HasDatabaseName("IX_guests_rfid");

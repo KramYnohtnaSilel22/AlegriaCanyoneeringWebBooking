@@ -44,5 +44,9 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [ForeignKey(nameof(RoleId))]
         public Role? Roles { get; set; }
+
+        // Navigation property for related Guests
+        // Navigation collection to Guests (optional, but good for reverse lookup)
+        public ICollection<Guest> Guests { get; set; }
     }
 }
