@@ -9,7 +9,7 @@ using AlegriaCanyoneeringWebBooking.Helpers;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
-    [Authorize(Roles = "Super Admin")]
+    [Authorize(Roles = "Super Admin,Admin")]
     public class OperatorsController : Controller
     {
         private readonly ApplicationDbContext _context;
