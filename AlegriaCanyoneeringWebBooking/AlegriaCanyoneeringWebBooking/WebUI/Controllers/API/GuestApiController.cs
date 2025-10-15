@@ -1,4 +1,4 @@
-﻿
+﻿#if DEBUG
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -864,3 +864,4 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
     }
 }
+#endif
