@@ -19,72 +19,106 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context = context;
         }
 
-
-        // Add this GET action for displaying the login form
+        // GET: Authentication/Login
         [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
+        public IActionResult Login()
         {
-            ViewBag.ReturnUrl = returnUrl;
-            return View(new LoginViewModel());
+            // If already logged in, redirect to dashboard
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Dashboard");
+            }
+            return View();
         }
+
+        // POST: Authentication/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> Login(string username, string password)
         {
-            if (!ModelState.IsValid) return View(model);
-
-            var op = await _context.Operators
-                .Include(o => o.Roles)
-                .FirstOrDefaultAsync(o => o.Username == model.Username);
-
-            if (op == null || op.Password == null ||
-                !PasswordHelper.VerifyPassword(model.Password, op.Password))
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                ModelState.AddModelError("", "Invalid username or password.");
-                return View(model);
+                ViewBag.ErrorMessage = "Username and password are required.";
+                return View();
             }
 
+            // Find user with their role
+            var user = await _context.Operators
+                .Include(o => o.Roles)
+                .FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null)
+            {
+                ViewBag.ErrorMessage = "Invalid username or password.";
+                return View();
+            }
+
+            // Verify password
+            bool isPasswordValid = PasswordHelper.VerifyPassword(password, user.Password);
+            if (!isPasswordValid)
+            {
+                ViewBag.ErrorMessage = "Invalid username or password.";
+                return View();
+            }
+
+            // Check if role exists
+            if (user.Roles == null)
+            {
+                ViewBag.ErrorMessage = "User role not found. Please contact administrator.";
+                return View();
+            }
+
+            // ✅ CRITICAL: Create claims with ClaimTypes.Role for ASP.NET Core Authorization
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, op.Username!),
-        new Claim(ClaimTypes.NameIdentifier, op.Id.ToString()),
-        new Claim(ClaimTypes.Role, op.Roles?.Name ?? "User"),
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Email, user.EmailAddress ?? ""),
+                // ✅ This is the MOST IMPORTANT claim for [Authorize(Roles = "...")] to work
+                new Claim(ClaimTypes.Role, user.Roles.Name),
+                // Keep these for custom access if needed
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("Role", user.Roles.Name),
+                new Claim("RoleName", user.Roles.Name),
+                new Claim("BusinessName", user.BusinessName ?? "")
+            };
 
-    };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true, // Remember me functionality
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2) // Session duration
+                IsPersistent = false, // Session cookie (expires when browser closes)
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8), // Backup expiration
+                AllowRefresh = true
             };
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity),
-                authProperties);
+                claimsPrincipal,
+                authProperties
+            );
 
-            // ✅ SET SESSION FOR USERNAME DISPLAY
-            HttpContext.Session.SetString("Username", op.Username!);
-            HttpContext.Session.SetInt32("OperatorId", op.Id);
-            HttpContext.Session.SetString("UserRole", op.Roles?.Name ?? "User");
+            // Store in session as backup
+            HttpContext.Session.SetString("Username", user.Username);
+            HttpContext.Session.SetString("Role", user.Roles.Name);
+            HttpContext.Session.SetInt32("UserId", user.Id);
 
-            // Set TempData for login success
-            TempData["LoginSuccess"] = "Login successful! Welcome back.";
-            if (op.Roles?.Name == "Operator")
+            TempData["SuccessMessage"] = $"Welcome back, {user.Name}!";
+
+            // Redirect based on role
+            if (user.Roles.Name == "Super Admin" || user.Roles.Name == "Admin")
             {
-                return RedirectToAction("NewBooking", "Guest");
+                return RedirectToAction("Index", "Dashboard");
             }
-            else if (op.Roles?.Name == "Admin")
-            {
-                return RedirectToAction("SaveGuest", "Guest");
-            }
-            else
+            else if (user.Roles.Name == "Operator")
             {
                 return RedirectToAction("Index", "Dashboard");
             }
 
+            return RedirectToAction("Index", "Dashboard");
         }
+
 
         public async Task<IActionResult> Logout()
         {
@@ -135,7 +169,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Password changed successfully!";
-            return RedirectToAction("NewBooking", "Guest"); // Redirect wherever appropriate
+            return RedirectToAction("ChangePassword", "Authentication"); // Redirect wherever appropriate
         }
 
         [HttpGet]

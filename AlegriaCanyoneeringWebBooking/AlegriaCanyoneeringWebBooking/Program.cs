@@ -9,12 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews()
     .AddRazorOptions(options =>
     {
-        // Clear default view locations
         options.ViewLocationFormats.Clear();
-
-        // Add your custom view locations inside /WebUI/Views/
-        options.ViewLocationFormats.Add("/WebUI/Views/{1}/{0}.cshtml");     // e.g. /WebUI/Views/Home/About.cshtml
-        options.ViewLocationFormats.Add("/WebUI/Views/Shared/{0}.cshtml");  // e.g. /WebUI/Views/Shared/_Layout.cshtml
+        options.ViewLocationFormats.Add("/WebUI/Views/{1}/{0}.cshtml");
+        options.ViewLocationFormats.Add("/WebUI/Views/Shared/{0}.cshtml");
     });
 
 // Add SignalR service
@@ -50,52 +47,51 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.Cookie.Name = "AlegriaCanyoneering.Session";
-    options.IdleTimeout = TimeSpan.FromSeconds(30); // Adjust as needed
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Changed from 30 seconds to 30 minutes
     options.Cookie.IsEssential = true;
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
-// ===== Cookie Settings for Identity =====
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-
-    // This makes cookie expire when browser closes
-    options.ExpireTimeSpan = TimeSpan.Zero;
-    options.SlidingExpiration = false;
-});
-
-builder.Services.AddResponseCompression(); // 🚀 Enable compression
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("SuperAdmin", policy => policy.RequireRole("Super Admin"));
-    options.AddPolicy("Operator", policy => policy.RequireRole("Operator"));
-});
-
-// 🔑 Authentication/Authorization
+// 🔑 Authentication - MUST come before Authorization
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Authentication/Login";
-        options.LogoutPath = "/Authentication/Logout";  // Fixed typo here: "AuAuthenticationth" → "Authentication"
+        options.LogoutPath = "/Authentication/Logout";
         options.AccessDeniedPath = "/Authentication/AccessDenied";
+        options.Cookie.Name = "AlegriaCanyoneering.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
     });
 
-// 2️⃣ Now build the app
+// Authorization - MUST come after Authentication
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("SuperAdmin", policy => policy.RequireRole("Super Admin"));
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("Operator", policy => policy.RequireRole("Operator"));
+    options.AddPolicy("AdminOrSuperAdmin", policy =>
+        policy.RequireRole("Admin", "Super Admin"));
+});
+
+builder.Services.AddResponseCompression();
+
+// 2️⃣ Build the app
 var app = builder.Build();
-// Serve static files from custom location: WebUI/wwwroot
+
+// Serve static files
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory(), "WebUI", "wwwroot")),
-    RequestPath = "" // or use "/WebUI" if you want URL prefix
+    RequestPath = ""
 });
-// 3️⃣ Optional: Test DB Connection AFTER Build
+
+// 3️⃣ Test DB Connection
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -116,32 +112,32 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// 4️⃣ Configure the middleware pipeline
+// 4️⃣ Configure middleware pipeline - ORDER MATTERS!
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-app.UseCors("AllowAll");  // Apply the CORS policy
-
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// ✅ CRITICAL: Authentication MUST come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.UseSession();
 app.UseResponseCompression();
 
-// API routes (Controller mappings)
-app.MapControllers();  // This maps the controllers to the routes.
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=About}/{id?}");
 
-// Map SignalR Hub
 app.MapHub<BatchCodeHub>("/batchCodeHub");
 
 app.Run();
