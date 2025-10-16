@@ -483,7 +483,37 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     // Save guests first
                     await _context.SaveChangesAsync();
 
-                    // If a photo was uploaded, save to tbl_guestimage
+                    // Save batch regardless of photo upload
+                    int noOfLocal = batchGuests.Count(g => g.NationalityType?.ToLower() == "local");
+                    int noOfForeign = batchGuests.Count(g => g.NationalityType?.ToLower() == "foreign");
+                    int totalGuests = noOfLocal + noOfForeign;
+
+                    string arrivalDate = batchGuests.FirstOrDefault()?.ArrivalDate ?? GetCurrentUnixTimestamp().ToString();
+
+
+                    var batchRecord = new Batch
+                    {
+                        OperatorId = batchGuests.FirstOrDefault()?.OperatorId ?? 0,
+                        NoOfLocalGuest = noOfLocal,
+                        NoOfForeignGuest = noOfForeign,
+                        NoOfTGuide = 0,
+                        NoOfMDriver = 0,
+                        TotalNoOfGuest = totalGuests,
+                        ArrivalDate = arrivalDate
+                    };
+
+                    try
+                    {
+                        _context.Batches.Add(batchRecord);
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine("✅ Batch saved: " + batchRecord.BatchId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("❌ Failed to save batch: " + ex.Message);
+                    }
+
+                    // Now handle photo upload if any
                     if (Photo != null && Photo.Length > 0)
                     {
                         using (var ms = new MemoryStream())
@@ -500,7 +530,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         }
                     }
 
-                    TempData["ToastMessage"] = "Guests added successfully";
+                    TempData["ToastMessage"] = "Guests and batch added successfully";
                     TempData["ToastType"] = "success";
 
                     return RedirectToAction("SaveGuest", new { batch = batchId, id });
@@ -513,6 +543,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await PopulateDropdowns();
             return View(model);
         }
+
 
         // Helper method to generate the current Unix timestamp
         private long GetCurrentUnixTimestamp()

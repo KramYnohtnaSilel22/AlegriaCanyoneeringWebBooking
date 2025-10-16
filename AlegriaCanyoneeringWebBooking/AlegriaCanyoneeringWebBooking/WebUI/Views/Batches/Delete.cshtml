@@ -17,7 +17,7 @@
             <dd class="col-sm-8">@Model.BatchId</dd>
 
             <dt class="col-sm-4">Operator</dt>
-            <dd class="col-sm-8">@Model.OperatorList?.OwnerName</dd>
+            <dd class="col-sm-8">@Model.Operators?.BusinessName</dd>
 
             <dt class="col-sm-4">Local Guests</dt>
             <dd class="col-sm-8">@Model.NoOfLocalGuest</dd>
@@ -35,7 +35,7 @@
             <dd class="col-sm-8">@Model.TotalNoOfGuest</dd>
 
             <dt class="col-sm-4">Arrival Date</dt>
-            <dd class="col-sm-8">@Model.ArrivalDate.ToString("yyyy-MM-dd")</dd>
+            <dd class="col-sm-8">@Model.ArrivalDate</dd>
         </dl>
 
         <form asp-action="DeleteConfirmed" method="post">

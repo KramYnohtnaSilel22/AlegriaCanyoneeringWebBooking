@@ -4,7 +4,24 @@
 @{
     ViewData["Title"] = "Batches";
 }
+@{
+    // Helper function to format ArrivalDate
+    string FormatArrivalDate(string unixTimestamp)
+    {
+        if (string.IsNullOrEmpty(unixTimestamp))
+            return "N/A";
 
+        if (long.TryParse(unixTimestamp, out var unix))
+        {
+            // Convert Unix timestamp to local time
+            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
+
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+        }
+
+        return unixTimestamp;
+    }
+}
 <h2 class="mb-3">Batches</h2>
 
 @* <p>
@@ -30,13 +47,16 @@
         {
             <tr>
                 <td>@item.BatchId</td>
-                <td>@item.OperatorList?.OwnerName</td> <!-- shows Operator name if loaded -->
+                <td>@item.Operators.BusinessName</td> <!-- shows Operator name if loaded -->
                 <td>@item.NoOfLocalGuest</td>
                 <td>@item.NoOfForeignGuest</td>
                 <td>@item.NoOfTGuide</td>
                 <td>@item.NoOfMDriver</td>
                 <td>@item.TotalNoOfGuest</td>
-                <td>@item.ArrivalDate</td>
+                <td>@FormatArrivalDate(item.ArrivalDate)</td>
+
+    
+           
                 <td>
                  
                     <a asp-action="Edit" asp-route-id="@item.BatchId" class="btn btn-warning btn-sm me-1" title="Edit Batch">

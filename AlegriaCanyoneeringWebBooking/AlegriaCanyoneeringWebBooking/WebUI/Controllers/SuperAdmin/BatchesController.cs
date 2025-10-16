@@ -22,7 +22,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public async Task<IActionResult> Index()
         {
             var batches = await _context.Batches
-                .Include(b => b.OperatorList)
+                .Include(b => b.Operators)
                 .ToListAsync();
             return View(batches);
         }
@@ -33,7 +33,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (id == null) return NotFound();
 
             var batch = await _context.Batches
-                .Include(b => b.OperatorList)
+                .Include(b => b.Operators)
                 .FirstOrDefaultAsync(m => m.BatchId == id);
 
             if (batch == null) return NotFound();
@@ -106,7 +106,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (id == null) return NotFound();
 
             var batch = await _context.Batches
-                .Include(b => b.OperatorList) // include Operator so OwnerName is available
+                .Include(b => b.Operators) // include Operator so OwnerName is available
                 .FirstOrDefaultAsync(m => m.BatchId == id);
 
             if (batch == null) return NotFound();
