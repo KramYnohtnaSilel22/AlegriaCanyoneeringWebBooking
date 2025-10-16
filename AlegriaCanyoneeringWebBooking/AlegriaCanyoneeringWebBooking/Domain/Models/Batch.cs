@@ -12,11 +12,10 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Required]
         [Column("operatorname")]
-        [StringLength(200)]
         public int OperatorId { get; set; }
 
         [ForeignKey(nameof(OperatorId))]
-        public OperatorList? OperatorList { get; set; }
+        public Operator? Operators { get; set; }
 
         [Column("no_of_localguest")]
         public int NoOfLocalGuest { get; set; }
@@ -33,10 +32,10 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Column("total_no_of_guest")]
         public int TotalNoOfGuest { get; set; }
 
-        // Since you used varchar(100) for date, I recommend storing it as DateTime
-        public DateTime ArrivalDate { get; set; }
+        [Column("arrivaldate")]
+        public string ArrivalDate { get; set; } = string.Empty;
 
-        // 👉 You can change this to DateTime if you want:
-        // public DateTime ArrivalDate { get; set; }
+
+
     }
 }

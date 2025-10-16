@@ -93,7 +93,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Column("operatorid")]
         public int? OperatorId { get; set; }
 
-        public Operator Operators { get; set; }
+        public Operator? Operators { get; set; }
         [NotMapped] public string? QRBase64 { get; set; }
         [NotMapped] public string? QRText { get; set; }
 
