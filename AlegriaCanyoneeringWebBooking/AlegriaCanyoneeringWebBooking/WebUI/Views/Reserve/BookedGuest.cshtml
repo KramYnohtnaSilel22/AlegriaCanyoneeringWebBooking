@@ -4,6 +4,8 @@
     var startDate = Context.Request.Query["startDate"].FirstOrDefault();
     var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
+<div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 2000; max-width: 350px;">
+</div>
 
 
 <div class="container my-4">
@@ -89,14 +91,28 @@
 </div>
 @section Scripts {
     <script>
-
-          $('#btnViewGuestOfDay').on('click', function () {
+                $('#btnViewGuestOfDay').on('click', function () {
             const modalContainer = $('#guestDetailsModalContainer');
-            modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary"></div><p class="mt-2">Loading...</p></div>');
+
+            // Show loading spinner first
+            modalContainer.html(`
+                <div class="text-center my-4">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2">Loading...</p>
+                </div>
+            `);
 
             $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
-                .done(function (html) {
-                    modalContainer.html(html);
+                .done(function (res) {
+                    // If server returns JSON with success = false and message, show toast and do NOT display modal
+                    if (res.success === false && res.message) {
+                        showToast(res.message); // your toast function
+                        modalContainer.empty(); // clear loading spinner
+                        return;
+                    }
+
+                    // Otherwise, assume it's HTML and load it in container, then show modal
+                    modalContainer.html(res); // res is HTML here
                     const modal = new bootstrap.Modal(document.getElementById('guestOfTheDayModal'));
                     modal.show();
                 })
@@ -104,6 +120,31 @@
                     modalContainer.html('<p class="text-danger text-center mt-4">Error fetching data. Please try again.</p>');
                 });
         });
+
+
+               function showToast(message) {
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-danger border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+
+            const $toast = $(toastHtml).appendTo('#toastContainer');
+
+            const bsToast = new bootstrap.Toast($toast[0], { delay: 4000 });
+            bsToast.show();
+
+            // Remove after hidden
+            $toast.on('hidden.bs.toast', function () {
+                $toast.remove();
+            });
+        }
+     
 
             // View Batch Guest Details
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {

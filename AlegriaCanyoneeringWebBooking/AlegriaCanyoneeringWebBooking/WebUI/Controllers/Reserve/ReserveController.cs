@@ -207,7 +207,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .ToListAsync();
 
             if (!pagedGuests.Any())
-                return Content("<p class='text-danger'>No guests found for today.</p>", "text/html");
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "No guest arrivals found today."
+                });
+            }
+
+
 
             var operatorIds = pagedGuests.Select(g => g.OperatorId).Distinct().ToList();
             var operators = await _context.Operators
