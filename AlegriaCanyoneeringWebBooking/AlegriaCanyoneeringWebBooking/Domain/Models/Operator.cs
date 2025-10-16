@@ -47,6 +47,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         // Navigation property for related Guests
         // Navigation collection to Guests (optional, but good for reverse lookup)
-        public ICollection<Guest> Guests { get; set; }
+        public ICollection<Guest>? Guests { get; set; }
     }
 }
