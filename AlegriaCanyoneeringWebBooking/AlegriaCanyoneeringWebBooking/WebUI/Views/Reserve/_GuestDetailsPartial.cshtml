@@ -2,22 +2,19 @@
 <link href="/css/GuestDetails.css" rel="stylesheet" />
 
 @{
-    // Helper function to format ArrivalDate
     string FormatArrivalDate(string unixTimestamp)
     {
         if (string.IsNullOrEmpty(unixTimestamp)) return "N/A";
-
         if (long.TryParse(unixTimestamp, out var unix))
         {
-            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
-            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+            var dt = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
+            return dt.ToString("MMMM dd, yyyy hh:mm tt");
         }
-
         return unixTimestamp;
     }
 }
 
-<div class="modal fade" id="guestOfTheDayModal" " tabindex="-1" aria-labelledby="guestOfTheDayModalLabel" aria-hidden="true" role="dialog" aria-modal="true">
+<div class="modal fade" id="guestOfTheDayModal" tabindex="-1" aria-labelledby="guestOfTheDayModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white">
@@ -42,7 +39,6 @@
             </div>
 
             <div class="modal-body bg-white text-black" id="guestDetailsContent">
-                <!-- Batch Search -->
                 <div class="mb-3">
                     <input type="text" id="batchSearchInput" class="form-control" placeholder="Search by Batch..." />
                 </div>
@@ -56,11 +52,10 @@
                         var primaryGuestVM = batchGroup.First();
                         var companionsVM = batchGroup.Skip(1).ToList();
 
-                        <div class="card border mb-4">
+                        <div class="card border mb-4" data-batch="@batchGroup.Key" data-operator="@primaryGuestVM.OperatorName">
                             <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2 px-3">
                                 <div>
-                                    <strong>Batch:</strong>
-                                    <span class="text-muted">@batchGroup.Key</span>
+                                    <strong>Batch:</strong> <span class="text-muted">@batchGroup.Key</span>
                                     <small class="ms-3">(Operator: @primaryGuestVM.OperatorName)</small>
                                 </div>
                                 <span class="text-muted">@FormatArrivalDate(primaryGuestVM.Guest.ArrivalDate)</span>
@@ -102,11 +97,12 @@
                                         <table class="table table-sm table-hover">
                                             <thead>
                                                 <tr class="table-light">
+                                             
                                                     <th>Full Name</th>
                                                     <th>Age</th>
                                                     <th>Contact</th>
                                                     <th>Gender</th>
-                                                    <th>Nationality Status</th>
+                                                    <th>Nationality</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -124,10 +120,6 @@
                                         </table>
                                     </div>
                                 }
-                                else
-                                {
-                                    <p class="text-muted">No companions in this batch.</p>
-                                }
                             </div>
                         </div>
                     }
@@ -137,7 +129,6 @@
                     <p class="text-muted">No guest arrivals found today.</p>
                 }
 
-                <!-- Pagination Controls -->
                 <nav aria-label="Guest pagination">
                     <ul class="pagination justify-content-center">
                         <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
@@ -154,19 +145,112 @@
                         </li>
                     </ul>
                 </nav>
+
             </div>
         </div>
     </div>
 </div>
 
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<script src="~/js/GuestPDF" asp-append-version="true" defer></script>
-<script src="~/js/GuestExcel.js" asp-append-version="true" defer></script>
+<script src="~/js/GuestPDF.js" asp-append-version="true" defer></script>
+
 
 <script>
+           function downloadGuestDetailsExcel() {
+        const wb = XLSX.utils.book_new();
+
+        const date = new Date().toLocaleDateString();
+        const title = [`Guests of the Day - ${date}`];
+
+        const headers = [
+            "Batch", "Operator", "Full Name", "Age", "Contact", "Gender", "Nationality", "Area", "Arrival Date"
+        ];
+        const rows = [title, [], headers];
+
+        const cards = document.querySelectorAll("#guestDetailsContent .card");
+        if (!cards.length) {
+            alert("No data available to export.");
+            return;
+        }
+
+        cards.forEach(card => {
+            const headerEl = card.querySelector(".card-header");
+            let batch = "";
+            let operator = "";
+            if (headerEl) {
+                const bm = headerEl.innerText.match(/Batch:\s*(\S+)/i);
+                if (bm) batch = bm[1];
+                const om = headerEl.innerText.match(/\(Operator:\s*(.+?)\)/i);
+                if (om) operator = om[1];
+            }
+
+            const tables = card.querySelectorAll("table");
+
+            // Primary
+            if (tables.length >= 1) {
+                const primaryTable = tables[0];
+                const prTr = primaryTable.querySelector("tbody tr");
+                if (prTr) {
+                    const cols = prTr.querySelectorAll("td");
+                    const row = [
+                        batch,
+                        operator,
+                        (cols[0]?.innerText || "").trim(),
+                        (cols[1]?.innerText || "").trim(),
+                        (cols[2]?.innerText || "").trim(),
+                        (cols[3]?.innerText || "").trim(),
+                        (cols[4]?.innerText || "").trim(),
+                        (cols[5]?.innerText || "").trim(),
+                        (cols[6]?.innerText || "").trim()
+                    ];
+                    rows.push(row);
+                }
+            }
+
+            // Companion
+            if (tables.length >= 2) {
+                const compTable = tables[1];
+                compTable.querySelectorAll("tbody tr").forEach(tr => {
+                    const cols = tr.querySelectorAll("td");
+                    console.log("Companion cols raw:", Array.from(cols).map(td => td.innerText));
+                    const companionRow = [
+                        "", // Batch blank
+                        "", // Operator blank
+                        (cols[0]?.innerText || "").trim(),
+                        (cols[1]?.innerText || "").trim(),
+                        (cols[2]?.innerText || "").trim(),
+                        (cols[3]?.innerText || "").trim(),
+                        (cols[4]?.innerText || "").trim(),
+                        "", // Area blank
+                        ""  // Arrival blank
+                    ];
+                    console.log("Companion Excel row:", companionRow);
+                    rows.push(companionRow);
+                });
+            }
+        });
+
+        // Pad rows
+        rows.forEach(row => {
+            while (row.length < 9) row.push("");
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [
+            { wch: 10 }, { wch: 20 }, { wch: 25 },
+            { wch: 5 }, { wch: 15 }, { wch: 8 },
+            { wch: 20 }, { wch: 15 }, { wch: 20 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Guests of the Day");
+        XLSX.writeFile(wb, "DailyGuestReport.xlsx");
+    }
+
+
     let currentPage = @Model.CurrentPage;
     const pageSize = @Model.PageSize;
 

@@ -80,6 +80,10 @@
                 <button class="btn btn-danger" onclick="downloadGuestDetailsPdf()">
                     <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
+                <button class="btn btn-success ms-2" onclick="downloadGuestDetailsExcel()">
+                    <i class="fas fa-file-excel"></i> Download Excel
+                </button>
+
             </div>
 
             <!-- PDF Content Wrapper -->
@@ -166,34 +170,8 @@
 <!-- PDF Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-    async function downloadGuestDetailsPdf() {
-        const { jsPDF } = window.jspdf;
-        const element = document.getElementById("guestDetailsContent");
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-        if (!element) {
-            alert("No guest details found to export.");
-            return;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            scrollY: -window.scrollY
-        }).then(canvas => {
-            const imgData = canvas.toDataURL("image/png");
-            const pdf = new jsPDF("p", "mm", "a4");
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-            pdf.save("GuestDetails.pdf");
-        }).catch(error => {
-            console.error("PDF generation error:", error);
-            alert("Failed to generate PDF.");
-        });
-    }
-</script>
+<script src="~/js/ViewGuestDetails.js" asp-append-version="true" defer></script>
