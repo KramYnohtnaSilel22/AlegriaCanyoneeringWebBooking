@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
 using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Http;
 
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
@@ -530,10 +531,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         }
                     }
 
-                    TempData["ToastMessage"] = "Guests and batch added successfully";
+                    TempData["ToastMessage"] = "Guests added successfully";
                     TempData["ToastType"] = "success";
 
-                    return RedirectToAction("SaveGuest", new { batch = batchId, id });
+
+                    return RedirectToAction("SaveGuest"); // ✅ Clean redirect, no query string
+
                 }
 
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
