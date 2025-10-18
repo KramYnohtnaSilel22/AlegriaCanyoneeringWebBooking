@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Reserved Booking";
 }
+<link href="/css/reservebooking.css" rel="stylesheet" />
 
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-primary">
@@ -209,13 +210,22 @@
                     previous: "Previous",
                     next: "Next"
                 }
-                },    
-                responsive: true,
-    order: [[1, 'desc']],
-    pageLength: 10,
-    lengthMenu: [[10, 25, 50], [10, 25, 50]] // Remove -1 from both arrays
-    
-        });
+                },
+                    responsive: true,
+                  order: [[1, 'desc']],
+                  pageLength: 10,
+                  drawCallback: function () {
+                      const headers = $('#reservedGuestsTable thead th').map(function () {
+                          return $(this).text().trim();
+                      }).get();
+
+                      $('#reservedGuestsTable tbody tr').each(function () {
+                          $(this).find('td').each(function (i) {
+                              $(this).attr('data-label', headers[i]);
+                          });
+                      });
+                  }
+              });
 
         // ✅ EVENT DELEGATION FOR CONFIRM BATCH BUTTONS
         $(document).on('click', '.confirm-batch-btn', function() {

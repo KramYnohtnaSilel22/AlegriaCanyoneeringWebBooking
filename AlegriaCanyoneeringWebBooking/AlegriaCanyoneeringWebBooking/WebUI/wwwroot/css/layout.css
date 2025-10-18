@@ -215,7 +215,7 @@ header.collapsed .header_toggle {
 }
 
 /* Responsive for smaller devices */
-@@media (max-width: 992px) {
+@media (max-width: 992px) {
     header {
         width: 100%;
         height: 56px;
