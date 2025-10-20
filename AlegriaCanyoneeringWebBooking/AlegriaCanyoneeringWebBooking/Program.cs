@@ -1,11 +1,59 @@
 ﻿using AlegriaCanyoneeringWebBooking;
+using AlegriaCanyoneeringWebBooking.Domain.Models;
+using AlegriaCanyoneeringWebBooking.Middleware;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1️⃣ Add services BEFORE Build
+// ✅ CRITICAL: Add User Secrets FIRST
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+// ✅ SWAGGER CONFIGURATION
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Guest API",
+        Version = "v1",
+        Description = "API for managing guest bookings"
+    });
+
+    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Description = "API Key needed to access the endpoints. X-API-Key: YOUR_API_KEY",
+        In = ParameterLocation.Header,
+        Name = "X-API-Key",
+        Type = SecuritySchemeType.ApiKey
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "ApiKey"
+                },
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+});
+
+// MVC Services
 builder.Services.AddControllersWithViews()
     .AddRazorOptions(options =>
     {
@@ -14,7 +62,10 @@ builder.Services.AddControllersWithViews()
         options.ViewLocationFormats.Add("/WebUI/Views/Shared/{0}.cshtml");
     });
 
-// Add SignalR service
+// Session
+builder.Services.AddSession();
+
+// SignalR
 builder.Services.AddSignalR();
 
 // Database Connection
@@ -26,64 +77,33 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         mysqlOptions => mysqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(30), null)
     ));
 
+// Services
 builder.Services.AddScoped<IGuestService, GuestService>();
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        policy =>
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
+        policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
-// ===== Session =====
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddMemoryCache();
-
-builder.Services.AddSession(options =>
-{
-    options.Cookie.Name = "AlegriaCanyoneering.Session";
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Changed from 30 seconds to 30 minutes
-    options.Cookie.IsEssential = true;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-});
-
-// 🔑 Authentication - MUST come before Authorization
+// Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Authentication/Login";
         options.LogoutPath = "/Authentication/Logout";
         options.AccessDeniedPath = "/Authentication/AccessDenied";
-        options.Cookie.Name = "AlegriaCanyoneering.Auth";
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;
     });
 
-// Authorization - MUST come after Authentication
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("SuperAdmin", policy => policy.RequireRole("Super Admin"));
-    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("Operator", policy => policy.RequireRole("Operator"));
-    options.AddPolicy("AdminOrSuperAdmin", policy =>
-        policy.RequireRole("Admin", "Super Admin"));
-});
+// Authorization
+builder.Services.AddAuthorization();
 
 builder.Services.AddResponseCompression();
 
-// 2️⃣ Build the app
 var app = builder.Build();
 
-// Serve static files
+// Static Files
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -91,29 +111,17 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = ""
 });
 
-// 3️⃣ Test DB Connection
-using (var scope = app.Services.CreateScope())
+// Development Pipeline
+if (app.Environment.IsDevelopment())
 {
-    var services = scope.ServiceProvider;
-    try
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        var canConnect = context.Database.CanConnect();
-        Console.WriteLine($"Database connection successful: {canConnect}");
-        if (canConnect)
-        {
-            context.Database.EnsureCreated();
-            Console.WriteLine("Database ensured created successfully");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"An error occurred while connecting to the database: {ex.Message}");
-    }
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Guest API v1");
+        options.RoutePrefix = "swagger";
+    });
 }
-
-// 4️⃣ Configure middleware pipeline - ORDER MATTERS!
-if (!app.Environment.IsDevelopment())
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
@@ -122,22 +130,23 @@ if (!app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseSession();
+
+// ✅ API KEY MIDDLEWARE - Only for API routes
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+    appBuilder.UseMiddleware<ApiKeyMiddleware>();
+});
 
 app.UseRouting();
-
-// ✅ CRITICAL: Authentication MUST come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseSession();
 app.UseResponseCompression();
 
 app.MapControllers();
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=About}/{id?}");
-
 app.MapHub<BatchCodeHub>("/batchCodeHub");
 
 app.Run();
