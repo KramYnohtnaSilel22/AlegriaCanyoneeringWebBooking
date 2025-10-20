@@ -31,30 +31,40 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return Ok(new { message = "API is working!" });
         }
-
-        // POST: api/v1/guests/bookings
         [HttpPost("bookings")]
-        public async Task<IActionResult> CreateBooking([FromBody] object request)
+        public async Task<IActionResult> CreateBooking([FromBody] JsonElement request)
         {
             try
             {
-                // Parse the request manually without DTOs
-                var requestJson = JsonSerializer.Serialize(request);
-                var jsonDocument = JsonDocument.Parse(requestJson);
+                _logger.LogInformation("CreateBooking started");
 
-                if (!jsonDocument.RootElement.TryGetProperty("guests", out var guestsElement) ||
-                    guestsElement.ValueKind != JsonValueKind.Array)
+                // Validation sa request structure
+                if (request.ValueKind != JsonValueKind.Object)
                 {
                     return BadRequest(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Guest data is required",
+                        Message = "Invalid request format",
                         Data = null
                     });
                 }
 
+                if (!request.TryGetProperty("guests", out var guestsElement) ||
+                    guestsElement.ValueKind != JsonValueKind.Array ||
+                    !guestsElement.EnumerateArray().Any())
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Guest array is required and cannot be empty",
+                        Data = null
+                    });
+                }
+
+                // Generate batch code
+                string batchId = await GenerateBatchCode();
+                string generatedRFIDCode = GenerateRFIDCode();
                 var guests = new List<Guest>();
-                string batchId = DateTime.Now.ToString("yyyyMMddHHmmss");
 
                 foreach (var guestElement in guestsElement.EnumerateArray())
                 {
@@ -71,12 +81,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     }
 
                     if (!guestElement.TryGetProperty("age", out var ageElement) ||
-                        !ageElement.TryGetInt32(out int age) || age <= 0)
+                        !ageElement.TryGetInt32(out int age) || age <= 0 || age > 120)
                     {
                         return BadRequest(new ApiResponse<object>
                         {
                             Success = false,
-                            Message = "Valid age is required for all guests",
+                            Message = "Valid age (1-120) is required for all guests",
                             Data = null
                         });
                     }
@@ -87,7 +97,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         return BadRequest(new ApiResponse<object>
                         {
                             Success = false,
-                            Message = "Operator is required for all guests",
+                            Message = "Valid operator ID is required for all guests",
                             Data = null
                         });
                     }
@@ -98,7 +108,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         return BadRequest(new ApiResponse<object>
                         {
                             Success = false,
-                            Message = "Nationality is required for all guests",
+                            Message = "Valid nationality ID is required for all guests",
+                            Data = null
+                        });
+                    }
+
+                    // IMPORTANTE: I-check kung exist ba ang Operator sa database gamit Inner Join
+                    bool operatorExists = await _context.Operators
+                        .AnyAsync(o => o.Id == operatorId);
+
+                    if (!operatorExists)
+                    {
+                        return BadRequest(new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = $"Operator with ID {operatorId} does not exist",
                             Data = null
                         });
                     }
@@ -106,26 +130,27 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     // Create guest entity
                     var guest = new Guest
                     {
-                        Fullname = fullnameElement.GetString(),
-
-                        // Fix for CS0029: Cannot implicitly convert type 'int' to 'string'  
-                        // Update the `Age` property assignment to convert the integer `age` to a string.  
-
+                        Fullname = fullnameElement.GetString()!.Trim(),
                         Age = age.ToString(),
-
-                        Gender = guestElement.TryGetProperty("gender", out var genderElement) ? genderElement.GetString() : "Male",
-                        ContactNumber = guestElement.TryGetProperty("contactNumber", out var contactElement) ? contactElement.GetString() : null,
-                        NationalityType = guestElement.TryGetProperty("nationalityType", out var nationalityTypeElement) ? nationalityTypeElement.GetString() : "Local",
+                        Gender = guestElement.TryGetProperty("gender", out var genderElement) ?
+                                genderElement.GetString() ?? "Male" : "Male",
+                        ContactNumber = guestElement.TryGetProperty("contactNumber", out var contactElement) ?
+                                       contactElement.GetString() : null,
+                        NationalityType = guestElement.TryGetProperty("nationalityType", out var nationalityTypeElement) ?
+                                         nationalityTypeElement.GetString() ?? "Local" : "Local",
                         NationalityId = nationalityId,
-                        OperatorId = operatorId,
-                        Area = guestElement.TryGetProperty("area", out var areaElement) ? areaElement.GetString() : "Wonder Falls",
-                        Date = guestElement.TryGetProperty("date", out var dateElement) ? dateElement.GetString() : DateTime.Today.ToString("yyyy-MM-dd"),
-                        ArrivalDate = guestElement.TryGetProperty("arrivalDate", out var arrivalDateElement) ? arrivalDateElement.GetString() : DateTime.Today.ToString("yyyy-MM-dd"),
-                        BookingStatus = 0, // Active/Anticipated
+                        OperatorId = operatorId,  // Kini ang gi-Inner Join nato
+                        Area = guestElement.TryGetProperty("area", out var areaElement) ?
+                               areaElement.GetString() ?? "Wonder Falls" : "Wonder Falls",
+                        BookingStatus = (int)Guest.BookingStatusEnum.anticipated,
                         Batch = batchId,
-                        Month = DateTime.Today.ToString("yyyy-MM"),
+                        RFID = 1,
+                        RFIDCode = generatedRFIDCode,
+                        Year = DateTime.Today.Year.ToString(),
+                        Month = DateTime.Today.ToString("MMMM"),
+                        ArrivalDate = GetCurrentUnixTimestamp().ToString(),
                         DateShort = DateTime.Today.ToString("MMM dd, yyyy"),
-
+                        Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")
                     };
 
                     guests.Add(guest);
@@ -134,32 +159,289 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Created booking batch {BatchId} with {GuestCount} guests", batchId, guests.Count);
+                // KUNG GUSTO NIMO KUHAON ANG GUEST DATA WITH OPERATOR DETAILS (INNER JOIN)
+                var guestsWithOperators = await _context.Guests
+                    .Where(g => g.Batch == batchId)
+                    .Include(g => g.Operators)  // INNER JOIN sa Operators table
+                    .Include(g => g.NationalityEntity)  // Optional: Inner Join sa Nationality
+                    .Select(g => new
+                    {
+                        g.Id,
+                        g.Fullname,
+                        g.Age,
+                        g.Gender,
+                        g.Batch,
+                        OperatorName = g.Operators != null ? g.Operators.Name : "Unknown", // Kuhaa ang operator name
+                        OperatorId = g.OperatorId,
+                        g.NationalityType,
+                        g.Area
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation("Successfully created booking batch {BatchId} with {GuestCount} guests", batchId, guests.Count);
 
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Booking created successfully",
+                    Message = $"Booking created successfully with {guests.Count} guests",
                     Data = new
                     {
                         batchId,
                         guestCount = guests.Count,
+                        rfidCode = generatedRFIDCode,
+                        guests = guestsWithOperators,  // I-apil ang guest data with operator details
                         createdAt = DateTime.UtcNow
                     }
                 });
             }
-            catch (Exception ex)
+            catch (DbUpdateException dbEx)
             {
-                _logger.LogError(ex, "Error creating booking");
+                var innerMessage = dbEx.InnerException?.Message ?? "No inner exception";
+                _logger.LogError(dbEx, "Database error: {InnerMessage}", innerMessage);
+
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "An error occurred while creating booking",
+                    Message = $"Database error: {innerMessage}",
+                    Data = null
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in CreateBooking");
+
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Unexpected error: {ex.Message}",
                     Data = null
                 });
             }
         }
+        //// POST: api/v1/guests/bookings
+        //[HttpPost("bookings")]
+        //public async Task<IActionResult> CreateBooking([FromBody] JsonElement request)
+        //{
+        //    try
+        //    {
+        //        _logger.LogInformation("CreateBooking started");
 
+        //        // Validation sa request structure
+        //        if (request.ValueKind != JsonValueKind.Object)
+        //        {
+        //            return BadRequest(new ApiResponse<object>
+        //            {
+        //                Success = false,
+        //                Message = "Invalid request format",
+        //                Data = null
+        //            });
+        //        }
+
+        //        if (!request.TryGetProperty("guests", out var guestsElement) ||
+        //            guestsElement.ValueKind != JsonValueKind.Array ||
+        //            !guestsElement.EnumerateArray().Any())
+        //        {
+        //            return BadRequest(new ApiResponse<object>
+        //            {
+        //                Success = false,
+        //                Message = "Guest array is required and cannot be empty",
+        //                Data = null
+        //            });
+        //        }
+
+        //        // Generate batch code (sama sa imong NewBooking)
+        //        string batchId = await GenerateBatchCode();
+        //        string generatedRFIDCode = GenerateRFIDCode();
+        //        var guests = new List<Guest>();
+
+        //        foreach (var guestElement in guestsElement.EnumerateArray())
+        //        {
+        //            // Validate required fields
+        //            if (!guestElement.TryGetProperty("fullname", out var fullnameElement) ||
+        //                string.IsNullOrWhiteSpace(fullnameElement.GetString()))
+        //            {
+        //                return BadRequest(new ApiResponse<object>
+        //                {
+        //                    Success = false,
+        //                    Message = "Guest name is required for all guests",
+        //                    Data = null
+        //                });
+        //            }
+
+        //            if (!guestElement.TryGetProperty("age", out var ageElement) ||
+        //                !ageElement.TryGetInt32(out int age) || age <= 0 || age > 120)
+        //            {
+        //                return BadRequest(new ApiResponse<object>
+        //                {
+        //                    Success = false,
+        //                    Message = "Valid age (1-120) is required for all guests",
+        //                    Data = null
+        //                });
+        //            }
+
+        //            if (!guestElement.TryGetProperty("operatorId", out var operatorIdElement) ||
+        //                !operatorIdElement.TryGetInt32(out int operatorId) || operatorId <= 0)
+        //            {
+        //                return BadRequest(new ApiResponse<object>
+        //                {
+        //                    Success = false,
+        //                    Message = "Valid operator ID is required for all guests",
+        //                    Data = null
+        //                });
+        //            }
+
+        //            if (!guestElement.TryGetProperty("nationalityId", out var nationalityIdElement) ||
+        //                !nationalityIdElement.TryGetInt32(out int nationalityId) || nationalityId <= 0)
+        //            {
+        //                return BadRequest(new ApiResponse<object>
+        //                {
+        //                    Success = false,
+        //                    Message = "Valid nationality ID is required for all guests",
+        //                    Data = null
+        //                });
+        //            }
+
+        //            // Create guest entity - GISUNDAN ANG IMONG STRUCTURE
+        //            var guest = new Guest
+        //            {
+        //                // Required fields
+        //                Fullname = fullnameElement.GetString()!.Trim(),
+        //                Age = age.ToString(),
+
+        //                // Optional fields with defaults (sama sa imong NewBooking)
+        //                Gender = guestElement.TryGetProperty("gender", out var genderElement) ?
+        //                        genderElement.GetString() ?? "Male" : "Male",
+        //                ContactNumber = guestElement.TryGetProperty("contactNumber", out var contactElement) ?
+        //                               contactElement.GetString() : null,
+        //                NationalityType = guestElement.TryGetProperty("nationalityType", out var nationalityTypeElement) ?
+        //                                 nationalityTypeElement.GetString() ?? "Local" : "Local",
+
+        //                // Foreign keys
+        //                NationalityId = nationalityId,
+        //                OperatorId = operatorId,
+
+        //                // Location/area info
+        //                Area = guestElement.TryGetProperty("area", out var areaElement) ?
+        //                       areaElement.GetString() ?? "Wonder Falls" : "Wonder Falls",
+
+        //                // IMPORTANTE: Sunda ang format sa imong NewBooking method
+        //                BookingStatus = (int)Guest.BookingStatusEnum.anticipated, // 0 = anticipated
+        //                Batch = batchId,
+        //                RFID = 1, // Default value gikan sa imong code
+        //                RFIDCode = generatedRFIDCode, // Sama sa imong NewBooking
+        //                Year = DateTime.Today.Year.ToString(),
+        //                Month = DateTime.Today.ToString("MMMM"),
+
+        //                // Unix timestamp style (sama sa imong NewBooking)
+        //                ArrivalDate = GetCurrentUnixTimestamp().ToString(),
+        //                DateShort = DateTime.Today.ToString("MMM dd, yyyy"),
+        //                Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")
+        //            };
+
+        //            guests.Add(guest);
+        //            _context.Guests.Add(guest);
+        //        }
+
+        //        // Save guests first (sama sa imong NewBooking)
+        //        await _context.SaveChangesAsync();
+
+        //        // Save batch record (sama sa imong NewBooking)
+        //        int noOfLocal = guests.Count(g => g.NationalityType?.ToLower() == "local");
+        //        int noOfForeign = guests.Count(g => g.NationalityType?.ToLower() == "foreign");
+        //        int totalGuests = noOfLocal + noOfForeign;
+
+        //        var batchRecord = new Batch
+        //        {
+        //            OperatorId = guests.FirstOrDefault()?.OperatorId ?? 0,
+        //            NoOfLocalGuest = noOfLocal,
+        //            NoOfForeignGuest = noOfForeign,
+        //            NoOfTGuide = 0,
+        //            NoOfMDriver = 0,
+        //            TotalNoOfGuest = totalGuests,
+        //            ArrivalDate = guests.FirstOrDefault()?.ArrivalDate ?? GetCurrentUnixTimestamp().ToString()
+        //        };
+
+        //        _context.Batches.Add(batchRecord);
+        //        await _context.SaveChangesAsync();
+
+        //        _logger.LogInformation("Successfully created booking batch {BatchId} with {GuestCount} guests", batchId, guests.Count);
+
+        //        return Ok(new ApiResponse<object>
+        //        {
+        //            Success = true,
+        //            Message = $"Booking created successfully with {guests.Count} guests",
+        //            Data = new
+        //            {
+        //                batchId,
+        //                guestCount = guests.Count,
+        //                rfidCode = generatedRFIDCode,
+        //                createdAt = DateTime.UtcNow
+        //            }
+        //        });
+        //    }
+        //    catch (DbUpdateException dbEx)
+        //    {
+        //        var innerMessage = dbEx.InnerException?.Message ?? "No inner exception";
+        //        _logger.LogError(dbEx, "Database error: {InnerMessage}", innerMessage);
+
+        //        return StatusCode(500, new ApiResponse<object>
+        //        {
+        //            Success = false,
+        //            Message = $"Database error: {innerMessage}",
+        //            Data = null
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Unexpected error in CreateBooking");
+
+        //        return StatusCode(500, new ApiResponse<object>
+        //        {
+        //            Success = false,
+        //            Message = $"Unexpected error: {ex.Message}",
+        //            Data = null
+        //        });
+        //    }
+        //}
+
+        // KINAHANGLANG METHODS gikan sa imong NewBooking:
+
+        private string GenerateRFIDCode()
+        {
+            // I-copy ang imong RFID generation logic dinhi
+            // Example:
+            return "RFID_" + DateTime.Now.ToString("yyyyMMddHHmmssfff");
+        }
+
+        private long GetCurrentUnixTimestamp()
+        {
+            DateTime utcNow = DateTime.UtcNow;
+            return (long)(utcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+        }
+
+        private async Task<string> GenerateBatchCode()
+        {
+            // GET ALL BATCH CODES THAT ARE VALID INTEGERS ONLY
+            var numericBatches = _context.Guests
+                .AsEnumerable()
+                .Select(g => g.Batch)
+                .Where(batch =>
+                    !string.IsNullOrWhiteSpace(batch) &&
+                    batch.All(char.IsDigit) &&
+                    int.TryParse(batch, out _))
+                .Select(batch => int.Parse(batch))
+                .OrderByDescending(x => x)
+                .ToList();
+
+            int nextBatchCode = 10000;
+
+            if (numericBatches.Any())
+            {
+                nextBatchCode = numericBatches.First() + 1;
+            }
+
+            return nextBatchCode.ToString();
+        }
         // GET: api/v1/guests/nationalities
         [HttpGet("nationalities")]
         public async Task<IActionResult> GetNationalities()
