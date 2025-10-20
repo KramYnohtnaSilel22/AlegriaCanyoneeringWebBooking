@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,10 +7,96 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="WebUI\wwwroot\css\about.css" />
+    <Content Include="WebUI\wwwroot\css\Dashboard.css" />
+    <Content Include="WebUI\wwwroot\css\GuestDetails.css" />
+    <Content Include="WebUI\wwwroot\css\layout.css" />
+    <Content Include="WebUI\wwwroot\css\NationalityReport.css" />
+    <Content Include="WebUI\wwwroot\css\ReportsTourist.css" />
+    <Content Include="WebUI\wwwroot\css\site.css" />
+    <Content Include="WebUI\wwwroot\favicon.ico" />
+    <Content Include="WebUI\wwwroot\images\alegrialogo2025.jpeg" />
+    <Content Include="WebUI\wwwroot\images\noaccess.png" />
+    <Content Include="WebUI\wwwroot\js\GuestPDF.js" />
+    <Content Include="WebUI\wwwroot\js\nationality-report.js" />
+    <Content Include="WebUI\wwwroot\js\ReportsTourism.js" />
+    <Content Include="WebUI\wwwroot\js\site.js" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.min.css" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.min.css.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.js" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.js.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.min.js" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.min.js.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.js" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.js.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.min.js" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map" />
+    <Content Include="WebUI\wwwroot\lib\bootstrap\LICENSE" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.min.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation-unobtrusive\LICENSE.txt" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation\dist\additional-methods.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation\dist\additional-methods.min.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation\dist\jquery.validate.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation\dist\jquery.validate.min.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery-validation\LICENSE.md" />
+    <Content Include="WebUI\wwwroot\lib\jquery\dist\jquery.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery\dist\jquery.min.js" />
+    <Content Include="WebUI\wwwroot\lib\jquery\dist\jquery.min.map" />
+    <Content Include="WebUI\wwwroot\lib\jquery\LICENSE.txt" />
+    <Content Include="WebUI\wwwroot\uploads\Class Diagram_20250924161556.png" />
+    <Content Include="WebUI\wwwroot\uploads\Class Diagram_20250924161844.png" />
+    <Content Include="WebUI\wwwroot\uploads\CUMPIO, DARIUS BSIT- F copy1_20250909135607.jpg" />
+    <Content Include="WebUI\wwwroot\uploads\DSC_9485_20250909135427.JPG" />
+    <Content Include="WebUI\wwwroot\uploads\DSC_9490_20250909135829.JPG" />
+    <Content Include="WebUI\wwwroot\uploads\gradpic_20250908162637.png" />
+    <Content Include="WebUI\wwwroot\uploads\gradpic_20250909091948.png" />
+    <Content Include="WebUI\wwwroot\uploads\gradpic_20250909135307.png" />
+    <Content Include="WebUI\wwwroot\uploads\image_2025-09-09_135401577_20250909135402.png" />
+    <Content Include="WebUI\wwwroot\uploads\Screenshot 2025-08-25 114639_20250910110142.png" />
+    <Content Include="WebUI\wwwroot\uploads\tithes_20250909135816.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt" Version="1.0.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Dapper" Version="2.0.151" />
     <PackageReference Include="MailKit" Version="4.14.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.0" />
     <PackageReference Include="Microsoft.Azure.Amqp" Version="2.7.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -23,10 +109,23 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.0.0" />
     <PackageReference Include="MySql.Data" Version="9.4.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.6" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.8" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.assert" Version="2.9.3" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
 
 </Project>
