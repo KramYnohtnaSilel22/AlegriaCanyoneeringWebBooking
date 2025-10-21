@@ -44,18 +44,22 @@
                     { data: 'businessName' },
                     { data: 'bussPermit' },
                     { data: 'location' },
-                    {
-                        data: 'status',
-                        render: function (data) {
-                            return data === 1 ? "Active" : "Inactive";
-                        }
-                    },
+                           {
+            data: 'status',
+            render: function (data) {
+                if (data === 1) {
+                    return '<span class="badge bg-success">Active</span>';
+                } else {
+                    return '<span class="badge bg-danger">Inactive</span>';
+                }
+            }
+        },
                     {
                         data: 'operatorId',
                         orderable: false,
                         searchable: false,
                         render: function (data) {
-                            return `<a href="/OperatorList/Edit/${data}" class="btn btn-sm btn-warning">Edit</a>`;
+                            return `<a href="/OperatorList/Edit/${data}" class="btn btn-sm btn-warning">     <i class="fas fa-trash"></i> Edit</a>`;
                         }
                     }
                 ],
