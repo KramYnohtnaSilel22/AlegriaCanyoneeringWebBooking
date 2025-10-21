@@ -36,7 +36,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Column("EmailAddress")]
         [DataType(DataType.EmailAddress)]
-        public string? EmailAddress { get; set; }
+        public string EmailAddress { get; set; }
 
         [Required]
         [Column("Role")]
@@ -48,5 +48,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         // Navigation property for related Guests
         // Navigation collection to Guests (optional, but good for reverse lookup)
         public ICollection<Guest>? Guests { get; set; }
+
+   
     }
 }

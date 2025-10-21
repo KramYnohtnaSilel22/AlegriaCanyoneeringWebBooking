@@ -32,7 +32,7 @@
             <tr>
                 <td>@item.Name</td>
                 <td>@item.EmailAddress</td>
-                <td>@item.BusinessName</td>
+                    <td>@(string.IsNullOrWhiteSpace(@item.BusinessName) ? "N/A" : @item.BusinessName)</td>
                 <td>@item.Age</td>
                 <td>@item.Gender</td>
                 <td>@item.Username</td>

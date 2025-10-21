@@ -377,6 +377,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Pass to View as dropdown list (Id = value, BusinessName = text)
             ViewBag.OperatorList = new SelectList(operators, "Id", "BusinessName");
 
+            // ✅ FIX: Create SelectList with "N/A" display for empty BusinessName
+            var operatorSelectList = operators.Select(o => new
+            {
+                Id = o.Id,
+                DisplayName = string.IsNullOrWhiteSpace(o.BusinessName) ? "N/A" : o.BusinessName
+            }).ToList();
+
+            ViewBag.OperatorList = new SelectList(operatorSelectList, "Id", "DisplayName");
+
+
             // Fetch anticipated guests
             var anticipatedGuests = await _context.Guests
                 .Include(g => g.OperatorList)
