@@ -38,10 +38,20 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                ViewBag.ErrorMessage = "Username and password are required.";
+                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(password))
+                {
+                    TempData["ErrorMessage"] = "Please fill up both username and password.";
+                }
+                else if (string.IsNullOrWhiteSpace(username))
+                {
+                    TempData["ErrorMessage"] = "Please fill up your username.";
+                }
+                else if (string.IsNullOrWhiteSpace(password))
+                {
+                    TempData["ErrorMessage"] = "Please fill up your password.";
+                }
                 return View();
             }
-
             // Find user with their role
             var user = await _context.Operators
                 .Include(o => o.Roles)
@@ -49,7 +59,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             if (user == null)
             {
-                ViewBag.ErrorMessage = "Invalid username or password.";
+                TempData["ErrorMessage"] = "Invalid username";
                 return View();
             }
 
@@ -57,14 +67,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             bool isPasswordValid = PasswordHelper.VerifyPassword(password, user.Password);
             if (!isPasswordValid)
             {
-                ViewBag.ErrorMessage = "Invalid username or password.";
+                TempData["ErrorMessage"] = "Invalid password.";
                 return View();
             }
 
             // Check if role exists
             if (user.Roles == null)
             {
-                ViewBag.ErrorMessage = "User role not found. Please contact administrator.";
+                TempData["ErrorMessage"] = "User role not found. Please contact administrato.";
+            
                 return View();
             }
 
