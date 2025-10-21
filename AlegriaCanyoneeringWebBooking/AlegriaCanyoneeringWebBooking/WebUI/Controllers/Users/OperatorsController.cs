@@ -129,6 +129,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             if (ModelState.IsValid)
             {
+                // ✅ FIX: Set BusinessName to "N/A" if empty or null
+                if (string.IsNullOrWhiteSpace(op.BusinessName))
+                {
+                    op.BusinessName = "N/A";
+                }
                 // Security check: Admin can ONLY create Operators
                 if (currentUserRole == "Admin")
                 {
