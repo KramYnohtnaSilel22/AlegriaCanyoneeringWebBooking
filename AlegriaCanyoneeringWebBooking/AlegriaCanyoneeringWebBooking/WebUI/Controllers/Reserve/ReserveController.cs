@@ -226,7 +226,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var vmList = pagedGuests.Select(g => new GuestWithOperatorVM
             {
                 Guest = g,
-                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
+                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "No Operator"
             }).ToList();
 
             var model = new GuestPaginationViewModel
@@ -356,7 +356,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var guestsWithOperatorName = guests.Select(g => new GuestWithOperatorVM
             {
                 Guest = g,
-                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "N/A"
+                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "No Operator"
             }).ToList();
 
             return PartialView("ViewGuestDetails", guestsWithOperatorName);
@@ -416,7 +416,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     // ✅ Lookup Operator's BusinessName from tbl_operator_mobile
                     var businessName = operators
-                        .FirstOrDefault(o => o.Id == first.OperatorId)?.BusinessName ?? "N/A";
+                        .FirstOrDefault(o => o.Id == first.OperatorId)?.BusinessName ?? "No Operator";
 
                     return new Guest
                     {

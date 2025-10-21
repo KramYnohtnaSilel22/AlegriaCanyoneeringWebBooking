@@ -110,7 +110,7 @@
                             </thead>
                             <tbody>
                                 <tr class="table-success">
-                                    <td>@primaryGuestVM.OperatorName</td>
+                                    <td>@(string.IsNullOrWhiteSpace(primaryGuestVM.OperatorName) ? "No Operator" : primaryGuestVM.OperatorName)</td>
                                     <td>@primaryGuestVM.Guest.Fullname</td>
                                     <td>@primaryGuestVM.Guest.Age</td>
                                     <td>@primaryGuestVM.Guest.ContactNumber</td>

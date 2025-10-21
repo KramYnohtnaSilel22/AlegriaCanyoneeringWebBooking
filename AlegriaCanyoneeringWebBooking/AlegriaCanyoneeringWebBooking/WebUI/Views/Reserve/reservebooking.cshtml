@@ -125,10 +125,17 @@
                 }
             },
             columns: [
-                {
-                    data: 'operatorName',
-                    name: 'OperatorName'
-                },
+                 {
+        data: 'operatorName',
+        name: 'OperatorName',
+        className: 'text-center',
+        render: function(data) {
+            if (!data || !data.trim()) {
+                return '<span class=" px-2 py-1">No Operator</span>';
+            }
+            return `<span class=" px-2 py-1">${data}</span>`;
+        }
+    },
                 {
                     data: 'registrationDate',
                     name: 'RegistrationDate',

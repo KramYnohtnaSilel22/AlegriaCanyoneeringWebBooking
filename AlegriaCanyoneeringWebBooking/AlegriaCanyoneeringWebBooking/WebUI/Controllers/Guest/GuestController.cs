@@ -381,7 +381,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var operatorSelectList = operators.Select(o => new
             {
                 Id = o.Id,
-                DisplayName = string.IsNullOrWhiteSpace(o.BusinessName) ? "N/A" : o.BusinessName
+                DisplayName = string.IsNullOrWhiteSpace(o.BusinessName) ? "No Operator" : o.BusinessName
             }).ToList();
 
             ViewBag.OperatorList = new SelectList(operatorSelectList, "Id", "DisplayName");

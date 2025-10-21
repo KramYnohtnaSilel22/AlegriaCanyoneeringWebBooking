@@ -56,7 +56,9 @@
                             <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2 px-3">
                                 <div>
                                     <strong>Batch:</strong> <span class="text-muted">@batchGroup.Key</span>
-                                    <small class="ms-3">(Operator: @primaryGuestVM.OperatorName)</small>
+                                    <small class="ms-3">
+                                        (Operator: @(string.IsNullOrWhiteSpace(primaryGuestVM.OperatorName) ? "No Operator" : primaryGuestVM.OperatorName))
+                                    </small>
                                 </div>
                                 <span class="text-muted">@FormatArrivalDate(primaryGuestVM.Guest.ArrivalDate)</span>
                             </div>
