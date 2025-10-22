@@ -3,7 +3,11 @@
     ViewData["Title"] = "Reserved Booking";
 }
 <link href="/css/reservebooking.css" rel="stylesheet" />
-
+<style>
+    .toast-container .position-fixed {
+        transition: opacity 1s ease-in-out !important;
+    }
+</style>
 <section class="container py-4">
     <h2 class="fw-bold mb-4 text-primary">
         <i class="fas fa-calendar-check me-2 text-primary"></i>
@@ -14,22 +18,6 @@
         <input type="text" id="globalScannerInput" class="form-control form-control-sm"
                placeholder="Enter or scan batch QR here...">
     </div>
-
-    <!-- ✅ Toast Notification -->
-    @if (TempData["ToastMessage"] != null)
-    {
-        <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-            <div class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show"
-                 role="alert" aria-live="assertive" aria-atomic="true" id="toastMessage">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="fas fa-info-circle me-2"></i> @TempData["ToastMessage"]
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
-    }
 
     <!-- ✅ DataTables Container -->
     <div class="card shadow-sm border-0">
@@ -71,8 +59,6 @@
     </div>
 </div>
 
-
-
 <!-- ✅ Required Libraries -->
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
@@ -81,16 +67,105 @@
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+
 <script>
+    // Add fade CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        .toast-container .position-fixed {
+            transition: opacity 1s ease-in-out !important;
+        }
+    `;
+    document.head.appendChild(style);
+
     const input = document.getElementById('globalScannerInput');
     let typingTimer;
-    const typingDelay = 5000; // 1 second delay
+    const typingDelay = 1000;
+    let currentScannedBatch = '';
+    let dataTable;
+
+    // ✅ FIXED: Enhanced Toast Notification System with 1-second fade
+    let activeToasts = 0;
+    const MAX_TOASTS = 3;
+    const TOAST_TIMEOUT = 5000; // 5 seconds total (4s display + 1s fade)
+
+    function showToast(message, type = 'info') {
+        // Limit simultaneous toasts
+        if (activeToasts >= MAX_TOASTS) {
+            return;
+        }
+
+        const toastId = 'toast-' + Date.now();
+        activeToasts++;
+
+        const icons = {
+            'success': 'fa-check-circle',
+            'error': 'fa-exclamation-triangle',
+            'danger': 'fa-exclamation-triangle',
+            'warning': 'fa-exclamation-circle',
+            'info': 'fa-info-circle'
+        };
+
+        const toastHtml = `
+            <div id="${toastId}" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; margin-top: ${(activeToasts - 1) * 80}px;">
+                <div class="toast align-items-center text-white bg-${type} border-0 show" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas ${icons[type] || 'fa-info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="removeToastWithFade('${toastId}')"></button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Create toast container if it doesn't exist
+        if ($('.toast-container').length === 0) {
+            $('body').append('<div class="toast-container"></div>');
+        }
+
+        $('.toast-container').append(toastHtml);
+
+        // Auto remove after timeout with 1-second fade
+        setTimeout(() => {
+            removeToastWithFade(toastId);
+        }, TOAST_TIMEOUT);
+    }
+
+    // ✅ Function to remove specific toast with 1-second fade
+    function removeToastWithFade(toastId) {
+        const $toast = $(`#${toastId}`);
+        if ($toast.length === 0) return;
+
+        // Start fade out
+        $toast.css('opacity', '0');
+
+        // Remove after 1 second (fade duration)
+        setTimeout(() => {
+            $toast.remove();
+            activeToasts = Math.max(0, activeToasts - 1);
+
+            // Re-position remaining toasts
+            $('.toast-container .position-fixed').each(function(index) {
+                $(this).css('margin-top', (index * 80) + 'px');
+            });
+        }, 1000); // 1-second fade duration
+    }
+
+    // ✅ Function to clear all toasts
+    function clearAllToasts() {
+        $('.toast-container .position-fixed').each(function() {
+            const toastId = $(this).attr('id');
+            removeToastWithFade(toastId);
+        });
+    }
 
     input.addEventListener('keyup', () => {
         clearTimeout(typingTimer);
         typingTimer = setTimeout(() => {
             processInput(input.value);
-            input.value = ''; // auto clear input
+            input.value = '';
         }, typingDelay);
     });
 
@@ -98,15 +173,228 @@
         clearTimeout(typingTimer);
     });
 
+    // ✅ FIXED: Process scanned input - NO BATCH PREFIX
     function processInput(value) {
         if(value.trim() !== '') {
-            console.log("Processing input:", value);
-            // Add your logic here (e.g., AJAX call)
+            console.log("Processing scanned QR:", value);
+
+            // ✅ JUST USE THE NUMBERS - No BATCH- prefix
+            let processedBatch = value.trim();
+
+            // Remove "BATCH-" if user accidentally types it
+            if (processedBatch.startsWith("BATCH-")) {
+                processedBatch = processedBatch.substring(6);
+                console.log("🔧 Removed BATCH- prefix:", processedBatch);
+            }
+
+            currentScannedBatch = processedBatch;
+
+            // Try multiple approaches
+            verifyBatchExistence(currentScannedBatch);
         }
     }
+
+    // ✅ FIXED: Enhanced batch verification
+    function verifyBatchExistence(batch) {
+        console.log('Verifying batch:', batch);
+
+        $.ajax({
+            url: '/Reserve/VerifyBatchExistence',
+            type: 'POST',
+            data: { Batch: batch },
+            success: function(response) {
+                console.log('Verify response:', response);
+                if (response.exists) {
+                    // ✅ BATCH FOUND - Show Confirm Button
+                    console.log('✅ Batch found, showing confirm button');
+                    showScanConfirmButton(batch, 'Found in system', 0);
+                } else {
+                    // ❌ BATCH NOT FOUND
+                    console.log('❌ Batch not found in backend');
+                    showToast(`Batch not found in reserved bookings.`, 'warning');
+                    currentScannedBatch = '';
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+
+                // ✅ FIXED: Show error toast
+                showToast('Error verifying batch. Please try again.', 'error');
+
+                // Fallback: Try to search in current DataTables data
+                fallbackBatchSearch(batch);
+            }
+        });
+    }
+
+    // ✅ FIXED: Fallback search if API fails
+    function fallbackBatchSearch(batch) {
+        console.log('Using fallback search for:', batch);
+
+        if (!dataTable) {
+            showToast('System temporarily unavailable. Please try again.', 'danger');
+            return;
+        }
+
+        // Search in currently loaded data
+        const currentData = dataTable.rows().data().toArray();
+        const foundRow = currentData.find(row => row.batch === batch);
+
+        if (foundRow) {
+            console.log('Batch found in fallback search:', foundRow);
+            // ✅ BATCH FOUND IN TABLE - Show Confirm Button
+            showScanConfirmButton(batch, foundRow.operatorName, foundRow.totalGuests);
+            highlightTableRow(batch);
+            // ✅ FIXED: Show success toast
+            showToast(`Batch ${batch} found!`, 'success');
+        } else {
+            // Try searching via DataTables API
+            dataTable.search(batch).draw();
+
+            setTimeout(() => {
+                const searchedData = dataTable.rows({ search: 'applied' }).data().toArray();
+                const searchedRow = searchedData.find(row => row.batch === batch);
+
+                if (searchedRow) {
+                    // ✅ BATCH FOUND AFTER SEARCH - Show Confirm Button
+                    showScanConfirmButton(batch, searchedRow.operatorName, searchedRow.totalGuests);
+                    highlightTableRow(batch);
+                    // ✅ FIXED: Show success toast
+                    showToast(`Batch ${batch} found!`, 'success');
+                } else {
+                    // ❌ BATCH NOT FOUND ANYWHERE
+                    showToast(`Batch ${batch} not found. Please check the QR code.`, 'warning');
+                    currentScannedBatch = '';
+                }
+            }, 1000);
+        }
+    }
+
+    // ✅ FIXED: Show confirm button with Batch Code only
+    function showScanConfirmButton(batch, operatorName, totalGuests) {
+        // Remove any existing scan confirm buttons
+        $('.scan-confirm-btn').remove();
+
+        const confirmButtonHtml = `
+            <div class="position-fixed top-50 start-50 translate-middle scan-confirm-btn" style="z-index: 1060;">
+                <div class="card shadow-lg border-0" style="min-width: 300px;">
+                    <div class="card-header bg-success text-white text-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-qrcode me-2"></i>Scanned Batch Found
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="mb-3"><strong>Batch Code:</strong><br>
+                           <span class="h5 text-primary">${batch}</span>
+                        </p>
+
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Batch ready for confirmation
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success btn-lg"
+                                    onclick="confirmScannedBatch('${batch.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-check-circle me-2"></i>Yes
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    onclick="closeScanConfirm()">
+                                <i class="fas fa-times me-1"></i>No
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('body').append(confirmButtonHtml);
+        // ✅ FIXED: Show success toast when button appears
+        showToast(`Batch ready for confirmation!`, 'success');
+    }
+
+    // ✅ FIXED: Confirm the scanned batch - USE 'BatchCode' parameter
+    function confirmScannedBatch(batch) {
+        console.log('🔍 [FRONTEND] Confirming batch:', batch);
+
+        if (!confirm(`Are you sure you want to confirm batch?`)) {
+            return;
+        }
+
+        const confirmBtn = $('.scan-confirm-btn .btn-success');
+        const originalHtml = confirmBtn.html();
+        confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Confirming...');
+
+        // ✅ FIXED: Use 'BatchCode' parameter name to match backend
+        $.ajax({
+            url: '/Reserve/BookedGuest',
+            type: 'POST',
+            data: { BatchCode: batch },
+            success: function(response) {
+                console.log('✅ [FRONTEND] Confirm response:', response);
+                if (response.success) {
+                    // ✅ FIXED: Show success toast
+                    showToast(response.message, 'success');
+                    if (dataTable) {
+                        dataTable.ajax.reload(null, false);
+                    }
+                    closeScanConfirm();
+                    currentScannedBatch = '';
+                } else {
+                    // ✅ FIXED: Show warning toast
+                    showToast(response.message, 'warning');
+                    confirmBtn.prop('disabled', false).html(originalHtml);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('💥 [FRONTEND] Error confirming batch:', error);
+                console.error('Response:', xhr.responseText);
+                // ✅ FIXED: Show error toast
+                showToast('Error confirming batch. Please try again.', 'error');
+                confirmBtn.prop('disabled', false).html(originalHtml);
+            }
+        });
+    }
+
+    // ✅ Function to close the scan confirm button/modal
+    function closeScanConfirm() {
+        $('.scan-confirm-btn').remove();
+        currentScannedBatch = '';
+        removeTableHighlight();
+        if (dataTable) {
+            dataTable.search('').draw();
+        }
+        // ✅ FIXED: Show info toast
+        showToast('Batch confirmation cancelled.', 'info');
+    }
+
+    // ✅ Function to highlight table row
+    function highlightTableRow(batch) {
+        removeTableHighlight();
+        if (dataTable) {
+            dataTable.rows().every(function() {
+                const data = this.data();
+                if (data.batch === batch) {
+                    $(this.node()).addClass('table-success');
+                    this.node().scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+    }
+
+    // ✅ Function to remove table highlight
+    function removeTableHighlight() {
+        $('#reservedGuestsTable tr').removeClass('table-success');
+    }
+
     // ✅ DataTables Initialization for Grouped Data
     $(document).ready(function () {
-        var table = $('#reservedGuestsTable').DataTable({
+        dataTable = $('#reservedGuestsTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: {
@@ -121,17 +409,17 @@
                 }
             },
             columns: [
-                 {
-        data: 'operatorName',
-        name: 'OperatorName',
-        className: 'text-center',
-        render: function(data) {
-            if (!data || !data.trim()) {
-                return '<span class=" px-2 py-1">No Operator</span>';
-            }
-            return `<span class=" px-2 py-1">${data}</span>`;
-        }
-    },
+                {
+                    data: 'operatorName',
+                    name: 'OperatorName',
+                    className: 'text-center',
+                    render: function(data) {
+                        if (!data || !data.trim()) {
+                            return '<span class="px-2 py-1">No Operator</span>';
+                        }
+                        return `<span class="px-2 py-1">${data}</span>`;
+                    }
+                },
                 {
                     data: 'registrationDate',
                     name: 'RegistrationDate',
@@ -160,12 +448,11 @@
                     searchable: false,
                     className: 'text-center',
                     render: function(data, type, row) {
-                        // ✅ FIXED: Use proper escaping for all variables
                         let batchCode = data.replace(/'/g, "\\'");
                         let operatorName = (row.operatorName || '').replace(/'/g, "\\'");
                         let totalGuests = row.totalGuests || 0;
                         let qrBase64 = (row.qrBase64 || '').replace(/'/g, "\\'");
-                        let guestId = row.id; // ✅ IMPORTANTE: Get the main guest ID
+                        let guestId = row.id;
 
                         let actions = `
                             <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
@@ -176,26 +463,26 @@
                                 </button>
                         `;
 
-                        @if (!User.IsInRole("Admin"))
-                        {
-                            <text>
-                                actions += `
-                                    <!-- 📷 View QR Code -->
-                                    <button type="button"
-                                            class="btn btn-sm btn-info d-flex align-items-center px-3 py-2"
-                                            onclick="showQrModal('${batchCode}', '${operatorName}', ${totalGuests}, '${qrBase64}')">
-                                        <i class="fas fa-qrcode me-1"></i> QR
-                                    </button>
+    @if (!User.IsInRole("Admin"))
+    {
+        <text>
+                                    actions += `
+                                        <!-- 📷 View QR Code -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-info d-flex align-items-center px-3 py-2"
+                                                onclick="showQrModal('${batchCode}', '${operatorName}', ${totalGuests}, '${qrBase64}')">
+                                            <i class="fas fa-qrcode me-1"></i> QR
+                                        </button>
 
-                                    <!-- ✅ Confirm Entire Batch -->
-                                    <button type="button"
-                                            class="btn btn-sm btn-success d-flex align-items-center px-3 py-2 confirm-batch-btn"
-                                            data-batch="${batchCode}">
-                                        <i class="fas fa-check me-1"></i> Confirm
-                                    </button>
-                                `;
-                            </text>
-                        }
+                                        <!-- ✅ Confirm Entire Batch -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-success d-flex align-items-center px-3 py-2 confirm-batch-btn"
+                                                data-batch="${batchCode}">
+                                            <i class="fas fa-check me-1"></i> Confirm
+                                        </button>
+                                    `;
+        </text>
+    }
 
                         actions += `</div>`;
                         return actions;
@@ -213,27 +500,27 @@
                     previous: "Previous",
                     next: "Next"
                 }
-                },
-                    responsive: true,
-                  order: [[1, 'desc']],
-                  pageLength: 10,
-                  drawCallback: function () {
-                      const headers = $('#reservedGuestsTable thead th').map(function () {
-                          return $(this).text().trim();
-                      }).get();
+            },
+            responsive: true,
+            order: [[1, 'desc']],
+            pageLength: 10,
+            drawCallback: function () {
+                const headers = $('#reservedGuestsTable thead th').map(function () {
+                    return $(this).text().trim();
+                }).get();
 
-                      $('#reservedGuestsTable tbody tr').each(function () {
-                          $(this).find('td').each(function (i) {
-                              $(this).attr('data-label', headers[i]);
-                          });
-                      });
-                  }
-              });
+                $('#reservedGuestsTable tbody tr').each(function () {
+                    $(this).find('td').each(function (i) {
+                        $(this).attr('data-label', headers[i]);
+                    });
+                });
+            }
+        });
 
         // ✅ EVENT DELEGATION FOR CONFIRM BATCH BUTTONS
         $(document).on('click', '.confirm-batch-btn', function() {
             var batchCode = $(this).data('batch');
-            confirmBatchBooking(batchCode, table);
+            confirmBatchBooking(batchCode, dataTable);
         });
     });
 
@@ -264,43 +551,16 @@
             },
             error: function(xhr, status, error) {
                 console.error('Error confirming batch:', error);
-                showToast('Error confirming batch. Please try again.', 'danger');
+                showToast('Error confirming batch. Please try again.', 'error');
                 button.prop('disabled', false).html(originalHtml);
             }
         });
     }
 
-    // ✅ TOAST NOTIFICATION FUNCTION
-    function showToast(message, type) {
-        // Remove existing toasts
-        $('.toast-container').remove();
-
-        const toastHtml = `
-            <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-                <div class="toast align-items-center text-white bg-${type} border-0 show" role="alert">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        $('body').append(toastHtml);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            $('.toast-container').remove();
-        }, 5000);
-    }
-
     // ✅ Load Batch Details - SINGLE FIXED VERSION
     function loadBatchDetails(guestId) {
         console.log('Loading batch details for guest ID:', guestId);
-        
+
         $('#bookingDetailsModalBody').html('<div class="text-center p-3"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading batch details...</p></div>');
 
         const modal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
@@ -419,7 +679,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <p class="mb-2"><strong><i class="fas fa-building me-2"></i>Operator:</strong><br>${operatorName}</p>
-                            
+
                                         <p class="mb-3"><strong><i class="fas fa-users me-2"></i>Total Guests:</strong><br>${totalGuests}</p>
                                     </div>
                                 </div>
@@ -430,7 +690,6 @@
                         </div>
                         <div class="modal-footer justify-content-center">
                             ${downloadButtonHtml}
-                          
                         </div>
                     </div>
                 </div>
@@ -524,12 +783,11 @@
                 ctx.fillStyle = "#2c3e50";
                 ctx.font = "bold 18px Arial";
                 ctx.textAlign = "center";
-      
 
                 // Add details
                 ctx.fillStyle = "#34495e";
                 ctx.font = "14px Arial";
- 
+
                 ctx.fillText("Operator: " + operator, canvas.width / 2, 305);
                 ctx.fillText("Total Guests: " + totalGuests, canvas.width / 2, 325);
 
@@ -558,7 +816,6 @@
         };
     }
 
- 
     // ✅ Bootstrap toast auto-show
     document.addEventListener("DOMContentLoaded", function () {
         var toastElement = document.getElementById('toastMessage');

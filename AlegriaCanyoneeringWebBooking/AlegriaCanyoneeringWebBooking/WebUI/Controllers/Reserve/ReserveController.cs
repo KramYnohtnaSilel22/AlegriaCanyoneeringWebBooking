@@ -38,6 +38,99 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             };
             return View(viewModel);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyBatchExistence(string Batch)
+        {
+            try
+            {
+                _logger.LogInformation($"🔍 VERIFY BATCH REQUEST: '{Batch}'");
+
+                if (string.IsNullOrEmpty(Batch))
+                {
+                    return Json(new { exists = false, error = "Batch code is required" });
+                }
+
+                // ✅ FIXED: Extract only the numbers from "BATCH-21471"
+                string batchNumbers = Batch;
+
+                // Remove "BATCH-" prefix if present
+                if (Batch.StartsWith("BATCH-"))
+                {
+                    batchNumbers = Batch.Substring(6); // Get only "21471"
+                    _logger.LogInformation($"🔧 Extracted batch numbers: '{batchNumbers}'");
+                }
+
+                _logger.LogInformation($"🔍 SEARCHING FOR BATCH IN DB: '{batchNumbers}'");
+
+                // ✅ FIXED: Search using only the numbers (21471)
+                var batchExists = await _context.Guests
+                    .AnyAsync(g => g.Batch == batchNumbers && g.BookingStatus == 2);
+
+                _logger.LogInformation($"✅ BATCH EXISTS: {batchExists} for '{batchNumbers}'");
+
+                return Json(new { exists = batchExists });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"💥 ERROR verifying batch {Batch}");
+                return Json(new { exists = false, error = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GetBatchDetails(string Batch)
+        {
+            try
+            {
+                _logger.LogInformation($"🔍 GET BATCH DETAILS: '{Batch}'");
+
+                if (string.IsNullOrEmpty(Batch))
+                {
+                    return Json(new { success = false, message = "Batch code is required" });
+                }
+
+                // ✅ FIXED: Extract only the numbers from "BATCH-21471"
+                string batchNumbers = Batch;
+
+                if (Batch.StartsWith("BATCH-"))
+                {
+                    batchNumbers = Batch.Substring(6); // Get only "21471"
+                    _logger.LogInformation($"🔧 Extracted batch numbers: '{batchNumbers}'");
+                }
+
+                // ✅ FIXED: Search using only the numbers (21471)
+                var batchDetails = await _context.Guests
+                    .Where(g => g.Batch == batchNumbers && g.BookingStatus == 2)
+                    .GroupBy(g => g.Batch)
+                    .Select(g => new
+                    {
+                        operatorName = g.First().Operators.BusinessName ?? "No Operator",
+                        totalGuests = g.Count()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (batchDetails != null)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = new
+                        {
+                            operatorName = batchDetails.operatorName,
+                            totalGuests = batchDetails.totalGuests
+                        }
+                    });
+                }
+
+                return Json(new { success = false, message = "Batch not found" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"💥 ERROR getting batch details for {Batch}");
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
         [HttpPost]
         public async Task<IActionResult> GetReservedGuestsData()
         {
@@ -805,71 +898,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = "Error confirming booking. Please try again." });
             }
         }
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> BookedGuest(string? BatchCode)
-        //{
-        //    // ✅ Get current user's info
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //    var userRole = User.FindFirstValue(ClaimTypes.Role);
-
-        //    int? currentOperatorId = null;
-        //    if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
-        //        currentOperatorId = parsedId;
-
-        //    // ✅ If no batch code is provided, auto-generate starting at 10001
-        //    if (string.IsNullOrEmpty(BatchCode))
-        //    {
-        //        var lastBatch = await _context.Guests
-        //            .OrderByDescending(g => g.Id)
-        //            .Select(g => g.Batch)
-        //            .FirstOrDefaultAsync();
-
-        //        int newBatchNumber = 10000; // base value
-
-        //        if (int.TryParse(lastBatch, out int lastNum))
-        //            newBatchNumber = lastNum + 1; // increment last batch
-        //        else
-        //            newBatchNumber = 10001; // first batch ever
-
-        //        BatchCode = newBatchNumber.ToString();
-
-        //        TempData["ToastMessage"] = $"⚠️ No batch code provided. Auto-generated batch code: {BatchCode}";
-        //        TempData["ToastType"] = "warning";
-        //    }
-
-        //    // ✅ Find all guests with this batch that are not yet confirmed
-        //    var guestsToFinalize = await _context.Guests
-        //        .Where(g => g.Batch == BatchCode && g.BookingStatus != 3)
-        //        .ToListAsync();
-
-        //    if (guestsToFinalize.Any())
-        //    {
-        //        foreach (var guest in guestsToFinalize)
-        //        {
-        //            guest.BookingStatus = 3; // Confirmed
-        //        }
-
-        //        await _context.SaveChangesAsync();
-
-        //        TempData["ToastMessage"] = $"✅ Successfully confirmed ";
-        //        TempData["ToastType"] = "success";
-        //    }
-        //    else
-        //    {
-        //        // If no guests found, still mark confirmation success
-        //        TempData["ToastMessage"] = $"✅  Confirmed successfully ";
-        //        TempData["ToastType"] = "success";
-        //    }
-
-        //    // ✅ Optional: reload operators list
-        //    var operators = await _context.Operators.ToListAsync();
-        //    ViewBag.OperatorList = new SelectList(operators, "Id", "BusinessName");
-
-        //    // ✅ Redirect to ReserveBooking with batchCode
-        //    return RedirectToAction("ReserveBooking", new { batch = BatchCode });
-        //}
-
+       
 
 
 
