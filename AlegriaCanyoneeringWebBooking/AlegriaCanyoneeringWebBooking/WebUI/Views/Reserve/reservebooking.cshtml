@@ -10,11 +10,9 @@
         Reserved Booking
     </h2>
 
-    <!-- ✅ Global Scan QR Button -->
     <div class="d-flex justify-content-between mb-3">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="openGlobalScanner()">
-            <i class="fas fa-qrcode"></i> Scan Batch QR
-        </button>
+        <input type="text" id="globalScannerInput" class="form-control form-control-sm"
+               placeholder="Enter or scan batch QR here...">
     </div>
 
     <!-- ✅ Toast Notification -->
@@ -73,31 +71,7 @@
     </div>
 </div>
 
-<!-- ✅ Global QR Scanner Modal -->
-<div class="modal fade" id="globalQrModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Scan Batch QR Code</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <div id="globalReader" class="border rounded p-2 mb-3" style="min-height: 250px;">
-                    <div class="d-flex align-items-center justify-content-center h-100">
-                        <div class="text-center">
-                            <div class="spinner-border text-primary mb-2" role="status"></div>
-                            <p class="text-muted small">Starting camera...</p>
-                        </div>
-                    </div>
-                </div>
-                <div id="scanStatus" class="text-muted small">Point camera at QR code...</div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="stopGlobalScanner()">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- ✅ Required Libraries -->
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
@@ -108,6 +82,28 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 <script>
+    const input = document.getElementById('globalScannerInput');
+    let typingTimer;
+    const typingDelay = 5000; // 1 second delay
+
+    input.addEventListener('keyup', () => {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            processInput(input.value);
+            input.value = ''; // auto clear input
+        }, typingDelay);
+    });
+
+    input.addEventListener('keydown', () => {
+        clearTimeout(typingTimer);
+    });
+
+    function processInput(value) {
+        if(value.trim() !== '') {
+            console.log("Processing input:", value);
+            // Add your logic here (e.g., AJAX call)
+        }
+    }
     // ✅ DataTables Initialization for Grouped Data
     $(document).ready(function () {
         var table = $('#reservedGuestsTable').DataTable({
@@ -562,105 +558,7 @@
         };
     }
 
-    // ✅ GLOBAL SCANNER - FIXED
-    let globalScanner = null;
-    let isScanning = false;
-
-    function openGlobalScanner() {
-        const modal = new bootstrap.Modal(document.getElementById('globalQrModal'));
-        document.getElementById('scanStatus').textContent = 'Point camera at QR code...';
-        document.getElementById('scanStatus').className = 'text-muted small';
-        modal.show();
-
-        setTimeout(() => {
-            startGlobalScanner();
-        }, 300);
-    }
-
-    function startGlobalScanner() {
-        if (isScanning) return;
-
-        const scannerElement = document.getElementById('globalReader');
-        if (!scannerElement) return;
-
-        scannerElement.innerHTML = '';
-        globalScanner = new Html5Qrcode("globalReader");
-        isScanning = true;
-
-        const config = {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0
-        };
-
-        globalScanner.start(
-            { facingMode: "environment" },
-            config,
-            onGlobalScanSuccess,
-            onGlobalScanError
-        ).catch(err => {
-            console.error("❌ Global scanner failed:", err);
-            document.getElementById('scanStatus').textContent = 'Failed to start camera: ' + err.message;
-            document.getElementById('scanStatus').className = 'text-danger small';
-            isScanning = false;
-
-            scannerElement.innerHTML = `
-                <div class="d-flex align-items-center justify-content-center h-100">
-                    <div class="text-center">
-                        <i class="fas fa-camera-slash text-danger fa-2x mb-2"></i>
-                        <p class="text-danger small">Camera access failed</p>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    function onGlobalScanSuccess(decodedText, decodedResult) {
-        if (!isScanning) return;
-
-        const batchCode = decodedText.trim();
-        console.log("✅ Global scan result:", batchCode);
-
-        document.getElementById('scanStatus').textContent = '✓ QR Code Scanned! Processing...';
-        document.getElementById('scanStatus').className = 'text-success small';
-
-        stopGlobalScanner().then(() => {
-            // Use AJAX confirmation
-            const table = $('#reservedGuestsTable').DataTable();
-            confirmBatchBooking(batchCode, table);
-
-            // Close modal
-            setTimeout(() => {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('globalQrModal'));
-                if (modal) modal.hide();
-            }, 1000);
-        });
-    }
-
-    function onGlobalScanError(error) {
-        // Normal scanning errors - ignore
-        if (!error.includes('No QR code found') && !error.includes('NotFoundException')) {
-            console.log("Scanning...", error);
-        }
-    }
-
-    async function stopGlobalScanner() {
-        if (globalScanner && isScanning) {
-            try {
-                await globalScanner.stop();
-                await globalScanner.clear();
-            } catch (err) {
-                console.warn("Warning stopping scanner:", err);
-            }
-            isScanning = false;
-        }
-    }
-
-    // Clean up scanner
-    document.getElementById('globalQrModal')?.addEventListener('hidden.bs.modal', function () {
-        stopGlobalScanner();
-    });
-
+ 
     // ✅ Bootstrap toast auto-show
     document.addEventListener("DOMContentLoaded", function () {
         var toastElement = document.getElementById('toastMessage');
