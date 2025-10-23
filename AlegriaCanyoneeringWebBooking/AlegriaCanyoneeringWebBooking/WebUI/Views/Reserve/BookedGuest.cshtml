@@ -4,9 +4,8 @@
     var startDate = Context.Request.Query["startDate"].FirstOrDefault();
     var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
-<div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 2000; max-width: 350px;">
-</div>
 
+<div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 2000; max-width: 350px;"></div>
 
 <div class="container my-4">
     <!-- Title & Guest of the Day Button -->
@@ -46,7 +45,6 @@
     <!-- Table Container -->
     <div id="batchesTableContainer" class="card shadow-sm border-0" style="display: none;">
         <div class="card-body p-3 position-relative">
-
             <!-- Loader -->
             <div id="tableLoader" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1050; display:none;">
                 <div class="spinner-border text-primary" role="status" style="width:3rem; height:3rem;"></div>
@@ -89,30 +87,41 @@
         </div>
     </div>
 </div>
+
 @section Scripts {
     <script>
-                $('#btnViewGuestOfDay').on('click', function () {
-            const modalContainer = $('#guestDetailsModalContainer');
+        // ================================
+        // 🔔 Toast Utility
+        // ================================
+        function showToast(message) {
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-danger border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>`;
+            const $toast = $(toastHtml).appendTo('#toastContainer');
+            const bsToast = new bootstrap.Toast($toast[0], { delay: 4000 });
+            bsToast.show();
+            $toast.on('hidden.bs.toast', function () { $toast.remove(); });
+        }
 
-            // Show loading spinner first
-            modalContainer.html(`
-                <div class="text-center my-4">
-                    <div class="spinner-border text-primary"></div>
-                    <p class="mt-2">Loading...</p>
-                </div>
-            `);
+        // ================================
+        // 🧭 Guest of the Day Modal
+        // ================================
+        $('#btnViewGuestOfDay').on('click', function () {
+            const modalContainer = $('#guestDetailsModalContainer');
+            modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary"></div><p>Loading...</p></div>');
 
             $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
                 .done(function (res) {
-                    // If server returns JSON with success = false and message, show toast and do NOT display modal
                     if (res.success === false && res.message) {
-                        showToast(res.message); // your toast function
-                        modalContainer.empty(); // clear loading spinner
+                        showToast(res.message);
+                        modalContainer.empty();
                         return;
                     }
-
-                    // Otherwise, assume it's HTML and load it in container, then show modal
-                    modalContainer.html(res); // res is HTML here
+                    modalContainer.html(res);
                     const modal = new bootstrap.Modal(document.getElementById('guestOfTheDayModal'));
                     modal.show();
                 })
@@ -121,68 +130,15 @@
                 });
         });
 
-
-               function showToast(message) {
-            const toastHtml = `
-                <div class="toast align-items-center text-white bg-danger border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                </div>
-            `;
-
-            const $toast = $(toastHtml).appendTo('#toastContainer');
-
-            const bsToast = new bootstrap.Toast($toast[0], { delay: 4000 });
-            bsToast.show();
-
-            // Remove after hidden
-            $toast.on('hidden.bs.toast', function () {
-                $toast.remove();
-            });
-        }
-     
-
-            // View Batch Guest Details
-            $('#batchesTableContainer').on('click', '.view-guest-details', function () {
-                const batchCode = $(this).data('batch');
-                const modalContainer = $('#guestDetailsModalContainer');
-                modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
-
-                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
-                    .done(function (html) {
-                        modalContainer.html(html);
-                        const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
-                        modal.show();
-
-                        $('#guestDetailsModal').on('hidden.bs.modal', function () {
-                            modalContainer.empty();
-                        });
-                    })
-                    .fail(function () {
-                        showToast('Failed to load guest details.');
-                    });
-            });
-
+        // ================================
+        // 🧾 DataTable Initialization
+        // ================================
         $(document).ready(function () {
             var table = null;
             var toast = new bootstrap.Toast(document.getElementById('liveToast'));
 
-            // 🔔 Reusable Toast
-            function showToast(message) {
-                $('#toastMessage').text(message);
-                toast.show();
-            }
-
-            // ===========================
-            // 🔍 FILTER FORM SUBMIT
-            // ===========================
             $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
-
                 const startDate = $('#startDate').val();
                 const endDate = $('#endDate').val();
 
@@ -194,7 +150,6 @@
                 $('#btnViewGuestOfDay').fadeOut();
                 $('#tableLoader').show();
 
-                // 🧹 Reset DataTable if already initialized
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
                     table.destroy();
                     $('#batchesTable').empty().append(`
@@ -207,11 +162,9 @@
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
-                        </thead>
-                    `);
+                        </thead>`);
                 }
 
-                // ⚡ Initialize DataTable
                 table = $('#batchesTable').DataTable({
                     processing: true,
                     serverSide: true,
@@ -251,41 +204,27 @@
                                     : '<span class="text-muted">No Operator</span>';
                             }
                         },
-             {
-            data: 'arrivalDate',
-            render: function (data) {
-                // ✅ Handle null or undefined
-                if (!data) return '<span class="text-muted">N/A</span>';
-
-                // ✅ Check if it's a Unix timestamp (numeric string)
-                if (!isNaN(data)) {
-                    // ✅ Convert Unix timestamp to Philippines time
-                    const date = new Date(parseInt(data) * 1000);
-
-                    // ✅ Format date with Philippines timezone
-                    var formattedDate = date.toLocaleString('en-US', {
-                        timeZone: 'Asia/Manila',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-
-                    return formattedDate;
-                } else {
-                    return data;
-                }
-            }
-        },            {   data: 'status',
+                        {
+                            data: 'arrivalDate',
+                            render: function (data) {
+                                if (!data) return '<span class="text-muted">N/A</span>';
+                                if (!isNaN(data)) {
+                                    const date = new Date(parseInt(data) * 1000);
+                                    return date.toLocaleString('en-US', {
+                                        timeZone: 'Asia/Manila',
+                                        year: 'numeric', month: 'long', day: 'numeric',
+                                        hour: '2-digit', minute: '2-digit', hour12: true
+                                    });
+                                } else {
+                                    return data;
+                                }
+                            }
+                        },
+                        {
+                            data: 'status',
                             render: function (data) {
                                 if (!data) return '';
-                                const badgeMap = {
-                                    confirmed: 'success',
-                                    anticipated: 'info',
-                                    cancelled: 'danger'
-                                };
+                                const badgeMap = { confirmed: 'success', anticipated: 'info', cancelled: 'danger' };
                                 return `<span class="badge bg-${badgeMap[data.toLowerCase()] || 'secondary'} text-uppercase">${data}</span>`;
                             }
                         },
@@ -297,6 +236,9 @@
                                 return `
                                     <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
                                         <i class="fas fa-eye me-1"></i> View
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-warning print-batch-details" data-batch="${data}">
+                                        <i class="fas fa-print me-1"></i> Print
                                     </button>`;
                             }
                         }
@@ -304,15 +246,38 @@
                     pageLength: 10,
                     responsive: true,
                     autoWidth: false,
-                    language: {
-                        emptyTable: "No guest batches found."
-                    }
+                    language: { emptyTable: "No guest batches found." }
                 });
             });
 
-   
+            // ================================
+            // 👁️ View Guest Details Modal
+            // ================================
+            $('#batchesTableContainer').on('click', '.view-guest-details', function () {
+                const batchCode = $(this).data('batch');
+                const modalContainer = $('#guestDetailsModalContainer');
+                modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
+
+                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
+                    .done(function (html) {
+                        modalContainer.html(html);
+                        const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
+                        modal.show();
+                        $('#guestDetailsModal').on('hidden.bs.modal', function () { modalContainer.empty(); });
+                    })
+                    .fail(function () { showToast('Failed to load guest details.'); });
+            });
+
+                 $('#batchesTableContainer').on('click', '.print-batch-details', function () {
+            const batchCode = $(this).data('batch');
+            const printUrl = '@Url.Action("PrintBatchGuests", "Reserve")' + '?batchCode=' + encodeURIComponent(batchCode);
+            const printWindow = window.open(printUrl, '_blank');
+            if (!printWindow) {
+                alert('Please allow popups to view print preview.');
+            }
+        });
+
+         
         });
     </script>
 }
-
- 

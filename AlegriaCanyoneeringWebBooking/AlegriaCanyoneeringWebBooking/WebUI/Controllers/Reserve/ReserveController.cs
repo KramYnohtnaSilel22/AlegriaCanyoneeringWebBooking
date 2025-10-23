@@ -7,6 +7,7 @@ using QRCoder;
 using System.Security.Claims;
 using System.Text;
 using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Authorization;
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     public class ReserveController : Controller
@@ -28,6 +29,52 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
+        [HttpGet]
+        public IActionResult PrintBatchGuests(string batchCode)
+        {
+            if (string.IsNullOrEmpty(batchCode))
+                return BadRequest("Batch code is required.");
+
+            var rawGuests = _context.Guests
+                .Where(g => g.Batch == batchCode)
+                .ToList();
+            
+            var guests = rawGuests.Select(g => new
+            {
+                FullName = g.Fullname ?? "Unknown Guest",
+     
+                ArrivalDate = ParseUnixTimestamp(g.ArrivalDate),
+                QRBase64 = !string.IsNullOrEmpty(g.QRText)
+                           ? GenerateQRCodeBase64(g.QRText)
+                           : GenerateQRCodeBase64(batchCode)
+            }).ToList();
+
+            if (!guests.Any())
+                return NotFound("No guests found for this batch.");
+
+            ViewBag.BatchCode = batchCode;
+
+            return View("PrintBatchGuests", guests);
+        }
+        private DateTime? ParseUnixTimestamp(string? unixTimestamp)
+        {
+            if (string.IsNullOrEmpty(unixTimestamp))
+                return null;
+
+            if (long.TryParse(unixTimestamp, out long seconds))
+            {
+                // Convert from Unix timestamp (seconds) to DateTimeOffset
+                DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(seconds);
+                // Convert to local time
+                return dateTimeOffset.ToLocalTime().DateTime;
+            }
+            return null;
+        }
+
+
+
+
+
 
         // GET: Reserve/Index (Original View)
         public IActionResult Index()

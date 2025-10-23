@@ -1,0 +1,90 @@
+﻿@model IEnumerable<dynamic>
+@{
+    Layout = null;
+}
+
+<link href="/css/Printwristbond.css" rel="stylesheet" />
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Batch Guest Print</title>
+  
+</head>
+<body>
+
+    <button id="printBtn" onclick="preparePrint()">🖨️ Print</button>
+
+    <div id="ticketsContainer">
+        @foreach (var g in Model)
+        {
+            var batchId = Guid.NewGuid().ToString("N"); // Unique per ticket
+            <div class="ticket">
+                @if (!string.IsNullOrEmpty(g.QRBase64))
+                {
+                    <img src="@g.QRBase64"
+                         alt="QR Code"
+                         class="qr"
+                         onload="markLoaded('@batchId')"
+                         onerror="markError('@batchId')" />
+                }
+                else
+                {
+                    <div class="qr" style="font-size:12px; color: red; text-align:center; width: 50px; height: 50px; border: 1px solid #ccc; display:flex; align-items:center; justify-content:center;">
+                        @ViewBag.BatchCode
+                    </div>
+                }
+                <div class="info">
+                    <div class="title">Alegria Canyoneering</div>
+                    <div>@g.FullName</div>
+                    <div>
+                        @(g.ArrivalDate != null 
+                          ? ((DateTime)g.ArrivalDate).ToLocalTime().ToString("M/d/yyyy h:mm tt") 
+                          : "N/A")
+                    </div>
+           
+                </div>
+            </div>
+        }
+    </div>
+
+    <script>
+        let totalImages = 0;
+        let loadedImages = 0;
+        let erroredImages = 0;
+
+        window.addEventListener("DOMContentLoaded", () => {
+            totalImages = document.querySelectorAll(".qr img").length;
+            console.log(`🧾 Preparing to print ${totalImages} tickets...`);
+        });
+
+        function markLoaded(id) {
+            loadedImages++;
+            console.log(`✅ QR loaded (${loadedImages}/${totalImages})`);
+        }
+
+        function markError(id) {
+            erroredImages++;
+            console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
+        }
+
+        function preparePrint() {
+            // Try scaling down if content overflows container
+            const container = document.getElementById("ticketsContainer");
+            const maxHeight = 27 * 37.8; // 27cm in pixels (approx), adjust as needed
+            if (container.scrollHeight > maxHeight) {
+                // Calculate scale factor
+                let scale = maxHeight / container.scrollHeight;
+                scale = Math.min(scale, 1); // don't upscale
+                container.style.transform = `scale(${scale})`;
+                container.style.transformOrigin = "top left";
+            } else {
+                container.style.transform = "none";
+            }
+            window.print();
+        }
+    </script>
+
+</body>
+</html>
