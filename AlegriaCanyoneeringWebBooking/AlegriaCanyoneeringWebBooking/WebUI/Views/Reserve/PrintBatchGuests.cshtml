@@ -61,9 +61,7 @@
                     <div class="guest-info">
                         <div class="guest-name">@g.FullName</div>
                         <div class="date-time">
-                            @(g.ArrivalDate != null
-                                ? ((DateTime)g.ArrivalDate).ToLocalTime().ToString("M/d/yyyy h:mm tt")
-                                : "N/A")
+                            @DateTime.Now.ToLocalTime().ToString("M/d/yyyy h:mm tt")
                         </div>
                     </div>
                 </div>
@@ -92,10 +90,6 @@
             console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
         }
 
-        // Back button function - redirect to BookedGuest
-        function goBack() {
-            window.location.href = 'BookedGuest';
-        }
     </script>
 
 </body>
