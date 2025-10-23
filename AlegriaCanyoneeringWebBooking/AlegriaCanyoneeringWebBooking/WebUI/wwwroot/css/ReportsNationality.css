@@ -1,0 +1,319 @@
+﻿.report-container {
+    background: white;
+    padding: 20px;
+    max-width: 100%;
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+.report-title-box {
+    border: 2px solid #000;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+    .report-title-box h3 {
+        margin: 0 0 5px 0;
+        font-weight: bold;
+        font-size: 24px;
+    }
+
+    .report-title-box p {
+        margin: 0;
+        font-size: 12px;
+    }
+
+.info-grid {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+.info-row {
+    display: table-row;
+    page-break-inside: avoid;
+}
+
+.info-cell {
+    display: table-cell;
+    border: 2px solid #000;
+    padding: 10px;
+}
+
+.info-label {
+    font-weight: bold;
+    width: 200px;
+    background-color: #f5f5f5;
+}
+
+/* CHANGED: #tourismReportTable → #nationalityReportTable */
+#nationalityReportTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    margin-top: 20px;
+    page-break-inside: avoid;
+}
+
+    #nationalityReportTable th,
+    #nationalityReportTable td {
+        border: 2px solid #000;
+        padding: 10px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #nationalityReportTable thead {
+        page-break-after: avoid;
+        display: table-header-group;
+    }
+
+    #nationalityReportTable tbody {
+        page-break-inside: avoid;
+    }
+
+    #nationalityReportTable tfoot {
+        page-break-before: avoid;
+        display: table-footer-group;
+    }
+
+    #nationalityReportTable tr {
+        page-break-inside: avoid;
+    }
+
+    #nationalityReportTable thead th {
+        background-color: #e0e0e0;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    #nationalityReportTable tfoot td {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+.note-text {
+    font-size: 12px;
+    margin-top: 10px;
+    margin-bottom: 0;
+    font-style: italic;
+    page-break-inside: avoid;
+}
+
+/* ==================== MOBILE RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    /* Card header - Stack elements vertically */
+    .card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 15px !important;
+    }
+
+        .card-header h5 {
+            margin-bottom: 10px !important;
+        }
+
+    /* Form - Stack inputs vertically */
+    #filterForm {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 5px !important;
+    }
+
+        #filterForm label,
+        #filterForm input,
+        #filterForm button {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+    /* Buttons - Stack vertically */
+    .card-header > div {
+        width: 100%;
+        flex-direction: column !important;
+    }
+
+    .btn-group {
+        width: 100%;
+        margin-top: 10px !important;
+    }
+
+        .btn-group button {
+            width: 100%;
+        }
+
+    /* Report container */
+    .report-container {
+        padding: 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Report title */
+    .report-title-box {
+        padding: 15px 10px;
+    }
+
+        .report-title-box h3 {
+            font-size: 18px;
+        }
+
+        .report-title-box p {
+            font-size: 11px;
+        }
+
+    /* Info grid - Convert to block layout */
+    .info-grid {
+        display: block;
+    }
+
+    .info-row {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .info-cell {
+        display: block;
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    /* Table - Smaller font and padding */
+    #nationalityReportTable {
+        font-size: 11px;
+        min-width: 600px; /* Enable horizontal scrolling */
+    }
+
+        #nationalityReportTable th,
+        #nationalityReportTable td {
+            padding: 6px;
+            white-space: nowrap;
+        }
+
+        #nationalityReportTable thead th {
+            font-size: 10px;
+            position: sticky;
+            top: 0;
+        }
+
+    /* Note */
+    .note-text {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extra small devices */
+    .report-title-box h3 {
+        font-size: 16px;
+    }
+
+    .report-title-box p {
+        font-size: 10px;
+    }
+
+    #nationalityReportTable {
+        font-size: 10px;
+    }
+
+        #nationalityReportTable th,
+        #nationalityReportTable td {
+            padding: 4px;
+        }
+
+    .info-cell {
+        font-size: 11px;
+        padding: 6px;
+    }
+}
+
+/* ==================== PRINT MEDIA ==================== */
+@media print {
+    /* Hide navigation and buttons */
+    .card-header,
+    .btn,
+    .btn-group,
+    .no-print {
+        display: none !important;
+    }
+
+    .report-container {
+        padding: 10px;
+        page-break-inside: avoid;
+    }
+
+    .report-title-box {
+        margin-bottom: 10px;
+        padding: 10px;
+        page-break-inside: avoid;
+    }
+
+        .report-title-box h3 {
+            font-size: 18px;
+            margin: 0 0 3px 0;
+        }
+
+        .report-title-box p {
+            font-size: 10px;
+        }
+
+    .info-grid {
+        margin-bottom: 10px;
+        page-break-inside: avoid;
+    }
+
+    .info-cell {
+        padding: 5px;
+        font-size: 11px;
+    }
+
+    #nationalityReportTable {
+        font-size: 10px;
+        margin-top: 10px;
+        page-break-inside: avoid;
+    }
+
+        #nationalityReportTable th,
+        #nationalityReportTable td {
+            padding: 4px;
+            border: 1px solid #000;
+        }
+
+        #nationalityReportTable thead {
+            display: table-header-group;
+            page-break-after: avoid;
+        }
+
+        #nationalityReportTable tfoot {
+            display: table-footer-group;
+            page-break-before: avoid;
+        }
+
+        #nationalityReportTable tbody tr {
+            page-break-inside: avoid;
+        }
+
+    .note-text {
+        font-size: 9px;
+        margin-top: 5px;
+        margin-bottom: 0;
+        page-break-inside: avoid;
+    }
+
+    /* Portrait orientation for nationality report */
+    @page {
+        size: portrait;
+        margin: 0.5cm;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+    }
+}

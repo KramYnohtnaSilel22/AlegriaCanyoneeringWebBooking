@@ -1,139 +1,123 @@
 ﻿@model IEnumerable<TourismReportViewModel>
-<link href="/css/ReportNationality.css" rel="stylesheet" />
+<link href="~/css/ReportsNationality.css" rel="stylesheet" />
 
 @{
     var totalMale = ViewBag.TotalMale ?? 0;
     var totalFemale = ViewBag.TotalFemale ?? 0;
     var totalEnding = ViewBag.TotalEnding ?? 0;
-    var currentFilter = ViewBag.Filter as string ?? "daily";
     var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
     var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    // Parse safely for display
+    DateTime.TryParse(dateFrom, out var fromDt);
+    DateTime.TryParse(dateTo, out var toDt);
 }
 
 <div class="card mt-4 shadow">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap">
-        <h5>Nationality Visitor Report (@currentFilter.ToUpper())</h5>
-        <div class="d-flex align-items-center flex-wrap mt-2 mt-md-0">
-            <form method="get" asp-action="Nationality" id="filterForm" class="d-flex align-items-center me-3">
-                <label class="me-2 text-white fw-bold">Filter:</label>
-                <select name="filter" id="filterSelect" class="form-select me-2">
-                    <option value="daily" selected="@(currentFilter == "daily")">Daily</option>
-                    <option value="weekly" selected="@(currentFilter == "weekly")">Weekly</option>
-                    <option value="monthly" selected="@(currentFilter == "monthly")">Monthly</option>
-                    <option value="quarterly" selected="@(currentFilter == "quarterly")">Quarterly</option>
-                    <option value="yearly" selected="@(currentFilter == "yearly")">Yearly</option>
-                </select>
-
-                <label class="me-2 text-white fw-bold">From:</label>
-                <input type="date" name="dateFrom" id="dateFrom" value="@dateFrom" class="form-control me-2" />
-
-                <label class="me-2 text-white fw-bold">To:</label>
-                <input type="date" name="dateTo" id="dateTo" value="@dateTo" class="form-control me-2" />
-
-                <button type="submit" class="btn btn-light me-2">
-                    <i class="bi bi-filter"></i> Apply
-                </button>
-
-                <button type="button" id="btnReset" class="btn btn-secondary">
-                    <i class="bi bi-arrow-clockwise"></i> Reset
-                </button>
+        <h5 class="mb-0">Nationality Visitor Report</h5>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form method="get" asp-action="Nationality" id="filterForm" class="d-flex align-items-center gap-2">
+                <label class="text-white fw-bold mb-0">From:</label>
+                <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom" class="form-control" style="width:auto;" required />
+                <label class="text-white fw-bold mb-0">To:</label>
+                <input type="date" id="dateTo" name="dateTo" value="@dateTo" class="form-control" style="width:auto;" required />
+                <button type="submit" class="btn btn-light">Search</button>
             </form>
 
-            <button class="btn btn-danger me-2 mb-2 mb-md-0" id="btnDownloadPDF">
-                <i class="bi bi-file-earmark-pdf"></i> Download PDF
-            </button>
-            <button class="btn btn-success mb-2 mb-md-0" id="btnDownloadExcel">
-                <i class="bi bi-file-earmark-excel"></i> Download Excel
-            </button>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" id="btnDownloadPDF"><i class="bi bi-file-earmark-pdf"></i> Print as PDF</a></li>
+                    <li><a class="dropdown-item" href="#" id="btnDownloadExcel"><i class="bi bi-file-earmark-excel"></i> Print as Excel</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 
     <div class="card-body report-container">
-        <div class="report-title-box">
+        <div class="report-title-box text-center mb-4">
             <h3>Nationality Visitor Record</h3>
             <p>(Summary of visitors by nationality)</p>
         </div>
 
-        <div class="info-grid">
+        <div class="info-grid mb-3">
             <div class="info-row">
-                <div class="info-cell info-label">Date From:</div>
-                <div class="info-cell">@DateTime.Parse(dateFrom).ToString("dddd, MMMM d, yyyy")</div>
+                <div class="info-cell fw-bold">Date From:</div>
+                <div class="info-cell">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
+                <div class="info-cell fw-bold">Date To:</div>
+                <div class="info-cell">@toDt.ToString("dddd, MMMM d, yyyy")</div>
             </div>
             <div class="info-row">
-                <div class="info-cell info-label">Date To:</div>
-                <div class="info-cell">@DateTime.Parse(dateTo).ToString("dddd, MMMM d, yyyy")</div>
-            </div>
-            <div class="info-row">
-                <div class="info-cell info-label">Municipality:</div>
+                <div class="info-cell fw-bold">Municipality:</div>
                 <div class="info-cell">ALEGRIA, CEBU</div>
-            </div>
-            <div class="info-row">
-                <div class="info-cell info-label">Name of Attraction/Spot:</div>
+                <div class="info-cell fw-bold">Attraction:</div>
                 <div class="info-cell">Canyoneering Adventure</div>
             </div>
         </div>
 
-        <table id="tourismReportTable" class="table table-bordered table-striped table-hover mt-3">
-            <thead class="table-primary">
-                <tr>
-                    <th>Seq.</th>
-                    <th>NATIONALITY</th>
-                    <th>MALE</th>
-                    <th>FEMALE</th>
-                    <th>ENDING TOTAL</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model != null && Model.Any())
-                {
-                    int seq = 1;
-                    foreach (var item in Model)
-                    {
-                        <tr>
-                            <td>@seq</td>
-                            <td>@item.Label</td>
-                            <td>@item.OtherProvinceMale</td>
-                            <td>@item.OtherProvinceFemale</td>
-                            <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
-                        </tr>
-                        seq++;
-                    }
-                }
-                else
-                {
+        <div class="table-responsive">
+            <table id="nationalityReportTable" class="table table-bordered table-striped text-center">
+                <thead class="table-primary">
                     <tr>
-                        <td colspan="5" class="text-center py-3">No data available for the selected date range</td>
+                        <th rowspan="2">Seq.</th>
+                        <th rowspan="2">NATIONALITY</th>
+                        <th colspan="2">NUMBER OF GUESTS</th>
+                        <th rowspan="2">ENDING TOTAL</th>
                     </tr>
-                }
-            </tbody>
-            <tfoot class="table-secondary">
-                <tr>
-                    <td colspan="2"><strong>TOTAL:</strong></td>
-                    <td><strong>@totalMale</strong></td>
-                    <td><strong>@totalFemale</strong></td>
-                    <td><strong>@totalEnding</strong></td>
-                </tr>
-            </tfoot>
-        </table>
-        <p class="note-text">
-            Note: Report generated on @DateTime.Today.ToString("MMMM dd, yyyy")
+                    <tr>
+                        <th>MALE</th>
+                        <th>FEMALE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int seq = 1;
+                        if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4">No data available for the selected date range</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@seq</td>
+                                    <td class="text-start">@item.Label</td>
+                                    <td>@item.OtherProvinceMale</td>
+                                    <td>@item.OtherProvinceFemale</td>
+                                    <td><strong>@(item.OtherProvinceMale + item.OtherProvinceFemale)</strong></td>
+                                </tr>
+                                seq++;
+                            }
+                        }
+                    }
+                </tbody>
+                <tfoot class="fw-bold table-secondary">
+                    <tr>
+                        <td colspan="2" class="text-start">TOTAL:</td>
+                        <td>@totalMale</td>
+                        <td>@totalFemale</td>
+                        <td>@totalEnding</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <p class="note-text mt-3">
+            <em>Note: Total number must be recorded. Residence entries are optional. Report totals must be recorded.</em>
         </p>
     </div>
 </div>
 
 @section Scripts {
-    <!-- jQuery (must come first) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-
-    <!-- html to pdf JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-    <!-- DataTables CSS -->
-    <link rel="stylesheet"
-          href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    <script src="~/js/ReportNationality.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="~/js/ReportsNationality.js" asp-append-version="true"></script>
 }
