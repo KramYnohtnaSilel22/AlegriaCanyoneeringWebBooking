@@ -15,7 +15,7 @@
 <body>
 
     <!-- Print Button - Visible on screen, hidden during print -->
-    <button id="printBtn" onclick="window.print()">🖨️ Print</button>
+    <button id="printBtn" onclick="window.print()">🖨️ Print Tickets</button>
 
 
     <div id="ticketsContainer">
@@ -23,33 +23,51 @@
         {
             var batchId = Guid.NewGuid().ToString("N");
             <div class="ticket">
-                <!-- QR Code Section -->
-                @if (!string.IsNullOrEmpty(g.QRBase64))
-                {
-                    <div class="qr">
-                        <img src="@g.QRBase64"
-                             alt="QR Code"
-                             onload="markLoaded('@batchId')"
-                             onerror="markError('@batchId')" />
-                    </div>
-                }
-                else
-                {
-                    <div class="qr-fallback">
-                        @ViewBag.BatchCode
-                    </div>
-                }
+                <!-- Left Section: Light Blue Background with Logo and QR Side by Side (40mm) -->
+                <div class="ticket-left">
+                    <div class="logo-qr-container">
+                        <!-- Logo with Border Radius -->
+                        <div class="logo">
+                            <img src="/images/alegrialogo2025.jpeg" alt="Alegria Canyoneering Logo"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div class="logo-placeholder" style="display: none;">
+                                ALEGRIA<br>CANYONEERING
+                            </div>
+                        </div>
 
-                <!-- Information Section -->
-                <div class="info">
-                    <div class="title">Alegria Canyoneering</div>
-                    <div class="guest-name">@g.FullName</div>
-                    <div class="date-time">
-                        @(g.ArrivalDate != null
-                            ? ((DateTime)g.ArrivalDate).ToLocalTime().ToString("M/d/yyyy h:mm tt")
-                            : "N/A")
+                        <!-- QR Code Section with Border Radius -->
+                        @if (!string.IsNullOrEmpty(g.QRBase64))
+                        {
+                            <div class="qr">
+                                <img src="@g.QRBase64"
+                                     alt="QR Code"
+                                     onload="markLoaded('@batchId')"
+                                     onerror="markError('@batchId')" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="qr-fallback">
+                                @ViewBag.BatchCode
+                            </div>
+                        }
                     </div>
                 </div>
+
+                <!-- Right Section: White Background for Guest Info (220mm) -->
+
+                <div class="ticket-right">
+                    <div class="operator-name">@g.Operators</div>
+                    <div class="guest-info">
+                        <div class="guest-name">@g.FullName</div>
+                        <div class="date-time">
+                            @(g.ArrivalDate != null
+                                ? ((DateTime)g.ArrivalDate).ToLocalTime().ToString("M/d/yyyy h:mm tt")
+                                : "N/A")
+                        </div>
+                    </div>
+                </div>
+
             </div>
         }
     </div>
