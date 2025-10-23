@@ -2,59 +2,128 @@
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 10px;
+    padding: 0;
+    background: white;
 }
 
+/* Print Button - Show on screen, hide during print */
 #printBtn {
-    margin-bottom: 10px;
-    padding: 8px 16px;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #2c5aa0;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
     font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transition: all 0.3s ease;
 }
 
-/* Container for all tickets */
+    #printBtn:hover {
+        background: #1e3d6f;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+
+/* Container for all tickets - One column */
 #ticketsContainer {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 tickets per row */
-    grid-template-rows: repeat(4, 1fr); /* 4 tickets per column */
-    gap: 10px;
-    max-width: 100%;
-    max-height: 100%;
-    overflow: hidden;
-}
-
-.ticket {
-    border: 1px solid #ccc;
-    padding: 8px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    font-size: 12px;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    gap: 0;
+    width: 260mm; /* 260mm width */
+    margin: 0 auto;
+    padding: 0;
+    background: white;
 }
 
-.qr {
-    width: 50px;
-    height: 50px;
-    margin-bottom: 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #fff;
+/* Individual Ticket - 260mm WIDTH x 80mm HEIGHT */
+.ticket {
+    width: 260mm; /* 260mm width (full width) */
+    height: 80mm; /* 80mm height */
+    background: white;
+    color: black;
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 10px;
-    color: #999;
+    padding: 5mm;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #000000;
+    border-bottom: none; /* Remove bottom border except last ticket */
+    page-break-inside: avoid; /* Don't break inside a ticket */
+    break-inside: avoid;
+    flex-direction: row; /* Horizontal layout */
+    justify-content: flex-start;
 }
 
-.info {
+    /* Last ticket should have bottom border */
+    .ticket:last-child {
+        border-bottom: 1px solid #000000;
+    }
+
+/* QR Code Styling - 40mm x 40mm */
+.qr {
+    width: 40mm; /* 40mm width */
+    height: 40mm; /* 40mm height */
+    background: white;
+    padding: 1mm;
+    border: 1px solid #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10mm;
+}
+
+    .qr img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+/* Fallback QR styling */
+.qr-fallback {
+    width: 40mm;
+    height: 40mm;
+    background: white;
+    border: 1px solid #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #000000;
     text-align: center;
+    margin-right: 10mm;
+}
+
+/* Information Section */
+.info {
+    text-align: left;
+    flex: 1;
 }
 
 .title {
+    font-size: 16px;
     font-weight: bold;
+    margin-bottom: 5mm;
+    color: black;
+}
+
+.guest-name {
     font-size: 14px;
-    margin-bottom: 2px;
+    font-weight: normal;
+    margin-bottom: 4mm;
+    color: black;
+}
+
+.date-time {
+    font-size: 12px;
+    color: black;
+    font-weight: normal;
 }
 
 /* Print styling */
@@ -62,35 +131,49 @@ body {
     body {
         margin: 0;
         padding: 0;
+        background: white;
     }
 
+    /* Hide print button during print */
     #printBtn {
-        display: none;
+        display: none !important;
     }
 
     #ticketsContainer {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr); /* 2 tickets per row */
-        grid-template-rows: repeat(4, 1fr); /* 4 tickets per column */
-        gap: 10px;
-        max-width: 100%;
-        max-height: 100%;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        width: 260mm;
+        margin: 0 auto;
+        padding: 0;
+        background: white;
     }
 
     .ticket {
-        border: 1px solid #ccc;
-        padding: 8px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        font-size: 12px;
-        page-break-inside: avoid;
+        width: 260mm;
+        height: 80mm;
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+        print-color-adjust: exact;
+        page-break-inside: avoid; /* Don't break inside tickets */
         break-inside: avoid;
+        border: 1px solid #000000;
+        border-bottom: none;
+        page-break-after: auto; /* Remove forced page breaks */
+        break-after: auto;
+    }
+
+        .ticket:last-child {
+            border-bottom: 1px solid #000000 !important;
+        }
+
+    .qr, .qr-fallback {
+        border: 1px solid #000000 !important;
     }
 
     @page {
         size: A4 portrait;
-        margin: 10mm;
+        margin: 0;
     }
 }

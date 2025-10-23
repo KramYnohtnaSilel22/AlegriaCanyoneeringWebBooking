@@ -77,11 +77,12 @@
 
             <!-- Download PDF Button -->
             <div class="px-3 py-2 border-bottom bg-light d-flex justify-content-end">
-                <button class="btn btn-danger" onclick="downloadGuestDetailsPdf()">
-                    <i class="fas fa-file-pdf"></i> Download PDF
-                </button>
+       
                 <button class="btn btn-success ms-2" onclick="downloadGuestDetailsExcel()">
                     <i class="fas fa-file-excel"></i> Download Excel
+                </button>
+                <button class="btn btn-warning" id="printButton">
+                    <i class="fas fa-print"></i> Print
                 </button>
 
             </div>
@@ -175,3 +176,16 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script src="~/js/ViewGuestDetails.js" asp-append-version="true" defer></script>
+<script>
+    document.getElementById('printButton').addEventListener('click', function () {
+        // Get the batchCode from the model or another source
+        var batchCode = '@Model.FirstOrDefault()?.Guest.Batch';
+
+        if (batchCode) {
+            // Redirect to the PrintBatchGuests action with the batchCode parameter
+            window.location.href = '/Reserve/PrintBatchGuests?batchCode=' + batchCode;
+        } else {
+            alert('Batch code is not available.');
+        }
+    });
+</script>

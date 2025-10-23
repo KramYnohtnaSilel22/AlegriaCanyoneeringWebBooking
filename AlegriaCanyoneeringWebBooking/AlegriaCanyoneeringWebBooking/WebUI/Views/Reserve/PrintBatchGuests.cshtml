@@ -3,47 +3,52 @@
     Layout = null;
 }
 
-<link href="/css/Printwristbond.css" rel="stylesheet" />
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <title>Batch Guest Print</title>
-  
+    <!-- External CSS -->
+    <link href="/css/Printwristbond.css" rel="stylesheet" />
+    <link rel="icon" href="/images/alegrialogo2025.jpeg" type="image/png" />
 </head>
 <body>
 
-    <button id="printBtn" onclick="preparePrint()">🖨️ Print</button>
+    <!-- Print Button - Visible on screen, hidden during print -->
+    <button id="printBtn" onclick="window.print()">🖨️ Print</button>
+
 
     <div id="ticketsContainer">
         @foreach (var g in Model)
         {
-            var batchId = Guid.NewGuid().ToString("N"); // Unique per ticket
+            var batchId = Guid.NewGuid().ToString("N");
             <div class="ticket">
+                <!-- QR Code Section -->
                 @if (!string.IsNullOrEmpty(g.QRBase64))
                 {
-                    <img src="@g.QRBase64"
-                         alt="QR Code"
-                         class="qr"
-                         onload="markLoaded('@batchId')"
-                         onerror="markError('@batchId')" />
+                    <div class="qr">
+                        <img src="@g.QRBase64"
+                             alt="QR Code"
+                             onload="markLoaded('@batchId')"
+                             onerror="markError('@batchId')" />
+                    </div>
                 }
                 else
                 {
-                    <div class="qr" style="font-size:12px; color: red; text-align:center; width: 50px; height: 50px; border: 1px solid #ccc; display:flex; align-items:center; justify-content:center;">
+                    <div class="qr-fallback">
                         @ViewBag.BatchCode
                     </div>
                 }
+
+                <!-- Information Section -->
                 <div class="info">
                     <div class="title">Alegria Canyoneering</div>
-                    <div>@g.FullName</div>
-                    <div>
-                        @(g.ArrivalDate != null 
-                          ? ((DateTime)g.ArrivalDate).ToLocalTime().ToString("M/d/yyyy h:mm tt") 
-                          : "N/A")
+                    <div class="guest-name">@g.FullName</div>
+                    <div class="date-time">
+                        @(g.ArrivalDate != null
+                            ? ((DateTime)g.ArrivalDate).ToLocalTime().ToString("M/d/yyyy h:mm tt")
+                            : "N/A")
                     </div>
-           
                 </div>
             </div>
         }
@@ -56,7 +61,7 @@
 
         window.addEventListener("DOMContentLoaded", () => {
             totalImages = document.querySelectorAll(".qr img").length;
-            console.log(`🧾 Preparing to print ${totalImages} tickets...`);
+            console.log(`🧾 Total tickets: ${document.querySelectorAll('.ticket').length}`);
         });
 
         function markLoaded(id) {
@@ -69,20 +74,9 @@
             console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
         }
 
-        function preparePrint() {
-            // Try scaling down if content overflows container
-            const container = document.getElementById("ticketsContainer");
-            const maxHeight = 27 * 37.8; // 27cm in pixels (approx), adjust as needed
-            if (container.scrollHeight > maxHeight) {
-                // Calculate scale factor
-                let scale = maxHeight / container.scrollHeight;
-                scale = Math.min(scale, 1); // don't upscale
-                container.style.transform = `scale(${scale})`;
-                container.style.transformOrigin = "top left";
-            } else {
-                container.style.transform = "none";
-            }
-            window.print();
+        // Back button function - redirect to BookedGuest
+        function goBack() {
+            window.location.href = 'BookedGuest';
         }
     </script>
 
