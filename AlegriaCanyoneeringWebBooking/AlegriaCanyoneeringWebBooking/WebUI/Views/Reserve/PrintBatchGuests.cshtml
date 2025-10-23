@@ -1,0 +1,84 @@
+﻿@model IEnumerable<dynamic>
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Batch Guest Print</title>
+    <!-- External CSS -->
+    <link href="/css/Printwristbond.css" rel="stylesheet" />
+    <link rel="icon" href="/images/alegrialogo2025.jpeg" type="image/png" />
+</head>
+<body>
+
+    <!-- Print Button - Visible on screen, hidden during print -->
+    <button id="printBtn" onclick="window.print()">🖨️ Print</button>
+
+
+    <div id="ticketsContainer">
+        @foreach (var g in Model)
+        {
+            var batchId = Guid.NewGuid().ToString("N");
+            <div class="ticket">
+                <!-- QR Code Section -->
+                @if (!string.IsNullOrEmpty(g.QRBase64))
+                {
+                    <div class="qr">
+                        <img src="@g.QRBase64"
+                             alt="QR Code"
+                             onload="markLoaded('@batchId')"
+                             onerror="markError('@batchId')" />
+                    </div>
+                }
+                else
+                {
+                    <div class="qr-fallback">
+                        @ViewBag.BatchCode
+                    </div>
+                }
+
+                <!-- Information Section -->
+                <div class="info">
+                    <div class="title">Alegria Canyoneering</div>
+                    <div class="guest-name">@g.FullName</div>
+                    <div class="date-time">
+                        @(g.ArrivalDate != null
+                            ? ((DateTime)g.ArrivalDate).ToLocalTime().ToString("M/d/yyyy h:mm tt")
+                            : "N/A")
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <script>
+        let totalImages = 0;
+        let loadedImages = 0;
+        let erroredImages = 0;
+
+        window.addEventListener("DOMContentLoaded", () => {
+            totalImages = document.querySelectorAll(".qr img").length;
+            console.log(`🧾 Total tickets: ${document.querySelectorAll('.ticket').length}`);
+        });
+
+        function markLoaded(id) {
+            loadedImages++;
+            console.log(`✅ QR loaded (${loadedImages}/${totalImages})`);
+        }
+
+        function markError(id) {
+            erroredImages++;
+            console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
+        }
+
+        // Back button function - redirect to BookedGuest
+        function goBack() {
+            window.location.href = 'BookedGuest';
+        }
+    </script>
+
+</body>
+</html>
