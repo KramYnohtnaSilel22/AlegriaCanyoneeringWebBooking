@@ -36,17 +36,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return BadRequest("Batch code is required.");
 
             var rawGuests = _context.Guests
+                .Include(g => g.Operators) // ADD THIS LINE - Eager load Operators
                 .Where(g => g.Batch == batchCode)
                 .ToList();
-            
+
             var guests = rawGuests.Select(g => new
             {
                 FullName = g.Fullname ?? "Unknown Guest",
-     
                 ArrivalDate = ParseUnixTimestamp(g.ArrivalDate),
                 QRBase64 = !string.IsNullOrEmpty(g.QRText)
                            ? GenerateQRCodeBase64(g.QRText)
-                           : GenerateQRCodeBase64(batchCode)
+                           : GenerateQRCodeBase64(batchCode),
+                Operators = g.Operators?.BusinessName ?? "No Operators" // ADD THIS LINE
             }).ToList();
 
             if (!guests.Any())
