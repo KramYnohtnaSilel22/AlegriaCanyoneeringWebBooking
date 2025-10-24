@@ -110,7 +110,7 @@
 
         // ---- Title Section ----
         ws.mergeCells("A5:E5");
-        ws.getCell("A5").value = "CANYONEERING - OPERATOR REPORT";
+        ws.getCell("A5").value = "CANYONEERING";
         ws.getCell("A5").font = { bold: true, size: 11 };
         ws.getCell("A5").alignment = { horizontal: "center", vertical: "middle" };
 
@@ -147,7 +147,7 @@
         };
 
         ws.mergeCells("B8:B9");
-        ws.getCell("B8").value = "OPERATOR / BUSINESS NAME";
+        ws.getCell("B8").value = "OPERATOR  ";
         ws.getCell("B8").font = { bold: true, size: 10 };
         ws.getCell("B8").alignment = { horizontal: "center", vertical: "middle" };
         ws.getCell("B8").fill = {
@@ -246,7 +246,7 @@
                 if (cells.length >= 5 && !cells[1].includes("No data")) {
                     const row = ws.addRow([
                         Number(cells[0]) || 0,  // Seq
-                        cells[1],               // Operator/Business Name
+                        cells[1],               // Operator
                         Number(cells[2]) || 0,  // Male
                         Number(cells[3]) || 0,  // Female
                         Number(cells[4]) || 0   // Ending Total
