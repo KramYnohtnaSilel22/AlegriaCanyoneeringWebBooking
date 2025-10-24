@@ -70,27 +70,27 @@
         }
     </div>
 
-    <script>
-        let totalImages = 0;
-        let loadedImages = 0;
-        let erroredImages = 0;
+        <script>
+            let totalImages = 0;
+            let loadedImages = 0;
+            let erroredImages = 0;
 
-        window.addEventListener("DOMContentLoaded", () => {
-            totalImages = document.querySelectorAll(".qr img").length;
-            console.log(`🧾 Total tickets: ${document.querySelectorAll('.ticket').length}`);
-        });
+            window.addEventListener("DOMContentLoaded", () => {
+                totalImages = document.querySelectorAll(".qr img").length;
+                console.log(`🧾 Total tickets: ${document.querySelectorAll('.ticket').length}`);
+            });
 
-        function markLoaded(id) {
-            loadedImages++;
-            console.log(`✅ QR loaded (${loadedImages}/${totalImages})`);
-        }
+            function markLoaded(id) {
+                loadedImages++;
+                console.log(`✅ QR loaded (${loadedImages}/${totalImages})`);
+            }
 
-        function markError(id) {
-            erroredImages++;
-            console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
-        }
+            function markError(id) {
+                erroredImages++;
+                console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
+            }
 
-    </script>
+        </script>
 
 </body>
 </html>
