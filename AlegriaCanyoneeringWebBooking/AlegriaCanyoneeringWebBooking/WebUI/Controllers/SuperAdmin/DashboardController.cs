@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 
-
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin,Admin,Operator")]
@@ -47,7 +46,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     monthlyGuestCounts.Add(guests.Count(g => ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Month == i && ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Year == DateTime.Now.Year));
                 }
 
-                // Fetch yearly guest counts for the last 5 years
+                // --- Fetch old year data explicitly for 2018, 2019, 2020 ---
+                var oldYearLabels = new List<string> { "2018", "2019", "2020" };
+                var oldYearlyGuestCounts = new List<int>();
+
+                foreach (var yearStr in oldYearLabels)
+                {
+                    int year = int.Parse(yearStr);
+                    var count = guests.Count(g => ConvertUnixToDateTime(long.Parse(g.ArrivalDate)).Year == year);
+                    oldYearlyGuestCounts.Add(count);
+                }
+
+                // Fetch yearly guest counts for the last 5 years including current year
                 var yearlyGuestCounts = new List<int>();
                 var yearLabels = new List<string>();
                 for (int i = 0; i < 5; i++)
@@ -63,8 +73,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ViewBag.GuestsPrevMonth = guestsPrevMonth;
                 ViewBag.MonthLabels = monthLabels;
                 ViewBag.MonthlyGuestCounts = monthlyGuestCounts;
+
+                // Pass old years (2018-2020)
+                ViewBag.YearLabelsOld = oldYearLabels;
+                ViewBag.YearlyGuestCountsOld = oldYearlyGuestCounts;
+
+                // Pass last 5 years (current -4 years)
                 ViewBag.YearLabels = yearLabels;
                 ViewBag.YearlyGuestCounts = yearlyGuestCounts;
+
                 ViewBag.GuestDates = guests.Select(g => g.ArrivalDate).ToList(); // Pass Unix timestamps to the view
 
                 return View();
@@ -78,7 +95,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-        // Helper method to convert Unix timestamp to DateTime (if needed in other places)
+        // Helper method to convert Unix timestamp to DateTime
         private DateTime ConvertUnixToDateTime(long unixTimestamp)
         {
             return DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;

@@ -8,34 +8,29 @@
 <head>
     <meta charset="utf-8" />
     <title>Batch Guest Print</title>
-    <!-- External CSS -->
     <link href="/css/Printwristbond.css" rel="stylesheet" />
     <link rel="icon" href="/images/alegrialogo2025.jpeg" type="image/png" />
 </head>
 <body>
 
-    <!-- Print Button - Visible on screen, hidden during print -->
     <button id="printBtn" onclick="window.print()">🖨️ Print Tickets</button>
-
 
     <div id="ticketsContainer">
         @foreach (var g in Model)
         {
             var batchId = Guid.NewGuid().ToString("N");
             <div class="ticket">
-                <!-- Left Section: Light Blue Background with Logo and QR Side by Side (40mm) -->
+                <!-- Left Section: 80mm width -->
                 <div class="ticket-left">
                     <div class="logo-qr-container">
-                        <!-- Logo with Border Radius -->
                         <div class="logo">
                             <img src="/images/alegrialogo2025.jpeg" alt="Alegria Canyoneering Logo"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                             <div class="logo-placeholder" style="display: none;">
-                                ALEGRIA<br>CANYONEERING
+                  
                             </div>
                         </div>
 
-                        <!-- QR Code Section with Border Radius -->
                         @if (!string.IsNullOrEmpty(g.QRBase64))
                         {
                             <div class="qr">
@@ -54,8 +49,7 @@
                     </div>
                 </div>
 
-                <!-- Right Section: White Background for Guest Info (220mm) -->
-
+                <!-- Right Section: 180mm width -->
                 <div class="ticket-right">
                     <div class="operator-name">@g.Operators</div>
                     <div class="guest-info">
@@ -65,7 +59,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         }
     </div>
@@ -89,7 +82,6 @@
             erroredImages++;
             console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
         }
-
     </script>
 
 </body>

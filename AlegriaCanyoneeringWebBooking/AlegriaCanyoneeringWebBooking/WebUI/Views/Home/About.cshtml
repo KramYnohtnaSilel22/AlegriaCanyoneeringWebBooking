@@ -173,8 +173,9 @@
     <div class="flex justify-between items-center w-full px-6 pt-6 mb-8">
         <!-- Logo -->
         <div class="flex items-center gap-4">
-            <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-16 w-auto object-contain" />
+            <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-32 w-auto object-contain" />
         </div>
+
 
         <!-- Back/Login Button -->
         @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
@@ -205,25 +206,52 @@
             </p>
         </div>
 
-        <!-- App Purpose -->
+        <!-- How to Use This App -->
         <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise mb-10">
             <h4 class="text-xl font-semibold text-primary-600 mb-3 flex items-center">
-                <i class="bi bi-window me-2 text-primary-600"></i> What is This App?
+                <i class="bi bi-list-ol me-2 text-primary-600"></i> How to Use This App
             </h4>
-            <p class="text-gray-700 text-lg leading-relaxed">
-                This app focuses on web booking and helps operators manage <strong>New Bookings</strong>,
-                <strong>Reservations</strong>, and <strong>Guest Booked</strong> efficiently.
-                It bridges the gap between operators and guests — allowing easy coordination, faster response,
-                and better guest experience.
-            </p>
-            <div class="bg-primary-100 text-black mt-4 p-4 rounded-lg">
-                <i class="bi bi-lightbulb me-2 text-primary-600"></i>
-                <strong>Did You Know?</strong> Over 90% of guests prefer booking online when the process is quick and user-friendly!
+
+            <ol class="list-decimal list-inside space-y-3 text-gray-700 text-lg leading-relaxed">
+                <li>
+                    <strong>Sign In or Register:</strong> The <em>Super Admin</em> creates operator accounts and provides the login credentials to each operator.
+                    Operators can then <strong>sign in</strong> using those credentials to access their booking dashboard.
+                </li>
+
+                <li>
+                    <strong>Add New Bookings:</strong> Use the <em>“New Booking”</em> feature to record guest details, dates, and preferences.
+                </li>
+                <li>
+                    <strong>Save Guest:</strong> After adding a new booking, go to the <em>“Save Guest”</em> section.
+                    Here, you can <strong>add another guest</strong> under the same booking or <strong>cancel</strong> if you don’t want to save the guest information.
+                </li>
+                <li>
+                    <strong>Open Reserve Booking:</strong> Go to the <em>Reserve Booking</em> section to manage guests arriving or confirming their reservations.
+                </li>
+                <li>
+                    <strong>Scan Guest QR Code:</strong> Each guest has a unique QR code — scan it to quickly retrieve their booking details.
+                </li>
+                <li>
+                    <strong>Confirm Booking:</strong> After scanning, a confirmation popup will appear. Choose <em>“Yes”</em> to confirm the reservation or <em>“No”</em> to cancel.
+                </li>
+                <li>
+                    <strong>View Booked Guests:</strong> Go to the <em>Booked Guest</em> page. You can <strong>search by date</strong> to see who has booked for the current day and
+                    <strong>print the batch list</strong> for easy reference or record-keeping.
+                </li>
+            </ol>
+
+            <div class="bg-primary-100 text-black mt-5 p-4 rounded-lg flex items-start">
+                <i class="bi bi-lightbulb me-2 text-primary-600 text-xl"></i>
+                <p>
+                    <strong>Tip:</strong> Always confirm and save guest information properly to ensure accurate booking records and smooth QR confirmation during check-in.
+                </p>
             </div>
         </div>
 
+
+
         <!-- Mission and Vision -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+  @*       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-1">
                 <h4 class="text-xl font-semibold text-red-600 mb-3 flex items-center">
                     <i class="bi bi-bullseye me-2"></i> Our Mission
@@ -241,7 +269,7 @@
                 </p>
             </div>
         </div>
-
+ *@
         <!-- Testimonials -->
         <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-3 mb-10 text-center">
             <h4 class="text-xl font-semibold text-green-600 mb-4">
@@ -251,15 +279,15 @@
                 <div class="carousel-inner text-center">
                     <div class="carousel-item active">
                         <blockquote class="text-gray-600 text-lg italic">“This app streamlined our entire booking process. It’s so intuitive!”</blockquote>
-                        <footer class="mt-2 text-sm text-gray-500">— Jane Santos</footer>
+                        <footer class="mt-2 text-sm text-gray-500">Nikk Alvin Barrioquinto</footer>
                     </div>
                     <div class="carousel-item">
                         <blockquote class="text-gray-600 text-lg italic">“Our response time improved by 50%. Highly recommended!”</blockquote>
-                        <footer class="mt-2 text-sm text-gray-500">— Carlos D. </footer>
+                        <footer class="mt-2 text-sm text-gray-500">Jude Lequido </footer>
                     </div>
                     <div class="carousel-item">
                         <blockquote class="text-gray-600 text-lg italic">“A guest-friendly platform that actually works. Simple and effective.”</blockquote>
-                        <footer class="mt-2 text-sm text-gray-500">— Maria L.</footer>
+                        <footer class="mt-2 text-sm text-gray-500">Bryan Montemayor</footer>
                     </div>
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
