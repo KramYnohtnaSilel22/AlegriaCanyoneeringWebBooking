@@ -3,7 +3,6 @@
     padding: 20px;
     max-width: 100%;
     overflow-x: auto;
-    /* REMOVED: border: 2px solid #000; */
     box-sizing: border-box;
 }
 
@@ -51,123 +50,125 @@
     background-color: #f5f5f5;
 }
 
-#tourismReportTable {
+
+/* TABLE */
+#operatorReportTable {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
     margin-top: 20px;
-    page-break-inside: avoid;
 }
 
-    #tourismReportTable th,
-    #tourismReportTable td {
+    /* Header, Body, Footer lines same as Nationality */
+    #operatorReportTable th,
+    #operatorReportTable td {
         border: 2px solid #000;
         padding: 10px;
         text-align: center;
         vertical-align: middle;
     }
 
-    #tourismReportTable thead {
-        page-break-after: avoid;
-        display: table-header-group;
-    }
-
-    #tourismReportTable tbody {
-        page-break-inside: avoid;
-    }
-
-    #tourismReportTable tfoot {
-        page-break-before: avoid;
-        display: table-footer-group;
-    }
-
-    #tourismReportTable tr {
-        page-break-inside: avoid;
-    }
-
-    #tourismReportTable thead th {
+    #operatorReportTable thead th {
         background-color: #e0e0e0;
         font-weight: bold;
         position: sticky;
         top: 0;
     }
 
-    #tourismReportTable tfoot td {
+    #operatorReportTable tbody td {
+        background-color: #fff;
+    }
+
+    #operatorReportTable tfoot td {
         background-color: #f5f5f5;
         font-weight: bold;
     }
 
+/* Note text */
 .note-text {
     font-size: 12px;
     margin-top: 10px;
-    margin-bottom: 0; /* ADDED: Remove extra space at bottom */
     font-style: italic;
     page-break-inside: avoid;
 }
 
-/* PDF-specific styles */
+/* Responsive (same as nationality) */
+@media (max-width: 768px) {
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px !important;
+    }
+
+    #filterForm {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .btn-group {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    #operatorReportTable {
+        font-size: 11px;
+        min-width: 650px;
+    }
+
+        #operatorReportTable th,
+        #operatorReportTable td {
+            padding: 6px;
+            white-space: nowrap;
+        }
+}
+
+/* Print same format as Nationality */
 @media print {
+    .card-header,
+    .btn,
+    .btn-group {
+        display: none !important;
+    }
+
     .report-container {
         padding: 10px;
-        page-break-inside: avoid;
-        /* REMOVED: border: 2px solid #000 !important; */
     }
 
     .report-title-box {
-        margin-bottom: 10px;
         padding: 10px;
-        page-break-inside: avoid;
+        margin-bottom: 10px;
     }
 
         .report-title-box h3 {
             font-size: 18px;
-            margin: 0 0 3px 0;
         }
 
-        .report-title-box p {
-            font-size: 10px;
-        }
-
-    .info-grid {
-        margin-bottom: 10px;
-        page-break-inside: avoid;
-    }
-
-    .info-cell {
-        padding: 5px;
-        font-size: 11px;
-    }
-
-    #tourismReportTable {
+    #operatorReportTable {
         font-size: 10px;
         margin-top: 10px;
         page-break-inside: avoid;
     }
 
-        #tourismReportTable th,
-        #tourismReportTable td {
+        #operatorReportTable th,
+        #operatorReportTable td {
             padding: 4px;
             border: 1px solid #000;
-        }
-
-        #tourismReportTable thead {
-            display: table-header-group;
-            page-break-after: avoid;
-        }
-
-        #tourismReportTable tfoot {
-            display: table-footer-group;
-            page-break-before: avoid;
-        }
-
-        #tourismReportTable tbody tr {
-            page-break-inside: avoid;
         }
 
     .note-text {
         font-size: 9px;
         margin-top: 5px;
         margin-bottom: 0;
-        page-break-inside: avoid;
+    }
+
+    @page {
+        size: portrait;
+        margin: 0.5cm;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: none !important;
     }
 }

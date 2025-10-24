@@ -155,63 +155,59 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
-        public IActionResult Operator(DateTime? dateFrom = null, DateTime? dateTo = null)
+        public IActionResult Operator(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
         {
             var fromDate = dateFrom ?? DateTime.Today;
             var toDate = dateTo ?? DateTime.Today;
 
+            // 🗓️ Save to ViewBag for date pickers
+            ViewBag.Filter = filter;
             ViewBag.DateFrom = fromDate.ToString("yyyy-MM-dd");
             ViewBag.DateTo = toDate.ToString("yyyy-MM-dd");
 
-            // Load all guests with operator information
+            // 🔹 Load all guests with operator info
             var allGuests = _context.Guests
                 .Include(g => g.Operators)
-                .AsEnumerable()
                 .ToList();
 
-            // Filter by date range
+            // 🔹 Filter guests by date range
             var guests = allGuests
                 .Where(g =>
                 {
-                    try
-                    {
-                        var guestDate = DateTime.Parse(g.Date);
-                        return guestDate.Date >= fromDate.Date && guestDate.Date <= toDate.Date;
-                    }
-                    catch
-                    {
+                    if (!DateTime.TryParse(g.Date, out var guestDate))
                         return false;
-                    }
+                    return g.Operators != null &&
+                           guestDate.Date >= fromDate.Date &&
+                           guestDate.Date <= toDate.Date;
                 })
                 .ToList();
 
-            // Group by operator
+            // 🔹 Group guests by operator business name
             var operatorReport = guests
-                .Where(g => g.OperatorId.HasValue && g.Operators != null)
-                .GroupBy(g => new { g.OperatorId, g.Operators.BusinessName })
+                .Where(g => !string.IsNullOrWhiteSpace(g.Gender) && g.Operators != null)
+                .GroupBy(g => g.Operators.BusinessName.Trim())
                 .Select((g, index) => new
                 {
                     Seq = index + 1,
-                    OperatorName = g.Key.BusinessName,
-                    Male = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "male"),
-                    Female = g.Count(x => x.Gender != null && x.Gender.Trim().ToLower() == "female"),
+                    BusinessName = g.Key,
+                    Male = g.Count(x => x.Gender.Trim().ToLower() == "male"),
+                    Female = g.Count(x => x.Gender.Trim().ToLower() == "female"),
                     Total = g.Count()
                 })
                 .OrderByDescending(x => x.Total)
                 .ToList();
 
-            // Calculate totals
+            // 🔹 Compute totals
             ViewBag.TotalMale = operatorReport.Sum(x => x.Male);
             ViewBag.TotalFemale = operatorReport.Sum(x => x.Female);
-            ViewBag.GrandTotal = operatorReport.Sum(x => x.Total);
+            ViewBag.TotalEnding = operatorReport.Sum(x => x.Total);
 
-            // Convert to ViewModel for consistency
+            // 🔹 Convert to ViewModel
             var viewModel = operatorReport.Select(x => new TourismReportViewModel
             {
-                Label = x.OperatorName,
-                ThisProvinceMale = x.Male,
-                ThisProvinceFemale = x.Female,
-                OtherProvinceMale = x.Total
+                Label = x.BusinessName,
+                OtherProvinceMale = x.Male,
+                OtherProvinceFemale = x.Female
             }).ToList();
 
             return View(viewModel);
