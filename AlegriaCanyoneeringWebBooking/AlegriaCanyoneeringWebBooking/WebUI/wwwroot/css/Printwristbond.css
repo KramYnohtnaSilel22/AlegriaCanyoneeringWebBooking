@@ -39,6 +39,7 @@ body {
     margin: 50px auto 0;
     padding: 0;
     background: white;
+
 }
 
 /* Single Ticket */
@@ -62,6 +63,7 @@ body {
     justify-content: center;
     padding: 4mm;
     box-sizing: border-box;
+    border: 2px solid;
 }
 
 /* Container for logo and QR side by side */
@@ -149,6 +151,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    border: 2px solid;
 
 }
 
