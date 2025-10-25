@@ -29,9 +29,29 @@ namespace AlegriaCanyoneeringWebBooking
                 v => v.HasValue ? v.Value.ToString() : null,            // Model -> DB
                 v => string.IsNullOrEmpty(v) ? (int?)null : int.Parse(v) // DB -> Model
             );
+            modelBuilder.Entity<Batch>(entity =>
+            {
 
+
+
+
+                // Apply conversion for OperatorId
+                entity.Property(e => e.OperatorId)
+                      .HasConversion(operatorIdConverter)
+                      .HasColumnName("operatorname");
+
+                //// Define relationship with Operator
+                //entity.HasOne(e => e.Operators)
+                //      .WithMany()
+                //      .HasForeignKey(e => e.OperatorId)
+                //      .HasPrincipalKey(o => o.Id);
+            });
             modelBuilder.Entity<Guest>(entity =>
             {
+
+             
+
+
                 // Apply conversion for OperatorId
                 entity.Property(e => e.OperatorId)
                       .HasConversion(operatorIdConverter)
@@ -169,6 +189,8 @@ namespace AlegriaCanyoneeringWebBooking
 
             modelBuilder.Entity<Nationality>().ToTable("nationalities");
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
+
+
             // Removed Driver entity configuration
             // modelBuilder.Entity<Driver>().ToTable("driver_details");
             //modelBuilder.Entity<Guide>().ToTable("tourguide_details");
