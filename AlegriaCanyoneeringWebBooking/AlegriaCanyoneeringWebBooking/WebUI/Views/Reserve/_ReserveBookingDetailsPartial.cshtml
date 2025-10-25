@@ -1,121 +1,68 @@
-﻿@model GuestDetailsViewModel
+﻿@using AlegriaCanyoneeringWebBooking.Models
+@model GuestDetailsViewModel
+@{
+    var allGuests = new List<Guest>();
+    if (Model.Guest != null) allGuests.Add(Model.Guest);
+    if (Model.GuestsInBatch != null)
+        allGuests.AddRange(Model.GuestsInBatch.Where(g => g.BookingStatus != 1));
+}
 
 @Html.AntiForgeryToken()
 
 @{
-    // Helper function to format ArrivalDate
     string FormatArrivalDate(string unixTimestamp)
     {
-        if (string.IsNullOrEmpty(unixTimestamp))
-            return "N/A";
-
+        if (string.IsNullOrEmpty(unixTimestamp)) return "N/A";
         if (long.TryParse(unixTimestamp, out var unix))
         {
-            // Convert Unix timestamp to local time
             var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
-
-            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt");
         }
-
         return unixTimestamp;
     }
 }
 
 <div class="container py-5">
-    <!-- Guest Info Card -->
-    <div class="card-header bg-lg text-secondary rounded-top-4 d-flex justify-content-between align-items-center py-3 px-4">
-        <div class="d-flex align-items-center gap-2">
-            <i class="fas fa-user fa-lg"></i>
-            <h5 class="mb-0 fw-bold">Primary Guest Info</h5>
-            <span class="badge bg-secondary text-dark"></span>
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">Guest List</h5>
+
         </div>
 
-        <!-- Booking Status Badge -->
-        <span class="badge
-                    @(Model.Guest.BookingStatus == 0 ? "bg-warning text-dark" : "bg-success")
-                    text-capitalize px-3 py-2 rounded-pill">
-            @(Model.Guest.BookingStatus == 2 ? "Reserved" : Model.Guest.BookingStatus)
-        </span>
-    </div>
-
-    <div class="card-body p-4">
-        <h2 class="fw-bold text-dark mb-3">@Model.Guest.Fullname</h2>
-
-        <div class="row g-3">
-            <div class="col-md-6">
-                <small class="text-muted">Gender</small>
-                <div>@Model.Guest.Gender</div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">Age</small>
-                <div>@Model.Guest.Age</div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">Contact Number</small>
-                <div>@Model.Guest.ContactNumber</div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">Nationality</small>
-                <div>@Model.Guest.NationalityType</div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">National Status</small>
-                <div>@(Model.Guest.NationalityEntity?.NatName ?? "N/A")</div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">Arrival Date</small>
-                <div>@FormatArrivalDate(Model.Guest.ArrivalDate)</div>
-            </div>
-        </div>
-    </div>
-
- @*    <div class="card-footer bg-white d-flex rounded-bottom-4 p-3">
-        <a asp-action="reservebooking" class="btn btn-outline-secondary rounded-pill px-4 d-flex align-items-center gap-2 ms-auto">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-    </div> *@
-
-    @if (Model.GuestsInBatch != null && Model.GuestsInBatch.Any(g => g.BookingStatus != 1)) // Exclude canceled guests
-    {
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table id="companionsTable" class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="text-center"></th>
-                                <th>Full Name</th>
-                                <th>Age</th>
-                                <th>Gender</th>
-                                <th>Nationality Status</th>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="companionsTable" class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            
+                            <th>Full Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Nationality</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var guest in allGuests)
+                        {
+                            <tr data-guest-row="@guest.Id" class="@(guest.Id == Model.Guest.Id ? "table-primary" : "")">
+                             
+                                <td>@guest.Fullname</td>
+                                <td>@guest.Age</td>
+                                <td>@guest.Gender</td>
+                                <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                <td>
+                                    <span class="badge @(guest.Id == Model.Guest.Id ? "badge-primary" : "badge-info") text-capitalize px-3 py-2 rounded-pill">
+                                        @(guest.Id == Model.Guest.Id ? "Primary ✦" : "Companion")
+                                    </span>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var guest in Model.GuestsInBatch.Where(g => g.BookingStatus != 1))
-                            {
-                                <tr data-guest-row="@guest.Id">
-                                    <td class="text-center">
-                                       
-                                    </td>
-                                    <td>@guest.Fullname</td>
-                                    <td>@guest.Age</td>
-                                    <td>@guest.Gender</td>
-                                    <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
-    }
-    else
-    {
-        <div class="alert alert-info text-center rounded-3 shadow-sm py-4 fs-5">
-            <i class="fas fa-info-circle me-2"></i>
-            No active companions in this booking yet.
-        </div>
-    }
+    </div>
 </div>
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
@@ -123,3 +70,54 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+<style>
+    #companionsTable {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+        #companionsTable tbody tr:hover {
+            background-color: #f2f7ff;
+        }
+
+        #companionsTable thead {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+    .badge-primary {
+        background-color: #0d6efd;
+        color: #fff;
+    }
+
+    .badge-info {
+        background-color: #cfe2ff;
+        color: #0d6efd;
+    }
+
+    .cancel-btn:hover {
+        background-color: #dc3545;
+        color: #fff;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    @@media (max-width: 576px) {
+        #companionsTable td:nth-child(3), #companionsTable th:nth-child(3) {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        $('#companionsTable').DataTable({
+            responsive: true,
+            pageLength: 5,
+            lengthMenu: [5, 10, 25],
+            columnDefs: [{ orderable: false, targets: 0 }],
+            language: { searchPlaceholder: "Search guest...", search: "" }
+        });
+
+     
+</script>

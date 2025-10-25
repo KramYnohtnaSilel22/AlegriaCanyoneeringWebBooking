@@ -145,6 +145,8 @@
             @* ✅ For Super Admin and Admin - Reports Dropdown *@
             @if (User.IsInRole("Admin") || User.IsInRole("Super Admin"))
             {
+
+                <div class="section-title">Reports</div>
                 <div class="nav-item mt-2">
                     <!-- Dropdown Toggle -->
                     <a class="nav-link d-flex justify-content-between align-items-center text-white fw-semibold"
@@ -152,24 +154,29 @@
                        data-bs-toggle="collapse"
                        role="button"
                        aria-expanded="false"
-                       aria-controls="reportsSubmenu">
+                       aria-controls="reportsSubmenu"
+                    >
+
                         <span><i class="bi bi-bar-chart-line-fill me-2"></i> Reports</span>
                         <i class="bi bi-chevron-down small toggle-icon"></i>
                     </a>
                     <!-- Dropdown Menu -->
            
                     <div class="collapse ms-3 mt-1" id="reportsSubmenu">
-                        <a class="nav-link text-white d-flex align-items-center py-1"
+                        <a class="d-block py-1 text-white text-decoration-none d-flex align-items-center"
                            asp-controller="Reports" asp-action="Guest">
-                            <i class="bi bi-person me-2 small"></i> Guest
+                            <i class="bi bi-person me-2"></i>
+                            <span class="submenu-text d-none d-md-inline">Guest</span>
                         </a>
-                        <a class="nav-link text-white d-flex align-items-center py-1"
+                        <a class="d-block py-1 text-white text-decoration-none d-flex align-items-center"
                            asp-controller="Reports" asp-action="Nationality">
-                            <i class="bi bi-globe me-2 small"></i> Nationality
+                            <i class="bi bi-globe me-2"></i>
+                            <span class="submenu-text d-none d-md-inline">Nationality</span>
                         </a>
-                        <a class="nav-link text-white d-flex align-items-center py-1"
+                        <a class="d-block py-1 text-white text-decoration-none d-flex align-items-center"
                            asp-controller="Reports" asp-action="Operator">
-                            <i class="bi bi-building me-2 small"></i> Operator
+                            <i class="bi bi-building me-2"></i>
+                            <span class="submenu-text d-none d-md-inline">Operator</span>
                         </a>
                     </div>
 
