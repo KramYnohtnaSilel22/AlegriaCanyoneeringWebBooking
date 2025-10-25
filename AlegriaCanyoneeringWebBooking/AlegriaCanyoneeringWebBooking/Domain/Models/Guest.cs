@@ -82,6 +82,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Area { get; set; }
 
         [Column("ContactNum")]
+        [StringLength(11, MinimumLength = 11)]
         public string? ContactNumber { get; set; }
 
         [Column("Id")]
@@ -92,10 +93,10 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Column("operatorid")]
         public int? OperatorId { get; set; }
-
+        
         public Operator? Operators { get; set; }
         [NotMapped] public string? QRBase64 { get; set; }
         [NotMapped] public string? QRText { get; set; }
-
+      
     }
 }
