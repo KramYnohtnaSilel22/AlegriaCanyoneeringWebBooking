@@ -6,21 +6,34 @@
 
 <a asp-action="Create" class="btn btn-primary mb-3">Create New</a>
 
-<table id="mainTable" class="table table-bordered table-striped">
-    <thead class="table-light">
-        <tr>
-            <th>Owner Name</th>
-            <th>Gender</th>
-            <th>Business Name</th>
-            <th>Business Permit</th>
-            <th>Location</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-</table>
+<div class="table-responsive">
+    <table id="mainTable" class="table table-bordered table-striped table-sm align-middle w-100">
+        <thead class="table-light">
+            <tr>
+                <th>Owner Name</th>
+                <th>Gender</th>
+                <th>Business Name</th>
+                <th>Business Permit</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+    </table>
+</div>
 
 @section Scripts {
+    <!-- DataTables core -->
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+
+    <!-- DataTables Bootstrap 5 integration -->
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- DataTables Responsive extension -->
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
     <script>
         $(document).ready(function () {
             $('#mainTable').DataTable({
@@ -39,33 +52,43 @@
                     }
                 },
                 columns: [
-                    { data: 'ownerName' },
-                    { data: 'gender' },
-                    { data: 'businessName' },
-                    { data: 'bussPermit' },
-                    { data: 'location' },
-                           {
-            data: 'status',
-            render: function (data) {
-                if (data === 1) {
-                    return '<span class="badge bg-success">Active</span>';
-                } else {
-                    return '<span class="badge bg-danger">Inactive</span>';
-                }
-            }
-        },
+                    { data: 'ownerName', className: 'text-break' },
+                    { data: 'gender', className: 'd-none d-sm-table-cell' },
+                    { data: 'businessName', className: 'text-break' },
+                    { data: 'bussPermit', className: 'd-none d-md-table-cell' },
+                    { data: 'location', className: 'd-none d-md-table-cell text-break' },
+                    {
+                        data: 'status',
+                        render: function (data) {
+                            return data === 1
+                                ? '<span class="badge bg-success">Active</span>'
+                                : '<span class="badge bg-danger">Inactive</span>';
+                        },
+                        className: 'text-center'
+                    },
                     {
                         data: 'operatorId',
                         orderable: false,
                         searchable: false,
                         render: function (data) {
-                            return `<a href="/OperatorList/Edit/${data}" class="btn btn-sm btn-warning">     <i class="fas fa-edit"></i> Edit</a>`;
-                        }
+                            return `
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="/OperatorList/Edit/${data}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i> <span class="d-none d-sm-inline">Edit</span>
+                                    </a>
+                                </div>`;
+                        },
+                        className: 'text-center'
                     }
                 ],
                 pageLength: 10,
                 lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
-                responsive: true,
+                responsive: {
+                    details: {
+                        type: 'column',
+                        target: 'tr'
+                    }
+                },
                 autoWidth: false,
                 language: {
                     emptyTable: "No operators found."
