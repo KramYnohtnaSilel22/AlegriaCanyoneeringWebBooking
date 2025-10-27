@@ -8,28 +8,37 @@
     var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
     var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
 
-    // Parse safely for display
     DateTime.TryParse(dateFrom, out var fromDt);
     DateTime.TryParse(dateTo, out var toDt);
 }
 
 <div class="card mt-4 shadow">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap">
-        <h5 class="mb-0">Operator Visitor Report</h5>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <form method="get" asp-action="Operator" id="filterForm" class="d-flex align-items-center gap-2">
-                <label class="text-white fw-bold mb-0">From:</label>
-                <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom" class="form-control" style="width:auto;" required />
-                <label class="text-white fw-bold mb-0">To:</label>
-                <input type="date" id="dateTo" name="dateTo" value="@dateTo" class="form-control" style="width:auto;" required />
-                <button type="submit" class="btn btn-light">Search</button>
+    <!-- Header -->
+    <div class="card-header bg-primary text-white d-flex flex-wrap justify-content-between align-items-center">
+        <h5 class="mb-2 mb-md-0">Operator Visitor Report</h5>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Filter Form -->
+            <form method="get" asp-action="Operator" id="filterForm" class="d-flex flex-wrap align-items-center gap-2">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">From:</label>
+                    <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom" class="form-control form-control-sm" required />
+                </div>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">To:</label>
+                    <input type="date" id="dateTo" name="dateTo" value="@dateTo" class="form-control form-control-sm" required />
+                </div>
+                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
+                    <i class="bi bi-search"></i> Search
+                </button>
             </form>
 
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
+            <!-- Print Dropdown -->
+            <div class="btn-group mt-2 mt-sm-0">
+                <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                     <i class="bi bi-printer"></i> Print
                 </button>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="#" id="btnDownloadPDF"><i class="bi bi-file-earmark-pdf"></i> Print as PDF</a></li>
                     <li><a class="dropdown-item" href="#" id="btnDownloadExcel"><i class="bi bi-file-earmark-excel"></i> Print as Excel</a></li>
                 </ul>
@@ -37,38 +46,38 @@
         </div>
     </div>
 
+    <!-- Body -->
     <div class="card-body report-container">
         <!-- Title -->
         <div class="report-title-box text-center mb-4">
-            <h3>Operator Visitor Record</h3>
-            <p>(Summary of visitors by operator</p>
+            <h3 class="fw-bold">Operator Visitor Record</h3>
+            <p class="text-muted small mb-0">(Summary of visitors by operator)</p>
         </div>
 
         <!-- Info Grid -->
         <div class="info-grid mb-3">
-            <div class="info-row">
-                <div class="info-cell fw-bold">Date From:</div>
-                <div class="info-cell">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
-                <div class="info-cell fw-bold">Date To:</div>
-                <div class="info-cell">@toDt.ToString("dddd, MMMM d, yyyy")</div>
-            </div>
-            <div class="info-row">
-                <div class="info-cell fw-bold">Municipality:</div>
-                <div class="info-cell">ALEGRIA, CEBU</div>
-                <div class="info-cell fw-bold">Attraction:</div>
-                <div class="info-cell">Canyoneering Adventure</div>
+            <div class="row g-2">
+                <div class="col-6 col-md-3 fw-bold">Date From:</div>
+                <div class="col-6 col-md-3">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
+                <div class="col-6 col-md-3 fw-bold">Date To:</div>
+                <div class="col-6 col-md-3">@toDt.ToString("dddd, MMMM d, yyyy")</div>
+
+                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
+                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
+                <div class="col-6 col-md-3 fw-bold">Attraction:</div>
+                <div class="col-6 col-md-3">Canyoneering Adventure</div>
             </div>
         </div>
 
-        <!-- Table -->
+        <!-- Responsive Table -->
         <div class="table-responsive">
-            <table id="operatorReportTable" class="table table-bordered text-center">
+            <table id="operatorReportTable" class="table table-bordered table-striped table-sm text-center align-middle">
                 <thead class="table-primary">
                     <tr>
-                        <th rowspan="2" style="vertical-align: middle;">Seq.</th>
-                        <th rowspan="2" style="vertical-align: middle;">OPERATOR</th>
+                        <th rowspan="2">Seq.</th>
+                        <th rowspan="2">OPERATOR</th>
                         <th colspan="2">NUMBER OF GUESTS</th>
-                        <th rowspan="2" style="vertical-align: middle;">ENDING TOTAL</th>
+                        <th rowspan="2">ENDING TOTAL</th>
                     </tr>
                     <tr>
                         <th>MALE</th>
@@ -83,6 +92,7 @@
                             <tr>
                                 <td colspan="5" class="text-center py-4">No data available for the selected date range</td>
                             </tr>
+                            ;
                         }
                         else
                         {
@@ -90,11 +100,12 @@
                             {
                                 <tr>
                                     <td>@seq</td>
-                                    <td class="text-start">@item.Label</td>
+                                    <td class="text-start text-break">@item.Label</td>
                                     <td>@item.OtherProvinceMale</td>
                                     <td>@item.OtherProvinceFemale</td>
                                     <td><strong>@(item.OtherProvinceMale + item.OtherProvinceFemale)</strong></td>
                                 </tr>
+                                ;
                                 seq++;
                             }
                         }
@@ -111,7 +122,7 @@
             </table>
         </div>
 
-        <p class="note-text mt-3">
+        <p class="note-text mt-3 small text-muted">
             <em>Note: Total number must be recorded. Operator entries are required. Report totals must be recorded.</em>
         </p>
     </div>

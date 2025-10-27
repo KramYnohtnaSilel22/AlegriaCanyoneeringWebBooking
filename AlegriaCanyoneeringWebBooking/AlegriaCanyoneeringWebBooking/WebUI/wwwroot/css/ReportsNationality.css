@@ -317,3 +317,21 @@
         border: none !important;
     }
 }
+@media (max-width: 576px) {
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+
+    #filterForm label {
+        font-size: 0.9rem;
+    }
+
+    .report-title-box h3 {
+        font-size: 1.2rem;
+    }
+
+    table th, table td {
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+}

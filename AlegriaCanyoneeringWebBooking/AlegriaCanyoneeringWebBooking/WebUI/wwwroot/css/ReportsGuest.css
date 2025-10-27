@@ -171,3 +171,29 @@
         page-break-inside: avoid;
     }
 }
+@media (max-width: 576px) {
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+
+    #filterForm label {
+        font-size: 0.9rem;
+    }
+
+    .report-title-box h3 {
+        font-size: 1.2rem;
+    }
+}
+/* Mobile-friendly table adjustments */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #tourismReportTable th, #tourismReportTable td {
+        white-space: nowrap;
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
