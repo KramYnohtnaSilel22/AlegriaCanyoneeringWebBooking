@@ -13,7 +13,7 @@
 </head>
 <body>
 
-    <button id="printBtn" onclick="window.print()">🖨️ Print Tickets</button>
+    <button id="printBtn" onclick="window.print()">🖨️ Print Wristbands</button>
 
     <div id="ticketsContainer">
         @foreach (var g in Model)
@@ -64,6 +64,10 @@
     </div>
 
     <script>
+        // Automatically trigger print dialog when the page loads
+              window.onload = function() {
+                  window.print();
+              };
         let totalImages = 0;
         let loadedImages = 0;
         let erroredImages = 0;
