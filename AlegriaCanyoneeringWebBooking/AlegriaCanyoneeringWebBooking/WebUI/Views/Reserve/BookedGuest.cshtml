@@ -268,13 +268,25 @@
                     .fail(function () { showToast('Failed to load guest details.'); });
             });
 
-                 $('#batchesTableContainer').on('click', '.print-batch-details', function () {
+        $('#batchesTableContainer').on('click', '.print-batch-details', function () {
             const batchCode = $(this).data('batch');
-            const printUrl = '@Url.Action("PrintBatchGuests", "Reserve")' + '?batchCode=' + encodeURIComponent(batchCode);
-            const printWindow = window.open(printUrl, '_blank');
-            if (!printWindow) {
-                alert('Please allow popups to view print preview.');
-            }
+
+            // Temporary form nga mo-submit gamit POST
+            const form = $('<form>', {
+                action: '@Url.Action("PrintBatchGuests", "Reserve")',
+                method: 'POST',
+                target: '_blank' // mo-open sa bag-ong tab
+            });
+
+            // Hidden input para sa batchCode
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'batchCode',
+                value: batchCode
+            }).appendTo(form);
+
+            // I-append sa body, i-submit, dayon i-remove
+            form.appendTo('body').submit().remove();
         });
 
 
