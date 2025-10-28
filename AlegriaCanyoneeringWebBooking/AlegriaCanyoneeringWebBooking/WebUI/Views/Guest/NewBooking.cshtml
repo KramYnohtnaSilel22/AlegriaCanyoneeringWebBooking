@@ -34,16 +34,17 @@
 
 @if (TempData["ToastMessage"] != null)
 {
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-        <div id="toastMessage" class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+        <div id="guestToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">
-                    <i class="fas fa-check-circle me-2"></i> @TempData["ToastMessage"]
+                    Guest added successfully!
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>
+
 }
 
 
@@ -197,143 +198,204 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 
 <script>
+function validateImage(input) {
+    const file = input.files[0];
+    const errorDiv = document.getElementById("fileError");
+    errorDiv.textContent = ""; // Clear previous error
 
-    function validateImage(input) {
-         const file = input.files[0];
-         const errorDiv = document.getElementById("fileError");
-         errorDiv.textContent = ""; // Clear previous error
+    if (!file) return;
 
-         if (!file) return;
+    const maxSizeMB = 1; // 1MB max size
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
-         const maxSizeMB = 1; // Set to 1MB
-         const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+        errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
+        input.value = ""; // Clear the input
+    }
+}
 
-         if (file.size > maxSizeBytes) {
-             errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
-             input.value = ""; // Clear the input
-         }
-     }
+$(function () {
+    const $type = $('#NationalityType');
+    const $list = $('#NationalityId');
+    const $operatorInput = $('#OperatorInput');
+    const $tourAreaInput = $('#TourAreaInput');
+    const $bookingDateInput = $('#BookingDateInput');
+    const $arrivalDateInput = $('#ArrivalDateInput');
+    const $batchGuestsJson = $('#BatchGuestsJson');
+    const $saveBtn = $('#saveBtn');
+    const $totalGuestsCount = $('#totalGuestsCount');
+    const $currentBatch = $('#CurrentBatch');
 
-    $(function () {
-        const $type = $('#NationalityType');
-        const $list = $('#NationalityId');
-        const $operatorInput = $('#OperatorInput');
-        const $tourAreaInput = $('#TourAreaInput');
-        const $bookingDateInput = $('#BookingDateInput');
-        const $arrivalDateInput = $('#ArrivalDateInput');
-        const $batchGuestsJson = $('#BatchGuestsJson');
-        const $saveBtn = $('#saveBtn');
-        const $totalGuestsCount = $('#totalGuestsCount');
-        const $currentBatch = $('#CurrentBatch');
+    const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+    const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
 
-        let foreignNationalitiesCache = null;
-        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-        const selectedNationalityId = '@Model.NewGuest.NationalityId';
+    // ===== Update Nationality Dropdown =====
+    function updateNationalityIdOptions(choice) {
+        $list.empty();
+        const selectedNationalityId = localStorage.getItem('selectedNationalityId');
 
-        function updateNationalityIdOptions(choice) {
-            $list.empty();
-            if (choice === 'Local') {
-                // ✅ CHANGED: Use 1 and 2 instead of 1000 and 1001
-                $list.append(new Option('Within Cebu Province', '1'));
-                $list.append(new Option('Outside Cebu Province', '2'));
+        if (choice === 'Local') {
+            $list.append(new Option('Within Cebu Province', '1'));
+            $list.append(new Option('Outside Cebu Province', '2'));
 
-                // Set selected value if matches
-                if (selectedNationalityId === '1' || selectedNationalityId === '2') {
-                    $list.val(selectedNationalityId);
-                }
-            } else if (choice === 'Foreign') {
-                $list.append(new Option('Loading...', ''));
-                $.getJSON(getNationalitiesUrl)
-                    .done(function (data) {
-                        $list.empty();
-                        $list.append(new Option('-- Select Nationality --', ''));
-                        data.forEach(function (item) {
-                            const option = new Option(item.natName, item.id);
-                            if (selectedNationalityId === item.id.toString()) option.selected = true;
-                            $list.append(option);
-                        });
-                    })
-                    .fail(function () {
-                        $list.empty().append(new Option('Error loading', ''));
+            if (selectedNationalityId === '1' || selectedNationalityId === '2') {
+                $list.val(selectedNationalityId);
+            }
+
+        } else if (choice === 'Foreign') {
+            $list.append(new Option('Loading...', ''));
+
+            $.getJSON(getNationalitiesUrl)
+                .done(function (data) {
+                    $list.empty();
+                    $list.append(new Option('-- Select Nationality --', ''));
+
+                    data.forEach(function (item) {
+                        $list.append(new Option(item.natName, item.id));
                     });
-            } else {
-                $list.append(new Option('-- Select --', ''));
-            }
+
+                    // Apply saved id after options load
+                    setTimeout(() => {
+                        if (selectedNationalityId) {
+                            $list.val(selectedNationalityId);
+                        }
+                    }, 50);
+
+                })
+                .fail(function () {
+                    $list.empty().append(new Option('Error loading', ''));
+                });
+
+        } else {
+            $list.append(new Option('-- Select --', ''));
         }
+    }
 
-        // Initialize nationalities
-        updateNationalityIdOptions($type.val());
+    // ===== Lock Inputs if readonly =====
+    function lockInputs() {
+        $bookingDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+        $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+        $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+        $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+        $currentBatch.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+    }
 
-        // Debounce for nationality type switch
-        let nationalityTypeChangeTimeout;
-        $type.on('change', function () {
-            clearTimeout(nationalityTypeChangeTimeout);
-            nationalityTypeChangeTimeout = setTimeout(() => {
-                updateNationalityIdOptions($(this).val());
-            }, 250);
+    // ===== Display total guests =====
+    function updateTotalGuestsDisplay(guestsBatch) {
+        $totalGuestsCount.text(guestsBatch.length);
+        $saveBtn.prop('disabled', guestsBatch.length < 1);
+    }
+
+    // ===== Prefill last guest =====
+    function prefillLastGuest(guest) {
+        $('[name="NewGuest.OperatorId"]').val(guest.OperatorId);
+        $('[name="NewGuest.Fullname"]').val(guest.Fullname);
+        $('[name="NewGuest.Age"]').val(guest.Age);
+        $('[name="NewGuest.Gender"]').val(guest.Gender);
+        $('[name="NewGuest.ContactNumber"]').val(guest.ContactNumber);
+        $('[name="NewGuest.NationalityType"]').val(guest.NationalityType).trigger('change');
+
+        // Delay to ensure dropdown options are loaded
+        setTimeout(() => {
+            $('[name="NewGuest.NationalityId"]').val(guest.NationalityId);
+        }, 300);
+
+        $('[name="NewGuest.Area"]').val(guest.Area);
+        $('[name="NewGuest.Date"]').val(guest.Date);
+        $('[name="NewGuest.ArrivalDate"]').val(guest.ArrivalDate);
+    }
+
+    // ===== Toast notification =====
+function showToast(message) {
+    const toast = $('<div class="toast"></div>').text(message)
+        .css({
+            position: 'fixed',
+            top: '20px',       // ✅ change from bottom to top
+            right: '20px',     // keeps it on the right side
+            background: '#4caf50',
+            color: '#fff',
+            padding: '10px 20px',
+            borderRadius: '5px',
+            zIndex: 9999,
+            display: 'none'
         });
+    $('body').append(toast);
+    toast.fadeIn(400).delay(1500).fadeOut(400, function () { $(this).remove(); });
+}
 
-        // Apply readonly if set from ViewBag
-        const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
-        if (isReadonly) {
-            $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-            $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-            $bookingDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-            $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-        }
 
-        // ===============================
-        // ✅ LOCAL STORAGE LOGIC START
-        // ===============================
+    // ===== Initialization =====
+    const savedType = localStorage.getItem('selectedNationalityType') || $type.val();
+    $type.val(savedType);
+    updateNationalityIdOptions(savedType);
 
-        let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
+    if (isReadonly) lockInputs();
 
-        function updateTotalGuestsDisplay() {
-            $totalGuestsCount.text(guestsBatch.length);
-            $saveBtn.prop('disabled', guestsBatch.length < 1);
-        }
+    let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
 
-        $('#addGuestBtn').click(function () {
-            const guest = {
-                OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
-                Fullname: $('[name="NewGuest.Fullname"]').val(),
-                Age: $('[name="NewGuest.Age"]').val(),
-                Gender: $('[name="NewGuest.Gender"]').val(),
-                ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
-                NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-                // ✅ FIXED: Now uses 1 and 2 for Local nationalities
-                NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
-                Area: $('[name="NewGuest.Area"]').val(),
-                Date: $('[name="NewGuest.Date"]').val(),
-                ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
-            };
+    if (guestsBatch.length > 0) {
+        lockInputs();
+        updateTotalGuestsDisplay(guestsBatch);
+        prefillLastGuest(guestsBatch[guestsBatch.length - 1]);
+    } else {
+        updateTotalGuestsDisplay(guestsBatch);
+    }
 
-            if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
-                !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
-                alert('Please fill in all required fields.');
-                return;
-            }
+    // ===== Event Handlers =====
+    $type.on('change', function () {
+        const selectedType = $(this).val();
+        localStorage.setItem('selectedNationalityType', selectedType);
 
-            guestsBatch.push(guest);
-            localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
-            updateTotalGuestsDisplay();
+        // Clear previously saved nationality ID on type change
+        localStorage.removeItem('selectedNationalityId');
 
-            // Lock inputs after adding first guest
-            $bookingDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-            $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-            $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-            $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-            $currentBatch.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-        });
-
-        $('#guestForm').on('submit', function () {
-            $batchGuestsJson.val(JSON.stringify(guestsBatch));
-            localStorage.removeItem('guestsBatch');
-        });
-
-        updateTotalGuestsDisplay();
-
-        // Hide overlay after load
-        $('#loadingOverlay').fadeOut(300);
+        updateNationalityIdOptions(selectedType);
     });
+
+    $list.on('change', function () {
+        localStorage.setItem('selectedNationalityId', $(this).val());
+    });
+
+    $('#addGuestBtn').click(function () {
+        const guest = {
+            OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
+            Fullname: $('[name="NewGuest.Fullname"]').val(),
+            Age: $('[name="NewGuest.Age"]').val(),
+            Gender: $('[name="NewGuest.Gender"]').val(),
+            ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
+            NationalityType: $('[name="NewGuest.NationalityType"]').val(),
+            NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
+            Area: $('[name="NewGuest.Area"]').val(),
+            Date: $('[name="NewGuest.Date"]').val(),
+            ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
+        };
+
+        if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
+            !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
+        guestsBatch.push(guest);
+        localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
+        localStorage.setItem('selectedNationalityType', guest.NationalityType);
+        localStorage.setItem('selectedNationalityId', guest.NationalityId);
+
+        updateTotalGuestsDisplay(guestsBatch);
+        lockInputs();
+        prefillLastGuest(guest);
+
+        showToast(`Guest "${guest.Fullname}" added successfully!`);
+    });
+
+    $('#guestForm').on('submit', function () {
+        $batchGuestsJson.val(JSON.stringify(guestsBatch));
+        localStorage.removeItem('guestsBatch');
+        localStorage.removeItem('selectedNationalityType');
+        localStorage.removeItem('selectedNationalityId');
+    });
+
+    // Hide overlay after load
+    $('#loadingOverlay').fadeOut(300);
+});
 </script>

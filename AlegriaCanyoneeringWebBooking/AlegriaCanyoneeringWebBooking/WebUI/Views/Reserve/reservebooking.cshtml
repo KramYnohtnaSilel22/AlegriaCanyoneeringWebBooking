@@ -303,13 +303,13 @@
                                     onclick="confirmScannedBatch('${batch.replace(/'/g, "\\'")}')">
                                 <i class="fas fa-check-circle me-2"></i>Yes
                             </button>
-                            <button class="btn btn-outline-secondary btn-sm"
+                            <button class="btn btn-outline-danger btn-sm"
                                     onclick="closeScanConfirm()">
                                 <i class="fas fa-times me-1"></i>No
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>  
             </div>
         `;
 
@@ -370,7 +370,7 @@
             dataTable.search('').draw();
         }
         // ✅ FIXED: Show info toast
-        showToast('Batch confirmation cancelled.', 'info');
+        showToast('Batch confirmation cancelled.', 'danger');
     }
 
     // ✅ Function to highlight table row
