@@ -2,14 +2,19 @@
 <link href="/css/GuestDetails.css" rel="stylesheet" />
 
 @{
+    // Helper function to format ArrivalDate
     string FormatArrivalDate(string unixTimestamp)
     {
-        if (string.IsNullOrEmpty(unixTimestamp)) return "N/A";
+        if (string.IsNullOrEmpty(unixTimestamp))
+            return "N/A";
+
         if (long.TryParse(unixTimestamp, out var unix))
         {
-            var dt = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
-            return dt.ToString("MMMM dd, yyyy hh:mm tt");
+            // Convert Unix timestamp to local time
+            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
         }
+
         return unixTimestamp;
     }
 }
