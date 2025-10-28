@@ -94,7 +94,26 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/Authentication/Login";
         options.LogoutPath = "/Authentication/Logout";
         options.AccessDeniedPath = "/Authentication/AccessDenied";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.None
+            : CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
     });
+
+// Session
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = ".Alegria.Session";
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // session timeout
+    options.Cookie.HttpOnly = true; // prevents JavaScript access
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.None
+        : CookieSecurePolicy.Always; // secure in production
+    options.Cookie.SameSite = SameSiteMode.Strict; // prevent CSRF
+});
 
 // Authorization
 builder.Services.AddAuthorization();
@@ -146,7 +165,7 @@ app.UseResponseCompression();
 app.MapControllers();
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=About}/{id?}");
+    pattern: "{controller=Home}/{action=landingpage}/{id?}");
 app.MapHub<BatchCodeHub>("/batchCodeHub");
 
 app.Run();
