@@ -63,9 +63,17 @@
         <div class="info-grid mb-3">
             <div class="row g-2">
                 <div class="col-6 col-md-3 fw-bold">Date From:</div>
-                <div class="col-6 col-md-3">@DateTime.Parse(dateFrom).ToString("dddd, MMMM d, yyyy")</div>
+                <div class="col-6 col-md-3">
+                    @(DateTime.TryParse(dateFrom, out var from)
+                                        ? from.ToString("dddd, MMMM d, yyyy")
+                                        : "N/A")
+                </div>
                 <div class="col-6 col-md-3 fw-bold">Date To:</div>
-                <div class="col-6 col-md-3">@DateTime.Parse(dateTo).ToString("dddd, MMMM d, yyyy")</div>
+                <div class="col-6 col-md-3">
+                    @(DateTime.TryParse(dateTo, out var to)
+                                        ? to.ToString("dddd, MMMM d, yyyy")
+                                        : "N/A")
+                </div>
 
                 <div class="col-6 col-md-3 fw-bold">Municipality:</div>
                 <div class="col-6 col-md-3">ALEGRIA, CEBU</div>

@@ -54,17 +54,18 @@
         let dateFromText = "";
         let dateToText = "";
 
-        if (infoGrid) {
-            const infoCells = Array.from(infoGrid.querySelectorAll(".info-cell"));
-            infoCells.forEach((cell, index) => {
-                if (cell.innerText.trim() === "Date From:" && infoCells[index + 1]) {
-                    dateFromText = infoCells[index + 1].innerText.trim();
-                }
-                if (cell.innerText.trim() === "Date To:" && infoCells[index + 1]) {
-                    dateToText = infoCells[index + 1].innerText.trim();
-                }
-            });
-        }
+        // ✅ NEW CODE - correctly reads from the grid layout
+        const infoCells = Array.from(document.querySelectorAll(".info-grid .row .col-6, .info-grid .row .col-md-3"));
+        infoCells.forEach((cell, i) => {
+            const text = cell.innerText.trim();
+            if (text === "Date From:" && infoCells[i + 1]) {
+                dateFromText = infoCells[i + 1].innerText.trim();
+            }
+            if (text === "Date To:" && infoCells[i + 1]) {
+                dateToText = infoCells[i + 1].innerText.trim();
+            }
+        });
+
 
         // Read DYNAMIC header text
         const headerRows = table.querySelectorAll("thead tr");
