@@ -54,13 +54,15 @@
             <p class="text-muted small mb-0">(Summary of visitors by operator)</p>
         </div>
 
-        <!-- Info Grid -->
-        <div class="info-grid mb-3">
+        <!-- Info Grid with DATA ATTRIBUTES -->
+        <div class="info-grid mb-3"
+             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
+             data-date-to="@toDt.ToString("MMMM d, yyyy")">
             <div class="row g-2">
                 <div class="col-6 col-md-3 fw-bold">Date From:</div>
-                <div class="col-6 col-md-3">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
+                <div class="col-6 col-md-3" id="displayDateFrom">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
                 <div class="col-6 col-md-3 fw-bold">Date To:</div>
-                <div class="col-6 col-md-3">@toDt.ToString("dddd, MMMM d, yyyy")</div>
+                <div class="col-6 col-md-3" id="displayDateTo">@toDt.ToString("dddd, MMMM d, yyyy")</div>
 
                 <div class="col-6 col-md-3 fw-bold">Municipality:</div>
                 <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
@@ -92,7 +94,6 @@
                             <tr>
                                 <td colspan="5" class="text-center py-4">No data available for the selected date range</td>
                             </tr>
-                            ;
                         }
                         else
                         {
@@ -105,7 +106,6 @@
                                     <td>@item.OtherProvinceFemale</td>
                                     <td><strong>@(item.OtherProvinceMale + item.OtherProvinceFemale)</strong></td>
                                 </tr>
-                                ;
                                 seq++;
                             }
                         }
@@ -133,5 +133,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <script src="~/js/ReportsOperator.js" asp-append-version="true"></script>
+    <script src="~/js/ReportsOperator.js?v=2" asp-append-version="true"></script>
 }

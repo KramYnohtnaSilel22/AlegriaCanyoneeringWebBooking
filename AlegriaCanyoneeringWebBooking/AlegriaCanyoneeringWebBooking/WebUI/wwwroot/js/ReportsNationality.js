@@ -138,7 +138,7 @@
         ws.getCell("A8").fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFF0F0F0" }
+            fgColor: { argb: "FFFFFFFF" }
         };
         ws.getCell("A8").border = {
             top: { style: "thin" },
@@ -160,7 +160,7 @@
         ws.getCell("B8").fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFF0F0F0" }
+            fgColor: { argb: "FFFFFFFF" }
         };
         ws.getCell("B8").border = {
             top: { style: "thin" },
@@ -182,7 +182,7 @@
         ws.getCell("C8").fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFF0F0F0" }
+            fgColor: { argb: "FFFFFFFF" }
         };
         ws.getCell("C8").border = {
             top: { style: "thin" },
@@ -198,7 +198,7 @@
         ws.getCell("E8").fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFF0F0F0" }
+            fgColor: { argb: "FFFFFFFF" }
         };
         ws.getCell("E8").border = {
             top: { style: "thin" },
@@ -220,7 +220,7 @@
         ws.getCell("C9").fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFF0F0F0" }
+            fgColor: { argb: "FFFFFFFF" }
         };
         ws.getCell("C9").border = {
             top: { style: "thin" },
@@ -235,7 +235,7 @@
         ws.getCell("D9").fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFF0F0F0" }
+            fgColor: { argb: "FFFFFFFF" }
         };
         ws.getCell("D9").border = {
             top: { style: "thin" },
@@ -310,7 +310,7 @@
                 cell.fill = {
                     type: "pattern",
                     pattern: "solid",
-                    fgColor: { argb: "FFE8E8E8" }
+                    fgColor: { argb: "FFFFFFFF" }
                 };
                 cell.border = {
                     top: { style: "thin" },

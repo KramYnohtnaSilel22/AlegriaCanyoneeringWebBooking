@@ -231,7 +231,7 @@
                 cell.fill = {
                     type: "pattern",
                     pattern: "solid",
-                    fgColor: { argb: "FFD6EAF8" }
+                    fgColor: { argb: "FFFFFFFF" }
                 };
                 cell.border = {
                     top: { style: "thin" },
@@ -310,7 +310,7 @@
             ws.getCell(`A${totalIdx}`).fill = {
                 type: "pattern",
                 pattern: "solid",
-                fgColor: { argb: "FFE8E8E8" }
+                fgColor: { argb: "FFFFFFFF" }
             };
             ws.getCell(`A${totalIdx}`).border = {
                 top: { style: "thin" },
@@ -332,7 +332,7 @@
                 cell.fill = {
                     type: "pattern",
                     pattern: "solid",
-                    fgColor: { argb: "FFE8E8E8" }
+                    fgColor: { argb: "FFFFFFFF" }
                 };
                 cell.border = {
                     top: { style: "thin" },

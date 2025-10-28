@@ -49,22 +49,44 @@
             return;
         }
 
-        // Read the DISPLAYED date text from the info-grid
-        const infoGrid = document.querySelector(".info-grid");
-        let dateFromText = "";
-        let dateToText = "";
+        // ✅ MULTI-METHOD DATE READING WITH FALLBACKS
+        let dateFromText = "N/A";
+        let dateToText = "N/A";
 
-        if (infoGrid) {
-            const infoCells = Array.from(infoGrid.querySelectorAll(".info-cell"));
-            infoCells.forEach((cell, index) => {
-                if (cell.innerText.trim() === "Date From:" && infoCells[index + 1]) {
-                    dateFromText = infoCells[index + 1].innerText.trim();
-                }
-                if (cell.innerText.trim() === "Date To:" && infoCells[index + 1]) {
-                    dateToText = infoCells[index + 1].innerText.trim();
-                }
-            });
+        // Method 1: Try data attributes - but we'll skip this for full format
+        const infoGrid = document.querySelector(".info-grid");
+
+        // Method 2: Read from display elements by ID (FULL FORMAT with day of week)
+        const displayFrom = document.getElementById("displayDateFrom");
+        const displayTo = document.getElementById("displayDateTo");
+
+        if (displayFrom) {
+            dateFromText = displayFrom.innerText.trim(); // Keep full: "Tuesday, October 28, 2025"
         }
+        if (displayTo) {
+            dateToText = displayTo.innerText.trim(); // Keep full: "Tuesday, October 28, 2025"
+        }
+
+        // Method 3: Fallback - read from grid divs
+        if ((dateFromText === "N/A" || dateToText === "N/A") && infoGrid) {
+            const allDivs = Array.from(infoGrid.querySelectorAll("div"));
+
+            for (let i = 0; i < allDivs.length; i++) {
+                const text = allDivs[i].innerText.trim();
+
+                if (text === "Date From:" && i + 1 < allDivs.length && dateFromText === "N/A") {
+                    dateFromText = allDivs[i + 1].innerText.trim();
+                }
+                if (text === "Date To:" && i + 1 < allDivs.length && dateToText === "N/A") {
+                    dateToText = allDivs[i + 1].innerText.trim();
+                }
+            }
+        }
+
+        console.log("=== OPERATOR REPORT DATE DEBUG ===");
+        console.log("Date From:", dateFromText);
+        console.log("Date To:", dateToText);
+        console.log("==================================");
 
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet("Operator Report", {
@@ -110,12 +132,13 @@
 
         // ---- Title Section ----
         ws.mergeCells("A5:E5");
-        ws.getCell("A5").value = "CANYONEERING";
+        ws.getCell("A5").value = "Canyoneering Adventure";
         ws.getCell("A5").font = { bold: true, size: 11 };
         ws.getCell("A5").alignment = { horizontal: "center", vertical: "middle" };
 
+        // ✅ USE FULL DYNAMIC DATES HERE
         ws.mergeCells("A6:E6");
-        ws.getCell("A6").value = `${dateFromText} to ${dateToText}`;
+        ws.getCell("A6").value = `${dateFromText} - ${dateToText}`;
         ws.getCell("A6").font = { bold: true, size: 10 };
         ws.getCell("A6").alignment = { horizontal: "center", vertical: "middle" };
 
