@@ -17,7 +17,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View();
         }
 
-        public IActionResult landingpage()
+        public IActionResult LandingPage()
         {
             return View();
         }

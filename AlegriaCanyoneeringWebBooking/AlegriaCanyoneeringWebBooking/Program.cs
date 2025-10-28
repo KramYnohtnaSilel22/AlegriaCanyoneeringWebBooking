@@ -165,7 +165,7 @@ app.UseResponseCompression();
 app.MapControllers();
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=landingpage}/{id?}");
+    pattern: "{controller=Home}/{action=LandingPage}/{id?}");
 app.MapHub<BatchCodeHub>("/batchCodeHub");
 
 app.Run();
