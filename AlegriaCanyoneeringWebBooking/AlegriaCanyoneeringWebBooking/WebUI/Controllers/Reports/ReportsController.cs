@@ -20,6 +20,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var fromDate = dateFrom ?? DateTime.Today;
             var toDate = dateTo ?? DateTime.Today;
 
+
+            // Store formatted dates for the View
             ViewBag.DateFrom = fromDate.ToString("yyyy-MM-dd");
             ViewBag.DateTo = toDate.ToString("yyyy-MM-dd");
 

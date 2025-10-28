@@ -83,7 +83,7 @@
         // ---- Column widths (5 columns - WITH SEQ) ----
         ws.columns = [
             { width: 8 },   // Seq
-            { width: 40 },  // Operator/Business Name (WIDER)
+            { width: 40 },  // Operator
             { width: 12 },  // Male
             { width: 12 },  // Female
             { width: 15 }   // Ending Total
@@ -147,7 +147,7 @@
         };
 
         ws.mergeCells("B8:B9");
-        ws.getCell("B8").value = "OPERATOR  ";
+        ws.getCell("B8").value = "OPERATOR";
         ws.getCell("B8").font = { bold: true, size: 10 };
         ws.getCell("B8").alignment = { horizontal: "center", vertical: "middle" };
         ws.getCell("B8").fill = {
