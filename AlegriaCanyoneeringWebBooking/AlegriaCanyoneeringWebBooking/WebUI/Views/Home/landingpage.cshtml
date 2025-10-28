@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "About Us";
+    ViewData["Title"] = "Landing Page";
     Layout = "Layout_Login";
 }
 <!DOCTYPE html>
@@ -151,15 +151,12 @@
 
         /* Responsive adjustments */
         @@media (max-width: 640px) {
-            #floatingMap
-
-        {
-            width: 90vw;
-            right: 5%;
-            bottom: 90px;
-            height: 180px;
-        }
-
+            #floatingMap {
+                width: 90vw;
+                right: 5%;
+                bottom: 90px;
+                height: 180px;
+            }
         }
     </style>
 
@@ -176,11 +173,12 @@
             <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-32 w-auto object-contain" />
         </div>
 
-  <a asp-area="" asp-controller="Dashboard" asp-action="Index"
-               class="btn btn-outline-secondary btn-lg rounded-pill px-4 flex items-center gap-2 shadow-sm">
-                <i class="bi bi-arrow-left"></i> Back
+
+            <a href="/Authentication/Login"
+               class="btn btn-outline-primary btn-lg rounded-pill px-4 flex items-center gap-2 shadow-sm">
+                <i class="bi bi-box-arrow-in-right"></i> Login
             </a>
-       
+ 
     </div>
 
     <!-- Main Content -->
@@ -240,7 +238,7 @@
 
 
         <!-- Mission and Vision -->
-  @*       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        @*       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-1">
                 <h4 class="text-xl font-semibold text-red-600 mb-3 flex items-center">
                     <i class="bi bi-bullseye me-2"></i> Our Mission
