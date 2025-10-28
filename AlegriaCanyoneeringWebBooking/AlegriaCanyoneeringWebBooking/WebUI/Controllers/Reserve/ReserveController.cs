@@ -29,7 +29,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 throw new Exception("Cannot connect to database. Please check your connection string.");
             }
         }
-        [HttpGet]
+        [HttpGet, HttpPost]
         public IActionResult PrintBatchGuests(string batchCode)
         {
             if (string.IsNullOrEmpty(batchCode))

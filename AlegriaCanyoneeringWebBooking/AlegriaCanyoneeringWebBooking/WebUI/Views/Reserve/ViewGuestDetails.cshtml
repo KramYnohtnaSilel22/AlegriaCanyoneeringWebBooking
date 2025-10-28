@@ -178,12 +178,30 @@
 <script src="~/js/ViewGuestDetails.js" asp-append-version="true" defer></script>
 <script>
     document.getElementById('printButton').addEventListener('click', function () {
-        // Get the batchCode from the model or another source
         var batchCode = '@Model.FirstOrDefault()?.Guest.Batch';
 
         if (batchCode) {
-            // Redirect to the PrintBatchGuests action with the batchCode parameter
-            window.location.href = '/Reserve/PrintBatchGuests?batchCode=' + batchCode;
+            // Create a form element dynamically
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/Reserve/PrintBatchGuests';
+            form.target = '_blank'; // Open in new tab
+
+            // Create an input element for batchCode
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'batchCode';
+            input.value = batchCode;
+
+            // Add input to the form
+            form.appendChild(input);
+
+            // Add form to the body and submit
+            document.body.appendChild(form);
+            form.submit();
+
+            // Remove the form after submitting
+            document.body.removeChild(form);
         } else {
             alert('Batch code is not available.');
         }
