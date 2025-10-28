@@ -49,8 +49,28 @@
             return;
         }
 
-        const dateFrom = $("#dateFrom").val() || "";
-        const dateTo = $("#dateTo").val() || "";
+        // ✅ READ FORMATTED DATES FROM THE INFO-GRID
+        const infoGrid = document.querySelector(".info-grid");
+        let dateFromText = "N/A";
+        let dateToText = "N/A";
+
+        if (infoGrid) {
+            const allDivs = Array.from(infoGrid.querySelectorAll("div"));
+
+            for (let i = 0; i < allDivs.length; i++) {
+                const text = allDivs[i].innerText.trim();
+
+                if (text === "Date From:" && allDivs[i + 1]) {
+                    dateFromText = allDivs[i + 1].innerText.trim();
+                }
+                if (text === "Date To:" && allDivs[i + 1]) {
+                    dateToText = allDivs[i + 1].innerText.trim();
+                }
+            }
+        }
+
+        console.log("Date From:", dateFromText); // ✅ Debug log
+        console.log("Date To:", dateToText);     // ✅ Debug log
 
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet("Nationality Report", {
@@ -96,12 +116,13 @@
 
         // ---- Title Section ----
         ws.mergeCells("A5:E5");
-        ws.getCell("A5").value = "CANYONEERING";
+        ws.getCell("A5").value = "Canyoneering Adventure";
         ws.getCell("A5").font = { bold: true, size: 11 };
         ws.getCell("A5").alignment = { horizontal: "center", vertical: "middle" };
 
+        // ✅ USE DYNAMIC DATES HERE
         ws.mergeCells("A6:E6");
-        ws.getCell("A6").value = `September 1-25, 2025`;
+        ws.getCell("A6").value = `${dateFromText} - ${dateToText}`;
         ws.getCell("A6").font = { bold: true, size: 10 };
         ws.getCell("A6").alignment = { horizontal: "center", vertical: "middle" };
 
@@ -231,7 +252,7 @@
                 const cells = Array.from(tr.querySelectorAll("td")).map(td => td.innerText.trim());
                 if (cells.length >= 5 && !cells[1].includes("No data")) {
                     const row = ws.addRow([
-                        Number(cells[0]) || 0,  // ✅ Seq
+                        Number(cells[0]) || 0,  // Seq
                         cells[1],               // Nationality
                         Number(cells[2]) || 0,  // Male
                         Number(cells[3]) || 0,  // Female
