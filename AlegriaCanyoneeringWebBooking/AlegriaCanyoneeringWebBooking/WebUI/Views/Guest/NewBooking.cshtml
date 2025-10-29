@@ -85,7 +85,7 @@
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Fullname" class="form-label">Full Name</label>
-                            <input asp-for="NewGuest.Fullname" class="form-control" placeholder="e.g., Juan Dela Cruz" />
+                            <input asp-for="NewGuest.Fullname" class="form-control" placeholder="e.g., Juan Dela Cruz" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')" />
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Age" class="form-label">Age</label>

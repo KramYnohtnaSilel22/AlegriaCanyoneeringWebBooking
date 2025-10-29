@@ -10,10 +10,11 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int Id { get; set; }
 
 
-
         [StringLength(1000, ErrorMessage = "Full name cannot exceed 1000 characters")]
         [Display(Name = "Full Name")]
-        public string? Fullname { get; set; }   // <-- Remove [Required] for batch
+        [RegularExpression(@"^[A-Za-z\s]+$", ErrorMessage = "Full name can only contain letters and spaces")]
+        public string? Fullname { get; set; }
+
 
         [RegularExpression(@"^\d+$", ErrorMessage = "Age must contain only numbers.")]
         [StringLength(3, ErrorMessage = "Age cannot exceed 3 digits.")]
