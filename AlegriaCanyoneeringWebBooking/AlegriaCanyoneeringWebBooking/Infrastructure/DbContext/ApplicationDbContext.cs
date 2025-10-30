@@ -1,4 +1,5 @@
 ﻿
+using AlegriaCanyoneeringWebBooking.Domain.Models;
 using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -20,6 +21,7 @@ namespace AlegriaCanyoneeringWebBooking
         //public DbSet<Guide> Guides { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Operator> Operators { get; set; }
+        public DbSet<GuestBriefing> GuestBriefings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -196,7 +198,7 @@ namespace AlegriaCanyoneeringWebBooking
             //modelBuilder.Entity<Guide>().ToTable("tourguide_details");
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<Operator>().ToTable("tbl_operator_mobile");
-
+            modelBuilder.Entity<GuestBriefing>().ToTable("tbl_guestbreifing");
         }
     }
 }
