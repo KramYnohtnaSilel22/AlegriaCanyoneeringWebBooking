@@ -1,0 +1,52 @@
+﻿@using AlegriaCanyoneeringWebBooking.Domain.Models
+@model IEnumerable<GuestBriefing>
+
+@{
+    ViewData["Title"] = "Guest Briefings";
+}
+
+<h2>Guest Briefings</h2>
+
+
+<div class="table-responsive">
+    <table id="example1" class="table table-bordered table-striped table-sm align-middle">
+        <thead class="table-light">
+        <tr>
+@*             <th>ID</th> *@
+            <th>Wristband Code</th>
+            <th>Guest Name</th>
+            <th>Arrival</th>
+            <th>Departure</th>
+            <th>Date Code</th>
+            <th>Image</th>
+                <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var guest in Model)
+        {
+            <tr>
+            @*     <td>@guest.BGuestID</td> *@
+                <td>@guest.BWristBondCode</td>
+                <td>@guest.BGuestName</td>
+                <td>@guest.BDateArrival?.ToString("g")</td>
+                <td>@guest.BDateDeparture?.ToString("g")</td>
+                <td>@guest.BDateCode</td>
+                <td>
+                    @if (guest.BGuestImage != null)
+                    {
+                        <img src="data:image/png;base64,@Convert.ToBase64String(guest.BGuestImage)" width="60" />
+                    }
+                </td>
+                    <td>
+                        <form asp-action="DeleteConfirmed" method="post" style="display:inline;"
+                              onsubmit="return confirm('Are you sure you want to delete this record?');">
+                            <input type="hidden" name="id" value="@guest.BGuestID" />
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+            </tr>
+        }
+    </tbody>
+</table>
+</div>
