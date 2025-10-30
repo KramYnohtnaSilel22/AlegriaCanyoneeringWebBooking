@@ -75,7 +75,11 @@
         }
              @if (User.IsInRole("Admin") || User.IsInRole("Super Admin"))
         {
-            <a asp-controller="Reserve" asp-action="ScanGuestInfo"><i class="bi bi-clipboard-check me-2"></i> <span>Scanning Info</span></a>
+            <a asp-controller="Reserve" asp-action="ScanGuestInfo">
+                <i class="bi bi-person-check-fill me-2"></i>
+                <span>Guest Check-In</span>
+            </a>
+
 
                   }
 
