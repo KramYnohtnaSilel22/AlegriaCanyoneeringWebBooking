@@ -83,8 +83,11 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Area { get; set; }
 
         [Column("ContactNum")]
-        [StringLength(11, MinimumLength = 11)]
+        [StringLength(11, MinimumLength = 11, ErrorMessage = "Contact number must be exactly 11 digits")]
+        [RegularExpression(@"^\d{11}$", ErrorMessage = "Contact number must contain only numbers")]
+        [Display(Name = "Mobile Number")]
         public string? ContactNumber { get; set; }
+
 
         [Column("Id")]
         public int? id { get; set; }
