@@ -6,7 +6,16 @@ namespace AlegriaCanyoneeringWebBooking
 {
     public class GuestDetailsViewModel
     {
-
+        public string FullName { get; set; } = string.Empty;
+        public DateTime? ArrivalDate { get; set; }
+        public DateTime? DepartureDate { get; set; }
+        public string? Operators { get; set; }
+        public string? Age { get; set; }
+        public string? Nationality { get; set; }
+        public string WristbandCode { get; set; } = string.Empty;
+        public string? QRText { get; set; }
+        public string? GuestImageBase64 { get; set; }
+        public string? QRBase64 { get; set; } // optional if QR image available
         public Guest Guest { get; set; }
         public List<Guest> GuestsInBatch { get; set; }
         // Add this:

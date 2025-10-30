@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Authorization;
+using AlegriaCanyoneeringWebBooking.Domain.Models;
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     public class ReserveController : Controller
@@ -35,19 +36,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (string.IsNullOrEmpty(batchCode))
                 return BadRequest("Batch code is required.");
 
+            // Get all guests in the batch + eager load Operators
             var rawGuests = _context.Guests
-                .Include(g => g.Operators) // ADD THIS LINE - Eager load Operators
+                .Include(g => g.Operators)
                 .Where(g => g.Batch == batchCode)
                 .ToList();
 
+            // Map guests with QR = RFIDCode
             var guests = rawGuests.Select(g => new
             {
                 FullName = g.Fullname ?? "Unknown Guest",
                 ArrivalDate = ParseUnixTimestamp(g.ArrivalDate),
-                QRBase64 = !string.IsNullOrEmpty(g.QRText)
-                           ? GenerateQRCodeBase64(g.QRText)
-                           : GenerateQRCodeBase64(batchCode),
-                Operators = g.Operators?.BusinessName ?? "No Operators" // ADD THIS LINE
+                WristbandCode = g.RFIDCode, // use RFIDCode as unique QR
+                QRBase64 = !string.IsNullOrEmpty(g.RFIDCode)
+                           ? GenerateQRCodeBase64(g.RFIDCode)
+                           : null, // fallback if missing
+                Operators = g.Operators?.BusinessName ?? "No Operators"
             }).ToList();
 
             if (!guests.Any())
@@ -57,6 +61,79 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View("PrintBatchGuests", guests);
         }
+
+
+
+        [HttpGet]
+        public IActionResult ScanGuestInfo(string? rfidCode)
+        {
+            if (string.IsNullOrEmpty(rfidCode))
+                return View("ScanGuestInfo"); // show empty scan page
+
+            // Pad RFID to 11 digits for consistent storage
+            string wristBondCode = rfidCode.PadLeft(11, '0');
+
+            // Get guest info by RFIDCode including Operators & NationalityEntity
+            var guestInfo = _context.Guests
+                .Include(g => g.Operators)
+                .Include(g => g.NationalityEntity) // join nationality table
+                .Where(g => g.RFIDCode == rfidCode)
+                .Select(g => new
+                {
+                    g.Fullname,
+                    g.ArrivalDate,
+                    g.RFIDCode,
+                    g.Date,
+                    g.Age,
+                 
+                    OperatorName = g.Operators != null ? g.Operators.BusinessName : "No Operator",
+                    NationalityName = g.NationalityEntity != null ? g.NationalityEntity.NatName : "Unknown"
+                })
+                .FirstOrDefault();
+
+            if (guestInfo == null)
+                return NotFound("Guest not found for this RFID.");
+
+            // Save to GuestBriefing if not exists
+            var briefing = _context.GuestBriefings
+                .FirstOrDefault(b => b.BWristBondCode == wristBondCode);
+
+            if (briefing == null)
+            {
+                briefing = new GuestBriefing
+                {
+                    BWristBondCode = wristBondCode,
+                    BGuestName = guestInfo.Fullname,
+                    BDateArrival = DateTime.TryParse(guestInfo.Date, out DateTime parsedDate)
+                                    ? parsedDate
+                                    : DateTime.Now,
+                    BDateDeparture = DateTime.Now,
+                    BDateCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()
+                };
+
+                _context.GuestBriefings.Add(briefing);
+                _context.SaveChanges();
+            }
+
+            // Pass info to ViewModel
+            var model = new GuestDetailsViewModel
+            {
+                FullName = guestInfo.Fullname,
+                ArrivalDate = DateTime.TryParse(guestInfo.Date, out DateTime parsedArrival)
+                                ? parsedArrival
+                                : DateTime.Now,
+                WristbandCode = wristBondCode,
+                QRText = briefing.BDateCode,
+                Operators = guestInfo.OperatorName,
+                Age = guestInfo.Age,
+                Nationality = guestInfo.NationalityName,
+             
+            };
+
+            return View("ScanGuestInfo", model);
+        }
+
+
         private DateTime? ParseUnixTimestamp(string? unixTimestamp)
         {
             if (string.IsNullOrEmpty(unixTimestamp))
