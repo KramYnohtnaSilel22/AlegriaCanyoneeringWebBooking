@@ -1,4 +1,5 @@
 ﻿@model GuestDetailsViewModel?
+
 @{
     Layout = null;
 }
@@ -113,39 +114,43 @@
 
     <h2>Scan Guest Info</h2>
 
+    <!-- ✅ FIXED: must match controller parameter name 'qrCodeValue' -->
     <form method="get" asp-action="ScanGuestInfo">
-        <input type="text" name="rfidCode" placeholder="Scan RFID here" autofocus />
+        <input type="text" name="qrCodeValue" placeholder="Scan QR / ID here" autofocus />
         <button type="submit">Search</button>
     </form>
 
     @if (Model != null)
     {
         <div id="guestInfo" class="guest-info">
+            <h3>Guest Information</h3>
             <p><strong>Operator:</strong> @Model.Operators</p>
-            <p><strong>FullName:</strong> @Model.FullName</p>
+            <p><strong>Full Name:</strong> @Model.FullName</p>
             <p><strong>Arrival:</strong> @(Model.ArrivalDate?.ToLocalTime().ToString("M/d/yyyy h:mm tt"))</p>
             <p><strong>Age:</strong> @Model.Age</p>
             <p><strong>Nationality:</strong> @Model.Nationality</p>
 
-            @if (!string.IsNullOrEmpty(Model.GuestImageBase64))
-            {
-                <img src="@Model.GuestImageBase64" alt="Guest Image" width="150" style="border-radius: 8px; margin-top: 1rem;" />
-            }
-            else
-            {
-                <img src="~/images/default_guest.png" alt="Default Guest Image" width="150" style="border-radius: 8px; margin-top: 1rem;" />
-            }
+            <div style="text-align:center; margin-top:1rem;">
+                @if (!string.IsNullOrEmpty(Model.GuestImageBase64))
+                {
+                    <img src="@Model.GuestImageBase64" alt="Guest Image" width="150" style="border-radius: 8px;" />
+                }
+                else
+                {
+                    <img src="~/images/default_guest.png" alt="Default Guest Image" width="150" style="border-radius: 8px;" />
+                }
+            </div>
         </div>
     }
 
     <script>
-        // Fade out the guest info after 5 seconds
+        // Fade out guest info after 5 seconds
         window.onload = function () {
             const guestDiv = document.getElementById('guestInfo');
             if (guestDiv) {
                 setTimeout(() => {
                     guestDiv.classList.add('fade-out');
-                }, 5000); // 5000ms = 5 seconds
+                }, 5000);
             }
         };
     </script>

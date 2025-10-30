@@ -14,6 +14,7 @@ namespace AlegriaCanyoneeringWebBooking
         public string? Nationality { get; set; }
         public string WristbandCode { get; set; } = string.Empty;
         public string? QRText { get; set; }
+
         public string? GuestImageBase64 { get; set; }
         public string? QRBase64 { get; set; } // optional if QR image available
         public Guest Guest { get; set; }
