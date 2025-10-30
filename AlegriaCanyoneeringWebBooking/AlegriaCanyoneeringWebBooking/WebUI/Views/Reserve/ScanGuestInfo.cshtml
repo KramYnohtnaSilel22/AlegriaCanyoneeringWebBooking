@@ -124,10 +124,17 @@
             <p><strong>Operator:</strong> @Model.Operators</p>
             <p><strong>FullName:</strong> @Model.FullName</p>
             <p><strong>Arrival:</strong> @(Model.ArrivalDate?.ToLocalTime().ToString("M/d/yyyy h:mm tt"))</p>
-       
             <p><strong>Age:</strong> @Model.Age</p>
             <p><strong>Nationality:</strong> @Model.Nationality</p>
-       
+
+            @if (!string.IsNullOrEmpty(Model.GuestImageBase64))
+            {
+                <img src="@Model.GuestImageBase64" alt="Guest Image" width="150" style="border-radius: 8px; margin-top: 1rem;" />
+            }
+            else
+            {
+                <img src="~/images/default_guest.png" alt="Default Guest Image" width="150" style="border-radius: 8px; margin-top: 1rem;" />
+            }
         </div>
     }
 

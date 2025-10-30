@@ -70,33 +70,36 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (string.IsNullOrEmpty(rfidCode))
                 return View("ScanGuestInfo"); // show empty scan page
 
-            // Pad RFID to 11 digits for consistent storage
             string wristBondCode = rfidCode.PadLeft(11, '0');
 
-            // Get guest info by RFIDCode including Operators & NationalityEntity
-            var guestInfo = _context.Guests
-                .Include(g => g.Operators)
-                .Include(g => g.NationalityEntity) // join nationality table
-                .Where(g => g.RFIDCode == rfidCode)
-                .Select(g => new
-                {
-                    g.Fullname,
-                    g.ArrivalDate,
-                    g.RFIDCode,
-                    g.Date,
-                    g.Age,
-                 
-                    OperatorName = g.Operators != null ? g.Operators.BusinessName : "No Operator",
-                    NationalityName = g.NationalityEntity != null ? g.NationalityEntity.NatName : "Unknown"
-                })
-                .FirstOrDefault();
+            // Get guest info including Operators, Nationality, and optional Image
+            var guestInfo = (from g in _context.Guests
+                             join img in _context.GuestImage
+                                 on wristBondCode equals img.WristbondGuestCode into gj
+                             from subImg in gj.DefaultIfEmpty() // LEFT JOIN
+                             where g.RFIDCode == rfidCode
+                             select new
+                             {
+                                 g.Fullname,
+                                 g.ArrivalDate,
+                                 g.RFIDCode,
+                                 g.Date,
+                                 g.Age,
+                                 OperatorName = g.Operators != null ? g.Operators.BusinessName : "No Operator",
+                                 NationalityName = g.NationalityEntity != null ? g.NationalityEntity.NatName : "Unknown",
+
+                                 ImageBase64 = subImg != null ? $"data:image/png;base64,{Convert.ToBase64String(subImg.Image)}" : null
+                             }).FirstOrDefault();
 
             if (guestInfo == null)
                 return NotFound("Guest not found for this RFID.");
 
             // Save to GuestBriefing if not exists
+  
+
             var briefing = _context.GuestBriefings
                 .FirstOrDefault(b => b.BWristBondCode == wristBondCode);
+
 
             if (briefing == null)
             {
@@ -108,14 +111,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                                     ? parsedDate
                                     : DateTime.Now,
                     BDateDeparture = DateTime.Now,
-                    BDateCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()
+                    BDateCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                     // store the image bytes in GuestBriefing
+        BGuestImage = guestInfo.ImageBase64 != null
+                        ? Convert.FromBase64String(guestInfo.ImageBase64.Split(',')[1])
+                        : null
                 };
 
                 _context.GuestBriefings.Add(briefing);
                 _context.SaveChanges();
             }
 
-            // Pass info to ViewModel
             var model = new GuestDetailsViewModel
             {
                 FullName = guestInfo.Fullname,
@@ -127,11 +133,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 Operators = guestInfo.OperatorName,
                 Age = guestInfo.Age,
                 Nationality = guestInfo.NationalityName,
-             
+                GuestImageBase64 = guestInfo.ImageBase64
             };
 
             return View("ScanGuestInfo", model);
         }
+
 
 
         private DateTime? ParseUnixTimestamp(string? unixTimestamp)
