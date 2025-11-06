@@ -257,7 +257,7 @@ $(function () {
             $.getJSON(getNationalitiesUrl)
                 .done(function (data) {
                     $list.empty();
-                    $list.append(new Option('-- Select Nationality --', ''));
+           
 
                     data.forEach(function (item) {
                         $list.append(new Option(item.natName, item.id));
