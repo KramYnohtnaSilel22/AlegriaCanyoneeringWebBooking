@@ -94,56 +94,68 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         //    return View("PrintBatchGuests", guests);
         //}
 
-
         [HttpGet]
         public IActionResult ScanGuestInfo(string? qrCodeValue)
         {
             if (string.IsNullOrEmpty(qrCodeValue))
-                return View("ScanGuestInfo"); // show empty scan page
+            {
+                TempData["ToastMessage"] = "Please scan a QR code before submitting.";
+                TempData["ToastType"] = "warning";
+                return View("ScanGuestInfo");
+            }
 
-            // Parse GuestID from QR Code
             if (!int.TryParse(qrCodeValue, out int guestId))
-                return BadRequest("Invalid QR code format. Must contain numeric GuestID.");
+            {
+                TempData["ToastMessage"] = "Invalid QR code format. Must contain numeric GuestID.";
+                TempData["ToastType"] = "danger";
+                return View("ScanGuestInfo");
+            }
 
-            // Step 1: Get guest by ID
             var guest = _context.Guests
                 .Include(g => g.Operators)
                 .Include(g => g.NationalityEntity)
                 .FirstOrDefault(g => g.id == guestId);
 
             if (guest == null)
-                return NotFound("Guest not found for this QR code.");
+            {
+                TempData["ToastMessage"] = "Guest not found for this QR code.";
+                TempData["ToastType"] = "danger";
+                return View("ScanGuestInfo");
+            }
 
-            // Step 2: Get guest image by RFID code (if exists)
+            // ✅ Step 1: Try to get guest image
             var guestImage = _context.GuestImage
                 .FirstOrDefault(i => i.WristbondGuestCode == guest.RFIDCode);
 
-            string? imageBase64 = guestImage != null
-                ? $"data:image/png;base64,{Convert.ToBase64String(guestImage.Image)}"
-                : null;
+            byte[] imageBytes;
+            string? imageBase64;
 
-            // Step 3: Generate padded wristband code (e.g., "011233283")
+            if (guestImage != null && guestImage.Image?.Length > 0)
+            {
+                // Use stored guest image
+                imageBytes = guestImage.Image;
+                imageBase64 = $"data:image/png;base64,{Convert.ToBase64String(imageBytes)}";
+            }
+            else
+            {
+                // ✅ Use default image when none exists
+                string defaultImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/default_guest.png");
+                imageBytes = System.IO.File.Exists(defaultImagePath)
+                    ? System.IO.File.ReadAllBytes(defaultImagePath)
+                    : Array.Empty<byte>(); // fallback to empty array if file missing
+
+                imageBase64 = $"data:image/png;base64,{Convert.ToBase64String(imageBytes)}";
+            }
+
+            // ✅ Step 2: Generate padded wristband code
             string wristBondCode = guest.RFIDCode.PadLeft(11, '0');
 
-            // Step 4: Check if briefing already exists
+            // ✅ Step 3: Check or create guest briefing
             var briefing = _context.GuestBriefings
                 .FirstOrDefault(b => b.BWristBondCode == wristBondCode && b.BGuestName == guest.Fullname);
 
             if (briefing == null)
             {
-                byte[]? imageBytes = null;
-                if (!string.IsNullOrEmpty(imageBase64) && imageBase64.Contains(','))
-                {
-                    try
-                    {
-                        imageBytes = Convert.FromBase64String(imageBase64.Split(',')[1]);
-                    }
-                    catch
-                    {
-                        imageBytes = null;
-                    }
-                }
-
                 briefing = new GuestBriefing
                 {
                     BWristBondCode = wristBondCode,
@@ -153,14 +165,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                                     : DateTime.Now,
                     BDateDeparture = DateTime.Now,
                     BDateCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-                    BGuestImage = imageBytes
+                    BGuestImage = imageBytes // ✅ always has valid bytes now
                 };
 
                 _context.GuestBriefings.Add(briefing);
                 _context.SaveChanges();
             }
 
-            // Step 5: Prepare view model
+            // ✅ Step 4: Prepare view model
             var model = new GuestDetailsViewModel
             {
                 FullName = guest.Fullname,
@@ -175,8 +187,94 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 GuestImageBase64 = imageBase64
             };
 
+            TempData["ToastMessage"] = $"Guest found successfully.";
+            TempData["ToastType"] = "success";
+
             return View("ScanGuestInfo", model);
         }
+
+        //[HttpGet]
+        //public IActionResult ScanGuestInfo(string? qrCodeValue)
+        //{
+        //    if (string.IsNullOrEmpty(qrCodeValue))
+        //        return View("ScanGuestInfo"); // show empty scan page
+
+        //    // Parse GuestID from QR Code
+        //    if (!int.TryParse(qrCodeValue, out int guestId))
+        //        return BadRequest("Invalid QR code format. Must contain numeric GuestID.");
+
+        //    // Step 1: Get guest by ID
+        //    var guest = _context.Guests
+        //        .Include(g => g.Operators)
+        //        .Include(g => g.NationalityEntity)
+        //        .FirstOrDefault(g => g.id == guestId);
+
+        //    if (guest == null)
+        //        return NotFound("Guest not found for this QR code.");
+
+        //    // Step 2: Get guest image by RFID code (if exists)
+        //    var guestImage = _context.GuestImage
+        //        .FirstOrDefault(i => i.WristbondGuestCode == guest.RFIDCode);
+
+        //    string? imageBase64 = guestImage != null
+        //        ? $"data:image/png;base64,{Convert.ToBase64String(guestImage.Image)}"
+        //        : null;
+
+        //    // Step 3: Generate padded wristband code (e.g., "011233283")
+        //    string wristBondCode = guest.RFIDCode.PadLeft(11, '0');
+
+        //    // Step 4: Check if briefing already exists
+        //    var briefing = _context.GuestBriefings
+        //        .FirstOrDefault(b => b.BWristBondCode == wristBondCode && b.BGuestName == guest.Fullname);
+
+        //    if (briefing == null)
+        //    {
+        //        byte[]? imageBytes = null;
+        //        if (!string.IsNullOrEmpty(imageBase64) && imageBase64.Contains(','))
+        //        {
+        //            try
+        //            {
+        //                imageBytes = Convert.FromBase64String(imageBase64.Split(',')[1]);
+        //            }
+        //            catch
+        //            {
+        //                imageBytes = null;
+        //            }
+        //        }
+
+        //        briefing = new GuestBriefing
+        //        {
+        //            BWristBondCode = wristBondCode,
+        //            BGuestName = guest.Fullname,
+        //            BDateArrival = DateTime.TryParse(guest.Date, out DateTime parsedDate)
+        //                            ? parsedDate
+        //                            : DateTime.Now,
+        //            BDateDeparture = DateTime.Now,
+        //            BDateCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+        //            BGuestImage = imageBytes
+        //        };
+
+        //        _context.GuestBriefings.Add(briefing);
+        //        _context.SaveChanges();
+        //    }
+
+        //    // Step 5: Prepare view model
+        //    var model = new GuestDetailsViewModel
+        //    {
+        //        FullName = guest.Fullname,
+        //        ArrivalDate = DateTime.TryParse(guest.Date, out DateTime parsedArrival)
+        //                        ? parsedArrival
+        //                        : DateTime.Now,
+        //        WristbandCode = wristBondCode,
+        //        QRText = briefing.BDateCode,
+        //        Operators = guest.Operators?.BusinessName ?? "No Operator",
+        //        Age = guest.Age,
+        //        Nationality = guest.NationalityEntity?.NatName ?? "Unknown",
+        //        GuestImageBase64 = imageBase64
+        //    };
+
+        //    return View("ScanGuestInfo", model);
+        //}
 
 
         //[HttpGet]
