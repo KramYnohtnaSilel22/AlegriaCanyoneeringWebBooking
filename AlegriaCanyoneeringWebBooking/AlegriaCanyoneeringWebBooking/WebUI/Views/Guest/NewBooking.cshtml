@@ -34,20 +34,21 @@
 
 @if (TempData["ToastMessage"] != null)
 {
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
-        <div id="guestToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    Guest added successfully!
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div id="guestToast" class="toast text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+            <div class="toast-header bg-success text-white border-0">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <small>Now</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                @TempData["ToastMessage"]
             </div>
         </div>
     </div>
 
-}
-
-
+    }
 <div class="card shadow-lg rounded-4 border-0">
     <div class="card-body p-4">
         <h4 class="text-primary mb-4 fw-semibold border-bottom pb-2 d-flex align-items-center">
@@ -315,22 +316,55 @@ $(function () {
     }
 
     // ===== Toast notification =====
-function showToast(message) {
-    const toast = $('<div class="toast"></div>').text(message)
-        .css({
-            position: 'fixed',
-            top: '20px',       // ✅ change from bottom to top
-            right: '20px',     // keeps it on the right side
-                background: '#4caf50',
-            color: '#fff',
-            padding: '10px 20px',
-            borderRadius: '5px',
-            zIndex: 9999,
-            display: 'none'
+    function showToast(message) {
+        // Create the outer toast container (like .toast-container)
+        const toastContainer = $('<div></div>')
+            .addClass('toast-container position-fixed top-0 end-0 p-3')
+            .css('z-index', 1080);
+
+        // Create the toast itself
+        const toast = $('<div></div>')
+            .addClass('toast text-white bg-success border-0')
+            .attr({
+                role: 'alert',
+                'aria-live': 'assertive',
+                'aria-atomic': 'true',
+                'data-bs-delay': 4000
+            });
+
+        // Create the toast header matching your markup
+        const toastHeader = $('<div></div>')
+            .addClass('toast-header bg-success text-white border-0')
+            .html(`
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <small>Now</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            `);
+
+        // Create the toast body with your message
+        const toastBody = $('<div></div>')
+            .addClass('toast-body')
+            .text(message);
+
+        // Append header and body to toast
+        toast.append(toastHeader, toastBody);
+
+        // Append toast to container
+        toastContainer.append(toast);
+
+        // Append container to body
+        $('body').append(toastContainer);
+
+        // Show the toast using Bootstrap's JS (assumes Bootstrap JS loaded)
+        var bsToast = new bootstrap.Toast(toast[0]);
+        bsToast.show();
+
+        // Remove toast from DOM after hidden to avoid clutter
+        toast.on('hidden.bs.toast', function () {
+            toastContainer.remove();
         });
-    $('body').append(toast);
-    toast.fadeIn(400).delay(1500).fadeOut(400, function () { $(this).remove(); });
-}
+    }
 
 
     // ===== Initialization =====

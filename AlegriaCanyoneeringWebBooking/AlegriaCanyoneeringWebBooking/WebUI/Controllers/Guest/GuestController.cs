@@ -699,19 +699,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             };
             return PartialView("_BookingDetailsPartial", model);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelGuest(int GuestId)
         {
+            // Fetch the guest by ID
             var guest = await _context.Guests.FindAsync(GuestId);
             if (guest == null)
                 return Json(new { success = false, message = "Guest not found" });
 
-            // Store batch before deleting
+            // Store batch before deleting (if required for further processing)
             var batch = guest.Batch;
 
-            // Permanent delete the guest
+            // Permanent delete the guest from the database
             _context.Guests.Remove(guest);
 
             try
@@ -723,7 +723,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = "An error occurred while deleting the guest." });
             }
 
-            // Recalculate RFID for remaining guests in the batch
+            // Recalculate RFID for remaining guests in the batch (if needed)
             var updatedGuestCount = await _context.Guests
                 .Where(g => g.Batch == batch)
                 .CountAsync();
@@ -732,7 +732,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Where(g => g.Batch == batch)
                 .ToListAsync();
 
-            // Update RFID for all guests in the batch
+            // Update RFID for all remaining guests in the batch
             foreach (var g in guestsInBatch)
             {
                 g.RFID = updatedGuestCount;
@@ -747,8 +747,59 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = "An error occurred while updating RFID for guests." });
             }
 
+            // Return success message along with the guest ID to frontend
             return Json(new { success = true, guestId = GuestId });
         }
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> CancelGuest(int GuestId)
+        //{
+        //    var guest = await _context.Guests.FindAsync(GuestId);
+        //    if (guest == null)
+        //        return Json(new { success = false, message = "Guest not found" });
+
+        //    // Store batch before deleting
+        //    var batch = guest.Batch;
+
+        //    // Permanent delete the guest
+        //    _context.Guests.Remove(guest);
+
+        //    try
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        return Json(new { success = false, message = "An error occurred while deleting the guest." });
+        //    }
+
+        //    // Recalculate RFID for remaining guests in the batch
+        //    var updatedGuestCount = await _context.Guests
+        //        .Where(g => g.Batch == batch)
+        //        .CountAsync();
+
+        //    var guestsInBatch = await _context.Guests
+        //        .Where(g => g.Batch == batch)
+        //        .ToListAsync();
+
+        //    // Update RFID for all guests in the batch
+        //    foreach (var g in guestsInBatch)
+        //    {
+        //        g.RFID = updatedGuestCount;
+        //    }
+
+        //    try
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        return Json(new { success = false, message = "An error occurred while updating RFID for guests." });
+        //    }
+
+        //    return Json(new { success = true, guestId = GuestId });
+        //}
         public async Task<IActionResult> UpdateStatus(int id, int status)
         {
             var guest = await _context.Guests.FindAsync(id);
