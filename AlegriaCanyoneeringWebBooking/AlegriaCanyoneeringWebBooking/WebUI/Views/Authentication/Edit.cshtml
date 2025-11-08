@@ -143,8 +143,48 @@
 
 @section Scripts {
     <script>
-        (() => {
-            'use strict';
+        // ===== Toast Notification Function =====
+        function showToast(message, type = 'success') {
+            let bgClass = 'bg-success', icon = 'bi-check-circle-fill', title = 'Success';
+            if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
+
+            const toastContainer = $('<div></div>')
+                .addClass('toast-container position-fixed top-0 end-0 p-3')
+                .css('z-index', 1080);
+
+            const toast = $('<div></div>')
+                .addClass(`toast text-white ${bgClass} border-0`)
+                .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
+
+            const toastHeader = $('<div></div>')
+                .addClass(`toast-header ${bgClass} text-white border-0`)
+                .html(`<i class="bi ${icon} me-2"></i>
+                       <strong class="me-auto">${title}</strong>
+                       <small>Now</small>
+                       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>`);
+
+            const toastBody = $('<div></div>').addClass('toast-body').text(message);
+
+            toast.append(toastHeader, toastBody);
+            toastContainer.append(toast);
+            $('body').append(toastContainer);
+
+            var bsToast = new bootstrap.Toast(toast[0]);
+            bsToast.show();
+
+            toast.on('hidden.bs.toast', () => toastContainer.remove());
+        }
+
+        $(document).ready(function () {
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>showToast('@TempData["SuccessMessage"]', 'success');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>showToast('@TempData["ErrorMessage"]', 'error');</text>
+            }
+
             const forms = document.querySelectorAll('.needs-validation');
             Array.from(forms).forEach(form => {
                 form.addEventListener('submit', event => {
@@ -155,6 +195,6 @@
                     form.classList.add('was-validated');
                 });
             });
-        })();
+        });
     </script>
 }
