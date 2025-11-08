@@ -1,0 +1,17 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Role
+
+<form asp-action="@ViewData["Action"]" method="post" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="RoleId" />
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label">Role Name</label>
+        <input asp-for="Name" class="form-control" placeholder="Enter role name" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="text-end">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">@ViewData["Action"]</button>
+    </div>
+</form>

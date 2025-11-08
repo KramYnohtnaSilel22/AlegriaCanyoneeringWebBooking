@@ -55,67 +55,79 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return Json(new { draw, recordsTotal, recordsFiltered, data });
         }
 
-        // GET: Roles/Create
-        public IActionResult Create() => View();
+       // GET: Roles/Create
+        public IActionResult Create()
+        {
+            ViewData["Action"] = "Create";
+            return PartialView("_CreatePartial", new Role());
+        }
 
         // POST: Roles/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("RoleId,Name")] Role role)
+        public async Task<IActionResult> Create(Role role)
         {
             if (ModelState.IsValid)
             {
+                var exists = await _context.Roles
+                    .AnyAsync(r => r.Name.ToLower() == role.Name.ToLower());
+
+                if (exists)
+                {
+                    ModelState.AddModelError("Name", "This role already exists.");
+                    return PartialView("_CreatePartial", role);
+                }
+
                 _context.Add(role);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Role '{role.Name}' created successfully.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = true, message = $"Role '{role.Name}' created successfully!" });
             }
 
-            TempData["ErrorMessage"] = "Failed to create role. Please check your input.";
-            return View(role);
+            ViewData["Action"] = "Create";
+            return PartialView("_CreatePartial", role);
         }
 
         // GET: Roles/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null) return NotFound();
+            if (id == null) return Json(new { success = false, message = "Role ID is required." });
 
             var role = await _context.Roles.FindAsync(id);
-            if (role == null) return NotFound();
+            if (role == null) return Json(new { success = false, message = "Role not found." });
 
-            return View(role);
+            ViewData["Action"] = "Edit";
+            return PartialView("_EditPartial", role);
         }
 
         // POST: Roles/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("RoleId,Name")] Role role)
+        public async Task<IActionResult> Edit(Role role)
         {
-            if (id != role.RoleId) return NotFound();
+            if (!ModelState.IsValid)
+                return PartialView("_EditPartial", role);
 
-            if (ModelState.IsValid)
+            var exists = await _context.Roles
+                .AnyAsync(r => r.Name.ToLower() == role.Name.ToLower() && r.RoleId != role.RoleId);
+
+            if (exists)
             {
-                try
-                {
-                    _context.Update(role);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = $"Role '{role.Name}' updated successfully.";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!RoleExists(role.RoleId))
-                    {
-                        TempData["ErrorMessage"] = "Role not found.";
-                        return RedirectToAction(nameof(Index));
-                    }
-                    else throw;
-                }
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("Name", "This role already exists.");
+                return PartialView("_EditPartial", role);
             }
 
-            TempData["ErrorMessage"] = "Failed to update role. Please check your input.";
-            return View(role);
+            try
+            {
+                _context.Update(role);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = $"Role '{role.Name}' updated successfully!" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new { success = false, message = "An error occurred while updating." });
+            }
         }
+
 
         // POST: Roles/DeleteAjax/5
         [HttpPost]

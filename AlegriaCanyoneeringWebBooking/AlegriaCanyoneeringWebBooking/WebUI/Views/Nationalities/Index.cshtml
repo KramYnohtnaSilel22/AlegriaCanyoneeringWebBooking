@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Nationality Management";
+    ViewData["Title"] = "Nationality";
 }
 
 <h2 class="fw-bold mb-4 text-primary">Nationality</h2>
@@ -132,7 +132,7 @@
                 }
             });
 
-            // Open Modal (Create/Edit)
+             // Function to open modal for Create/Edit
             function openNationalityModal(url, title) {
                 $.get(url, function (data) {
                     $('#modalContent').html(data);
@@ -141,7 +141,10 @@
                 });
             }
 
+              // Open Create Modal
             $('#btnCreate').click(() => openNationalityModal('@Url.Action("Create", "Nationalities")', 'Create Nationality'));
+
+            // Open Edit Modal
             $('#nationalitiesTable').on('click', '.btn-edit', function (e) {
                 e.preventDefault();
                 openNationalityModal($(this).attr('href'), 'Edit Nationality');

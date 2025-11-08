@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Roles";
+    ViewData["Title"] = "Role Management";
 }
 
 <h2 class="fw-bold mb-4 text-primary">Roles</h2>
@@ -9,63 +9,110 @@
     @Html.AntiForgeryToken()
 </form>
 
-<a asp-action="Create" class="btn btn-primary mb-3">
+<!-- Button to open Create Modal -->
+<button type="button" id="btnCreateRole" class="btn btn-primary mb-3">
     <i class="fas fa-plus"></i> Create New
-</a>
+</button>
 
 <div class="table-responsive">
     <table id="rolesTable" class="table table-bordered table-striped table-sm align-middle w-100">
         <thead class="table-light">
             <tr>
-                <th>Name</th>
-                <th>Actions</th>
+                <th>Role Name</th>
+                <th class="text-center">Actions</th>
             </tr>
         </thead>
     </table>
 </div>
 
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="roleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="roleModalLabel">Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="roleModalContent">
+                <!-- AJAX loaded form will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+
+    <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
     <script>
+        // ===== Toast Notification Function =====
         function showToast(message, type = 'success') {
-            let bgClass = 'bg-success', icon = 'bi-check-circle-fill', title = 'Success';
-            if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
+            let bgClass = 'bg-success';
+            let icon = 'bi-check-circle-fill';
+            let title = 'Success';
 
-            const toastContainer = $('<div class="toast-container position-fixed top-0 end-0 p-3"></div>').css('z-index', 1080);
-            const toast = $('<div class="toast text-white ' + bgClass + ' border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000"></div>');
-            const toastHeader = $('<div class="toast-header ' + bgClass + ' text-white border-0"></div>').html(`
-                <i class="bi ${icon} me-2"></i>
-                <strong class="me-auto">${title}</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            `);
-            const toastBody = $('<div class="toast-body"></div>').text(message);
+            if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
+            else if (type === 'warning') { bgClass = 'bg-warning'; icon = 'bi-exclamation-circle-fill'; title = 'Warning'; }
+            else if (type === 'info') { bgClass = 'bg-info'; icon = 'bi-info-circle-fill'; title = 'Info'; }
+
+            const toastContainer = $('<div></div>')
+                .addClass('toast-container position-fixed top-0 end-0 p-3')
+                .css('z-index', 1080);
+
+            const toast = $('<div></div>')
+                .addClass(`toast text-white ${bgClass} border-0`)
+                .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
+
+            const toastHeader = $('<div></div>')
+                .addClass(`toast-header ${bgClass} text-white border-0`)
+                .html(`
+                    <i class="bi ${icon} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <small>Now</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                `);
+
+            const toastBody = $('<div></div>')
+                .addClass('toast-body')
+                .text(message);
 
             toast.append(toastHeader, toastBody);
             toastContainer.append(toast);
             $('body').append(toastContainer);
-            new bootstrap.Toast(toast[0]).show();
 
-            toast.on('hidden.bs.toast', () => toastContainer.remove());
+            var bsToast = new bootstrap.Toast(toast[0]);
+            bsToast.show();
+
+            toast.on('hidden.bs.toast', function () {
+                toastContainer.remove();
+            });
         }
 
         $(document).ready(function () {
+            // ===== Initialize Roles DataTable =====
             var table = $('#rolesTable').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
                     url: '@Url.Action("GetRolesData", "Roles")',
                     type: 'POST',
-                    data: { __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
-                    error: function (xhr) {
+                    data: function(d) {
+                        // Add anti-forgery token
+                        d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                    },
+                    dataSrc: 'data',
+                    error: function(xhr) {
                         console.error("DataTables AJAX error:", xhr.responseText);
-                        showToast("Failed to load roles. Refresh the page.", "error");
+                        showToast("Failed to load roles data.", "error");
                     }
                 },
                 columns: [
@@ -74,18 +121,18 @@
                         data: 'roleId',
                         orderable: false,
                         searchable: false,
-                        render: function (data, type, row) {
+                        className: 'text-center',
+                        render: function(data, type, row) {
                             return `
-                                <div class="d-flex flex-wrap gap-2">
-                                    <a href="/Roles/Edit/${data}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i> <span class="d-none d-sm-inline">Edit</span>
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    <a href="/Roles/Edit/${data}" class="btn btn-sm btn-warning btn-edit">
+                                        <i class="fas fa-edit"></i> Edit
                                     </a>
                                     <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.name}">
-                                        <i class="fas fa-trash"></i> <span class="d-none d-sm-inline">Delete</span>
+                                        <i class="fas fa-trash"></i> Delete
                                     </button>
                                 </div>`;
-                        },
-                        className: 'text-center'
+                        }
                     }
                 ],
                 pageLength: 10,
@@ -98,36 +145,64 @@
                 }
             });
 
-            $('#rolesTable').on('click', '.delete-btn', function () {
+            // ===== Delete Role =====
+            $('#rolesTable').on('click', '.delete-btn', function() {
                 var roleId = $(this).data('id');
                 var roleName = $(this).data('name');
-                if (confirm('Are you sure you want to delete role "' + roleName + '"?')) {
-                    $.ajax({
-                        url: '@Url.Action("DeleteAjax", "Roles")',
-                        type: 'POST',
-                        data: { id: roleId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
-                        success: function (response) {
-                            if (response.success) {
-                                showToast(response.message, 'success');
-                                table.ajax.reload(null, false);
-                            } else showToast(response.message, 'error');
-                        },
-                        error: function (xhr) {
-                            console.error("AJAX Error:", xhr.responseText);
-                            showToast("Error deleting role. Check console.", "error");
+
+                if (confirm(`Are you sure you want to delete role "${roleName}"?`)) {
+                    $.post('@Url.Action("DeleteAjax", "Roles")', {
+                        id: roleId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    }, function(response) {
+                        if (response.success) {
+                            showToast(response.message, 'success');
+                            table.ajax.reload(null, false);
+                        } else {
+                            showToast(response.message, 'error');
                         }
+                    }).fail(function(xhr) {
+                        console.error("Delete error:", xhr.responseText);
+                        showToast("An error occurred while deleting the role.", "error");
                     });
                 }
             });
 
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <text>showToast('@TempData["SuccessMessage"]', 'success');</text>
+            // Function to open modal for Create/Edit
+            function openRoleModal(url, title) {
+                $.get(url, function (data) {
+                    $('#roleModalContent').html(data);
+                    $('#roleModalLabel').text(title);
+                    new bootstrap.Modal(document.getElementById('roleModal')).show();
+                });
             }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <text>showToast('@TempData["ErrorMessage"]', 'error');</text>
-            }
+
+            // Open Create Modal
+            $('#btnCreateRole').click(() => openRoleModal('@Url.Action("Create", "Roles")', 'Create Role'));
+
+            // Open Edit Modal
+            $('#rolesTable').on('click', '.btn-edit', function (e) {
+                e.preventDefault();
+                openRoleModal($(this).attr('href'), 'Edit Role');
+            });
+
+            // Submit form via AJAX
+            $('#roleModal').on('submit', 'form', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                $.post(form.attr('action'), form.serialize(), function (response) {
+                    if (response.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('roleModal')).hide();
+                        table.ajax.reload(null, false);
+                        showToast(response.message, 'success');
+                    } else {
+                        $('#roleModalContent').html(response);
+                    }
+                }).fail(function (xhr) {
+                    console.error(xhr.responseText);
+                    showToast("Error saving role.", 'error');
+                });
+            });
         });
     </script>
 }
