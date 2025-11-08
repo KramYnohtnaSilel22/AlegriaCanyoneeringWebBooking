@@ -85,27 +85,27 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-   // GET Create
-        public IActionResult Create()
-        {
-            ViewData["Action"] = "Create";
-            return PartialView("_CreatePartial", new OperatorList());
-        }
-
-        // POST Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(OperatorList operatorModel)
-        {
-            if (ModelState.IsValid)
+         // GET Create
+            public IActionResult Create()
             {
-                _context.Add(operatorModel);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = $"Operator '{operatorModel.OwnerName}' created successfully!" });
+                ViewData["Action"] = "Create";
+                return PartialView("_CreatePartial", new OperatorList());
             }
-            ViewData["Action"] = "Create";
-            return PartialView("_CreatePartial", operatorModel);
-        }
+
+            // POST Create
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> Create(OperatorList operatorModel)
+            {
+                if (ModelState.IsValid)
+                {
+                    _context.Add(operatorModel);
+                    await _context.SaveChangesAsync();
+                    return Json(new { success = true, message = $"Operator '{operatorModel.OwnerName}' created successfully!" });
+                }
+                ViewData["Action"] = "Create";
+                return PartialView("_CreatePartial", operatorModel);
+            }
 
 
         // GET: OperatorList/Edit/5
