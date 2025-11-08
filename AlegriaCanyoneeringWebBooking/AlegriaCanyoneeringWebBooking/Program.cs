@@ -122,13 +122,23 @@ builder.Services.AddResponseCompression();
 
 var app = builder.Build();
 
-// Static Files
-app.UseStaticFiles(new StaticFileOptions
+#region Static Files (works locally + IIS)
+var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "WebUI", "wwwroot");
+
+// Serve default wwwroot
+if (Directory.Exists(wwwrootPath))
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "WebUI", "wwwroot")),
-    RequestPath = ""
-});
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(wwwrootPath),
+        RequestPath = "" // root
+    });
+}
+else
+{
+    Console.WriteLine($"[Warning] wwwroot folder not found: {wwwrootPath}");
+}
+#endregion
 
 // Development Pipeline
 if (app.Environment.IsDevelopment())
@@ -148,7 +158,7 @@ else
 
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
 app.UseSession();
 
 // ✅ API KEY MIDDLEWARE - Only for API routes

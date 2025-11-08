@@ -45,22 +45,44 @@
 <!-- Toast Message -->
 @if (TempData["ToastMessage"] != null)
 {
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-        <div id="toastMessage" class="toast align-items-center text-white bg-@TempData["ToastType"] border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-check-circle me-2"></i> @TempData["ToastMessage"]
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    var toastType = TempData["ToastType"]?.ToString()?.ToLower() ?? "success";
+    var toastConfig = toastType switch
+    {
+        "success" => new { Icon = "bi-check-circle-fill", Bg = "bg-success text-white", Title = "Success" },
+        "danger" => new { Icon = "bi-exclamation-triangle-fill", Bg = "bg-danger text-white", Title = "Error" },
+        "warning" => new { Icon = "bi-exclamation-circle-fill", Bg = "bg-warning text-dark", Title = "Warning" },
+        _ => new { Icon = "bi-info-circle-fill", Bg = "bg-info text-light", Title = "Notification" }
+    };
+
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="toastMessage"
+             class="toast border-0 shadow-sm show @toastConfig.Bg"
+             role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+
+            <div class="toast-header @toastConfig.Bg">
+                <i class="bi @toastConfig.Icon me-2"></i>
+                <strong class="me-auto">@toastConfig.Title</strong>
+                <small>Now</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+
+            <div class="toast-body">
+                @TempData["ToastMessage"]
             </div>
         </div>
     </div>
-}
 
+  
+}
 
 
 @section Scripts {
     <script>
+               document.addEventListener("DOMContentLoaded", function () {
+                const toastEl = document.getElementById('toastMessage');
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            });
         const bookingDetailsUrl = '@Url.Action("GetBookingDetails", "Guest")';
 
         function loadBookingDetails(id) {

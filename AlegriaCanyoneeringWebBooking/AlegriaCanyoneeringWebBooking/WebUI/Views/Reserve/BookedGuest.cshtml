@@ -5,7 +5,7 @@
     var endDate = Context.Request.Query["endDate"].FirstOrDefault();
 }
 
-<div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 2000; max-width: 350px;"></div>
+<div class="toast-container position-fixed top-0 end-0 p-3"></div>
 
 <div class="container my-4">
     <!-- Title & Guest of the Day Button -->
@@ -90,22 +90,39 @@
 
 @section Scripts {
     <script>
-        // ================================
+            // ================================
         // 🔔 Toast Utility
         // ================================
-        function showToast(message) {
+                  function showToast(message, title = 'Notification', type = 'danger') {
+            const toastTypes = {
+                success: { icon: 'bi-check-circle-fill', bg: 'bg-success text-white' },
+                danger: { icon: 'bi-exclamation-triangle-fill', bg: 'bg-danger text-white' },
+                warning: { icon: 'bi-exclamation-circle-fill', bg: 'bg-warning text-dark' },
+                info: { icon: 'bi-info-circle-fill', bg: 'bg-info text-dark' }
+            };
+
+            const { icon, bg } = toastTypes[type] || toastTypes.info;
+            const toastId = 'toast-' + Date.now();
+
             const toastHtml = `
-                <div class="toast align-items-center text-white bg-danger border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div class="toast-body">${message}</div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <div id="${toastId}" class="toast border-0 shadow-sm ${bg}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                    <div class="toast-header ${bg}">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <small class="text-muted">Just now</small>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
-                </div>`;
-            const $toast = $(toastHtml).appendTo('#toastContainer');
-            const bsToast = new bootstrap.Toast($toast[0], { delay: 4000 });
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+
+            const $toast = $(toastHtml).appendTo('.toast-container');
+            const bsToast = new bootstrap.Toast($toast[0]);
             bsToast.show();
-            $toast.on('hidden.bs.toast', function () { $toast.remove(); });
+
+            $toast.on('hidden.bs.toast', () => $toast.remove());
         }
+
 
         // ================================
         // 🧭 Guest of the Day Modal
