@@ -1,54 +1,103 @@
 ﻿@model List<GuestWithOperatorVM>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
 
 <style>
     body {
-        background: #ffffff;
-        color: #000000;
-        font-family: "Segoe UI", sans-serif;
+        background-color: #f8f9fa;
+        font-family: "Segoe UI", Roboto, sans-serif;
+        color: #212529;
     }
 
     .modal-content {
-        background: #ffffff !important;
-        color: #000000 !important;
-        border-radius: 12px;
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
     }
 
     .modal-header {
         background: #ffffff;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid #e9ecef;
+        padding: 1.25rem 1.5rem;
     }
 
     .modal-title {
+        font-size: 1.2rem;
         font-weight: 600;
+        color: #0d6efd;
     }
 
-    table {
-        background: #ffffff;
-        color: #000000;
+    .modal-body {
+        padding: 1.5rem;
+        background-color: #ffffff;
     }
 
-    th {
+    /* --- Action Bar --- */
+    .action-bar {
         background: #f8f9fa;
-        color: #000;
+        border-bottom: 1px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
-    tr.table-success {
-        background: #e6ffe6 !important;
+        .action-bar .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+            .action-bar .btn i {
+                font-size: 1rem;
+            }
+
+    /* --- Tables --- */
+    .table {
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 0;
     }
 
-    .btn {
-        border-radius: 6px;
-        font-size: 0.9rem;
+        .table th {
+            background-color: #f1f3f5;
+            color: #495057;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
     }
 
-        .btn i {
-            margin-right: 4px;
+    .table-success {
+        background-color: #e9f8ef !important;
+    }
+
+    .section-title {
+        font-weight: 600;
+        color: #212529;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .section-title i {
+            color: #0d6efd;
         }
 </style>
+
 @{
-    // Helper function to format ArrivalDate
     string FormatArrivalDate(string unixTimestamp)
     {
         if (string.IsNullOrEmpty(unixTimestamp))
@@ -56,46 +105,50 @@
 
         if (long.TryParse(unixTimestamp, out var unix))
         {
-            // Convert Unix timestamp to local time
             var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
-            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt");
         }
 
         return unixTimestamp;
     }
 }
 
+<!-- Guest Details Modal -->
 <div class="modal fade" id="guestDetailsModal" tabindex="-1" aria-labelledby="guestDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content shadow-sm">
+        <div class="modal-content">
+            <!-- Header -->
             <div class="modal-header">
                 <h5 class="modal-title" id="guestDetailsModalLabel">
-                    Booking Details - Batch: @Model.FirstOrDefault()?.Guest.Batch
+                    <i class="fas fa-info-circle me-2"></i>
+                    Booking Details
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <!-- Download PDF Button -->
-            <div class="px-3 py-2 border-bottom bg-light d-flex justify-content-end">
-       
-                <button class="btn btn-success ms-2" onclick="downloadGuestDetailsExcel()">
+            <!-- Action Bar -->
+            <div class="action-bar d-flex justify-content-end align-items-center">
+                <button class="btn btn-outline-success btn-sm" onclick="downloadGuestDetailsExcel()">
                     <i class="fas fa-file-excel"></i> Download Excel
                 </button>
-                <button class="btn btn-warning" id="printButton">
+                <button class="btn btn-warning btn-sm ms-2" id="printButton">
                     <i class="fas fa-print"></i> Print
                 </button>
-
             </div>
 
-            <!-- PDF Content Wrapper -->
+            <!-- Body -->
             <div class="modal-body" id="guestDetailsContent">
                 @if (Model != null && Model.Any())
                 {
                     var primaryGuestVM = Model.First();
                     var companionsVM = Model.Skip(1).ToList();
 
-                    <h6 class="text-dark fw-bold mb-3 mt-3"><i class="fas fa-user"></i> Primary Guest</h6>
-                    <div class="table-responsive">
+                    <!-- Primary Guest -->
+                    <h6 class="section-title">
+                        <i class="fas fa-user"></i> Primary Guest
+                    </h6>
+
+                    <div class="table-responsive mb-4">
                         <table class="table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
@@ -124,9 +177,13 @@
                         </table>
                     </div>
 
+                    <!-- Companions -->
                     @if (companionsVM.Any())
                     {
-                        <h6 class="text-dark fw-bold mt-4 mb-3"><i class="fas fa-users"></i> Companion Guests</h6>
+                        <h6 class="section-title">
+                            <i class="fas fa-users"></i> Companion Guest
+                        </h6>
+
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
                                 <thead>
@@ -160,47 +217,39 @@
                 }
                 else
                 {
-                    <p class="text-muted">No guests found for this batch.</p>
+                    <p class="text-muted text-center py-3">No guests found for this batch.</p>
                 }
             </div>
-            <!-- End PDF Content Wrapper -->
         </div>
     </div>
 </div>
 
-<!-- PDF Scripts -->
+<!-- Dependencies -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
 <script src="~/js/ViewGuestDetails.js" asp-append-version="true" defer></script>
+
+<!-- Print Script -->
 <script>
     document.getElementById('printButton').addEventListener('click', function () {
         var batchCode = '@Model.FirstOrDefault()?.Guest.Batch';
 
         if (batchCode) {
-            // Create a form element dynamically
             var form = document.createElement('form');
             form.method = 'POST';
             form.action = '/Reserve/PrintBatchGuests';
-            form.target = '_blank'; // Open in new tab
+            form.target = '_blank';
 
-            // Create an input element for batchCode
             var input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'batchCode';
             input.value = batchCode;
 
-            // Add input to the form
             form.appendChild(input);
-
-            // Add form to the body and submit
             document.body.appendChild(form);
             form.submit();
-
-            // Remove the form after submitting
             document.body.removeChild(form);
         } else {
             alert('Batch code is not available.');
