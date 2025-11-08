@@ -1,0 +1,80 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Operator
+
+<form id="operatorForm" method="post" action="@ViewData["FormAction"]">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Full Name</label>
+                <input asp-for="Name" class="form-control" placeholder="Enter full name" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="BusinessName" class="form-label">Business Name</label>
+                <input asp-for="BusinessName" class="form-control" placeholder="e.g. Adventure Co." />
+                <span asp-validation-for="BusinessName" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Age" class="form-label">Age</label>
+                <input asp-for="Age" class="form-control" type="number" min="18" placeholder="e.g. 30" />
+                <span asp-validation-for="Age" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Gender" class="form-label">Gender</label>
+                <select asp-for="Gender" class="form-select">
+                    <option value="">-- Select Gender --</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+                <span asp-validation-for="Gender" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="Username" class="form-label">Username</label>
+                <input asp-for="Username" class="form-control" placeholder="Choose a username" />
+                <span asp-validation-for="Username" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">Password</label>
+                <input asp-for="Password" class="form-control" type="password" placeholder="Enter password" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EmailAddress" class="form-label">Email Address</label>
+                <input asp-for="EmailAddress" class="form-control" type="email" placeholder="user@example.com" />
+                <span asp-validation-for="EmailAddress" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="RoleId" class="form-label">User Role</label>
+                <select asp-for="RoleId" class="form-select" asp-items="ViewBag.RoleId">
+                    <option value="">-- Select Role --</option>
+                </select>
+                <span asp-validation-for="RoleId" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 text-end">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i> Save
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+
