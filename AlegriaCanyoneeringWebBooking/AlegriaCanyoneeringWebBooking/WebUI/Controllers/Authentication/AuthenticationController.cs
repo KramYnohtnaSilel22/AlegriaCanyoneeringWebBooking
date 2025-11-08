@@ -140,6 +140,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // GET: Change Password
+        [Authorize(Roles = "Super Admin,Admin,Operator")]
         [HttpGet]
         public IActionResult ChangePassword()
         {
@@ -147,6 +148,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // POST: Change Password
+        [Authorize(Roles = "Super Admin,Admin,Operator")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
