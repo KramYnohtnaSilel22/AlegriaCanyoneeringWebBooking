@@ -115,7 +115,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             HttpContext.Session.SetString("Role", user.Roles.Name);
             HttpContext.Session.SetInt32("UserId", user.Id);
 
-            TempData["SuccessMessage"] = $"Welcome back, {user.Name}!";
+  
 
             // Redirect based on role
             if (user.Roles.Name == "Super Admin" || user.Roles.Name == "Admin")
@@ -127,6 +127,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return RedirectToAction("Index", "Dashboard");
             }
 
+            TempData["SuccessMessage"] = $"Welcome back, {user.Name}!";
             return RedirectToAction("Index", "Dashboard");
         }
 
@@ -140,37 +141,36 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // GET: Change Password
         [HttpGet]
-        [Authorize(Roles = "Super Admin,Admin,Operator")]
         public IActionResult ChangePassword()
         {
             return View(new ChangePasswordViewModel());
         }
 
         // POST: Change Password
-        [Authorize(Roles = "Super Admin,Admin,Operator")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+                return View(model);
 
-            // Get current logged-in user
             var username = User.Identity?.Name;
             if (username == null)
             {
+                TempData["ErrorMessage"] = "User session expired. Please login again.";
                 return RedirectToAction("Login", "Authentication");
             }
 
             var op = await _context.Operators.FirstOrDefaultAsync(o => o.Username == username);
             if (op == null)
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login", "Authentication");
             }
 
-            // Verify current password
             if (!PasswordHelper.VerifyPassword(model.CurrentPassword, op.Password))
             {
-                ModelState.AddModelError("", "Current password is incorrect.");
+                TempData["ErrorMessage"] = "Current password is incorrect.";
                 return View(model);
             }
 
@@ -180,7 +180,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Password changed successfully!";
-            return RedirectToAction("ChangePassword", "Authentication"); // Redirect wherever appropriate
+            return RedirectToAction("ChangePassword");
         }
 
         [HttpGet]
@@ -316,8 +316,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // ================= GET =================
-        // GET: /Authentication/Edit
-        [Authorize(Roles = "Super Admin,Admin,Operator")]
         [HttpGet("/Authentication/Edit")]
         public async Task<IActionResult> Edit()
         {
@@ -349,24 +347,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // ================= POST =================
-        // POST: /Authentication/Edit
-        [Authorize(Roles = "Super Admin,Admin,Operator")]
         [HttpPost("/Authentication/Edit")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(OperatorUpdateViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please correct the errors in the form.";
+                return View(model);
+            }
 
-            // get the current operator id from the logged-in user (extra safety)
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(idClaim) || model.OperatorId.ToString() != idClaim)
             {
+                TempData["ErrorMessage"] = "Unauthorized operation.";
                 return Forbid(); // prevent editing someone else's record
             }
 
             var op = await _context.Operators.FindAsync(model.OperatorId);
-            if (op == null) return NotFound();
+            if (op == null)
+            {
+                TempData["ErrorMessage"] = "Operator not found.";
+                return RedirectToAction("Index", "Dashboard");
+            }
 
+            // Update operator info
             op.Name = model.Name;
             op.BusinessName = model.BusinessName;
             op.Age = model.Age;
@@ -378,8 +383,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context.Update(op);
             await _context.SaveChangesAsync();
 
-            TempData["UpdateSuccess"] = "Operator information updated successfully.";
-            return RedirectToAction("Index", "Dashboard"); // or wherever you want to go after saving
+            TempData["SuccessMessage"] = "Operator information updated successfully!";
+            return RedirectToAction("Edit");
         }
 
 
