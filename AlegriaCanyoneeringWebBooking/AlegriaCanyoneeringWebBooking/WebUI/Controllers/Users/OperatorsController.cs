@@ -20,6 +20,102 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context = context;
         }
 
+        [HttpPost]
+        public async Task<IActionResult> GetOperatorsData()
+        {
+            try
+            {
+                // Get current user's role for filtering
+                var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
+                                   ?? User.FindFirst("Role")?.Value;
+
+                if (string.IsNullOrEmpty(currentUserRole))
+                {
+                    return Json(new { error = "Unable to determine user role." });
+                }
+
+                // Extract DataTables parameters
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+                var searchValue = Request.Form["search[value]"].FirstOrDefault();
+
+                // Build base query with role-based filtering (same logic as Index)
+                IQueryable<Operator> query;
+
+                if (currentUserRole == "Super Admin")
+                {
+                    // Super Admin sees all users
+                    query = _context.Operators.Include(o => o.Roles);
+                }
+                else if (currentUserRole == "Admin")
+                {
+                    // Admin only sees Operators
+                    query = _context.Operators
+                        .Include(o => o.Roles)
+                        .Where(o => o.Roles.Name == "Operator");
+                }
+                else
+                {
+                    // No access for other roles
+                    return Json(new { error = "Access denied." });
+                }
+
+                // Apply global search filter
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    query = query.Where(o =>
+                        o.Name.Contains(searchValue) ||
+                        o.EmailAddress.Contains(searchValue) ||
+                        o.BusinessName.Contains(searchValue) ||
+                        o.Username.Contains(searchValue) ||
+                        o.Gender.Contains(searchValue) ||
+                        (o.Roles != null && o.Roles.Name.Contains(searchValue))
+                    );
+                }
+
+                // Get total count after filtering
+                var recordsFiltered = await query.CountAsync();
+
+                // Get total count before filtering (for info display)
+                var recordsTotal = currentUserRole == "Super Admin"
+                    ? await _context.Operators.CountAsync()
+                    : await _context.Operators.Include(o => o.Roles)
+                        .CountAsync(o => o.Roles.Name == "Operator");
+
+                // Apply sorting and pagination
+                var data = await query
+                    .OrderBy(o => o.Name)
+                    .Skip(start)
+                    .Take(length)
+                    .Select(o => new
+                    {
+                        id = o.Id,
+                        name = o.Name,
+                        emailAddress = o.EmailAddress,
+                        businessName = string.IsNullOrWhiteSpace(o.BusinessName) ? "No Operator" : o.BusinessName,
+                        age = o.Age,
+                        gender = o.Gender,
+                        username = o.Username,
+                        roleName = o.Roles != null ? o.Roles.Name : "N/A"
+                    })
+                    .ToListAsync();
+
+                // Return DataTables-formatted JSON
+                return Json(new
+                {
+                    draw = draw,
+                    recordsFiltered = recordsFiltered,
+                    recordsTotal = recordsTotal,
+                    data = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = $"Server Error: {ex.Message}" });
+            }
+        }
+
         // GET: Operators
         public async Task<IActionResult> Index()
         {
@@ -434,66 +530,128 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(op);
         }
 
-        // POST: Operators/Delete/5
-        [HttpPost, ActionName("Delete")]
+        //// POST: Operators/Delete/5
+        //[HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteConfirmed(int id)
+        //{
+        //    var op = await _context.Operators
+        //        .Include(o => o.Roles)
+        //        .FirstOrDefaultAsync(o => o.Id == id);
+
+        //    if (op == null)
+        //    {
+        //        TempData["ErrorMessage"] = "User not found.";
+        //        return RedirectToAction(nameof(Index));
+        //    }
+
+        //    // Get current user's role and ID
+        //    var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
+        //                       ?? User.FindFirst("Role")?.Value;
+        //    var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        //    // Prevent deleting yourself
+        //    if (currentUserId != null && op.Id.ToString() == currentUserId)
+        //    {
+        //        TempData["ErrorMessage"] = "You cannot delete your own account.";
+        //        return RedirectToAction(nameof(Index));
+        //    }
+
+        //    // Security check: Admin can only delete Operators
+        //    if (currentUserRole == "Admin" && op.Roles?.Name != "Operator")
+        //    {
+        //        TempData["ErrorMessage"] = "You can only delete Operator accounts.";
+        //        return RedirectToAction(nameof(Index));
+        //    }
+
+        //    // Prevent deleting the last Super Admin
+        //    if (op.Roles?.Name == "Super Admin")
+        //    {
+        //        var superAdminCount = await _context.Operators
+        //            .Include(o => o.Roles)
+        //            .CountAsync(o => o.Roles.Name == "Super Admin");
+
+        //        if (superAdminCount <= 1)
+        //        {
+        //            TempData["ErrorMessage"] = "Cannot delete the last Super Admin account. At least one Super Admin must exist.";
+        //            return RedirectToAction(nameof(Index));
+        //        }
+        //    }
+
+        //    try
+        //    {
+        //        _context.Operators.Remove(op);
+        //        await _context.SaveChangesAsync();
+        //        TempData["SuccessMessage"] = $"User '{op.Name}' deleted successfully.";
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        TempData["ErrorMessage"] = "An error occurred while deleting the user.";
+        //    }
+
+        //    return RedirectToAction(nameof(Index));
+        //}
+
+        // DELETE THE OLD Delete() and DeleteConfirmed() methods
+        // KEEP ONLY THIS ONE:
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteAjax(int id)
         {
-            var op = await _context.Operators
-                .Include(o => o.Roles)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
-            if (op == null)
-            {
-                TempData["ErrorMessage"] = "User not found.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            // Get current user's role and ID
-            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
-                               ?? User.FindFirst("Role")?.Value;
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // Prevent deleting yourself
-            if (currentUserId != null && op.Id.ToString() == currentUserId)
-            {
-                TempData["ErrorMessage"] = "You cannot delete your own account.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            // Security check: Admin can only delete Operators
-            if (currentUserRole == "Admin" && op.Roles?.Name != "Operator")
-            {
-                TempData["ErrorMessage"] = "You can only delete Operator accounts.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            // Prevent deleting the last Super Admin
-            if (op.Roles?.Name == "Super Admin")
-            {
-                var superAdminCount = await _context.Operators
-                    .Include(o => o.Roles)
-                    .CountAsync(o => o.Roles.Name == "Super Admin");
-
-                if (superAdminCount <= 1)
-                {
-                    TempData["ErrorMessage"] = "Cannot delete the last Super Admin account. At least one Super Admin must exist.";
-                    return RedirectToAction(nameof(Index));
-                }
-            }
-
             try
             {
+                var op = await _context.Operators
+                    .Include(o => o.Roles)
+                    .FirstOrDefaultAsync(o => o.Id == id);
+
+                if (op == null)
+                {
+                    return Json(new { success = false, message = "User not found." });
+                }
+
+                // Get current user's role and ID
+                var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
+                                   ?? User.FindFirst("Role")?.Value;
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                // Prevent deleting yourself
+                if (currentUserId != null && op.Id.ToString() == currentUserId)
+                {
+                    return Json(new { success = false, message = "You cannot delete your own account." });
+                }
+
+                // Security check: Admin can only delete Operators
+                if (currentUserRole == "Admin" && op.Roles?.Name != "Operator")
+                {
+                    return Json(new { success = false, message = "You can only delete Operator accounts." });
+                }
+
+                // Prevent deleting the last Super Admin
+                if (op.Roles?.Name == "Super Admin")
+                {
+                    var superAdminCount = await _context.Operators
+                        .Include(o => o.Roles)
+                        .CountAsync(o => o.Roles.Name == "Super Admin");
+
+                    if (superAdminCount <= 1)
+                    {
+                        return Json(new { success = false, message = "Cannot delete the last Super Admin account." });
+                    }
+                }
+
                 _context.Operators.Remove(op);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"User '{op.Name}' deleted successfully.";
+
+                return Json(new { success = true, message = $"User '{op.Name}' deleted successfully." });
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "An error occurred while deleting the user.";
+                // Log the actual exception for debugging
+                System.Diagnostics.Debug.WriteLine($"Delete Error: {ex.Message}");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
 
-            return RedirectToAction(nameof(Index));
         }
     }
 }

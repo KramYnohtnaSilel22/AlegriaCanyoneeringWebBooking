@@ -1,45 +1,188 @@
-﻿@using AlegriaCanyoneeringWebBooking.Models
-@model IEnumerable<Nationality>
-
-@{
-    ViewData["Title"] = "Nationalities";
+﻿@{
+    ViewData["Title"] = "Nationality";
 }
 
-<h1>Nationalities</h1>
+<h2 class="fw-bold mb-4 text-primary">Nationality</h2>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Create New</a>
-</p>
+<!-- Anti-Forgery Token for AJAX -->
+<form id="__AjaxAntiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<a asp-action="Create" class="btn btn-primary mb-3">
+    <i></i> Create New
+</a>
+
 <div class="table-responsive">
-    <table id="example1" class="table table-bordered table-striped">
-    <thead class="table-light">
-        <tr>
-            <th>Nationality Name</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
+    <table id="nationalitiesTable" class="table table-bordered table-striped table-sm align-middle w-100">
+        <thead class="table-light">
             <tr>
-                <td>@item.NatName</td>
-                <td>
-                        <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-sm btn-warning">
-                            <i class="fas fa-edit me-1"></i> Edit
-                        </a>
-
-
-                        <form asp-action="Delete" asp-route-id="@item.id" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </form>
-
-                 
-
-                </td>
+                <th>Nationality Name</th>
+                <th class="text-center" style="width: 200px;">Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+    </table>
 </div>
+
+@section Scripts {
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+    <script>
+        // ===== Toast Notification Function =====
+        function showToast(message, type = 'success') {
+            let bgClass = 'bg-success';
+            let icon = 'bi-check-circle-fill';
+            let title = 'Success';
+
+            if (type === 'error') {
+                bgClass = 'bg-danger';
+                icon = 'bi-exclamation-triangle-fill';
+                title = 'Error';
+            } else if (type === 'warning') {
+                bgClass = 'bg-warning';
+                icon = 'bi-exclamation-circle-fill';
+                title = 'Warning';
+            } else if (type === 'info') {
+                bgClass = 'bg-info';
+                icon = 'bi-info-circle-fill';
+                title = 'Info';
+            }
+
+            const toastContainer = $('<div></div>')
+                .addClass('toast-container position-fixed top-0 end-0 p-3')
+                .css('z-index', 1080);
+
+            const toast = $('<div></div>')
+                .addClass(`toast text-white ${bgClass} border-0`)
+                .attr({
+                    role: 'alert',
+                    'aria-live': 'assertive',
+                    'aria-atomic': 'true',
+                    'data-bs-delay': 4000
+                });
+
+            const toastHeader = $('<div></div>')
+                .addClass(`toast-header ${bgClass} text-white border-0`)
+                .html(`
+                    <i class="bi ${icon} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <small>Now</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                `);
+
+            const toastBody = $('<div></div>')
+                .addClass('toast-body')
+                .text(message);
+
+            toast.append(toastHeader, toastBody);
+            toastContainer.append(toast);
+            $('body').append(toastContainer);
+
+            var bsToast = new bootstrap.Toast(toast[0]);
+            bsToast.show();
+
+            toast.on('hidden.bs.toast', function () {
+                toastContainer.remove();
+            });
+        }
+
+        $(document).ready(function () {
+            // Initialize DataTable
+            var table = $('#nationalitiesTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '@Url.Action("GetNationalitiesData", "Nationalities")',
+                    type: 'POST',
+                    dataSrc: 'data',
+                    error: function (xhr, error, code) {
+                        console.error("DataTables AJAX error:", xhr.responseText);
+                        showToast("Failed to load data. Please refresh the page.", "error");
+                    }
+                },
+                columns: [
+                    {
+                        data: 'natName',
+                        className: 'text-break'
+                    },
+                    {
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            return `
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    <a href="/Nationalities/Edit/${data}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.natName}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>`;
+                        }
+                    }
+                ],
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                order: [[0, 'asc']], // Sort by nationality name
+                responsive: true,
+                autoWidth: false,
+                language: {
+                    emptyTable: "No nationalities found",
+                    processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
+                    search: "_INPUT_",
+                    searchPlaceholder: ""
+                }
+            });
+
+            // Handle Delete Button
+            $('#nationalitiesTable').on('click', '.delete-btn', function () {
+                var nationalityId = $(this).data('id');
+                var nationalityName = $(this).data('name');
+
+                if (confirm(`Are you sure you want to delete "${nationalityName}"?`)) {
+                    var token = $('input[name="__RequestVerificationToken"]').val();
+
+                    $.ajax({
+                        url: '@Url.Action("DeleteAjax", "Nationalities")',
+                        type: 'POST',
+                        data: {
+                            id: nationalityId,
+                            __RequestVerificationToken: token
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                showToast(response.message, 'success');
+                                table.ajax.reload(null, false);
+                            } else {
+                                showToast(response.message, 'error');
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error("Delete error:", xhr.responseText);
+                            showToast("An error occurred while deleting the nationality.", "error");
+                        }
+                    });
+                }
+            });
+
+            // Show TempData messages on page load
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>showToast('@TempData["SuccessMessage"]', 'success');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>showToast('@TempData["ErrorMessage"]', 'error');</text>
+            }
+        });
+    </script>
+}

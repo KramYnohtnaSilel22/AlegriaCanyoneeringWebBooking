@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 using AlegriaCanyoneeringWebBooking.Models;
+
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin,Admin")]
@@ -15,6 +16,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             _context = context;
         }
+
+        // GET: OperatorList/Index
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        // POST: DataTables server-side data
         [HttpPost]
         public async Task<IActionResult> GetOperatorsData()
         {
@@ -23,35 +32,34 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 var draw = Request.Form["draw"].FirstOrDefault();
                 var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
                 var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-                var search = Request.Form["search[value]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault();
 
                 var query = _context.OperatorLists.AsQueryable();
 
-                if (!string.IsNullOrEmpty(search))
+                // Apply search filter
+                if (!string.IsNullOrEmpty(searchValue))
                 {
                     query = query.Where(o =>
-                        o.OwnerName.Contains(search) ||
-                        o.Gender.Contains(search) ||
-                        o.BusinessName.Contains(search) ||
-                        o.BussPermit.Contains(search) ||
-                        o.Location.Contains(search)
+                        o.OwnerName.Contains(searchValue) ||
+                        o.Gender.Contains(searchValue) ||
+                        o.BusinessName.Contains(searchValue) ||
+                        o.BussPermit.Contains(searchValue) ||
+                        o.Location.Contains(searchValue)
                     );
                 }
 
-                var recordsTotal = await query.CountAsync();
+                // Get filtered count
+                var recordsFiltered = await query.CountAsync();
 
+                // Get total count (before filtering)
+                var recordsTotal = await _context.OperatorLists.CountAsync();
+
+                // Apply pagination
                 var data = await query
                     .OrderBy(o => o.OperatorId)
                     .Skip(start)
                     .Take(length)
-                    .ToListAsync();
-
-                return Json(new
-                {
-                    draw,
-                    recordsFiltered = recordsTotal,
-                    recordsTotal,
-                    data = data.Select(o => new
+                    .Select(o => new
                     {
                         operatorId = o.OperatorId,
                         ownerName = o.OwnerName,
@@ -59,9 +67,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         businessName = o.BusinessName,
                         bussPermit = o.BussPermit,
                         location = o.Location,
-                        status = o.Status,
-                        isActive = o.Status == 1
+                        status = o.Status
                     })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    draw = draw,
+                    recordsFiltered = recordsFiltered,
+                    recordsTotal = recordsTotal,
+                    data = data
                 });
             }
             catch (Exception ex)
@@ -70,55 +85,64 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-
-        // GET: Admin/Operators
-        public async Task<IActionResult> Index()
-        {
-            var operators = await _context.OperatorLists.ToListAsync();
-            return View(operators);
-        }
-
-        // GET: Admin/CreateOperator
+        // GET: OperatorList/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Admin/CreateOperator
+        // POST: OperatorList/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OperatorList operatorModel)
         {
             if (ModelState.IsValid)
             {
-                // You can add any custom validation here if needed
+                try
+                {
+                    _context.Add(operatorModel);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Operator '{operatorModel.OwnerName}' created successfully!";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = "An error occurred while creating the operator.";
+                    ModelState.AddModelError("", ex.Message);
+                }
+            }
+            return View(operatorModel);
+        }
 
-                _context.Add(operatorModel);
-                await _context.SaveChangesAsync();
+        // GET: OperatorList/Edit/5
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                TempData["ErrorMessage"] = "Operator ID is required.";
                 return RedirectToAction(nameof(Index));
             }
-            return View(operatorModel);
-        }
 
-        // GET: Admin/EditOperator/5
-        public async Task<IActionResult> Edit(int id)
-        {
             var operatorModel = await _context.OperatorLists.FindAsync(id);
+
             if (operatorModel == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "Operator not found.";
+                return RedirectToAction(nameof(Index));
             }
+
             return View(operatorModel);
         }
 
-        // POST: Admin/EditOperator/5
+        // POST: OperatorList/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, OperatorList operatorModel)
         {
             if (id != operatorModel.OperatorId)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "Invalid operator ID.";
+                return RedirectToAction(nameof(Index));
             }
 
             if (ModelState.IsValid)
@@ -127,21 +151,82 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     _context.Update(operatorModel);
                     await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Operator '{operatorModel.OwnerName}' updated successfully!";
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
                     if (!OperatorExists(operatorModel.OperatorId))
                     {
-                        return NotFound();
+                        TempData["ErrorMessage"] = "Operator not found.";
+                        return RedirectToAction(nameof(Index));
                     }
                     else
                     {
+                        TempData["ErrorMessage"] = "An error occurred while updating the operator.";
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(operatorModel);
+        }
+
+        // POST: OperatorList/Delete (AJAX)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAjax(int id)
+        {
+            try
+            {
+                var operatorModel = await _context.OperatorLists.FindAsync(id);
+
+                if (operatorModel == null)
+                {
+                    return Json(new { success = false, message = "Operator not found." });
+                }
+
+                _context.OperatorLists.Remove(operatorModel);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"Operator '{operatorModel.OwnerName}' deleted successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        // POST: OperatorList/ToggleStatus (AJAX)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            try
+            {
+                var operatorModel = await _context.OperatorLists.FindAsync(id);
+
+                if (operatorModel == null)
+                {
+                    return Json(new { success = false, message = "Operator not found." });
+                }
+
+                // Toggle status (0 -> 1 or 1 -> 0)
+                operatorModel.Status = operatorModel.Status == 1 ? 0 : 1;
+
+                await _context.SaveChangesAsync();
+
+                string statusText = operatorModel.Status == 1 ? "Active" : "Inactive";
+                return Json(new
+                {
+                    success = true,
+                    message = $"Operator '{operatorModel.OwnerName}' is now {statusText}.",
+                    newStatus = operatorModel.Status
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
         }
 
         private bool OperatorExists(int id)
