@@ -26,8 +26,52 @@
     combinedYearlyGuestCounts.AddRange(yearlyGuestCounts);
 }
 
-
 <link href="~/css/Dashboard.css" rel="stylesheet" />
+
+<style>
+    /* === Skeleton Loading Styles === */
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+        background-size: 400% 100%;
+        animation: skeleton-loading 1.4s ease infinite;
+        border-radius: 6px;
+    }
+
+    @@keyframes skeleton-loading {
+        0%
+
+    {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+
+    }
+
+    .skeleton-card {
+        height: 100px;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .skeleton-chart {
+        height: 250px;
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    /* Fade transition for smoother switch */
+    #dashboardContent {
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+        #dashboardContent.visible {
+            opacity: 1;
+        }
+</style>
 
 <div class="container-fluid py-4">
     <!-- Header -->
@@ -39,79 +83,94 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row g-3 mb-5">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-subtitle text-muted mb-2">Guests Today</h6>
-                            <h2 class="card-title fw-bold text-primary">@ViewBag.GuestsToday</h2>
-                        </div>
-                        <div class="bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="fas fa-users text-primary"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- ✅ Skeleton Loading (shown initially) -->
+    <div id="skeletonLoader">
+        <div class="row g-3 mb-5">
+            <div class="col-md-4"><div class="skeleton skeleton-card"></div></div>
+            <div class="col-md-4"><div class="skeleton skeleton-card"></div></div>
+            <div class="col-md-4"><div class="skeleton skeleton-card"></div></div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-subtitle text-muted mb-2">Guests This Month</h6>
-                            <h2 class="card-title fw-bold text-success">@ViewBag.GuestsThisMonth</h2>
-                        </div>
-                        <div class="bg-success bg-opacity-10 p-2 rounded">
-                            <i class="fas fa-calendar-alt text-success"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-subtitle text-muted mb-2">Previous Month</h6>
-                            <h2 class="card-title fw-bold text-warning">@ViewBag.GuestsPrevMonth</h2>
-                        </div>
-                        <div class="bg-warning bg-opacity-10 p-2 rounded">
-                            <i class="fas fa-chart-line text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="row g-4">
+            <div class="col-lg-6"><div class="skeleton skeleton-chart"></div></div>
+            <div class="col-lg-6"><div class="skeleton skeleton-chart"></div></div>
         </div>
     </div>
 
-    <!-- Charts Section -->
-    <div class="row g-4">
-        <!-- Monthly Guest Trend Chart -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-semibold">Monthly Guest Trend</h5>
+    <!-- ✅ Real Dashboard (hidden until data ready) -->
+    <div id="dashboardContent" style="display:none;">
+        <!-- Stats Cards -->
+        <div class="row g-3 mb-5">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-subtitle text-muted mb-2">Guests Today</h6>
+                                <h2 class="card-title fw-bold text-primary">@ViewBag.GuestsToday</h2>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-2 rounded">
+                                <i class="fas fa-users text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <canvas id="monthlyGuestTrendChart" height="250"></canvas>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-subtitle text-muted mb-2">Guests This Month</h6>
+                                <h2 class="card-title fw-bold text-success">@ViewBag.GuestsThisMonth</h2>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-2 rounded">
+                                <i class="fas fa-calendar-alt text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-subtitle text-muted mb-2">Previous Month</h6>
+                                <h2 class="card-title fw-bold text-warning">@ViewBag.GuestsPrevMonth</h2>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-2 rounded">
+                                <i class="fas fa-chart-line text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Yearly Guest Trend Chart -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-semibold">Yearly Guest Trend</h5>
+        <!-- Charts Section -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="card-title mb-0 fw-semibold">Monthly Guest Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthlyGuestTrendChart" height="250"></canvas>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <canvas id="yearlyGuestTrendChart" height="250"></canvas>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="card-title mb-0 fw-semibold">Yearly Guest Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="yearlyGuestTrendChart" height="250"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -121,27 +180,23 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Convert Unix timestamp to human-readable date
         function convertUnixToDate(unixTimestamp) {
-            var date = new Date(unixTimestamp * 1000); // seconds to ms
-            return date.toLocaleDateString(); // MM/DD/YYYY format
+            var date = new Date(unixTimestamp * 1000);
+            return date.toLocaleDateString();
         }
 
-        // Display guest dates in human-readable format
         const guestDates = @Html.Raw(Json.Serialize(guestDates));
         console.log(guestDates.map(timestamp => convertUnixToDate(timestamp)));
 
-        // Monthly guest trend data
         const monthlyGuestCounts = @Html.Raw(Json.Serialize(monthlyGuestCounts));
         const monthLabels = @Html.Raw(Json.Serialize(monthLabels));
 
-        // Chart.js gradient for monthly trend
         const ctxMonthly = document.getElementById('monthlyGuestTrendChart').getContext('2d');
         const gradientMonthly = ctxMonthly.createLinearGradient(0, 0, 0, 400);
         gradientMonthly.addColorStop(0, 'rgba(0, 123, 255, 0.8)');
         gradientMonthly.addColorStop(1, 'rgba(0, 123, 255, 0.1)');
 
-        new Chart(ctxMonthly, {
+        const monthChart = new Chart(ctxMonthly, {
             type: 'line',
             data: {
                 labels: monthLabels,
@@ -157,33 +212,9 @@
                     borderWidth: 3
                 }]
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    tooltip: {
-                        enabled: true,
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: '#fff',
-                        borderWidth: 1,
-                    },
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            font: { family: 'Arial', size: 14 }
-                        }
-                    }
-                },
-                scales: {
-                    x: { ticks: { font: { size: 14 } } },
-                    y: { ticks: { font: { size: 14 } } }
-                }
-            }
+            options: { responsive: true }
         });
 
-        // Yearly guest trend combined data
         const yearLabelsCombined = @Html.Raw(Json.Serialize(combinedYearLabels));
         const yearlyGuestCountsCombined = @Html.Raw(Json.Serialize(combinedYearlyGuestCounts));
 
@@ -192,7 +223,7 @@
         gradientYearly.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
         gradientYearly.addColorStop(1, 'rgba(40, 167, 69, 0.1)');
 
-        new Chart(ctxYearly, {
+        const yearChart = new Chart(ctxYearly, {
             type: 'line',
             data: {
                 labels: yearLabelsCombined,
@@ -208,30 +239,17 @@
                     borderWidth: 3
                 }]
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    tooltip: {
-                        enabled: true,
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: '#fff',
-                        borderWidth: 1,
-                    },
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            font: { family: 'Arial', size: 14 }
-                        }
-                    }
-                },
-                scales: {
-                    x: { ticks: { font: { size: 14 } } },
-                    y: { ticks: { font: { size: 14 } } }
-                }
-            }
+            options: { responsive: true }
+        });
+
+        // ✅ Simulate loading time, then show real dashboard
+        document.addEventListener("DOMContentLoaded", function () {
+            setTimeout(() => {
+                document.getElementById('skeletonLoader').style.display = 'none';
+                const dashboard = document.getElementById('dashboardContent');
+                dashboard.style.display = 'block';
+                requestAnimationFrame(() => dashboard.classList.add('visible'));
+            }, 1000);
         });
     </script>
 }
