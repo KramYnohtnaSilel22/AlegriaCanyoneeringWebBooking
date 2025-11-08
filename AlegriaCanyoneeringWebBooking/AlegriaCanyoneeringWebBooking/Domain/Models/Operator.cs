@@ -31,11 +31,12 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Username { get; set; }
 
         [StringLength(255)]
-        [DataType(DataType.Password)]
+        [DataType(DataType.Password)]   
         public string? Password { get; set; }
 
         [Column("EmailAddress")]
         [DataType(DataType.EmailAddress)]
+        [Display(Name = "Email Address")]
         public string EmailAddress { get; set; }
 
         [Required]

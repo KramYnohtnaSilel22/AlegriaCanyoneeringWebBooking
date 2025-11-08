@@ -12,6 +12,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Required, MaxLength(1000)]
         [Column("owner_name")]
+        [Display(Name = "Owner Name")]
         public string OwnerName { get; set; }
 
         [Required, MaxLength(1000)]
@@ -20,10 +21,12 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Required, MaxLength(1000)]
         [Column("business_name")]
+        [Display(Name = "Business Name")]
         public string BusinessName { get; set; }
 
         [Required, MaxLength(1000)]
         [Column("buss_permit")]
+        [Display(Name = "Business Permit")]
         public string BussPermit { get; set; }
 
         [Required, MaxLength(1000)]

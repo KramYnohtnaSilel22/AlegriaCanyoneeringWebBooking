@@ -85,91 +85,72 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-        // GET: OperatorList/Create
+   // GET Create
         public IActionResult Create()
         {
-            return View();
+            ViewData["Action"] = "Create";
+            return PartialView("_CreatePartial", new OperatorList());
         }
 
-        // POST: OperatorList/Create
+        // POST Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OperatorList operatorModel)
         {
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Add(operatorModel);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = $"Operator '{operatorModel.OwnerName}' created successfully!";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = "An error occurred while creating the operator.";
-                    ModelState.AddModelError("", ex.Message);
-                }
+                _context.Add(operatorModel);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = $"Operator '{operatorModel.OwnerName}' created successfully!" });
             }
-            return View(operatorModel);
+            ViewData["Action"] = "Create";
+            return PartialView("_CreatePartial", operatorModel);
         }
+
 
         // GET: OperatorList/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Operator ID is required.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Operator ID is required." });
             }
 
             var operatorModel = await _context.OperatorLists.FindAsync(id);
 
             if (operatorModel == null)
             {
-                TempData["ErrorMessage"] = "Operator not found.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Operator not found." });
             }
 
-            return View(operatorModel);
+            // Return partial view for modal
+            return PartialView("_EditPartial", operatorModel);
         }
+
 
         // POST: OperatorList/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, OperatorList operatorModel)
+        public async Task<IActionResult> Edit(OperatorList operatorModel)
         {
-            if (id != operatorModel.OperatorId)
+            if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Invalid operator ID.";
-                return RedirectToAction(nameof(Index));
+                return PartialView("_EditPartial", operatorModel);
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _context.Update(operatorModel);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = $"Operator '{operatorModel.OwnerName}' updated successfully!";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!OperatorExists(operatorModel.OperatorId))
-                    {
-                        TempData["ErrorMessage"] = "Operator not found.";
-                        return RedirectToAction(nameof(Index));
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "An error occurred while updating the operator.";
-                        throw;
-                    }
-                }
+                _context.Update(operatorModel);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Operator updated successfully." });
             }
-            return View(operatorModel);
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
+
+
 
         // POST: OperatorList/Delete (AJAX)
         [HttpPost]
