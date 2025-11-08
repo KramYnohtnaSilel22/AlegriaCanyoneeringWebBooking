@@ -94,7 +94,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET: Nationalities/Create
         public IActionResult Create()
         {
-            return View();
+            // Set the form action for the partial view
+            ViewData["Action"] = "Create";
+
+            // Return the partial view with a new Nationality model
+            return PartialView("_CreatePartial", new Nationality());
         }
 
         // POST: Nationalities/Create
@@ -102,103 +106,123 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Nationality nationality)
         {
-            if (ModelState.IsValid)
+            // Make sure the model is valid
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    // Check for duplicate nationality name
-                    var existingNationality = await _context.Nationalities
-                        .FirstOrDefaultAsync(n => n.NatName.ToLower() == nationality.NatName.ToLower());
-
-                    if (existingNationality != null)
-                    {
-                        ModelState.AddModelError("NatName", "This nationality already exists.");
-                        return View(nationality);
-                    }
-
-                    _context.Add(nationality);
-                    await _context.SaveChangesAsync();
-
-                    TempData["SuccessMessage"] = $"Nationality '{nationality.NatName}' created successfully!";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = "An error occurred while creating the nationality.";
-                    ModelState.AddModelError("", ex.Message);
-                }
+                ViewData["Action"] = "Create";
+                return PartialView("_CreatePartial", nationality);
             }
-            return View(nationality);
+
+            // Check if the nationality already exists (case-insensitive)
+            bool exists = await _context.Nationalities
+                .AnyAsync(n => n.NatName.ToLower() == nationality.NatName.ToLower());
+
+            if (exists)
+            {
+                ModelState.AddModelError("NatName", "This nationality already exists.");
+                ViewData["Action"] = "Create";
+                return PartialView("_CreatePartial", nationality);
+            }
+
+            try
+            {
+                // Add and save the new nationality
+                _context.Nationalities.Add(nationality);
+                await _context.SaveChangesAsync();
+
+                // Return JSON success for AJAX
+                return Json(new
+                {
+                    success = true,
+                    message = $"Nationality '{nationality.NatName}' created successfully!"
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (optional)
+                Console.Error.WriteLine(ex.Message);
+
+                // Return JSON error for AJAX
+                return Json(new
+                {
+                    success = false,
+                    message = "An error occurred while saving the nationality."
+                });
+            }
         }
+
 
         // GET: Nationalities/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Nationality ID is required.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Nationality ID is required." });
             }
 
             var nationality = await _context.Nationalities.FindAsync(id);
-
             if (nationality == null)
             {
-                TempData["ErrorMessage"] = "Nationality not found.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Nationality not found." });
             }
 
-            return View(nationality);
+            // Pass the model to the partial view
+            ViewData["Action"] = "Edit";
+            return PartialView("_EditPartial", nationality);
         }
 
         // POST: Nationalities/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Nationality nationality)
+        public async Task<IActionResult> Edit(Nationality nationality)
         {
-            if (id != nationality.id)
+            if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Invalid nationality ID.";
-                return RedirectToAction(nameof(Index));
+                ViewData["Action"] = "Edit";
+                return PartialView("_EditPartial", nationality);
             }
 
-            if (ModelState.IsValid)
+            // Check for duplicate nationality (case-insensitive) excluding current record
+            bool exists = await _context.Nationalities
+                .AnyAsync(n => n.NatName.ToLower() == nationality.NatName.ToLower() && n.id != nationality.id);
+
+            if (exists)
             {
-                try
-                {
-                    // Check for duplicate nationality name (excluding current record)
-                    var existingNationality = await _context.Nationalities
-                        .FirstOrDefaultAsync(n => n.NatName.ToLower() == nationality.NatName.ToLower()
-                                                && n.id != id);
-
-                    if (existingNationality != null)
-                    {
-                        ModelState.AddModelError("NatName", "This nationality already exists.");
-                        return View(nationality);
-                    }
-
-                    _context.Update(nationality);
-                    await _context.SaveChangesAsync();
-
-                    TempData["SuccessMessage"] = $"Nationality '{nationality.NatName}' updated successfully!";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!NationalityExists(nationality.id))
-                    {
-                        TempData["ErrorMessage"] = "Nationality not found.";
-                        return RedirectToAction(nameof(Index));
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "An error occurred while updating the nationality.";
-                        throw;
-                    }
-                }
+                ModelState.AddModelError("NatName", "This nationality already exists.");
+                ViewData["Action"] = "Edit";
+                return PartialView("_EditPartial", nationality);
             }
-            return View(nationality);
+
+            try
+            {
+                _context.Update(nationality);
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"Nationality '{nationality.NatName}' updated successfully!"
+                });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "An error occurred while updating the nationality."
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+                return Json(new
+                {
+                    success = false,
+                    message = "An unexpected error occurred."
+                });
+            }
         }
+
 
         // POST: Nationalities/DeleteAjax (AJAX)
         [HttpPost]
