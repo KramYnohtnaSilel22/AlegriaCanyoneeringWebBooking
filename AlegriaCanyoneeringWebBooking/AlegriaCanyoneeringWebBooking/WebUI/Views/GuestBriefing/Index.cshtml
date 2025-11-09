@@ -1,52 +1,122 @@
-﻿@using AlegriaCanyoneeringWebBooking.Domain.Models
-@model IEnumerable<GuestBriefing>
-
-@{
+﻿@{
     ViewData["Title"] = "Guest Briefings";
 }
 
-<h2>Guest Briefings</h2>
+<h2 class="fw-bold mb-4 text-primary">Guest Briefings</h2>
 
+<form id="__AjaxAntiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
 
 <div class="table-responsive">
-    <table id="example1" class="table table-bordered table-striped table-sm align-middle">
+    <table id="guestBriefingsTable" class="table table-bordered table-striped table-sm align-middle w-100">
         <thead class="table-light">
-        <tr>
-@*             <th>ID</th> *@
-            <th>Wristband Code</th>
-            <th>Guest Name</th>
-            <th>Arrival</th>
-            <th>Departure</th>
-            <th>Date Code</th>
-            <th>Image</th>
-                <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var guest in Model)
-        {
             <tr>
-            @*     <td>@guest.BGuestID</td> *@
-                <td>@guest.BWristBondCode</td>
-                <td>@guest.BGuestName</td>
-                <td>@guest.BDateArrival?.ToString("g")</td>
-                <td>@guest.BDateDeparture?.ToString("g")</td>
-                <td>@guest.BDateCode</td>
-                <td>
-                    @if (guest.BGuestImage != null)
-                    {
-                        <img src="data:image/png;base64,@Convert.ToBase64String(guest.BGuestImage)" width="60" />
-                    }
-                </td>
-                    <td>
-                        <form asp-action="DeleteConfirmed" method="post" style="display:inline;"
-                              onsubmit="return confirm('Are you sure you want to delete this record?');">
-                            <input type="hidden" name="id" value="@guest.BGuestID" />
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                        </form>
-                    </td>
+                <th>Wristband Code</th>
+                <th>Guest Name</th>
+                <th>Arrival</th>
+                <th>Departure</th>
+                <th>Date Code</th>
+                <th>Image</th>
+                <th class="text-center">Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+    </table>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        function showToast(message, type = 'success') {
+            const bgClass = {
+                success: 'bg-success',
+                error: 'bg-danger',
+                warning: 'bg-warning text-dark',
+                info: 'bg-info'
+            }[type] || 'bg-success';
+
+            const toast = $(`
+                <div class="toast text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                    <div class="toast-header ${bgClass} text-white border-0">
+                        <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `);
+
+            if (!$('#toastContainer').length)
+                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;"></div>');
+
+            $('#toastContainer').append(toast);
+            new bootstrap.Toast(toast[0]).show();
+        }
+
+        $(function () {
+            const table = $('#guestBriefingsTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '@Url.Action("GetGuestBriefings", "GuestBriefing")',
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    dataSrc: 'data',
+                    error: function (xhr) {
+                        console.error(xhr.responseText);
+                        showToast("Failed to load data.", "error");
+                    }
+                },
+                columns: [
+                    { data: 'wristband' },
+                    { data: 'name' },
+                    { data: 'arrival' },
+                    { data: 'departure' },
+                    { data: 'dateCode' },
+                    {
+                        data: 'image',
+                        render: data => data ? `<img src="data:image/png;base64,${data}" width="60" />` : ''
+                    },
+                    {
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            return `
+                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.name}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>`;
+                        }
+                    }
+                ],
+                responsive: true,
+                pageLength: 10,
+                autoWidth: false
+            });
+
+            // --- Delete AJAX ---
+            $('#guestBriefingsTable').on('click', '.delete-btn', function () {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                if (confirm(`Delete "${name}?`)) {
+                    $.post('@Url.Action("DeleteAjax", "GuestBriefing")', {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    }, function (res) {
+                        if (res.success) {
+                            showToast(res.message);
+                            table.ajax.reload(null, false);
+                        } else {
+                            showToast(res.message, 'error');
+                        }
+                    }).fail(() => showToast('Server error deleting record.', 'error'));
+                }
+            });
+        });
+    </script>
+}
