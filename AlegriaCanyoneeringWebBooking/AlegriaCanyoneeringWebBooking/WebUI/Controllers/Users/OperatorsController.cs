@@ -350,7 +350,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 var operatorRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Operator");
                 if (operatorRole == null)
                     return Json(new { success = false, message = "Operator role not found in the system." });
-
                 op.RoleId = operatorRole.RoleId;
             }
 
@@ -360,40 +359,33 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 var selectedRole = await _context.Roles.FindAsync(op.RoleId);
                 if (selectedRole == null)
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "Invalid role selected.",
-                        errors = new { RoleId = new[] { "Invalid role selected." } }
-                    });
+                    IQueryable<Role> availableRoles = _context.Roles;
+                    ViewData["RoleId"] = new SelectList(availableRoles, "RoleId", "Name", op.RoleId);
+                    ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
+
+                    ModelState.AddModelError("RoleId", "Invalid role selected.");
+                    return PartialView("_EditPartial", op);
                 }
             }
 
-            // 🔹 Check unique username BEFORE ModelState validation
+            // 🔹 Uniqueness check for Username
             bool usernameExists = await _context.Operators
                 .AnyAsync(u => u.Username == op.Username && u.Id != id);
-
             if (usernameExists)
-            {
                 ModelState.AddModelError("Username", "Username already exists.");
-            }
 
-            // 🔹 FIXED: Return JSON with validation errors instead of PartialView
+            // 🔹 Return PartialView on validation error
             if (!ModelState.IsValid)
             {
-                var errors = ModelState
-                    .Where(x => x.Value.Errors.Count > 0)
-                    .ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                    );
+                IQueryable<Role> availableRoles =
+                    currentUserRole == "Super Admin"
+                        ? _context.Roles
+                        : _context.Roles.Where(r => r.Name == "Operator");
 
-                return Json(new
-                {
-                    success = false,
-                    message = "Please correct the validation errors.",
-                    errors = errors
-                });
+                ViewData["RoleId"] = new SelectList(availableRoles, "RoleId", "Name", op.RoleId);
+                ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
+
+                return PartialView("_EditPartial", op);
             }
 
             // 🔹 Update fields
@@ -404,8 +396,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             existing.Username = op.Username;
             existing.EmailAddress = op.EmailAddress;
             existing.RoleId = op.RoleId;
-
-            // 🔹 Update password (optional)
             if (!string.IsNullOrWhiteSpace(NewPassword))
                 existing.Password = PasswordHelper.HashPassword(NewPassword);
 
@@ -414,12 +404,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 await _context.SaveChangesAsync();
                 return Json(new { success = true, message = "Operator updated successfully!" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log the error (ex)
-                return Json(new { success = false, message = "An error occurred while saving changes." });
+                IQueryable<Role> availableRoles =
+                    currentUserRole == "Super Admin"
+                        ? _context.Roles
+                        : _context.Roles.Where(r => r.Name == "Operator");
+
+                ViewData["RoleId"] = new SelectList(availableRoles, "RoleId", "Name", op.RoleId);
+                ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
+
+                ModelState.AddModelError("", "An error occurred while saving changes.");
+                return PartialView("_EditPartial", op);
             }
         }
+
 
 
         // GET: Operators/Delete/5
