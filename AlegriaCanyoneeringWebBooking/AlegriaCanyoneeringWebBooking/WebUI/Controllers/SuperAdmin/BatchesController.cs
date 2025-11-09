@@ -1,136 +1,109 @@
-﻿
+﻿using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using AlegriaCanyoneeringWebBooking.Models;
+
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [Authorize(Roles = "Super Admin")]
     public class BatchesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<BatchesController> _logger;
 
-        public BatchesController(ApplicationDbContext context)
+        public BatchesController(ApplicationDbContext context, ILogger<BatchesController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
-        // GET: Batchs
-        public async Task<IActionResult> Index()
-        {
-            var batches = await _context.Batches
-                .Include(b => b.Operators)
-                .ToListAsync();
-            return View(batches);
-        }
+        // MAIN VIEW
+        public IActionResult Index() => View();
 
-        // GET: Batchs/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var batch = await _context.Batches
-                .Include(b => b.Operators)
-                .FirstOrDefaultAsync(m => m.BatchId == id);
-
-            if (batch == null) return NotFound();
-
-            return View(batch);
-        }
-
-        // GET: Batchs/Create
-        public IActionResult Create()
-        {
-            ViewBag.OperatorId = new SelectList(_context.OperatorLists, "OperatorId", "OwnerName");
-            return View();
-        }
-
-
-        // POST: Batchs/Create
+        // ✅ DataTables endpoint
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BatchId,OperatorId,NoOfLocalGuest,NoOfForeignGuest,NoOfTGuide,NoOfMDriver,TotalNoOfGuest,ArrivalDate")] Batch batch)
+        public async Task<IActionResult> GetBatches()
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(batch);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                // DataTables params
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower();
+
+                var query = _context.Batches
+                    .Include(b => b.Operators)
+                    .AsNoTracking();
+
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    var pattern = $"%{searchValue}%";
+                    query = query.Where(b =>
+                        EF.Functions.Like(b.Operators.BusinessName!, pattern) ||
+                        EF.Functions.Like(b.ArrivalDate!, pattern)
+                    );
+                }
+
+                var totalRecords = await _context.Batches.CountAsync();
+                var filteredRecords = await query.CountAsync();
+
+                var data = await query
+                    .OrderByDescending(b => b.BatchId)
+                    .Skip(start)
+                    .Take(length)
+                    .Select(b => new
+                    {
+                        id = b.BatchId,
+                        operatorName = b.Operators.BusinessName,
+                        localGuests = b.NoOfLocalGuest,
+                        foreignGuests = b.NoOfForeignGuest,
+                        guides = b.NoOfTGuide,
+                        drivers = b.NoOfMDriver,
+                        totalGuests = b.TotalNoOfGuest,
+                        arrivalUnix = b.ArrivalDate // 👈 keep as raw Unix timestamp (string or long)
+                    })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    draw,
+                    recordsTotal = totalRecords,
+                    recordsFiltered = filteredRecords,
+                    data
+                });
             }
-            return View(batch);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading batches");
+                return Json(new { error = "Error loading batch data." });
+            }
         }
 
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var batch = await _context.Batches.FindAsync(id);
-            if (batch == null) return NotFound();
-
-            ViewBag.OperatorId = new SelectList(_context.OperatorLists, "OperatorId", "OwnerName", batch.OperatorId);
-            return View(batch);
-        }
-
-        // POST: Batchs/Edit/5
+        // ✅ AJAX Delete
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BatchId,OperatorId,NoOfLocalGuest,NoOfForeignGuest,NoOfTGuide,NoOfMDriver,TotalNoOfGuest,ArrivalDate")] Batch batch)
+        public async Task<IActionResult> DeleteAjax(int id)
         {
-            if (id != batch.BatchId) return NotFound();
-
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _context.Update(batch);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BatchExists(batch.BatchId))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(batch);
-        }
+                var batch = await _context.Batches.FindAsync(id);
+                if (batch == null)
+                    return Json(new { success = false, message = "Batch not found." });
 
-        // GET: Batches/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var batch = await _context.Batches
-                .Include(b => b.Operators) // include Operator so OwnerName is available
-                .FirstOrDefaultAsync(m => m.BatchId == id);
-
-            if (batch == null) return NotFound();
-
-            return View(batch);  // Returns Delete.cshtml confirmation page
-        }
-
-        // POST: Batches/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var batch = await _context.Batches.FindAsync(id);
-            if (batch != null)
-            {
                 _context.Batches.Remove(batch);
                 await _context.SaveChangesAsync();
-            }
-            return RedirectToAction(nameof(Index));
-        }
 
-        private bool BatchExists(int id)
-        {
-            return _context.Batches.Any(e => e.BatchId == id);
+                return Json(new { success = true, message = "Batch deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting batch");
+                return Json(new { success = false, message = "Error deleting batch." });
+            }
         }
     }
 }
