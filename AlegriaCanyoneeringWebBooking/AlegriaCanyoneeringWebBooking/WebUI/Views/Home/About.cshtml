@@ -166,21 +166,21 @@
 
 <body class="bg-gray-50">
 
-    <header class="w-full bg-white shadow-sm rounded-md">
-        <div class="max-w-7xl mx-auto flex justify-between items-center py-6 px-8">
-            <div class="flex items-center gap-6">
+    <header class="w-full bg-white shadow-md py-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center gap-8">
+            <!-- Logo + Title on the left with extra right padding -->
+            <div class="flex items-center gap-6 pr-8">
                 <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-20 w-auto rounded-full" />
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent whitespace-nowrap">
+                <h6 class="text-lg md:text-xl font-extrabold text-primary-600">
                     Alegria Canyoneering
-                </h1>
+                </h6>
             </div>
-
 
             <a asp-area="" asp-controller="Dashboard" asp-action="Index"
                class="btn btn-outline-secondary btn-lg rounded-pill px-4 flex items-center gap-2 shadow-sm">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
-
+        </div>
         </div>
     </header>
 

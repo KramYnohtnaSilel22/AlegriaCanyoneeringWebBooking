@@ -166,21 +166,23 @@
 
 <body class="bg-gray-50">
 
-    <header class="w-full bg-white shadow-sm rounded-md">
-        <div class="max-w-7xl mx-auto flex justify-between items-center py-6 px-8">
-            <div class="flex items-center gap-6">
+    <header class="w-full bg-white shadow-md py-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center gap-8">
+            <!-- Logo + Title on the left with extra right padding -->
+            <div class="flex items-center gap-6 pr-8">
                 <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-20 w-auto rounded-full" />
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent whitespace-nowrap">
+                <h6 class="text-lg md:text-xl font-extrabold text-primary-600">
                     Alegria Canyoneering
-                </h1>
+                </h6>
             </div>
 
-            <a href="/Authentication/Login" class="bg-primary-600 text-white px-6 py-3 rounded-full shadow-md hover:bg-primary-700 transition flex items-center gap-2 whitespace-nowrap">
-                <i class="bi bi-box-arrow-in-right text-lg"></i>
-                <span class="font-medium">Login</span>
+            <!-- Login Button on the right with extra left padding -->
+            <a href="/Authentication/Login" class="bg-primary-600 text-white px-6 py-3 rounded-full shadow-md hover:bg-primary-700 hover:shadow-lg transition flex items-center gap-2 pl-8">
+                <i class="bi bi-box-arrow-in-right text-lg"></i> Login
             </a>
         </div>
     </header>
+
 
     <!-- Loading Spinner Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white flex items-center justify-center z-50">
@@ -323,43 +325,13 @@
         </div>
 
 
-    <!-- Floating Buttons Container -->
-    <div class="floating-container">
-        <!-- Map Toggle Button -->
-        <button id="mapToggleBtn" class="floating-btn" title="Show Map" aria-label="Toggle Map">
-            <i class="bi bi-geo-alt-fill"></i>
-        </button>
-    </div>
 
-    <!-- Floating Map Container -->
-    <div id="floatingMap">
-        <iframe src="https://www.google.com/maps?q=Alegria+Barangay+Rd,+Alegría,+Cebu,+Philippines&hl=en&z=15&output=embed"
-                width="300"
-                height="200"
-                style="border:0;"
-                allowfullscreen=""
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
-    </div>
 
     <!-- Bootstrap JS (required for carousel) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Toggle map visibility
-        const mapToggleBtn = document.getElementById('mapToggleBtn');
-        const floatingMap = document.getElementById('floatingMap');
 
-        mapToggleBtn.addEventListener('click', () => {
-            if (floatingMap.style.display === 'none' || floatingMap.style.display === '') {
-                floatingMap.style.display = 'block';
-                mapToggleBtn.title = "Hide Map";
-            } else {
-                floatingMap.style.display = 'none';
-                mapToggleBtn.title = "Show Map";
-            }
-        });
           window.addEventListener('load', function() {
             // Ensure spinner stays at least 3 seconds
             setTimeout(() => {
