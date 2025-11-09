@@ -69,7 +69,101 @@
 <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 
 <script>
-    // Add fade CSS
+    // // Add fade CSS
+    // const style = document.createElement('style');
+    // style.textContent = `
+    //     .toast-container .position-fixed {
+    //         transition: opacity 1s ease-in-out !important;
+    //     }
+    // `;
+    // document.head.appendChild(style);
+
+    // const input = document.getElementById('globalScannerInput');
+    // let typingTimer;
+    // const typingDelay = 1000;
+    // let currentScannedBatch = '';
+    // let dataTable;
+
+    // // ✅ FIXED: Enhanced Toast Notification System with 1-second fade
+    // let activeToasts = 0;
+    // const MAX_TOASTS = 1;
+    // const TOAST_TIMEOUT = 2000; // 5 seconds total (4s display + 1s fade)
+
+    // function showToast(message, type = 'info') {
+    //     // Limit simultaneous toasts
+    //     if (activeToasts >= MAX_TOASTS) {
+    //         return;
+    //     }
+
+    //     const toastId = 'toast-' + Date.now();
+    //     activeToasts++;
+
+    //     const icons = {
+    //         'success': 'fa-check-circle',
+    //         'error': 'fa-exclamation-triangle',
+    //         'danger': 'fa-exclamation-triangle',
+    //         'warning': 'fa-exclamation-circle',
+    //         'info': 'fa-info-circle'
+    //     };
+
+    //     const toastHtml = `
+    //         <div id="${toastId}" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; margin-top: ${(activeToasts - 1) * 80}px;">
+    //             <div class="toast align-items-center text-white bg-${type} border-0 show" role="alert">
+    //                 <div class="d-flex">
+    //                     <div class="toast-body">
+    //                         <i class="fas ${icons[type] || 'fa-info-circle'} me-2"></i>
+    //                         <strong class="me-auto">${title}</strong>
+    //                 <small>Now</small>
+                          
+    //                     </div>
+    //                     <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="removeToastWithFade('${toastId}')"></button>
+    //                 </div>
+    //                   ${message}
+    //             </div>
+    //         </div>
+    //     `;
+
+    //     // Create toast container if it doesn't exist
+    //     if ($('.toast-container').length === 0) {
+    //         $('body').append('<div class="toast-container"></div>');
+    //     }
+
+    //     $('.toast-container').append(toastHtml);
+
+    //     // Auto remove after timeout with 1-second fade
+    //     setTimeout(() => {
+    //         removeToastWithFade(toastId);
+    //     }, TOAST_TIMEOUT);
+    // }
+
+    // // ✅ Function to remove specific toast with 1-second fade
+    // function removeToastWithFade(toastId) {
+    //     const $toast = $(`#${toastId}`);
+    //     if ($toast.length === 0) return;
+
+    //     // Start fade out
+    //     $toast.css('opacity', '0');
+
+    //     // Remove after 1 second (fade duration)
+    //     setTimeout(() => {
+    //         $toast.remove();
+    //         activeToasts = Math.max(0, activeToasts - 1);
+
+    //         // Re-position remaining toasts
+    //         $('.toast-container .position-fixed').each(function(index) {
+    //             $(this).css('margin-top', (index * 80) + 'px');
+    //         });
+    //     }, 1000); // 1-second fade duration
+    // }
+
+    // // ✅ Function to clear all toasts
+    // function clearAllToasts() {
+    //     $('.toast-container .position-fixed').each(function() {
+    //         const toastId = $(this).attr('id');
+    //         removeToastWithFade(toastId);
+    //     });
+    // }
+        // Add fade CSS
     const style = document.createElement('style');
     style.textContent = `
         .toast-container .position-fixed {
@@ -87,9 +181,18 @@
     // ✅ FIXED: Enhanced Toast Notification System with 1-second fade
     let activeToasts = 0;
     const MAX_TOASTS = 1;
-    const TOAST_TIMEOUT = 2000; // 5 seconds total (4s display + 1s fade)
+    const TOAST_TIMEOUT = 4000; // 4 seconds display
 
-    function showToast(message, type = 'info') {
+    // Toast types with icons and colors
+    const toastTypes = {
+        success: { icon: 'bi-check-circle-fill', bg: 'bg-success text-white' },
+        danger: { icon: 'bi-exclamation-triangle-fill', bg: 'bg-danger text-white' },
+        error: { icon: 'bi-exclamation-triangle-fill', bg: 'bg-danger text-white' },
+        warning: { icon: 'bi-exclamation-circle-fill', bg: 'bg-warning text-dark' },
+        info: { icon: 'bi-info-circle-fill', bg: 'bg-info text-dark' }
+    };
+
+    function showToast(message, type = 'info', title = 'Notification') {
         // Limit simultaneous toasts
         if (activeToasts >= MAX_TOASTS) {
             return;
@@ -98,24 +201,19 @@
         const toastId = 'toast-' + Date.now();
         activeToasts++;
 
-        const icons = {
-            'success': 'fa-check-circle',
-            'error': 'fa-exclamation-triangle',
-            'danger': 'fa-exclamation-triangle',
-            'warning': 'fa-exclamation-circle',
-            'info': 'fa-info-circle'
-        };
+        const { icon, bg } = toastTypes[type] || toastTypes.info;
 
         const toastHtml = `
-            <div id="${toastId}" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; margin-top: ${(activeToasts - 1) * 80}px;">
-                <div class="toast align-items-center text-white bg-${type} border-0 show" role="alert">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <i class="fas ${icons[type] || 'fa-info-circle'} me-2"></i>
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="removeToastWithFade('${toastId}')"></button>
+            <div id="${toastId}" class="position-fixed top-0 end-0 p-3"
+                 style="z-index: 1055; margin-top: ${(activeToasts - 1) * 80}px; opacity:1;">
+                <div class="toast border-0 shadow-sm ${bg}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${TOAST_TIMEOUT}">
+                    <div class="toast-header ${bg}">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <small>Now</small>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
+                    <div class="toast-body">${message}</div>
                 </div>
             </div>
         `;
@@ -125,12 +223,16 @@
             $('body').append('<div class="toast-container"></div>');
         }
 
-        $('.toast-container').append(toastHtml);
+        const $toast = $(toastHtml).appendTo('.toast-container');
 
-        // Auto remove after timeout with 1-second fade
+        // Initialize Bootstrap toast
+        const bsToast = new bootstrap.Toast($toast.find('.toast')[0]);
+        bsToast.show();
+
+        // Auto remove after display timeout + 1 second fade
         setTimeout(() => {
             removeToastWithFade(toastId);
-        }, TOAST_TIMEOUT);
+        }, TOAST_TIMEOUT + 1000);
     }
 
     // ✅ Function to remove specific toast with 1-second fade
@@ -147,7 +249,7 @@
             activeToasts = Math.max(0, activeToasts - 1);
 
             // Re-position remaining toasts
-            $('.toast-container .position-fixed').each(function(index) {
+            $('.toast-container .position-fixed').each(function (index) {
                 $(this).css('margin-top', (index * 80) + 'px');
             });
         }, 1000); // 1-second fade duration
@@ -155,7 +257,7 @@
 
     // ✅ Function to clear all toasts
     function clearAllToasts() {
-        $('.toast-container .position-fixed').each(function() {
+        $('.toast-container .position-fixed').each(function () {
             const toastId = $(this).attr('id');
             removeToastWithFade(toastId);
         });
@@ -281,31 +383,34 @@
         $('.scan-confirm-btn').remove();
 
         const confirmButtonHtml = `
-           <div class="position-fixed start-50 translate-middle-x scan-confirm-btn" style="z-index: 1060; top: 30px;">
-        <div class="card shadow-lg border-0" style="min-width: 350px; font-size: 1.1rem;">
-            <div class="card-header bg-primary text-white text-center">
-                <h6 class="mb-0">
-                    <i class="fas fa-qrcode me-2"></i>Scanned Batch Found
-                </h6>
+          <div class="position-fixed start-50 top-20 translate-middle-x scan-confirm-btn" style="z-index: 1060; min-width: 380px; max-width: 480px;">
+        <div class="card shadow-lg border-0 rounded-4" style="font-size: 1.15rem;">
+            <!-- Header -->
+            <div class="card-header bg-primary text-white text-center rounded-top-4 py-3">
+                <h5 class="fw-bold mb-0">Scanned Batch Found</h5>
             </div>
-            <div class="card-body text-center">
-                <p class="mb-3"><strong>Batch Code:</strong><br>
-                    <span class="h5 text-primary">${batch}</span>
+
+            <!-- Body -->
+            <div class="card-body text-center py-4">
+                <p class="mb-4">
+                    <strong>Batch Code:</strong><br>
+                    <span class="h4 text-primary">${batch}</span>
                 </p>
 
-                <div class="d-grid gap-2">
-                    <button class="btn btn-success btn-lg" style="font-size: 1.2rem;"
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-success btn-lg px-5" style="font-size: 1.2rem; border-radius: 0.5rem;"
                             onclick="confirmScannedBatch('${batch.replace(/'/g, "\\'")}')">
                         <i class="fas fa-check-circle me-2"></i>Yes
                     </button>
-                    <button class="btn btn-danger btn-sm" style="font-size: 1rem;"
+                    <button class="btn btn-outline-danger btn-lg px-5" style="font-size: 1.2rem; border-radius: 0.5rem;"
                             onclick="closeScanConfirm()">
-                        <i class="fas fa-times me-1"></i>No
+                        <i class="fas fa-times me-2"></i>No
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
 
         `;
 
