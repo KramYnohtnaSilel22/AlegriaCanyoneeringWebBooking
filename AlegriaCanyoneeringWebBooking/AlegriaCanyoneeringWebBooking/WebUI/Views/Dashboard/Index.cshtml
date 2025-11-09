@@ -252,47 +252,47 @@
             }, 1000);
         });
 
-          // Toast function
-        function showToast(message, type = 'success') {
-            let bgClass = 'bg-success', icon = 'bi-check-circle-fill', title = 'Success';
-            if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
+        //   // Toast function
+        // function showToast(message, type = 'success') {
+        //     let bgClass = 'bg-success', icon = 'bi-check-circle-fill', title = 'Success';
+        //     if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
 
-            const toastContainer = $('<div></div>')
-                .addClass('toast-container position-fixed top-0 end-0 p-3')
-                .css('z-index', 1080);
+        //     const toastContainer = $('<div></div>')
+        //         .addClass('toast-container position-fixed top-0 end-0 p-3')
+        //         .css('z-index', 1080);
 
-            const toast = $('<div></div>')
-                .addClass(`toast text-white ${bgClass} border-0`)
-                .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
+        //     const toast = $('<div></div>')
+        //         .addClass(`toast text-white ${bgClass} border-0`)
+        //         .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
 
-            const toastHeader = $('<div></div>')
-                .addClass(`toast-header ${bgClass} text-white border-0`)
-                .html(`<i class="bi ${icon} me-2"></i>
-                       <strong class="me-auto">${title}</strong>
-                       <small>Now</small>
-                       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>`);
+        //     const toastHeader = $('<div></div>')
+        //         .addClass(`toast-header ${bgClass} text-white border-0`)
+        //         .html(`<i class="bi ${icon} me-2"></i>
+        //                <strong class="me-auto">${title}</strong>
+        //                <small>Now</small>
+        //                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>`);
 
-            const toastBody = $('<div></div>').addClass('toast-body').text(message);
+        //     const toastBody = $('<div></div>').addClass('toast-body').text(message);
 
-            toast.append(toastHeader, toastBody);
-            toastContainer.append(toast);
-            $('body').append(toastContainer);
+        //     toast.append(toastHeader, toastBody);
+        //     toastContainer.append(toast);
+        //     $('body').append(toastContainer);
 
-            var bsToast = new bootstrap.Toast(toast[0]);
-            bsToast.show();
+        //     var bsToast = new bootstrap.Toast(toast[0]);
+        //     bsToast.show();
 
-            toast.on('hidden.bs.toast', () => toastContainer.remove());
-        }
+        //     toast.on('hidden.bs.toast', () => toastContainer.remove());
+        // }
 
-        $(document).ready(function () {
-            // Call toast for the logged-in user
-            const name = '@User.Identity.Name';
-            if (name) {
-                showToast(`Welcome back, ${name}!`, 'success');
-            }
+        // $(document).ready(function () {
+        //     // Call toast for the logged-in user
+        //     const name = '@User.Identity.Name';
+        //     if (name) {
+        //         showToast(`Welcome back, ${name}!`, 'success');
+        //     }
 
            
-        });
+        // });
 
 
     </script>
