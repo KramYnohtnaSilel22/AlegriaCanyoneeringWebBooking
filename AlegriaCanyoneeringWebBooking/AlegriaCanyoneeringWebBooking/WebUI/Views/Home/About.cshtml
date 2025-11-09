@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "About Us";
+    ViewData["Title"] = "Landing Page";
     Layout = "Layout_Login";
 }
 <!DOCTYPE html>
@@ -151,15 +151,12 @@
 
         /* Responsive adjustments */
         @@media (max-width: 640px) {
-            #floatingMap
-
-        {
-            width: 90vw;
-            right: 5%;
-            bottom: 90px;
-            height: 180px;
-        }
-
+            #floatingMap {
+                width: 90vw;
+                right: 5%;
+                bottom: 90px;
+                height: 180px;
+            }
         }
     </style>
 
@@ -169,78 +166,80 @@
 
 <body class="bg-gray-50">
 
-    <!-- Top Bar with Logo and Button -->
-    <div class="flex justify-between items-center w-full px-6 pt-6 mb-8">
-        <!-- Logo -->
-        <div class="flex items-center gap-4">
-            <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-32 w-auto object-contain" />
-        </div>
+    <header class="w-full bg-white shadow-sm rounded-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center py-6 px-8">
+            <div class="flex items-center gap-6">
+                <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-20 w-auto rounded-full" />
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent whitespace-nowrap">
+                    Alegria Canyoneering
+                </h1>
+            </div>
 
-  <a asp-area="" asp-controller="Dashboard" asp-action="Index"
+
+            <a asp-area="" asp-controller="Dashboard" asp-action="Index"
                class="btn btn-outline-secondary btn-lg rounded-pill px-4 flex items-center gap-2 shadow-sm">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
-       
-    </div>
 
-    <!-- Main Content -->
-    <div class="container mx-auto px-6 py-6">
-        <!-- Hero Section -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl font-extrabold gradient-text mb-4 animate-fade">
-                Transforming Guest Booking — One Click at a Time.
-            </h1>
-            <p class="text-gray-600 text-lg max-w-3xl mx-auto animate-fade delay-1">
-                Simplifying guest management through seamless online booking — designed for operators, made for convenience.
+        </div>
+    </header>
+
+
+    <!-- Hero Section -->
+    <section class="text-center py-20 px-6 bg-gradient-to-b from-sky-50 via-white to-emerald-50">
+        <h2 class="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent mb-6 animate-fade">
+            Transforming Guest Booking — One Click at a Time
+        </h2>
+        <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Simplify guest management through seamless online booking — designed for operators, made for convenience.
+        </p>
+    </section>
+    <!-- How to Use This App -->
+    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise mb-10">
+        <h4 class="text-xl font-semibold text-primary-600 mb-3 flex items-center">
+            <i class="bi bi-list-ol me-2 text-primary-600"></i> How to Use This App
+        </h4>
+
+        <ol class="list-decimal list-inside space-y-3 text-gray-700 text-lg leading-relaxed">
+            <li>
+                <strong>Sign In or Register:</strong> The <em>Super Admin</em> creates operator accounts and provides the login credentials to each operator.
+                Operators can then <strong>sign in</strong> using those credentials to access their booking dashboard.
+            </li>
+
+            <li>
+                <strong>Add New Bookings:</strong> Use the <em>“New Booking”</em> feature to record guest details, dates, and preferences.
+            </li>
+            <li>
+                <strong>Save Guest:</strong> After adding a new booking, go to the <em>“Save Guest”</em> section.
+                Here, you can <strong>add another guest</strong> under the same booking or <strong>cancel</strong> if you don’t want to save the guest information.
+            </li>
+            <li>
+                <strong>Open Reserve Booking:</strong> Go to the <em>Reserve Booking</em> section to manage guests arriving or confirming their reservations.
+            </li>
+            <li>
+                <strong>Scan Guest QR Code:</strong> Each guest has a unique QR code — scan it to quickly retrieve their booking details.
+            </li>
+            <li>
+                <strong>Confirm Booking:</strong> After scanning, a confirmation popup will appear. Choose <em>“Yes”</em> to confirm the reservation or <em>“No”</em> to cancel.
+            </li>
+            <li>
+                <strong>View Booked Guests:</strong> Go to the <em>Booked Guest</em> page. You can <strong>search by date</strong> to see who has booked for the current day and
+                <strong>print the batch list</strong> for easy reference or record-keeping.
+            </li>
+        </ol>
+
+        <div class="bg-primary-100 text-black mt-5 p-4 rounded-lg flex items-start">
+            <i class="bi bi-lightbulb me-2 text-primary-600 text-xl"></i>
+            <p>
+                <strong>Tip:</strong> Always confirm and save guest information properly to ensure accurate booking records and smooth QR confirmation during check-in.
             </p>
         </div>
-
-        <!-- How to Use This App -->
-        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise mb-10">
-            <h4 class="text-xl font-semibold text-primary-600 mb-3 flex items-center">
-                <i class="bi bi-list-ol me-2 text-primary-600"></i> How to Use This App
-            </h4>
-
-            <ol class="list-decimal list-inside space-y-3 text-gray-700 text-lg leading-relaxed">
-                <li>
-                    <strong>Sign In or Register:</strong> The <em>Super Admin</em> creates operator accounts and provides the login credentials to each operator.
-                    Operators can then <strong>sign in</strong> using those credentials to access their booking dashboard.
-                </li>
-
-                <li>
-                    <strong>Add New Bookings:</strong> Use the <em>“New Booking”</em> feature to record guest details, dates, and preferences.
-                </li>
-                <li>
-                    <strong>Save Guest:</strong> After adding a new booking, go to the <em>“Save Guest”</em> section.
-                    Here, you can <strong>add another guest</strong> under the same booking or <strong>cancel</strong> if you don’t want to save the guest information.
-                </li>
-                <li>
-                    <strong>Open Reserve Booking:</strong> Go to the <em>Reserve Booking</em> section to manage guests arriving or confirming their reservations.
-                </li>
-                <li>
-                    <strong>Scan Guest QR Code:</strong> Each guest has a unique QR code — scan it to quickly retrieve their booking details.
-                </li>
-                <li>
-                    <strong>Confirm Booking:</strong> After scanning, a confirmation popup will appear. Choose <em>“Yes”</em> to confirm the reservation or <em>“No”</em> to cancel.
-                </li>
-                <li>
-                    <strong>View Booked Guests:</strong> Go to the <em>Booked Guest</em> page. You can <strong>search by date</strong> to see who has booked for the current day and
-                    <strong>print the batch list</strong> for easy reference or record-keeping.
-                </li>
-            </ol>
-
-            <div class="bg-primary-100 text-black mt-5 p-4 rounded-lg flex items-start">
-                <i class="bi bi-lightbulb me-2 text-primary-600 text-xl"></i>
-                <p>
-                    <strong>Tip:</strong> Always confirm and save guest information properly to ensure accurate booking records and smooth QR confirmation during check-in.
-                </p>
-            </div>
-        </div>
+    </div>
 
 
 
-        <!-- Mission and Vision -->
-  @*       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+    <!-- Mission and Vision -->
+    @*       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-1">
                 <h4 class="text-xl font-semibold text-red-600 mb-3 flex items-center">
                     <i class="bi bi-bullseye me-2"></i> Our Mission
@@ -259,81 +258,77 @@
             </div>
         </div>
  *@
-        <!-- Testimonials -->
-        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-3 mb-10 text-center">
-            <h4 class="text-xl font-semibold text-green-600 mb-4">
-                <i class="bi bi-chat-square-quote me-2"></i> What Our Users Say
-            </h4>
-            <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner text-center">
-                    <div class="carousel-item active">
-                        <blockquote class="text-gray-600 text-lg italic">“This app streamlined our entire booking process. It’s so intuitive!”</blockquote>
-                        <footer class="mt-2 text-sm text-gray-500">Nikk Alvin Barrioquinto</footer>
-                    </div>
-                    <div class="carousel-item">
-                        <blockquote class="text-gray-600 text-lg italic">“Our response time improved by 50%. Highly recommended!”</blockquote>
-                        <footer class="mt-2 text-sm text-gray-500">Jude Lequido </footer>
-                    </div>
-                    <div class="carousel-item">
-                        <blockquote class="text-gray-600 text-lg italic">“A guest-friendly platform that actually works. Simple and effective.”</blockquote>
-                        <footer class="mt-2 text-sm text-gray-500">Bryan Montemayor</footer>
-                    </div>
+    <!-- Testimonials -->
+    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-3 mb-10 text-center">
+        <h4 class="text-xl font-semibold text-green-600 mb-4">
+            <i class="bi bi-chat-square-quote me-2"></i> What Our Users Say
+        </h4>
+        <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner text-center">
+                <div class="carousel-item active">
+                    <blockquote class="text-gray-600 text-lg italic">“This app streamlined our entire booking process. It’s so intuitive!”</blockquote>
+                    <footer class="mt-2 text-sm text-gray-500">Nikk Alvin Barrioquinto</footer>
                 </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon bg-dark rounded-circle"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon bg-dark rounded-circle"></span>
-                </button>
+                <div class="carousel-item">
+                    <blockquote class="text-gray-600 text-lg italic">“Our response time improved by 50%. Highly recommended!”</blockquote>
+                    <footer class="mt-2 text-sm text-gray-500">Jude Lequido </footer>
+                </div>
+                <div class="carousel-item">
+                    <blockquote class="text-gray-600 text-lg italic">“A guest-friendly platform that actually works. Simple and effective.”</blockquote>
+                    <footer class="mt-2 text-sm text-gray-500">Bryan Montemayor</footer>
+                </div>
             </div>
-        </div>
-
-        <!-- Contact -->
-        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-4 mb-10">
-            <h4 class="text-xl font-semibold text-green-700 mb-3 flex items-center">
-                <i class="bi bi-chat-dots me-2"></i> Get in Touch
-            </h4>
-            <p class="text-gray-700 text-lg mb-3">
-                Have an idea to make our app even better? We’d love to hear from you!
-            </p>
-            <ul class="text-gray-700 text-lg space-y-2">
-                <li><i class="bi bi-envelope me-2 text-success"></i>Email: <a href="mailto:lelis.markanthony@gmail.com" class="text-primary-600 font-semibold hover:underline">lelis.markanthony@gmail.com</a></li>
-                <li><i class="bi bi-telephone me-2 text-success"></i>Phone: <a href="tel:+6324175154" class="text-primary-600 font-semibold hover:underline">(032) 417-5154</a></li>
-            </ul>
-            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=lelis.markanthony@gmail.com&su=Inquiry&body=Hello, I would like to get in touch with you."
-               target="_blank"
-               class="mt-4 inline-block bg-primary-600 text-white px-6 py-3 rounded-full shadow hover:bg-primary-700 transition">
-                <i class="bi bi-chat-dots-fill me-2"></i> Let's Talk
-            </a>
-        </div>
-
-        <!-- Imprint -->
-        <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-5">
-            <h4 class="text-xl font-semibold text-yellow-600 mb-3 flex items-center">
-                <i class="bi bi-building me-2"></i> Imprint
-            </h4>
-            <p class="text-gray-700 text-lg leading-relaxed">
-                Published by <strong>JustClick Integrated Solutions Inc.</strong><br />
-                171 N. Bacalso Avenue, Cebu City<br />
-                Developed by <strong>Dendo Pulgo</strong> and <strong>Darius Cumpio</strong><br />
-                Responsible: <strong>Mark Anthony P. Lelis</strong><br />
-                On behalf of: <strong>Municipality of Alegria, Cebu</strong>
-            </p>
+            <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon bg-dark rounded-circle"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon bg-dark rounded-circle"></span>
+            </button>
         </div>
     </div>
+
+    <!-- Contact -->
+    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-4 mb-10">
+        <h4 class="text-xl font-semibold text-green-700 mb-3 flex items-center">
+            <i class="bi bi-chat-dots me-2"></i> Get in Touch
+        </h4>
+        <p class="text-gray-700 text-lg mb-3">
+            Have an idea to make our app even better? We’d love to hear from you!
+        </p>
+        <ul class="text-gray-700 text-lg space-y-2">
+            <li><i class="bi bi-envelope me-2 text-success"></i>Email: <a href="mailto:lelis.markanthony@gmail.com" class="text-primary-600 font-semibold hover:underline">lelis.markanthony@gmail.com</a></li>
+            <li><i class="bi bi-telephone me-2 text-success"></i>Phone: <a href="tel:+6324175154" class="text-primary-600 font-semibold hover:underline">(032) 417-5154</a></li>
+        </ul>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=lelis.markanthony@gmail.com&su=Inquiry&body=Hello, I would like to get in touch with you."
+           target="_blank"
+           class="mt-4 inline-block bg-primary-600 text-white px-6 py-3 rounded-full shadow hover:bg-primary-700 transition">
+            <i class="bi bi-chat-dots-fill me-2"></i> Let's Talk
+        </a>
+    </div>
+
+    <!-- Imprint -->
+    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-5">
+        <h4 class="text-xl font-semibold text-yellow-600 mb-3 flex items-center">
+            <i class="bi bi-building me-2"></i> Imprint
+        </h4>
+        <p class="text-gray-700 text-lg leading-relaxed">
+            Published by <strong>JustClick Integrated Solutions Inc.</strong><br />
+            171 N. Bacalso Avenue, Cebu City<br />
+            Developed by <strong>Dendo Pulgo</strong> and <strong>Darius Cumpio</strong><br />
+            Responsible: <strong>Mark Anthony P. Lelis</strong><br />
+            On behalf of: <strong>Municipality of Alegria, Cebu</strong>
+        </p>
+    </div>
+
 
     <!-- Floating Buttons Container -->
     <div class="floating-container">
-        <!-- Messenger button: opens Messenger chat link -->
-        <a href="https://m.me/YourPageID" target="_blank" aria-label="Messenger Chat" class="floating-btn" title="Chat on Messenger">
-            <i class="bi bi-messenger"></i>
-        </a>
-
-        <!-- Map button: toggles embedded map -->
-        <button aria-label="Toggle Map" title="Show Map" class="floating-btn" id="mapToggleBtn">
-            <i class="bi bi-geo-alt"></i>
+        <!-- Map Toggle Button -->
+        <button id="mapToggleBtn" class="floating-btn" title="Show Map" aria-label="Toggle Map">
+            <i class="bi bi-geo-alt-fill"></i>
         </button>
     </div>
+
     <!-- Floating Map Container -->
     <div id="floatingMap">
         <iframe src="https://www.google.com/maps?q=Alegria+Barangay+Rd,+Alegría,+Cebu,+Philippines&hl=en&z=15&output=embed"
@@ -345,7 +340,6 @@
                 referrerpolicy="no-referrer-when-downgrade">
         </iframe>
     </div>
-
 
     <!-- Bootstrap JS (required for carousel) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
