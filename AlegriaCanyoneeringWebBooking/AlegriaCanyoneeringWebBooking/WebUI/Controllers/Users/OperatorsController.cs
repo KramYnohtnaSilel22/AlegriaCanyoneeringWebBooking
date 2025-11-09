@@ -21,69 +21,55 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> GetOperatorsData()
+
+        public async Task<IActionResult> GetUserData()
         {
             try
             {
-                // Get current user's role for filtering
-                var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
-                                   ?? User.FindFirst("Role")?.Value;
-
+                // --- Get user role ---
+                var currentUserRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
                 if (string.IsNullOrEmpty(currentUserRole))
-                {
                     return Json(new { error = "Unable to determine user role." });
-                }
 
-                // Extract DataTables parameters
+                // --- DataTables parameters ---
                 var draw = Request.Form["draw"].FirstOrDefault();
-                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
-                var searchValue = Request.Form["search[value]"].FirstOrDefault();
+                var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
+                var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
+                var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower();
 
-                // Build base query with role-based filtering (same logic as Index)
-                IQueryable<Operator> query;
+                IQueryable<Operator> query = _context.Operators.Include(o => o.Roles);
 
-                if (currentUserRole == "Super Admin")
+                // --- Role-based filtering ---
+                if (currentUserRole == "Admin")
                 {
-                    // Super Admin sees all users
-                    query = _context.Operators.Include(o => o.Roles);
+                    query = query.Where(o => o.Roles != null && o.Roles.Name == "Operator");
                 }
-                else if (currentUserRole == "Admin")
+                else if (currentUserRole != "Super Admin")
                 {
-                    // Admin only sees Operators
-                    query = _context.Operators
-                        .Include(o => o.Roles)
-                        .Where(o => o.Roles.Name == "Operator");
-                }
-                else
-                {
-                    // No access for other roles
                     return Json(new { error = "Access denied." });
                 }
 
-                // Apply global search filter
+                // --- Global search ---
                 if (!string.IsNullOrEmpty(searchValue))
                 {
                     query = query.Where(o =>
-                        o.Name.Contains(searchValue) ||
-                        o.EmailAddress.Contains(searchValue) ||
-                        o.BusinessName.Contains(searchValue) ||
-                        o.Username.Contains(searchValue) ||
-                        o.Gender.Contains(searchValue) ||
-                        (o.Roles != null && o.Roles.Name.Contains(searchValue))
+                        (o.Name != null && o.Name.ToLower().Contains(searchValue)) ||
+                        (o.Username != null && o.Username.ToLower().Contains(searchValue)) ||
+                        (o.EmailAddress != null && o.EmailAddress.ToLower().Contains(searchValue)) ||
+                        (o.Gender != null && o.Gender.ToLower().Contains(searchValue)) ||
+                        (o.BusinessName != null && o.BusinessName.ToLower().Contains(searchValue)) ||
+                        (o.Roles != null && o.Roles.Name.ToLower().Contains(searchValue))
                     );
                 }
 
-                // Get total count after filtering
+                // --- Total / filtered records ---
                 var recordsFiltered = await query.CountAsync();
-
-                // Get total count before filtering (for info display)
                 var recordsTotal = currentUserRole == "Super Admin"
                     ? await _context.Operators.CountAsync()
                     : await _context.Operators.Include(o => o.Roles)
-                        .CountAsync(o => o.Roles.Name == "Operator");
+                        .CountAsync(o => o.Roles != null && o.Roles.Name == "Operator");
 
-                // Apply sorting and pagination
+                // --- Paging & projection ---
                 var data = await query
                     .OrderBy(o => o.Name)
                     .Skip(start)
@@ -91,23 +77,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .Select(o => new
                     {
                         id = o.Id,
-                        name = o.Name,
-                        emailAddress = o.EmailAddress,
-                        businessName = string.IsNullOrWhiteSpace(o.BusinessName) ? "No Operator" : o.BusinessName,
+                        ownerName = o.Name ?? "",
+                        gender = o.Gender ?? "",
+                        businessName = o.BusinessName ?? "",
                         age = o.Age,
-                        gender = o.Gender,
-                        username = o.Username,
-                        roleName = o.Roles != null ? o.Roles.Name : "N/A"
+                        username = o.Username ?? "",
+                        emailAddress = o.EmailAddress ?? "",
+                        role = o.Roles != null ? o.Roles.Name : "",
+                        status = 1
                     })
                     .ToListAsync();
 
-                // Return DataTables-formatted JSON
                 return Json(new
                 {
-                    draw = draw,
-                    recordsFiltered = recordsFiltered,
-                    recordsTotal = recordsTotal,
-                    data = data
+                    draw,
+                    recordsFiltered,
+                    recordsTotal,
+                    data
                 });
             }
             catch (Exception ex)
@@ -115,6 +101,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { error = $"Server Error: {ex.Message}" });
             }
         }
+
 
         // GET: Operators
         public async Task<IActionResult> Index()
@@ -185,263 +172,231 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(op);
         }
 
-        // GET: Operators/Create
+        // GET: Operators/Create 
+        [HttpGet]
         public IActionResult Create()
         {
             var currentUserRole = User.FindFirst("Role")?.Value;
 
             if (currentUserRole == "Super Admin")
             {
-                // Super Admin can create all types of users (Admin, Operator, Super Admin)
                 ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name");
             }
             else if (currentUserRole == "Admin")
             {
-                // Admin can only create Operators
                 ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name");
             }
             else
             {
-                // No access for Operators or other roles
                 return Forbid();
             }
 
             ViewBag.GenderList = new SelectList(new[] { "Male", "Female" });
-            return View();
+            ViewData["Action"] = "Create";
+            return PartialView("_CreatePartial", new Operator());
         }
 
-        // POST: Operators/Create
+        // POST: Operators/Create - Handle AJAX Form Submission
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Name,BusinessName,Age,Gender,Username,Password,EmailAddress,RoleId")] Operator op)
         {
             var currentUserRole = User.FindFirst("Role")?.Value;
 
-            // Security check: Only Super Admin and Admin can create users
             if (currentUserRole != "Super Admin" && currentUserRole != "Admin")
             {
-                return Forbid();
+                return Json(new { success = false, message = "Access denied." });
             }
 
             if (ModelState.IsValid)
             {
-                // ✅ FIX: Set BusinessName to "N/A" if empty or null
+                // Set BusinessName default if empty
                 if (string.IsNullOrWhiteSpace(op.BusinessName))
                 {
                     op.BusinessName = "No Operator";
                 }
-                // Security check: Admin can ONLY create Operators
+
+                // Role validation for Admin
                 if (currentUserRole == "Admin")
                 {
                     var operatorRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Operator");
                     if (operatorRole == null)
                     {
-                        ModelState.AddModelError("", "Operator role not found in the system.");
-                        ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name");
-                        ViewBag.GenderList = new SelectList(new[] { "Male", "Female" });
-                        return View(op);
+                        return Json(new { success = false, message = "Operator role not found in the system." });
                     }
-
-                    // Force the role to be Operator, ignore whatever was submitted
                     op.RoleId = operatorRole.RoleId;
                 }
                 else if (currentUserRole == "Super Admin")
                 {
-                    // Super Admin can create any role, but validate that the selected role exists
                     var selectedRole = await _context.Roles.FindAsync(op.RoleId);
                     if (selectedRole == null)
                     {
                         ModelState.AddModelError("RoleId", "Invalid role selected.");
                         ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
                         ViewBag.GenderList = new SelectList(new[] { "Male", "Female" });
-                        return View(op);
+                        ViewData["Action"] = "Create";
+                        return PartialView("_CreatePartial", op);
                     }
                 }
 
-                // Check if username already exists
+                // Check username uniqueness
                 var existingUser = await _context.Operators.FirstOrDefaultAsync(u => u.Username == op.Username);
                 if (existingUser != null)
                 {
                     ModelState.AddModelError("Username", "Username already exists. Please choose a different username.");
 
-                    // Refill dropdowns
                     if (currentUserRole == "Super Admin")
                         ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
                     else
                         ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name");
 
                     ViewBag.GenderList = new SelectList(new[] { "Male", "Female" });
-                    return View(op);
+                    ViewData["Action"] = "Create";
+                    return PartialView("_CreatePartial", op);
                 }
 
-                // Hash password before saving
+                // Hash password
                 op.Password = PasswordHelper.HashPassword(op.Password);
 
                 _context.Add(op);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "User created successfully!";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = true, message = $"User '{op.Name}' created successfully!" });
             }
 
-            // Refill dropdowns on validation failure
+            // Return partial view with validation errors
             if (currentUserRole == "Super Admin")
-            {
                 ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
-            }
-            else if (currentUserRole == "Admin")
-            {
-                ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name", op.RoleId);
-            }
+            else
+                ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name");
 
             ViewBag.GenderList = new SelectList(new[] { "Male", "Female" });
-            return View(op);
+            ViewData["Action"] = "Create";
+            return PartialView("_CreatePartial", op);
         }
 
+
+        // ======================
         // GET: Operators/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // ======================
+        [HttpGet]
+        [Route("Operators/Edit/{id:int}")]
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null)
-                return BadRequest();
+            var op = await _context.Operators
+                .Include(o => o.Roles)
+                .FirstOrDefaultAsync(o => o.Id == id);
 
-            var op = await _context.Operators.Include(o => o.Roles).FirstOrDefaultAsync(o => o.Id == id);
             if (op == null)
-                return NotFound();
+                return NotFound("Operator not found.");
 
-            // Get current user's role
-            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
-                               ?? User.FindFirst("Role")?.Value;
-
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("Role")?.Value;
             if (string.IsNullOrEmpty(currentUserRole))
-            {
-                TempData["ErrorMessage"] = "Unable to determine user role. Please log in again.";
-                return RedirectToAction("Login", "Authentication");
-            }
+                return BadRequest("Unable to determine user role. Please log in again.");
 
-            // Role-based dropdown restrictions
+            // 🔹 Role-based filtering
+            IQueryable<Role> availableRoles;
             if (currentUserRole == "Super Admin")
             {
-                // Super Admin can assign any role
-                ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
+                availableRoles = _context.Roles;
             }
             else if (currentUserRole == "Admin")
             {
-                // Admin can only assign Operator role
-                var operatorRoles = _context.Roles.Where(r => r.Name == "Operator").ToList();
-
-                // Admins can only edit Operators, not other Admins or Super Admins
+                // Admins can only edit Operator accounts
                 if (op.Roles?.Name != "Operator")
-                {
-                    TempData["ErrorMessage"] = "You can only edit Operator accounts.";
-                    return RedirectToAction(nameof(Index));
-                }
+                    return BadRequest("You can only edit Operator accounts.");
 
-                ViewData["RoleId"] = new SelectList(operatorRoles, "RoleId", "Name", op.RoleId);
+                availableRoles = _context.Roles.Where(r => r.Name == "Operator");
             }
             else
             {
-                // Operators cannot edit users
                 return Forbid();
             }
 
+            ViewData["RoleId"] = new SelectList(availableRoles, "RoleId", "Name", op.RoleId);
             ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
-            return View(op);
+
+            return PartialView("_EditPartial", op);
         }
 
+        // ======================
         // POST: Operators/Edit/5
+        // ======================
         [HttpPost]
+        [Route("Operators/Edit/{id:int}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            int id,
-            [Bind("Id,Name,BusinessName,Age,Gender,Username,EmailAddress,RoleId")] Operator op,
-            string? NewPassword)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,BusinessName,Age,Gender,Username,EmailAddress,RoleId")] Operator op, string? NewPassword)
         {
             if (id != op.Id)
-                return BadRequest();
+                return Json(new { success = false, message = "Invalid request." });
 
-            // Get current user's role
-            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
-                               ?? User.FindFirst("Role")?.Value;
-
-            // Security check: Only Super Admin and Admin can edit users
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("Role")?.Value;
             if (currentUserRole != "Super Admin" && currentUserRole != "Admin")
-            {
-                return Forbid();
-            }
+                return Json(new { success = false, message = "Access denied." });
 
-            // Get the existing user with their current role
-            var existing = await _context.Operators.Include(o => o.Roles).FirstOrDefaultAsync(o => o.Id == id);
+            var existing = await _context.Operators
+                .Include(o => o.Roles)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
             if (existing == null)
-                return NotFound();
+                return Json(new { success = false, message = "Operator not found." });
 
-            // Security check: Admin can ONLY edit Operators
+            // 🔹 Role restriction for Admin
             if (currentUserRole == "Admin")
             {
-                // Check if trying to edit a non-Operator
                 if (existing.Roles?.Name != "Operator")
-                {
-                    TempData["ErrorMessage"] = "You can only edit Operator accounts.";
-                    return RedirectToAction(nameof(Index));
-                }
+                    return Json(new { success = false, message = "You can only edit Operator accounts." });
 
-                // Force role to remain Operator - Admin cannot change roles
                 var operatorRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Operator");
                 if (operatorRole == null)
-                {
-                    ModelState.AddModelError("", "Operator role not found in the system.");
-                    ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name", op.RoleId);
-                    ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
-                    return View(op);
-                }
-                op.RoleId = operatorRole.RoleId; // Force to Operator role
+                    return Json(new { success = false, message = "Operator role not found in the system." });
+
+                op.RoleId = operatorRole.RoleId;
             }
-            else if (currentUserRole == "Super Admin")
+
+            // 🔹 Validate role for Super Admin
+            if (currentUserRole == "Super Admin")
             {
-                // Super Admin can change roles, but validate the selected role exists
                 var selectedRole = await _context.Roles.FindAsync(op.RoleId);
                 if (selectedRole == null)
                 {
-                    ModelState.AddModelError("RoleId", "Invalid role selected.");
-                    ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
-                    ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
-                    return View(op);
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Invalid role selected.",
+                        errors = new { RoleId = new[] { "Invalid role selected." } }
+                    });
                 }
             }
 
+            // 🔹 Check unique username BEFORE ModelState validation
+            bool usernameExists = await _context.Operators
+                .AnyAsync(u => u.Username == op.Username && u.Id != id);
+
+            if (usernameExists)
+            {
+                ModelState.AddModelError("Username", "Username already exists.");
+            }
+
+            // 🔹 FIXED: Return JSON with validation errors instead of PartialView
             if (!ModelState.IsValid)
             {
-                // Refill dropdowns based on role
-                if (currentUserRole == "Super Admin")
-                    ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
-                else
-                    ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name", op.RoleId);
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
 
-                ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
-                return View(op);
-            }
-
-            // Check if username is being changed and if it already exists
-            if (existing.Username != op.Username)
-            {
-                var usernameExists = await _context.Operators
-                    .AnyAsync(u => u.Username == op.Username && u.Id != id);
-
-                if (usernameExists)
+                return Json(new
                 {
-                    ModelState.AddModelError("Username", "Username already exists. Please choose a different username.");
-
-                    // Refill dropdowns
-                    if (currentUserRole == "Super Admin")
-                        ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
-                    else
-                        ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name", op.RoleId);
-
-                    ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
-                    return View(op);
-                }
+                    success = false,
+                    message = "Please correct the validation errors.",
+                    errors = errors
+                });
             }
 
-            // Update fields
+            // 🔹 Update fields
             existing.Name = op.Name;
             existing.BusinessName = op.BusinessName;
             existing.Age = op.Age;
@@ -450,34 +405,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             existing.EmailAddress = op.EmailAddress;
             existing.RoleId = op.RoleId;
 
-            // Password handling - only update if a new password is provided
+            // 🔹 Update password (optional)
             if (!string.IsNullOrWhiteSpace(NewPassword))
-            {
                 existing.Password = PasswordHelper.HashPassword(NewPassword);
-            }
 
             try
             {
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "User updated successfully!";
+                return Json(new { success = true, message = "Operator updated successfully!" });
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "An error occurred while saving changes.");
-
-                // Refill dropdowns
-                if (currentUserRole == "Super Admin")
-                    ViewData["RoleId"] = new SelectList(_context.Roles, "RoleId", "Name", op.RoleId);
-                else
-                    ViewData["RoleId"] = new SelectList(_context.Roles.Where(r => r.Name == "Operator"), "RoleId", "Name", op.RoleId);
-
-                ViewBag.GenderList = new SelectList(new[] { "Male", "Female" }, op.Gender);
-                return View(op);
+                // Log the error (ex)
+                return Json(new { success = false, message = "An error occurred while saving changes." });
             }
-
-            return RedirectToAction(nameof(Index));
         }
-
 
 
         // GET: Operators/Delete/5

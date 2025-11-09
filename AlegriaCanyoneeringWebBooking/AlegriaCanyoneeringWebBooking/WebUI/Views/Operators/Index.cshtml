@@ -1,17 +1,18 @@
 ﻿@{
-    ViewData["Title"] = "User";
+    ViewData["Title"] = "Operators";
 }
 
-<h2 class="fw-bold mb-4 text-primary">User</h2>
+<h2 class="fw-bold mb-4 text-primary">Operators</h2>
 
-<!-- ✅ ADD THIS - Anti-Forgery Token for AJAX -->
+<!-- Anti-Forgery Token for AJAX -->
 <form id="__AjaxAntiForgeryForm" style="display:none;">
     @Html.AntiForgeryToken()
 </form>
 
-<a asp-action="Create" class="btn btn-primary mb-3">
+<!-- Create Button -->
+<button type="button" id="btnCreate" class="btn btn-primary mb-3">
     <i></i> Create New
-</a>
+</button>
 
 <div class="table-responsive">
     <table id="operatorsTable" class="table table-bordered table-striped table-sm align-middle w-100">
@@ -30,10 +31,28 @@
     </table>
 </div>
 
+<!-- Modal for Create/Edit -->
+<div class="modal fade" id="operatorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="operatorModalLabel">Operator</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- AJAX-loaded form will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
 
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
@@ -41,179 +60,163 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
     <script>
-        // ===== Toast Notification Function =====
-        function showToast(message, type = 'success') {
-            let bgClass = 'bg-success';
-            let icon = 'bi-check-circle-fill';
-            let title = 'Success';
+        function showToast(message, type='success') {
+            let bg='bg-success', icon='bi-check-circle-fill', title='Success';
+            if(type==='error'){ bg='bg-danger'; icon='bi-exclamation-triangle-fill'; title='Error'; }
+            else if(type==='warning'){ bg='bg-warning'; icon='bi-exclamation-circle-fill'; title='Warning'; }
+            else if(type==='info'){ bg='bg-info'; icon='bi-info-circle-fill'; title='Info'; }
 
-            if (type === 'error') {
-                bgClass = 'bg-danger';
-                icon = 'bi-exclamation-triangle-fill';
-                title = 'Error';
-            } else if (type === 'warning') {
-                bgClass = 'bg-warning';
-                icon = 'bi-exclamation-circle-fill';
-                title = 'Warning';
-            } else if (type === 'info') {
-                bgClass = 'bg-info';
-                icon = 'bi-info-circle-fill';
-                title = 'Info';
-            }
-
-            const toastContainer = $('<div></div>')
-                .addClass('toast-container position-fixed top-0 end-0 p-3')
-                .css('z-index', 1080);
-
-            const toast = $('<div></div>')
-                .addClass(`toast text-white ${bgClass} border-0`)
-                .attr({
-                    role: 'alert',
-                    'aria-live': 'assertive',
-                    'aria-atomic': 'true',
-                    'data-bs-delay': 4000
-                });
-
-            const toastHeader = $('<div></div>')
-                .addClass(`toast-header ${bgClass} text-white border-0`)
-                .html(`
-                    <i class="bi ${icon} me-2"></i>
-                    <strong class="me-auto">${title}</strong>
-                    <small>Now</small>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                `);
-
-            const toastBody = $('<div></div>')
-                .addClass('toast-body')
-                .text(message);
-
-            toast.append(toastHeader, toastBody);
-            toastContainer.append(toast);
-            $('body').append(toastContainer);
-
-            var bsToast = new bootstrap.Toast(toast[0]);
-            bsToast.show();
-
-            toast.on('hidden.bs.toast', function () {
-                toastContainer.remove();
-            });
+            const container=$('<div class="toast-container position-fixed top-0 end-0 p-3"></div>').css('z-index',1080);
+            const toast=$('<div class="toast text-white '+bg+' border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000"></div>');
+            const header=$('<div class="toast-header '+bg+' text-white border-0"></div>').html(`<i class="bi ${icon} me-2"></i><strong class="me-auto">${title}</strong><small>Now</small><button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>`);
+            const body=$('<div class="toast-body"></div>').text(message);
+            toast.append(header,body); container.append(toast); $('body').append(container);
+            new bootstrap.Toast(toast[0]).show(); toast.on('hidden.bs.toast',()=>container.remove());
         }
 
-        $(document).ready(function () {
-            // Initialize DataTable
-            $('#operatorsTable').DataTable({
+        $(document).ready(function() {
+            var table = $('#operatorsTable').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: '@Url.Action("GetOperatorsData", "Operators")',
+                    url: '@Url.Action("GetUserData", "Operators")',
                     type: 'POST',
+                    headers: { "RequestVerificationToken": $('input[name="__RequestVerificationToken"]').val() },
                     dataSrc: 'data',
-                    error: function (xhr, error, code) {
-                        console.error("DataTables AJAX error:", xhr.responseText);
-                        showToast("Failed to load data. Please refresh the page.", "error");
-                    }
+                    error: function(xhr){ showToast("Failed to load data","error"); console.error(xhr.responseText); }
                 },
                 columns: [
-                    { data: 'name', className: 'text-break' },
-                    { data: 'emailAddress', className: 'text-break' },
-                    { data: 'businessName', className: 'd-none d-sm-table-cell' },
-                    { data: 'age', className: 'd-none d-md-table-cell text-center' },
-                    { data: 'gender', className: 'd-none d-md-table-cell text-center' },
-                    { data: 'username', className: 'text-break' },
-                    {
-                        data: 'roleName',
-                        className: 'd-none d-sm-table-cell',
-                        render: function (data) {
-                            if (data === 'Super Admin') {
-                                return '<span class="badge bg-danger">' + data + '</span>';
-                            } else if (data === 'Admin') {
-                                return '<span class="badge bg-warning text-dark">' + data + '</span>';
-                            } else if (data === 'Operator') {
-                                return '<span class="badge bg-info">' + data + '</span>';
-                            }
-                            return '<span class="badge bg-secondary">' + data + '</span>';
+                    { data:'ownerName' },
+                    { data:'emailAddress' },
+                    { data:'businessName', className:'d-none d-sm-table-cell' },
+                    { data:'age', className:'d-none d-md-table-cell text-center', defaultContent: '' },
+                    { data:'gender', className:'d-none d-md-table-cell text-center' },
+                    { data:'username' },
+                    { data:'role', className:'d-none d-sm-table-cell',
+                        render: function(d){
+                            if(d==='Super Admin') return '<span class="badge bg-danger">'+d+'</span>';
+                            if(d==='Admin') return '<span class="badge bg-warning text-dark">'+d+'</span>';
+                            if(d==='Operator') return '<span class="badge bg-info">'+d+'</span>';
+                            return '<span class="badge bg-secondary">'+d+'</span>';
                         }
                     },
-                    {
-                        data: 'id',
-                        orderable: false,
-                        searchable: false,
-                        render: function (data, type, row) {
-                            return `
-                                <div class="d-flex flex-wrap gap-2">
-                                    <a href="/Operators/Edit/${data}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i> <span class="d-none d-sm-inline">Edit</span>
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.name}">
-                                        <i class="fas fa-trash"></i> <span class="d-none d-sm-inline">Delete</span>
-                                    </button>
-                                </div>`;
-                        },
-                        className: 'text-center'
+                    { data:'id', orderable:false, searchable:false, className:'text-center',
+                         render: function(d, type, row) {
+                           return `<div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-warning btn-edit" data-url="/Operators/Edit/${d}"><i class="fas fa-edit"></i> Edit</button>
+                                <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="${d}" data-name="${row.ownerName}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>`;
+                        }
+
                     }
                 ],
                 pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-                responsive: {
-                    details: {
-                        type: 'column',
-                        target: 'tr'
-                    }
-                },
-                autoWidth: false,
-                language: {
-                    emptyTable: "No users found",
-                    processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>'
-                }
+                lengthMenu: [[10,25,50,100],[10,25,50,100]],
+                responsive:true,
+                autoWidth:false,
+                language:{emptyTable:"No operators found", processing:'<div class="spinner-border text-primary"></div>'}
             });
 
-            // Handle delete button clicks with AJAX
-            $('#operatorsTable').on('click', '.delete-btn', function () {
-                var userId = $(this).data('id');
-                var userName = $(this).data('name');
 
-                if (confirm('Are you sure you want to delete user "' + userName + '"?')) {
-                    var token = $('input[name="__RequestVerificationToken"]').val();
+            function openModal(url,title){
+                $.get(url,function(html){
+                    $('#modalContent').html(html);
+                    $('#operatorModalLabel').text(title);
+                    new bootstrap.Modal(document.getElementById('operatorModal')).show();
+                });
+            }
+          
+            // ===== Open Create Modal =====
+            $('#btnCreate').click(()=>openModal('@Url.Action("Create", "Operators")','Create Operator'));
+            $('#operatorsTable').on('click','.btn-edit',function(){ openModal($(this).data('url'),'Edit Operator'); });
 
-                    console.log("Token:", token);
-                    console.log("User ID:", userId);
+            // Submit form via AJAX (works for both Create and Edit)
+                $('#operatorModal').on('submit', '#operatorForm', function (e) {
+            e.preventDefault();
+            const form = $(this);
+            const actionUrl = form.attr('action');
+            const formData = form.serialize();
 
-                    $.ajax({
-                        url: '@Url.Action("DeleteAjax", "Operators")',
-                        type: 'POST',
-                        data: {
-                            id: userId,
-                            __RequestVerificationToken: token
-                        },
-                        success: function (response) {
-                            console.log("Response:", response);
+            form.find('.text-danger').text('');
+            form.find('.is-invalid').removeClass('is-invalid');
 
-                            if (response.success) {
-                                showToast(response.message, 'success');
-                                $('#operatorsTable').DataTable().ajax.reload(null, false);
-                            } else {
-                                showToast(response.message, 'error');
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.error("AJAX Error:", xhr.responseText);
-                            console.error("Status:", status);
-                            console.error("Error:", error);
+            const submitBtn = form.find('button[type="submit"]');
+            const originalText = submitBtn.text();
+            submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Saving...');
 
-                            showToast("An error occurred while deleting the user. Check console for details.", "error");
+            $.post(actionUrl, formData)
+                .done(function(response){
+                    if(response.success){
+                        bootstrap.Modal.getInstance(document.getElementById('operatorModal')).hide();
+                        $('#operatorsTable').DataTable().ajax.reload(null,false);
+                        showToast(response.message,'success');
+                    } else {
+                        showToast(response.message||"Please fix errors.",'error');
+                        if(response.errors){
+                            $.each(response.errors, function(field,msgs){
+                                const input = form.find(`[name="${field}"]`);
+                                input.addClass('is-invalid');
+                                input.siblings('.text-danger').text(msgs[0]);
+                            });
                         }
-                    });
+                    }
+                })
+                .fail(function(xhr){
+                    showToast("Server error. Check console.",'error');
+                    console.error(xhr.responseText);
+                })
+                .always(function(){ submitBtn.prop('disabled', false).text(originalText); });
+        });
+
+
+             // ===== Delete Button =====
+            $('#operatorsTable').on('click', '.btn-delete', function () {
+                var btn = $(this);
+                var userId = btn.data('id');
+                var userName = btn.data('name');
+
+                console.log('Delete clicked - ID:', userId, 'Name:', userName);
+
+                if (!confirm(`Are you sure you want to delete user "${userName}"?\n\nThis action cannot be undone.`)) {
+                    return;
                 }
+
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+                $.ajax({
+                    url: '@Url.Action("DeleteAjax", "Operators")',
+                    type: 'POST',
+                    data: {
+                        id: userId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res.success) {
+                            table.ajax.reload(null, false);
+                            showToast(res.message, 'success');
+                        } else {
+                            showToast(res.message, 'error');
+                            btn.prop('disabled', false).html('<i class="fas fa-trash"></i> Delete');
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('Delete error:', xhr.responseText);
+                        showToast("Error deleting user.", 'error');
+                        btn.prop('disabled', false).html('<i class="fas fa-trash"></i> Delete');
+                    }
+                });
             });
 
-            // Show toast for TempData messages on page load
             @if (TempData["SuccessMessage"] != null)
             {
-                    <text>showToast('@TempData["SuccessMessage"]', 'success');</text>
+                    <text>showToast('@TempData["SuccessMessage"]','success');</text>
             }
             @if (TempData["ErrorMessage"] != null)
             {
-                    <text>showToast('@TempData["ErrorMessage"]', 'error');</text>
+                    <text>showToast('@TempData["ErrorMessage"]','error');</text>
             }
         });
     </script>
