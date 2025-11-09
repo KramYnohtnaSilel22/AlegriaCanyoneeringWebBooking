@@ -10,6 +10,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Column("Id")]
         public int Id { get; set; }
 
+        [Display(Name = "Owner Name")]
         [Required, StringLength(255)]
         [Column("Name")]
         public string? Name { get; set; }
@@ -42,6 +43,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Required]
         [Column("Role")]
+
         public int RoleId { get; set; }
 
         [ForeignKey(nameof(RoleId))]

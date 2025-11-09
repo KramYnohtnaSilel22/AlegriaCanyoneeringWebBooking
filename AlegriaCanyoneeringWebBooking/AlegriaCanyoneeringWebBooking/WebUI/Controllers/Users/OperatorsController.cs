@@ -472,67 +472,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(op);
         }
 
-        //// POST: Operators/Delete/5
-        //[HttpPost, ActionName("Delete")]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> DeleteConfirmed(int id)
-        //{
-        //    var op = await _context.Operators
-        //        .Include(o => o.Roles)
-        //        .FirstOrDefaultAsync(o => o.Id == id);
-
-        //    if (op == null)
-        //    {
-        //        TempData["ErrorMessage"] = "User not found.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    // Get current user's role and ID
-        //    var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value
-        //                       ?? User.FindFirst("Role")?.Value;
-        //    var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        //    // Prevent deleting yourself
-        //    if (currentUserId != null && op.Id.ToString() == currentUserId)
-        //    {
-        //        TempData["ErrorMessage"] = "You cannot delete your own account.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    // Security check: Admin can only delete Operators
-        //    if (currentUserRole == "Admin" && op.Roles?.Name != "Operator")
-        //    {
-        //        TempData["ErrorMessage"] = "You can only delete Operator accounts.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    // Prevent deleting the last Super Admin
-        //    if (op.Roles?.Name == "Super Admin")
-        //    {
-        //        var superAdminCount = await _context.Operators
-        //            .Include(o => o.Roles)
-        //            .CountAsync(o => o.Roles.Name == "Super Admin");
-
-        //        if (superAdminCount <= 1)
-        //        {
-        //            TempData["ErrorMessage"] = "Cannot delete the last Super Admin account. At least one Super Admin must exist.";
-        //            return RedirectToAction(nameof(Index));
-        //        }
-        //    }
-
-        //    try
-        //    {
-        //        _context.Operators.Remove(op);
-        //        await _context.SaveChangesAsync();
-        //        TempData["SuccessMessage"] = $"User '{op.Name}' deleted successfully.";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["ErrorMessage"] = "An error occurred while deleting the user.";
-        //    }
-
-        //    return RedirectToAction(nameof(Index));
-        //}
 
         // DELETE THE OLD Delete() and DeleteConfirmed() methods
         // KEEP ONLY THIS ONE:

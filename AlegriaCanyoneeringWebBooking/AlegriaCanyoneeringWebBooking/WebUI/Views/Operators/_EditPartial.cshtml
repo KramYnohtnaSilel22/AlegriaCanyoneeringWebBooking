@@ -44,11 +44,12 @@
             </div>
 
             <div class="mb-3">
-                <label asp-for="Password" class="form-label">Password <span class="text-danger">*</span></label>
-                <input asp-for="Password" type="password" class="form-control" placeholder="Enter password" />
+                <label asp-for="Password" class="form-label">New Password (leave blank to keep current) <span class="text-danger">*</span></label>
+                <input asp-for="Password" type="password" class="form-control" placeholder="Enter new password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
+  
             <div class="mb-3">
                 <label asp-for="EmailAddress" class="form-label">Email Address <span class="text-danger">*</span></label>
                 <input asp-for="EmailAddress" type="email" class="form-control" placeholder="user@example.com" />
