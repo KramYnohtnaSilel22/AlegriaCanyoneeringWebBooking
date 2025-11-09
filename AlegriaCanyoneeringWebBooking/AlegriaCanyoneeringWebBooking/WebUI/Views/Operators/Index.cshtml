@@ -2,7 +2,7 @@
     ViewData["Title"] = "Operators";
 }
 
-<h2 class="fw-bold mb-4 text-primary">Operators</h2>
+<h2 class="fw-bold mb-4 text-primary">User</h2>
 
 <!-- Anti-Forgery Token for AJAX -->
 <form id="__AjaxAntiForgeryForm" style="display:none;">
@@ -129,8 +129,8 @@
             }
           
             // ===== Open Create Modal =====
-            $('#btnCreate').click(()=>openModal('@Url.Action("Create", "Operators")','Create Operator'));
-            $('#operatorsTable').on('click','.btn-edit',function(){ openModal($(this).data('url'),'Edit Operator'); });
+            $('#btnCreate').click(()=>openModal('@Url.Action("Create", "Operators")','Create User'));
+            $('#operatorsTable').on('click','.btn-edit',function(){ openModal($(this).data('url'),'Edit User'); });
 
             // Submit form via AJAX (works for both Create and Edit)
                 $('#operatorModal').on('submit', '#operatorForm', function (e) {
