@@ -164,10 +164,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     BWristBondCode = wristBondCode,
                     BGuestName = guest.Fullname,
-                    BDateArrival = DateTime.TryParse(guest.Date, out DateTime parsedDate)
-                                    ? parsedDate
-                                    : DateTime.Now,
-                    BDateDeparture = DateTime.Now,
+                    BDateArrival = guest.Date != null ? DateTime.Parse(guest.Date).ToString("ddd MMM dd yyyy HH:mm:ss") : "-----",
+                    BDateDeparture = DateTime.Now.ToString("ddd MMM dd yyyy HH:mm:ss"),
+
                     BDateCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
                     BGuestImage = imageBytes // ✅ always has valid bytes now
                 };

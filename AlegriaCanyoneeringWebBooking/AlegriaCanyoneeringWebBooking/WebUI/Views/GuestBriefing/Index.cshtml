@@ -4,6 +4,7 @@
 
 <h2 class="fw-bold mb-4 text-primary">Guest Briefings</h2>
 
+<!-- Hidden Anti-Forgery Token -->
 <form id="__AjaxAntiForgeryForm" style="display:none;">
     @Html.AntiForgeryToken()
 </form>
@@ -30,6 +31,7 @@
     <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
+        // 🧠 Toast notifications
         function showToast(message, type = 'success') {
             const bgClass = {
                 success: 'bg-success',
@@ -65,60 +67,88 @@
                     headers: {
                         'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                     },
-                    dataSrc: 'data',
+                    dataSrc: function (json) {
+                        if (json.error) {
+                            console.error("Server error:", json.error);
+                            showToast(json.error, "error");
+                            return [];
+                        }
+                        return json.data;
+                    },
                     error: function (xhr) {
-                        console.error(xhr.responseText);
+                        console.error("AJAX error:", xhr.responseText);
                         showToast("Failed to load data.", "error");
                     }
                 },
-                columns: [
-                    { data: 'wristband' },
-                    { data: 'name' },
-                    { data: 'arrival' },
-                    { data: 'departure' },
-                    { data: 'dateCode' },
-                         {
-            data: 'image',
-            render: data => {
-                if (data) {
-                    return `<img src="data:image/png;base64,${data}" width="60" class="rounded border border-secondary" />`;
-                } else {
-                    return `<img src="/images/null.png" width="60" alt="No Image" class="rounded border border-secondary" />`;
+                    columns: [
+            { data: 'wristband', defaultContent: '' },
+            {
+                data: 'guestNameHuman',
+                defaultContent: '',
+                render: function(data, type, row) {
+                    if (!data) return '';
+
+                    // Format based on "type" dynamically
+                    if (data.startsWith("Guest Number ")) {
+                        return `<span class="badge bg-info">${data}</span>`;
+                    }
+                    if (data.includes("----")) {
+                        return `<span class="text-muted">${data}</span>`;
+                    }
+
+                    // Default display
+                    return data;
+                }
+            },
+            { data: 'arrival', defaultContent: '-----' },
+            { data: 'departure', defaultContent: '-----' },
+            { data: 'dateCode', defaultContent: '' },
+            {
+                data: 'image',
+                render: data => {
+                    if (data) {
+                        return `<img src="data:image/png;base64,${data}" width="60" class="rounded border border-secondary" />`;
+                    } else {
+                        return `<img src="/images/null.png" width="60" alt="No Image" class="rounded border border-secondary" />`;
+                    }
+                }
+            },
+            {
+                data: 'id',
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                render: function (data, type, row) {
+                    return `
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.guestNameHuman}">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>`;
                 }
             }
-        },
-                    {
-                        data: 'id',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            return `
-                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.name}">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>`;
-                        }
-                    }
-                ],
+        ],
+
                 responsive: true,
                 pageLength: 10,
-                autoWidth: false
+                autoWidth: false,
+                language: {
+                    emptyTable: "No guest briefings found."
+                }
             });
 
-            // --- Delete AJAX ---
+            // 🔥 Delete AJAX action
             $('#guestBriefingsTable').on('click', '.delete-btn', function () {
                 const id = $(this).data('id');
                 const name = $(this).data('name');
-                if (confirm(`Delete "${name}?`)) {
+                if (confirm(`Are you sure you want to delete "${name}"?`)) {
                     $.post('@Url.Action("DeleteAjax", "GuestBriefing")', {
                         id: id,
                         __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                     }, function (res) {
                         if (res.success) {
-                            showToast(res.message);
+                            showToast(res.message, 'success');
                             table.ajax.reload(null, false);
                         } else {
-                            showToast(res.message, 'error');
+                            showToast(res.message || 'Failed to delete record.', 'error');
                         }
                     }).fail(() => showToast('Server error deleting record.', 'error'));
                 }
