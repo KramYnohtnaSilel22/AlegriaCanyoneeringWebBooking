@@ -148,7 +148,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             // ✅ Step 2: Generate padded wristband code
-            string wristBondCode = guest.RFIDCode.PadLeft(11, '0');
+            //string wristBondCode = guest.RFIDCode.PadLeft(11, '0');
+            string hex = guest.RFIDCode.Replace(" ", "");
+            string firstPart = hex.Substring(0, 8); // first 4 bytes
+            uint numericId = Convert.ToUInt32(firstPart, 16);
+            string wristBondCode = numericId.ToString().PadLeft(11, '0');
 
             // ✅ Step 3: Check or create guest briefing
             var briefing = _context.GuestBriefings
