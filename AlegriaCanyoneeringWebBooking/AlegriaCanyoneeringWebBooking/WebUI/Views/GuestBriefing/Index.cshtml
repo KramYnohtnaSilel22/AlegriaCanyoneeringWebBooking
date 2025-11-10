@@ -77,10 +77,16 @@
                     { data: 'arrival' },
                     { data: 'departure' },
                     { data: 'dateCode' },
-                    {
-                        data: 'image',
-                        render: data => data ? `<img src="data:image/png;base64,${data}" width="60" />` : ''
-                    },
+                         {
+            data: 'image',
+            render: data => {
+                if (data) {
+                    return `<img src="data:image/png;base64,${data}" width="60" class="rounded border border-secondary" />`;
+                } else {
+                    return `<img src="/images/null.png" width="60" alt="No Image" class="rounded border border-secondary" />`;
+                }
+            }
+        },
                     {
                         data: 'id',
                         orderable: false,
