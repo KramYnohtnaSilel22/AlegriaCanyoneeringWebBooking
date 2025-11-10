@@ -31,17 +31,47 @@
                             600: '#16a34a',
                             700: '#15803d'
                         }
-                    }
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.8s ease-out forwards',
+                        'slide-up': 'slideUp 1s ease-out forwards',
+                        'bounce-in': 'bounceIn 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(40px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        bounceIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.3)' },
+                            '50%': { opacity: '1', transform: 'scale(1.05)' },
+                            '70%': { transform: 'scale(0.9)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                    },
                 }
             }
         }
     </script>
 
     <style>
-        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
         body {
             font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 100%);
+        }
+
+        .hero-bg {
+            background-image: url('/images/canyoneering-hero.jpg'); /* Replace with actual image path */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
         .gradient-text {
@@ -52,55 +82,14 @@
         }
 
         .card-hover {
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
             .card-hover:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             }
 
-        @@keyframes fade {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-fade {
-            animation: fade 0.8s ease-out forwards;
-        }
-
-        .animate-rise {
-            animation: fade 1s ease-out forwards;
-        }
-
-        .delay-1 {
-            animation-delay: 0.2s;
-        }
-
-        .delay-2 {
-            animation-delay: 0.4s;
-        }
-
-        .delay-3 {
-            animation-delay: 0.6s;
-        }
-
-        .delay-4 {
-            animation-delay: 0.8s;
-        }
-
-        .delay-5 {
-            animation-delay: 1s;
-        }
-
-        /* Floating Buttons Container */
         .floating-container {
             position: fixed;
             bottom: 2rem;
@@ -111,51 +100,71 @@
             z-index: 9999;
         }
 
-        /* Common floating button styles */
         .floating-btn {
-            background-color: #2563eb; /* primary-600 */
+            background: linear-gradient(135deg, #2563eb, #16a34a);
             color: white;
-            border-radius: 9999px; /* fully rounded */
-            width: 56px;
-            height: 56px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            animation: bounce-in 0.6s ease-out;
         }
 
             .floating-btn:hover {
-                background-color: #1d4ed8; /* primary-700 */
+                transform: scale(1.1);
+                box-shadow: 0 15px 35px rgba(37, 99, 235, 0.6);
             }
 
-            /* Messenger icon (Bootstrap Icons) */
             .floating-btn i {
                 font-size: 1.5rem;
             }
 
-        /* Map container for embedded map */
-        #floatingMap {
-            position: fixed;
-            bottom: 80px;
-            right: 2rem;
-            width: 300px;
-            height: 200px;
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-            display: none;
-            z-index: 9998;
+        .scroll-to-top {
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
+            .scroll-to-top.show {
+                opacity: 1;
+            }
+
+        .interactive-list li {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .interactive-list li:hover {
+                color: #2563eb;
+                transform: translateX(10px);
+            }
+
+        .testimonial-card {
+            transition: all 0.3s ease;
+        }
+
+            .testimonial-card:hover {
+                transform: scale(1.05);
+            }
+
         /* Responsive adjustments */
-        @@media (max-width: 640px) {
-            #floatingMap {
-                width: 90vw;
-                right: 5%;
-                bottom: 90px;
-                height: 180px;
+        @@media (max-width: 768px) {
+            .hero-bg {
+                background-attachment: scroll;
+            }
+
+            .floating-container {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .floating-btn {
+                width: 50px;
+                height: 50px;
             }
         }
     </style>
@@ -166,24 +175,32 @@
 
 <body class="bg-gray-50">
 
-    <header class="w-full bg-white shadow-md py-6">
-        <div class="max-w-7xl mx-auto flex justify-between items-center gap-8">
-            <!-- Logo + Title on the left with extra right padding -->
-            <div class="flex items-center gap-6 pr-8">
-                <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-20 w-auto rounded-full" />
-                <h6 class="text-lg md:text-xl font-extrabold text-primary-600">
+    <!-- Header -->
+    <header class="w-full bg-white/90 backdrop-blur-md shadow-lg py-6 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center px-6">
+            <div class="flex items-center gap-6">
+                <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-16 w-16 rounded-full shadow-md animate-bounce-in" />
+                <h6 class="text-sm md:text-base font-semibold gradient-text">
                     Alegria Canyoneering
                 </h6>
-            </div>
 
+            </div>
+            <nav class="hidden md:flex space-x-8">
+                <a href="#how-to-use" class="text-gray-700 hover:text-primary-600 transition">How to Use</a>
+                <a href="#testimonials" class="text-gray-700 hover:text-primary-600 transition">Testimonials</a>
+                <a href="#contact" class="text-gray-700 hover:text-primary-600 transition">Contact</a>
+            </nav>
             <a asp-area="" asp-controller="Dashboard" asp-action="Index"
                class="btn btn-outline-secondary btn-lg rounded-pill px-4 flex items-center gap-2 shadow-sm">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
         </div>
-        </div>
     </header>
 
+    <!-- Loading Spinner Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="w-16 h-16 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
 
     <!-- Hero Section -->
     <section class="text-center py-20 px-6 bg-gradient-to-b from-sky-50 via-white to-emerald-50">
@@ -194,169 +211,170 @@
             Simplify guest management through seamless online booking — designed for operators, made for convenience.
         </p>
     </section>
-    <!-- How to Use This App -->
-    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise mb-10">
-        <h4 class="text-xl font-semibold text-primary-600 mb-3 flex items-center">
-            <i class="bi bi-list-ol me-2 text-primary-600"></i> How to Use This App
-        </h4>
 
-        <ol class="list-decimal list-inside space-y-3 text-gray-700 text-lg leading-relaxed">
-            <li>
-                <strong>Sign In or Register:</strong> The <em>Super Admin</em> creates operator accounts and provides the login credentials to each operator.
-                Operators can then <strong>sign in</strong> using those credentials to access their booking dashboard.
-            </li>
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-6 py-16 space-y-16">
 
-            <li>
-                <strong>Add New Bookings:</strong> Use the <em>“New Booking”</em> feature to record guest details, dates, and preferences.
-            </li>
-            <li>
-                <strong>Save Guest:</strong> After adding a new booking, go to the <em>“Save Guest”</em> section.
-                Here, you can <strong>add another guest</strong> under the same booking or <strong>cancel</strong> if you don’t want to save the guest information.
-            </li>
-            <li>
-                <strong>Open Reserve Booking:</strong> Go to the <em>Reserve Booking</em> section to manage guests arriving or confirming their reservations.
-            </li>
-            <li>
-                <strong>Scan Guest QR Code:</strong> Each guest has a unique QR code — scan it to quickly retrieve their booking details.
-            </li>
-            <li>
-                <strong>Confirm Booking:</strong> After scanning, a confirmation popup will appear. Choose <em>“Yes”</em> to confirm the reservation or <em>“No”</em> to cancel.
-            </li>
-            <li>
-                <strong>View Booked Guests:</strong> Go to the <em>Booked Guest</em> page. You can <strong>search by date</strong> to see who has booked for the current day and
-                <strong>print the batch list</strong> for easy reference or record-keeping.
-            </li>
-        </ol>
+        <!-- How to Use This App -->
+        <section id="how-to-use" class="bg-white p-8 rounded-2xl shadow-xl card-hover animate-slide-up">
+            <h3 class="text-3xl font-bold text-primary-600 mb-6 flex items-center">
+                <i class="bi bi-list-ol mr-3 text-accent-600"></i> How to Use This App
+            </h3>
+            <ol class="interactive-list list-decimal list-inside space-y-4 text-gray-700 text-lg leading-relaxed">
+                <li><strong>Sign In or Register:</strong> The <em>Super Admin</em> creates operator accounts and provides the login credentials to each operator. Operators can then <strong>sign in</strong> using those credentials to access their booking dashboard.</li>
+                <li><strong>Add New Bookings:</strong> Use the <em>"New Booking"</em> feature to record guest details, dates, and preferences.</li>
+                <li><strong>Save Guest:</strong> After adding a new booking, go to the <em>"Save Guest"</em> section. Here, you can <strong>add another guest</strong> under the same booking or <strong>cancel</strong> if you don't want to save the guest information.</li>
+                <li><strong>Open Reserve Booking:</strong> Go to the <em>Reserve Booking</em> section to manage guests arriving or confirming their reservations.</li>
+                <li><strong>Scan Guest QR Code:</strong> Each guest has a unique QR code — scan it to quickly retrieve their booking details.</li>
+                <li><strong>Confirm Booking:</strong> After scanning, a confirmation popup will appear. Choose <em>"Yes"</em> to confirm the reservation or <em>"No"</em> to cancel.</li>
+                <li><strong>View Booked Guests:</strong> Go to the <em>Booked Guest</em> page. You can <strong>search by date</strong> to see who has booked for the current day and <strong>print the batch list</strong> for easy reference or record-keeping.</li>
+            </ol>
+            <div class="bg-gradient-to-r from-primary-100 to-accent-100 text-black mt-8 p-6 rounded-xl flex items-start shadow-md">
+                <i class="bi bi-lightbulb mr-3 text-primary-600 text-2xl"></i>
+                <p><strong>Tip:</strong> Always confirm and save guest information properly to ensure accurate booking records and smooth QR confirmation during check-in.</p>
+            </div>
+        </section>
 
-        <div class="bg-primary-100 text-black mt-5 p-4 rounded-lg flex items-start">
-            <i class="bi bi-lightbulb me-2 text-primary-600 text-xl"></i>
-            <p>
-                <strong>Tip:</strong> Always confirm and save guest information properly to ensure accurate booking records and smooth QR confirmation during check-in.
+        <!-- Testimonials -->
+        <section id="testimonials" class="bg-white p-8 rounded-2xl shadow-xl card-hover animate-slide-up">
+            <h3 class="text-3xl font-bold text-accent-600 mb-8 text-center">
+                <i class="bi bi-chat-square-quote mr-3"></i> What Our Users Say
+            </h3>
+            <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="testimonial-card bg-gray-50 p-8 rounded-xl text-center shadow-md">
+                            <blockquote class="text-gray-700 text-xl italic mb-4">"This app streamlined our entire booking process. It's so intuitive!"</blockquote>
+                            <footer class="text-primary-600 font-semibold">Nikk Alvin Barrioquinto</footer>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="testimonial-card bg-gray-50 p-8 rounded-xl text-center shadow-md">
+                            <blockquote class="text-gray-700 text-xl italic mb-4">"Our response time improved by 50%. Highly recommended!"</blockquote>
+                            <footer class="text-primary-600 font-semibold">Jude Lequido</footer>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="testimonial-card bg-gray-50 p-8 rounded-xl text-center shadow-md">
+                            <blockquote class="text-gray-700 text-xl italic mb-4">"A guest-friendly platform that actually works. Simple and effective."</blockquote>
+                            <footer class="text-primary-600 font-semibold">Bryan Montemayor</footer>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon bg-primary-600 rounded-circle p-3"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon bg-primary-600 rounded-circle p-3"></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Contact -->
+        <section id="contact" class="bg-white p-8 rounded-2xl shadow-xl card-hover animate-slide-up">
+            <h3 class="text-3xl font-bold text-accent-700 mb-6 flex items-center">
+                <i class="bi bi-chat-dots mr-3"></i> Get in Touch
+            </h3>
+            <p class="text-gray-700 text-lg mb-6">
+                Have an idea to make our app even better? We'd love to hear from you!
             </p>
-        </div>
-    </div>
+            <ul class="text-gray-700 text-lg space-y-3 mb-6">
+                <li><i class="bi bi-envelope mr-3 text-accent-600"></i>Email: <a href="mailto:lelis.markanthony@gmail.com" class="text-primary-600 font-semibold hover:underline transition">lelis.markanthony@gmail.com</a></li>
+                <li><i class="bi bi-telephone mr-3 text-accent-600"></i>Phone: <a href="tel:+6324175154" class="text-primary-600 font-semibold hover:underline transition">(032) 417-5154</a></li>
+            </ul>
+            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=lelis.markanthony@gmail.com&su=Inquiry&body=Hello, I would like to get in touch with you." target="_blank" class="inline-block bg-gradient-to-r from-primary-600 to-accent-600 text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-semibold">
+                <i class="bi bi-chat-dots-fill mr-2"></i> Let's Talk
+            </a>
+        </section>
 
+        <!-- Imprint -->
+        <section class="bg-white p-8 rounded-2xl shadow-xl card-hover animate-slide-up">
+            <h3 class="text-3xl font-bold text-yellow-600 mb-6 flex items-center">
+                <i class="bi bi-building mr-3"></i> Imprint
+            </h3>
+            <p class="text-gray-700 text-lg leading-relaxed">
+                Published by <strong>JustClick Integrated Solutions Inc.</strong><br />
+                171 N. Bacalso Avenue, Cebu City<br />
+                Developed by <strong>Dendo Pulgo</strong> and <strong>Darius Cumpio</strong><br />
+                Responsible: <strong>Mark Anthony P. Lelis</strong><br />
+                On behalf of: <strong>Municipality of Alegria, Cebu</strong>
+            </p>
+        </section>
 
+    </main>
 
-    <!-- Mission and Vision -->
-    @*       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-1">
-                <h4 class="text-xl font-semibold text-red-600 mb-3 flex items-center">
-                    <i class="bi bi-bullseye me-2"></i> Our Mission
-                </h4>
-                <p class="text-gray-700 text-lg">
-                    To deliver a seamless and efficient booking system that empowers operators and enhances the guest journey through technology and reliability.
-                </p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-2">
-                <h4 class="text-xl font-semibold text-cyan-600 mb-3 flex items-center">
-                    <i class="bi bi-eye me-2"></i> Our Vision
-                </h4>
-                <p class="text-gray-700 text-lg">
-                    To be the most trusted web booking solution across the tourism and hospitality industry — connecting guests and operators effortlessly.
-                </p>
-            </div>
-        </div>
- *@
-    <!-- Testimonials -->
-    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-3 mb-10 text-center">
-        <h4 class="text-xl font-semibold text-green-600 mb-4">
-            <i class="bi bi-chat-square-quote me-2"></i> What Our Users Say
-        </h4>
-        <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
-            <div class="carousel-inner text-center">
-                <div class="carousel-item active">
-                    <blockquote class="text-gray-600 text-lg italic">“This app streamlined our entire booking process. It’s so intuitive!”</blockquote>
-                    <footer class="mt-2 text-sm text-gray-500">Nikk Alvin Barrioquinto</footer>
-                </div>
-                <div class="carousel-item">
-                    <blockquote class="text-gray-600 text-lg italic">“Our response time improved by 50%. Highly recommended!”</blockquote>
-                    <footer class="mt-2 text-sm text-gray-500">Jude Lequido </footer>
-                </div>
-                <div class="carousel-item">
-                    <blockquote class="text-gray-600 text-lg italic">“A guest-friendly platform that actually works. Simple and effective.”</blockquote>
-                    <footer class="mt-2 text-sm text-gray-500">Bryan Montemayor</footer>
-                </div>
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon bg-dark rounded-circle"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon bg-dark rounded-circle"></span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Contact -->
-    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-4 mb-10">
-        <h4 class="text-xl font-semibold text-green-700 mb-3 flex items-center">
-            <i class="bi bi-chat-dots me-2"></i> Get in Touch
-        </h4>
-        <p class="text-gray-700 text-lg mb-3">
-            Have an idea to make our app even better? We’d love to hear from you!
-        </p>
-        <ul class="text-gray-700 text-lg space-y-2">
-            <li><i class="bi bi-envelope me-2 text-success"></i>Email: <a href="mailto:lelis.markanthony@gmail.com" class="text-primary-600 font-semibold hover:underline">lelis.markanthony@gmail.com</a></li>
-            <li><i class="bi bi-telephone me-2 text-success"></i>Phone: <a href="tel:+6324175154" class="text-primary-600 font-semibold hover:underline">(032) 417-5154</a></li>
-        </ul>
-        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=lelis.markanthony@gmail.com&su=Inquiry&body=Hello, I would like to get in touch with you."
-           target="_blank"
-           class="mt-4 inline-block bg-primary-600 text-white px-6 py-3 rounded-full shadow hover:bg-primary-700 transition">
-            <i class="bi bi-chat-dots-fill me-2"></i> Let's Talk
-        </a>
-    </div>
-
-    <!-- Imprint -->
-    <div class="bg-white p-6 rounded-xl shadow card-hover animate-rise delay-5">
-        <h4 class="text-xl font-semibold text-yellow-600 mb-3 flex items-center">
-            <i class="bi bi-building me-2"></i> Imprint
-        </h4>
-        <p class="text-gray-700 text-lg leading-relaxed">
-            Published by <strong>JustClick Integrated Solutions Inc.</strong><br />
-            171 N. Bacalso Avenue, Cebu City<br />
-            Developed by <strong>Dendo Pulgo</strong> and <strong>Darius Cumpio</strong><br />
-            Responsible: <strong>Mark Anthony P. Lelis</strong><br />
-            On behalf of: <strong>Municipality of Alegria, Cebu</strong>
-        </p>
-    </div>
-
-
-    <!-- Floating Buttons Container -->
+    <!-- Floating Buttons -->
     <div class="floating-container">
-        <!-- Map Toggle Button -->
-        <button id="mapToggleBtn" class="floating-btn" title="Show Map" aria-label="Toggle Map">
-            <i class="bi bi-geo-alt-fill"></i>
-        </button>
+        <div class="floating-btn" onclick="scrollToTop()">
+            <i class="bi bi-arrow-up"></i>
+        </div>
+
     </div>
 
-    <!-- Floating Map Container -->
-    <div id="floatingMap">
-        <iframe src="https://www.google.com/maps?q=Alegria+Barangay+Rd,+Alegría,+Cebu,+Philippines&hl=en&z=15&output=embed"
-                width="300"
-                height="200"
-                style="border:0;"
-                allowfullscreen=""
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
-    </div>
 
-    <!-- Bootstrap JS (required for carousel) -->
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Toggle map visibility
-        const mapToggleBtn = document.getElementById('mapToggleBtn');
-        const floatingMap = document.getElementById('floatingMap');
+        // Loading overlay
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.style.transition = 'opacity 0.5s ease';
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 500);
+            }, 2000);
+        });
 
-        mapToggleBtn.addEventListener('click', () => {
-            if (floatingMap.style.display === 'none' || floatingMap.style.display === '') {
-                floatingMap.style.display = 'block';
-                mapToggleBtn.title = "Hide Map";
+        // Scroll to top functionality
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show/hide scroll to top button
+        window.addEventListener('scroll', function() {
+            const scrollBtn = document.querySelector('.floating-btn:first-child');
+            if (window.pageYOffset > 300) {
+                scrollBtn.classList.add('show');
             } else {
-                floatingMap.style.display = 'none';
-                mapToggleBtn.title = "Show Map";
+                scrollBtn.classList.remove('show');
             }
+        });
+
+        // Placeholder for messenger functionality
+        function openMessenger() {
+            // Implement messenger opening logic here
+            alert('Messenger would open here!');
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add intersection observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-slide-up, .animate-fade-in, .animate-bounce-in').forEach(el => {
+            el.style.animationPlayState = 'paused';
+            observer.observe(el);
         });
     </script>
 </body>
