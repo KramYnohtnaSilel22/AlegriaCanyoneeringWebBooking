@@ -176,25 +176,28 @@
 <body class="bg-gray-50">
 
     <!-- Header -->
-    <header class="w-full bg-white/90 backdrop-blur-md shadow-lg py-6 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex justify-between items-center px-6">
-            <div class="flex items-center gap-6">
-                <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-16 w-16 rounded-full shadow-md animate-bounce-in" />
-                <h6 class="text-sm md:text-base font-semibold gradient-text">
-                    Alegria Canyoneering
-                </h6>
+    <header class="flex items-center justify-between px-8 py-4 shadow-md bg-white">
+        <!-- Left side: Logo -->
+        <a href="/" class="flex items-center space-x-2">
+            <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="h-16 w-16 rounded-full shadow-md animate-bounce-in" />
+            <span class="text-2xl font-semibold text-primary-700">AlegriaCanyoneering</span>
+        </a>
 
-            </div>
+        <!-- Right side: Navigation + Login -->
+        <div class="flex items-center space-x-8">
             <nav class="hidden md:flex space-x-8">
                 <a href="#how-to-use" class="text-gray-700 hover:text-primary-600 transition">How to Use</a>
                 <a href="#testimonials" class="text-gray-700 hover:text-primary-600 transition">Testimonials</a>
                 <a href="#contact" class="text-gray-700 hover:text-primary-600 transition">Contact</a>
             </nav>
-            <a href="/Authentication/Login" class="bg-gradient-to-r from-primary-600 to-accent-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 animate-bounce-in">
+
+            <a href="/Authentication/Login"
+               class="bg-gradient-to-r from-primary-600 to-accent-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 animate-bounce-in">
                 <i class="bi bi-box-arrow-in-right text-lg"></i> Login
             </a>
         </div>
     </header>
+
 
     <!-- Loading Spinner Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white flex items-center justify-center z-50">
