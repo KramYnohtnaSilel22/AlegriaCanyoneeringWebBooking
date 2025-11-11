@@ -13,9 +13,9 @@ namespace AlegriaCanyoneeringWebBooking.Domain.Models
 
         public string? BGuestName { get; set; }
 
-        public DateTime? BDateArrival { get; set; }
+        public string? BDateArrival { get; set; }
 
-        public DateTime? BDateDeparture { get; set; }
+        public string? BDateDeparture { get; set; }
 
         public string? BDateCode { get; set; } // stored as Unix timestamp
 
