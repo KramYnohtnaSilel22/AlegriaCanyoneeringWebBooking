@@ -61,16 +61,20 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
     <script>
+        // ✅ Bootstrap Toast Notification (Your Version)
         function showToast(message, type = 'success') {
             let bgClass = 'bg-success';
             let icon = 'bi-check-circle-fill';
             let title = 'Success';
 
             if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
-            else if (type === 'warning') { bgClass = 'bg-warning'; icon = 'bi-exclamation-circle-fill'; title = 'Warning'; }
+            else if (type === 'warning') { bgClass = 'bg-danger'; icon = 'bi-exclamation-circle-fill'; title = 'Warning'; }
             else if (type === 'info') { bgClass = 'bg-info'; icon = 'bi-info-circle-fill'; title = 'Info'; }
 
-            const toastContainer = $('<div></div>').addClass('toast-container position-fixed top-0 end-0 p-3').css('z-index', 1080);
+            const toastContainer = $('<div></div>')
+                .addClass('toast-container position-fixed top-0 end-0 p-3')
+                .css('z-index', 1080);
+
             const toast = $('<div></div>').addClass(`toast text-white ${bgClass} border-0`)
                 .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
 
@@ -94,6 +98,7 @@
         }
 
         $(document).ready(function () {
+            // ✅ Initialize DataTable
             var table = $('#operatorsTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -101,7 +106,10 @@
                     url: '@Url.Action("GetUserData", "Operators")',
                     type: 'POST',
                     dataSrc: 'data',
-                    error: function (xhr) { console.error(xhr.responseText); showToast("Failed to load data.", "error"); }
+                    error: function (xhr) {
+                        console.error(xhr.responseText);
+                        showToast("Failed to load data.", "error");
+                    }
                 },
                 columns: [
                     { data: 'ownerName', className: 'text-break' },
@@ -143,21 +151,29 @@
                 autoWidth: false
             });
 
-            // Delete
+            // ✅ Delete Handler
             $('#operatorsTable').on('click', '.delete-btn', function () {
-                var id = $(this).data('id'), name = $(this).data('name');
+                var id = $(this).data('id'),
+                    name = $(this).data('name');
+
                 if (confirm(`Delete "${name}"?\n\nThis action cannot be undone.`)) {
                     $.post('@Url.Action("DeleteAjax", "Operators")', {
                         id: id,
                         __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                     }, function (res) {
-                        if (res.success) { showToast(res.message); table.ajax.reload(null, false); }
-                        else { showToast(res.message, 'error'); }
+                        if (res.success) {
+                            showToast(res.message, 'success');
+                            table.ajax.reload(null, false);
+                        } else {
+                            showToast(res.message, 'error');
+                        }
+                    }).fail(function () {
+                        showToast('An error occurred while deleting.', 'error');
                     });
                 }
             });
 
-            // Function to open modal for Create/Edit
+            // ✅ Open Modal for Create/Edit
             function openOperatorModal(url, title) {
                 $.get(url, function (data) {
                     $('#modalContent').html(data);
@@ -166,40 +182,35 @@
                 });
             }
 
-            // Open Create Modal
             $('#btnCreate').click(() => openOperatorModal('@Url.Action("Create", "Operators")', 'Create User'));
 
-            // Open Edit Modal
             $('#operatorsTable').on('click', '.btn-edit', function (e) {
                 e.preventDefault();
                 openOperatorModal($(this).attr('href'), 'Edit User');
             });
 
-
-         // Submit form via AJAX (works for both Create and Edit)
-          $('#operatorModal').on('submit', 'form', function (e) {
+           // ✅ Form Submission with Validation Toast
+            $('#operatorModal').on('submit', 'form', function (e) {
                 e.preventDefault();
                 var form = $(this);
-
-                // Check if form is valid before submitting
+                // If form invalid → show warning toast
                 if (!form.valid()) {
+                    showToast('Please fill in all required fields.', 'warning');
                     return false;
                 }
-
                 $.post(form.attr('action'), form.serialize(), function (response) {
                     if (response.success) {
                         bootstrap.Modal.getInstance(document.getElementById('operatorModal')).hide();
                         table.ajax.reload(null, false);
-                        showToast(response.message, 'success');
+                        showToast(response.message || 'Record saved successfully.', 'success');
                     } else {
-                        // Reload form with validation errors
+                        // Reload validation errors if backend returned HTML
                         $('#modalContent').html(response);
-                        // Re-parse validation after reloading
                         $.validator.unobtrusive.parse('#modalContent');
                     }
                 }).fail(function (xhr) {
                     console.error(xhr.responseText);
-                    showToast("Error saving.", 'error');
+                    showToast('An error occurred while saving.', 'error');
                 });
             });
         });

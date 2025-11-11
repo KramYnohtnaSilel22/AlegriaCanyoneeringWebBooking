@@ -318,8 +318,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // ================= GET =================
-        [HttpGet("/Authentication/Edit")]
-        public async Task<IActionResult> Edit()
+        [HttpGet("/Authentication/Update")]
+        public async Task<IActionResult> Update()
         {
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(idClaim)) return RedirectToAction("Login", "Authentication");
@@ -349,9 +349,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // ================= POST =================
-        [HttpPost("/Authentication/Edit")]
+        [HttpPost("/Authentication/Update")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(OperatorUpdateViewModel model)
+        public async Task<IActionResult> Update(OperatorUpdateViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -386,7 +386,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Operator information updated successfully!";
-            return RedirectToAction("Edit");
+            return RedirectToAction("Update");
         }
 
 

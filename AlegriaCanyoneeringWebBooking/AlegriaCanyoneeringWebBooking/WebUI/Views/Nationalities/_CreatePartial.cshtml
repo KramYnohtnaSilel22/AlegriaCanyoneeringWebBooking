@@ -3,7 +3,7 @@
 <form asp-action="@ViewData["Action"]" method="post" novalidate>
     @Html.AntiForgeryToken()
     <div class="mb-3">
-        <label asp-for="NatName" class="form-label">Nationality Name</label>
+        <label asp-for="NatName" class="form-label">Nationality Name <span class="text-danger">*</span></label>
         <input asp-for="NatName" class="form-control" placeholder="Enter nationality" />
         <span asp-validation-for="NatName" class="text-danger"></span>
     </div>

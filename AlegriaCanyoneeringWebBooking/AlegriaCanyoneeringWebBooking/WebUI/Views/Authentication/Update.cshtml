@@ -5,6 +5,7 @@
 }
 
 <style>
+    /* Styles unchanged */
     .update-user-container {
         min-height: 100vh;
         padding: 40px 0;
@@ -14,7 +15,7 @@
     .form-card {
         background: #fff;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         padding: 40px;
         max-width: 600px;
         margin: 0 auto;
@@ -44,7 +45,7 @@
 
         .form-control:focus, .form-select:focus {
             border-color: #0d6efd;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+            box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
             outline: none;
         }
 
@@ -79,7 +80,7 @@
 <div class="update-user-container">
     <div class="form-card">
         <h2 class="form-title"><i></i>Update Info</h2>
-        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+        <form asp-action="Update" method="post" class="needs-validation" novalidate>
             <input type="hidden" asp-for="OperatorId" />
 
             <div class="row g-4">
@@ -92,7 +93,7 @@
                     </div>
                     <div class="mb-3">
                         <label asp-for="BusinessName" class="form-label">Business Name</label>
-                        <input asp-for="BusinessName" class="form-control" placeholder="e.g. Adventure Co." required />
+                        <input asp-for="BusinessName" class="form-control" placeholder="e.g. Adventure Co." />
                         <span asp-validation-for="BusinessName" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
@@ -131,7 +132,6 @@
                 </div>
             </div>
 
-            <!-- Submit Button -->
             <div class="d-flex justify-content-end mt-4">
                 <button type="submit" class="btn btn-primary btn-lg px-4">
                     <i></i> Save
@@ -142,26 +142,30 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+
     <script>
-        // ===== Toast Notification Function =====
+        // ✅ Bootstrap Toast Notification
         function showToast(message, type = 'success') {
             let bgClass = 'bg-success', icon = 'bi-check-circle-fill', title = 'Success';
             if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
+            else if (type === 'warning') { bgClass = 'bg-warning'; icon = 'bi-exclamation-circle-fill'; title = 'Warning'; }
+            else if (type === 'info') { bgClass = 'bg-info'; icon = 'bi-info-circle-fill'; title = 'Info'; }
 
             const toastContainer = $('<div></div>')
                 .addClass('toast-container position-fixed top-0 end-0 p-3')
                 .css('z-index', 1080);
 
-            const toast = $('<div></div>')
-                .addClass(`toast text-white ${bgClass} border-0`)
+            const toast = $('<div></div>').addClass(`toast text-white ${bgClass} border-0`)
                 .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
 
-            const toastHeader = $('<div></div>')
-                .addClass(`toast-header ${bgClass} text-white border-0`)
-                .html(`<i class="bi ${icon} me-2"></i>
-                       <strong class="me-auto">${title}</strong>
-                       <small>Now</small>
-                       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>`);
+            const toastHeader = $('<div></div>').addClass(`toast-header ${bgClass} text-white border-0`).html(`
+                <i class="bi ${icon} me-2"></i>
+                <strong class="me-auto">${title}</strong>
+                <small>Now</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            `);
 
             const toastBody = $('<div></div>').addClass('toast-body').text(message);
 
@@ -172,10 +176,11 @@
             var bsToast = new bootstrap.Toast(toast[0]);
             bsToast.show();
 
-            toast.on('hidden.bs.toast', () => toastContainer.remove());
+            toast.on('hidden.bs.toast', function () { toastContainer.remove(); });
         }
 
         $(document).ready(function () {
+            // Show TempData messages if any
             @if (TempData["SuccessMessage"] != null)
             {
                     <text>showToast('@TempData["SuccessMessage"]', 'success');</text>
@@ -186,11 +191,14 @@
             }
 
             const forms = document.querySelectorAll('.needs-validation');
+
             Array.from(forms).forEach(form => {
                 form.addEventListener('submit', event => {
+                    // Check HTML5 validity
                     if (!form.checkValidity()) {
                         event.preventDefault();
                         event.stopPropagation();
+                        showToast('Please fill in all required fields correctly.', 'warning');
                     }
                     form.classList.add('was-validated');
                 });

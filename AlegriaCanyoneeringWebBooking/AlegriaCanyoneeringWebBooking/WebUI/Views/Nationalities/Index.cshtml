@@ -42,8 +42,8 @@
 
 @section Scripts {
     <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" />
 
     <!-- Validation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
@@ -55,39 +55,44 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
     <script>
-        function showToast(message, type = 'success') {
-            let bgClass = 'bg-success';
-            let icon = 'bi-check-circle-fill';
-            let title = 'Success';
+        // ✅ Bootstrap Toast Notification (Your Version)
+         function showToast(message, type = 'success') {
+             let bgClass = 'bg-success';
+             let icon = 'bi-check-circle-fill';
+             let title = 'Success';
 
-            if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
-            else if (type === 'warning') { bgClass = 'bg-warning'; icon = 'bi-exclamation-circle-fill'; title = 'Warning'; }
-            else if (type === 'info') { bgClass = 'bg-info'; icon = 'bi-info-circle-fill'; title = 'Info'; }
+             if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
+             else if (type === 'warning') { bgClass = 'bg-danger'; icon = 'bi-exclamation-circle-fill'; title = 'Warning'; }
+             else if (type === 'info') { bgClass = 'bg-info'; icon = 'bi-info-circle-fill'; title = 'Info'; }
 
-            const toastContainer = $('<div></div>').addClass('toast-container position-fixed top-0 end-0 p-3').css('z-index', 1080);
-            const toast = $('<div></div>').addClass(`toast text-white ${bgClass} border-0`)
-                .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
+             const toastContainer = $('<div></div>')
+                 .addClass('toast-container position-fixed top-0 end-0 p-3')
+                 .css('z-index', 1080);
 
-            const toastHeader = $('<div></div>').addClass(`toast-header ${bgClass} text-white border-0`).html(`
-                <i class="bi ${icon} me-2"></i>
-                <strong class="me-auto">${title}</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            `);
+             const toast = $('<div></div>').addClass(`toast text-white ${bgClass} border-0`)
+                 .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
 
-            const toastBody = $('<div></div>').addClass('toast-body').text(message);
+             const toastHeader = $('<div></div>').addClass(`toast-header ${bgClass} text-white border-0`).html(`
+                 <i class="bi ${icon} me-2"></i>
+                 <strong class="me-auto">${title}</strong>
+                 <small>Now</small>
+                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+             `);
 
-            toast.append(toastHeader, toastBody);
-            toastContainer.append(toast);
-            $('body').append(toastContainer);
+             const toastBody = $('<div></div>').addClass('toast-body').text(message);
 
-            var bsToast = new bootstrap.Toast(toast[0]);
-            bsToast.show();
+             toast.append(toastHeader, toastBody);
+             toastContainer.append(toast);
+             $('body').append(toastContainer);
 
-            toast.on('hidden.bs.toast', function () { toastContainer.remove(); });
-        }
+             var bsToast = new bootstrap.Toast(toast[0]);
+             bsToast.show();
+
+             toast.on('hidden.bs.toast', function () { toastContainer.remove(); });
+         }
 
         $(document).ready(function () {
+            // Initialize DataTable
             var table = $('#nationalitiesTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -95,7 +100,10 @@
                     url: '@Url.Action("GetNationalitiesData", "Nationalities")',
                     type: 'POST',
                     dataSrc: 'data',
-                    error: function (xhr) { console.error(xhr.responseText); showToast("Failed to load data.", "error"); }
+                    error: function (xhr) {
+                        console.error(xhr.responseText);
+                        showToast("Failed to load data.", "error");
+                    }
                 },
                 columns: [
                     { data: 'natName', className: 'text-break' },
@@ -124,19 +132,20 @@
 
             // Delete
             $('#nationalitiesTable').on('click', '.delete-btn', function () {
-                var id = $(this).data('id'), name = $(this).data('name');
-                if (confirm(`Delete "${name}"?`)) {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                if (confirm(`Delete "${name}"? This action cannot be undone.`)) {
                     $.post('@Url.Action("DeleteAjax", "Nationalities")', {
                         id: id,
                         __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                     }, function (res) {
-                        if (res.success) { showToast(res.message); table.ajax.reload(null, false); }
-                        else { showToast(res.message, 'error'); }
+                        if (res.success) { showToast(res.message, 'success'); table.ajax.reload(null, false); }
+                        else showToast(res.message, 'error');
                     });
                 }
             });
 
-             // Function to open modal for Create/Edit
+            // Open modal for Create/Edit
             function openNationalityModal(url, title) {
                 $.get(url, function (data) {
                     $('#modalContent').html(data);
@@ -145,30 +154,34 @@
                 });
             }
 
-              // Open Create Modal
             $('#btnCreate').click(() => openNationalityModal('@Url.Action("Create", "Nationalities")', 'Create Nationality'));
-
-            // Open Edit Modal
             $('#nationalitiesTable').on('click', '.btn-edit', function (e) {
                 e.preventDefault();
                 openNationalityModal($(this).attr('href'), 'Edit Nationality');
             });
 
-            // Submit form via AJAX
+            // ✅ Form Submission with Validation Toast
             $('#nationalityModal').on('submit', 'form', function (e) {
                 e.preventDefault();
                 var form = $(this);
-                $.post(form.attr('action'), form.serialize(), function (response) {
-                    if (response.success) {
+                // If form invalid → show warning toast
+                if (form.valid()) {
+                    showToast('Please fill in all required fields.', 'warning');
+                    return false;
+                }
+                $.post(form.attr('action'), form.serialize(), function (res) {
+                    if (res.success) {
                         bootstrap.Modal.getInstance(document.getElementById('nationalityModal')).hide();
                         table.ajax.reload(null, false);
-                        showToast(response.message, 'success');
+                        showToast(res.message || 'Record saved successfully.', 'success');
                     } else {
-                        $('#modalContent').html(response);
+                        // Reload validation errors if backend returned HTML
+                        $('#modalContent').html(res);
+                        $.validator.unobtrusive.parse('#modalContent');
                     }
                 }).fail(function (xhr) {
                     console.error(xhr.responseText);
-                    showToast("Error saving.", 'error');
+                    showToast('An error occurred while saving.', 'error');
                 });
             });
         });
