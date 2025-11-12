@@ -169,7 +169,7 @@
                 e.preventDefault();
                 var form = $(this);
                 // If form invalid → show warning toast
-                if (form.valid()){
+                if (!form.valid()){
                     showToast('Please fill in all required fields.', 'warning'); 
                     return false; 
                 }
