@@ -53,7 +53,7 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="guestTableBody">
                         @foreach (var guest in allGuests)
                         {
                             <tr data-guest-row="@guest.Id" class="@(guest.Id == Model.Guest.Id ? "table-primary" : "")">
@@ -133,51 +133,50 @@
     }
 </style>
 
-<script>
-    $(document).ready(function () {
-        // Initialize DataTable for the companion list
-        $('#companionsTable').DataTable({
-            responsive: true,
-            pageLength: 5,
-            lengthMenu: [5, 10, 25],
-            columnDefs: [{ orderable: false, targets: 0 }],  // Disable sorting for the first column (Actions)
-            language: { searchPlaceholder: "Search guest...", search: "" }
-        });
+    <script>
+        $(document).ready(function () {
+            // Initialize DataTable for the companion list
+            $('#companionsTable').DataTable({
+                responsive: true,
+                pageLength: 5,
+                lengthMenu: [5, 10, 25],
+                columnDefs: [{ orderable: false, targets: 0 }],  // Disable sorting for the first column (Actions)
+                language: { searchPlaceholder: "Search guest...", search: "" }
+            });
 
-        // Handle the cancel button click event
-        $('.cancel-btn').off('click').on('click', function () {
-            // Confirm the action
-            if (!confirm("Are you sure you want to cancel this guest?")) return;
+            // Handle cancel button click event
+            $('.cancel-btn').off('click').on('click', function () {
+                // Confirm the action
+                if (!confirm("Are you sure you want to cancel this guest?")) return;
 
-            // Get the guest ID and CSRF token
-            var guestId = $(this).data('guest-id');
-            var token = $('input[name="__RequestVerificationToken"]').val();
+                // Get the guest ID and CSRF token
+                var guestId = $(this).data('guest-id');
+                var token = $('input[name="__RequestVerificationToken"]').val();
 
-            // Send AJAX request to cancel the guest
-            $.ajax({
-                url: '/Guest/CancelGuest',
-                type: 'POST',
-                data: { GuestId: guestId, __RequestVerificationToken: token },
-                success: function (result) {
-                    if (result.success) {
-                        // Remove the guest row from the table
-                        $('tr[data-guest-row="' + guestId + '"]').remove();
+                // Send AJAX request to cancel the guest
+                $.ajax({
+                    url: '/Guest/CancelGuest',
+                    type: 'POST',
+                    data: { GuestId: guestId, __RequestVerificationToken: token },
+                    success: function (result) {
+                        if (result.success) {
+                            // Remove the guest row from the table
+                            $('tr[data-guest-row="' + guestId + '"]').remove();
 
-                        // Reload the page to reflect changes
-                        location.reload();  // This will reload the page
-
-                        // Notify the user
-                        alert("Guest cancelled successfully.");
-                    } else {
-                        alert(result.message || "Failed to cancel guest.");
+                            // Reload the guest list partial view with updated data
+                            $('#guestTableBody').load('@Url.Action("GetUpdatedGuestList", "Guest")', function () {
+                                alert("Guest cancelled successfully.");
+                            });
+                        } else {
+                            alert(result.message || "Failed to cancel guest.");
+                        }
+                    },
+                    error: function (xhr) {
+                        // Handle any errors
+                        console.error(xhr.responseText);
+                        alert("An error occurred while cancelling the guest.");
                     }
-                },
-                error: function (xhr) {
-                    // Handle any errors
-                    console.error(xhr.responseText);
-                    alert("An error occurred while cancelling the guest.");
-                }
+                });
             });
         });
-    });
-</script>
+    </script>

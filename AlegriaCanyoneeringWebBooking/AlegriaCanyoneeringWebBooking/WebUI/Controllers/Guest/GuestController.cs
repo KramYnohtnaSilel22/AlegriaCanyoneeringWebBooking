@@ -703,15 +703,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelGuest(int GuestId)
         {
-            // Fetch the guest by ID
             var guest = await _context.Guests.FindAsync(GuestId);
             if (guest == null)
                 return Json(new { success = false, message = "Guest not found" });
 
-            // Store batch before deleting (if required for further processing)
             var batch = guest.Batch;
-
-            // Permanent delete the guest from the database
             _context.Guests.Remove(guest);
 
             try
@@ -723,32 +719,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = "An error occurred while deleting the guest." });
             }
 
-            // Recalculate RFID for remaining guests in the batch (if needed)
-            var updatedGuestCount = await _context.Guests
-                .Where(g => g.Batch == batch)
-                .CountAsync();
-
-            var guestsInBatch = await _context.Guests
+            var updatedGuests = await _context.Guests
                 .Where(g => g.Batch == batch)
                 .ToListAsync();
 
-            // Update RFID for all remaining guests in the batch
-            foreach (var g in guestsInBatch)
-            {
-                g.RFID = updatedGuestCount;
-            }
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return Json(new { success = false, message = "An error occurred while updating RFID for guests." });
-            }
-
-            // Return success message along with the guest ID to frontend
             return Json(new { success = true, guestId = GuestId });
+        }
+
+        [HttpGet]
+        public IActionResult GetUpdatedGuestList(string batchId)
+        {
+            var allGuests = _context.Guests
+                .Where(g => g.Batch == batchId && g.BookingStatus != (int)Guest.BookingStatusEnum.canceled)
+                .ToList();
+
+            return PartialView("_BookingDetailsPartial", allGuests);
         }
 
         //[HttpPost]

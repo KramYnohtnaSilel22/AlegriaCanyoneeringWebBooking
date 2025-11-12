@@ -1,0 +1,15 @@
+﻿@using AlegriaCanyoneeringWebBooking.Models
+@model GuestDetailsViewModel
+
+@{
+    var allGuests = new List<Guest>();
+    if (Model.Guest != null) allGuests.Add(Model.Guest);
+    if (Model.GuestsInBatch != null)
+        allGuests.AddRange(Model.GuestsInBatch.Where(g => g.BookingStatus != 1));
+}
+
+@Html.AntiForgeryToken()
+
+<div id="bookingDetailsContainer">
+    @Html.Partial("_BookingDetailsPartial", Model)
+</div>
