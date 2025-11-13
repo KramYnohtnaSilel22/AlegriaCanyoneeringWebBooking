@@ -33,36 +33,35 @@
             <div class="col-md-6 col-lg-5">
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
-                        <!-- Logo / Brand -->
+                        <!-- Logo -->
                         <div class="text-center mb-4">
                             <img src="/images/alegrialogo2025.jpeg" alt="Logo" class="img-fluid" style="max-height: 100px;" />
                         </div>
                         <h4 class="text-center fw-bold mb-4">Login</h4>
 
                         <form asp-action="Login" asp-controller="Authentication" method="post" novalidate>
-                        
                             @Html.AntiForgeryToken()
-
-            
 
                             <div class="mb-3">
                                 <label asp-for="Username" class="form-label"><i class="fa fa-user"></i> Username</label>
-                                <input asp-for="Username" class="form-control rounded-3" placeholder="Enter Username" aria-required="true" />
+                                <input asp-for="Username" class="form-control rounded-3" placeholder="Enter Username" />
                                 <span asp-validation-for="Username" class="text-danger"></span>
                             </div>
+
                             <div class="mb-3 position-relative">
                                 <label asp-for="Password" class="form-label"><i class="fa fa-lock"></i> Password</label>
                                 <div class="position-relative">
-                                    <input asp-for="Password" type="password" class="form-control rounded-3" placeholder="Enter Password" aria-required="true" id="passwordField" />
-                                    <i class="fas fa-eye eye-icon" id="open" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
-                                    <i class="fas fa-eye-slash eye-icon d-none" id="closed" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
+                                    <input asp-for="Password" type="password" class="form-control rounded-3" placeholder="Enter Password" id="passwordField" />
+                                    <i class="fas fa-eye eye-icon" id="openEye" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
+                                    <i class="fas fa-eye-slash eye-icon d-none" id="closedEye" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
                                 </div>
                                 <span asp-validation-for="Password" class="text-danger"></span>
                             </div>
+
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg">Log In</button>
                             </div>
-                            <!-- Optional: "Forgot password?" link -->
+
                             <div class="text-center mt-3">
                                 <a asp-action="ForgotPassword" asp-controller="Authentication">Forgot password?</a>
                             </div>
@@ -74,19 +73,19 @@
     </div>
 </div>
 
-<!-- Required JS & CSS -->
+<!-- Scripts -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ===== Toggle Password =====
+    // ===== Toggle Password Visibility =====
     function togglePassword() {
         const passwordField = document.getElementById('passwordField');
         const openEye = document.getElementById('openEye');
         const closedEye = document.getElementById('closedEye');
-        if(passwordField.type === "password") {
+        if (passwordField.type === "password") {
             passwordField.type = "text";
             openEye.classList.add('d-none');
             closedEye.classList.remove('d-none');
@@ -98,19 +97,21 @@
     }
 
     // ===== Toast Function =====
-    function showToast(message, type = 'success') {
-        let bgClass = 'bg-success', icon='bi-check-circle-fill', title='Success';
-        if(type==='error'){ bgClass='bg-danger'; icon='bi-exclamation-triangle-fill'; title='Error'; }
-        else if(type==='warning'){ bgClass='bg-warning'; icon='bi-exclamation-circle-fill'; title='Warning'; }
-        else if(type==='info'){ bgClass='bg-info'; icon='bi-info-circle-fill'; title='Info'; }
+    function showToast(message, type = 'danger') {
+        let bgClass = 'bg-danger', icon = 'bi-exclamation-triangle-fill', title = 'Error';
+        if (type === 'warning') {
+            bgClass = 'bg-warning';
+            icon = 'bi-exclamation-circle-fill';
+            title = 'Warning';
+        }
 
         const toastContainer = $('<div></div>')
             .addClass('toast-container position-fixed top-0 end-0 p-3')
-            .css('z-index',1080);
+            .css('z-index', 1080);
 
         const toast = $('<div></div>')
             .addClass(`toast text-white ${bgClass} border-0`)
-            .attr({ role:'alert', 'aria-live':'assertive', 'aria-atomic':'true','data-bs-delay':4000 });
+            .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
 
         const toastHeader = $('<div></div>')
             .addClass(`toast-header ${bgClass} text-white border-0`)
@@ -130,19 +131,18 @@
         $('body').append(toastContainer);
 
         new bootstrap.Toast(toast[0]).show();
-
-        toast.on('hidden.bs.toast', function(){ toastContainer.remove(); });
+        toast.on('hidden.bs.toast', function () { toastContainer.remove(); });
     }
 
-    // ===== Show TempData Messages =====
-    $(document).ready(function() {
-        @if (TempData["SuccessMessage"] != null)
+    // ===== Display Danger or Warning Toasts from TempData =====
+    $(document).ready(function () {
+        @if (TempData["ErrorMessage"] != null)
         {
-                <text>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["SuccessMessage"])), 'success');</text>
+                <text>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ErrorMessage"])), 'danger');</text>
         }
-        else if (TempData["ErrorMessage"] != null)
+        else if (TempData["WarningMessage"] != null)
         {
-                <text>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ErrorMessage"])), 'error');</text>
+                <text>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["WarningMessage"])), 'warning');</text>
         }
     });
 </script>
