@@ -180,8 +180,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 FullName = guest.Fullname,
                 ArrivalDate = DateTime.TryParse(guest.Date, out DateTime parsedArrival)
-                                ? parsedArrival
-                                : DateTime.Now,
+                    ? parsedArrival // Assuming parsedArrival is in the correct local time
+                    : DateTime.Now,  // Use current local time if parsing fails
                 WristbandCode = wristBondCode,
                 QRText = briefing.BDateCode,
                 Operators = guest.Operators?.BusinessName ?? "No Operator",
