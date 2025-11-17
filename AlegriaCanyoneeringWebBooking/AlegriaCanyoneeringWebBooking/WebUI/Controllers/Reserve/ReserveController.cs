@@ -633,7 +633,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .AsNoTracking()
                 .Include(g => g.NationalityEntity)
                 .Where(g =>
-                    g.BookingStatus == 3 &&
+                    g.BookingStatus == 0 &&
                     !string.IsNullOrEmpty(g.ArrivalDate) &&
                     string.Compare(g.ArrivalDate, todayUnix) >= 0 &&
                     string.Compare(g.ArrivalDate, tomorrowUnix) < 0
@@ -964,7 +964,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Query joined Guests + Operators with bookingStatus
             var query = from g in _context.Guests
                         join o in _context.Operators on g.OperatorId equals o.Id
-                        where g.BookingStatus == 3
+                        where g.BookingStatus == 0
                         select new
                         {
                             Guest = g,
@@ -1232,7 +1232,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 foreach (var guest in guestsToFinalize)
                 {
-                    guest.BookingStatus = 3; // Confirmed status
+                    guest.BookingStatus = 0; // Confirmed status
                                              // You can add additional fields like confirmation date if needed
                                              // guest.ConfirmedDate = DateTime.Now;
                                              // guest.ConfirmedBy = userId; // Track who confirmed the booking

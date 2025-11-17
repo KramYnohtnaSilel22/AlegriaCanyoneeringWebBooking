@@ -616,7 +616,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var anticipatedGuestsQuery = _context.Guests
                 .Include(g => g.OperatorList)
                 .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated
-                            && g.BookingStatus != 3); // <-- exclude confirmed
+                            && g.BookingStatus != 0); // <-- exclude confirmed
 
             if (currentOperatorId.HasValue)
             {
