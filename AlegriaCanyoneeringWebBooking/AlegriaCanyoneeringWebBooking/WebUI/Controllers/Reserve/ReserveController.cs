@@ -633,7 +633,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
                 currentOperatorId = parsedId;
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateTime.Today; // local date
             var tomorrow = today.AddDays(1);
 
             var todayUnix = ((DateTimeOffset)today).ToUnixTimeSeconds().ToString();
@@ -964,12 +964,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
                 currentOperatorId = parsedId;
 
-            DateTime? startDateValue = null;
-            DateTime? endDateValue = null;
+            long? startUnix = null;
+            long? endUnix = null;
             if (DateTime.TryParse(startDate, out DateTime sd))
-                startDateValue = sd.Date;
+                startUnix = new DateTimeOffset(sd.Date).ToUnixTimeSeconds();
             if (DateTime.TryParse(endDate, out DateTime ed))
-                endDateValue = ed.Date.AddDays(1).AddTicks(-1);
+                endUnix = new DateTimeOffset(ed.Date.AddDays(1).AddTicks(-1)).ToUnixTimeSeconds();
 
             // Query joined Guests + Operators with bookingStatus
             var query = from g in _context.Guests
@@ -990,22 +990,26 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     x.Guest.Batch.Contains(search) ||
                     x.OperatorName.Contains(search));
 
+            // Filter DB first for non-null ArrivalDate
+            if (startUnix.HasValue && endUnix.HasValue)
+            {
+                query = query.Where(x => !string.IsNullOrEmpty(x.Guest.ArrivalDate));
+            }
+
             var guestsList = await query.ToListAsync();
 
-            // Apply date filtering in-memory on all filtered guests
-            if (startDateValue.HasValue && endDateValue.HasValue)
+            // Apply date filter safely in-memory
+            if (startUnix.HasValue && endUnix.HasValue)
             {
                 guestsList = guestsList
                     .Where(x =>
-                    {
-                        if (string.IsNullOrEmpty(x.Guest.ArrivalDate) || !long.TryParse(x.Guest.ArrivalDate, out var unix))
-                            return false;
-
-                        var arrival = DateTimeOffset.FromUnixTimeSeconds(unix).DateTime;
-                        return arrival >= startDateValue.Value && arrival <= endDateValue.Value;
-                    })
+                        long.TryParse(x.Guest.ArrivalDate, out var unix) &&
+                        unix >= startUnix.Value &&
+                        unix <= endUnix.Value
+                    )
                     .ToList();
             }
+
 
             // Group data after filtering
             var groupedData = guestsList
@@ -1015,9 +1019,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     batch = g.Key.Batch,
                     operatorName = g.Key.OperatorName,
                     totalGuests = g.Count(),
-                    // In your CreateBooking method
-                    // ✅ CORRECT - Use the actual stored ArrivalDate
-                    arrivalDate = g.First().Guest.ArrivalDate, // Use the stored Unix timestamp
+                    arrivalDate = g.First().Guest.ArrivalDate, // Use stored Unix timestamp
                     status = "Confirmed"
                 })
                 .ToList();
@@ -1033,6 +1035,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 data = pagedData
             });
         }
+
 
 
 
