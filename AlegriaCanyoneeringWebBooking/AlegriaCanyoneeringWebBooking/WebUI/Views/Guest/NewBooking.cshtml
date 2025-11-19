@@ -313,25 +313,27 @@ $(function () {
 
         $('[name="NewGuest.Area"]').val(guest.Area);
 
-        // ===== Set Booking Date =====
-        if (guest.Date) {
-            const bookingDate = new Date(guest.Date);
-            if (!isNaN(bookingDate.getTime())) {
-                const formattedBookingDate = bookingDate.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
-                $('[name="NewGuest.Date"]').val(formattedBookingDate);
-            }
+      // ===== Ensure Booking Date and Arrival Date are not overwritten =====
+    if (guest.Date) {
+        const bookingDate = new Date(guest.Date);
+        if (!isNaN(bookingDate.getTime())) {
+            // Format the date to local time as 'yyyy-MM-ddTHH:mm'
+            const formattedBookingDate = bookingDate.toLocaleString('sv-SE').slice(0, 16); // 'sv-SE' formats it as 'yyyy-MM-ddTHH:mm'
+            $('[name="NewGuest.Date"]').val(formattedBookingDate);
         }
+    }
 
-        // ===== Set Arrival Date =====
-        if (guest.ArrivalDate) {
-            let arrivalDate = new Date(guest.ArrivalDate);
-            if (!isNaN(arrivalDate.getTime())) {
-                let formattedArrivalDate = arrivalDate.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
-                $('[name="NewGuest.ArrivalDate"]').val(formattedArrivalDate);
-            }
+    if (guest.ArrivalDate) {
+        let arrivalDate = new Date(guest.ArrivalDate);
+        if (!isNaN(arrivalDate.getTime())) {
+            // Format the date to local time as 'yyyy-MM-ddTHH:mm'
+            let formattedArrivalDate = arrivalDate.toLocaleString('sv-SE').slice(0, 16); // 'sv-SE' formats it as 'yyyy-MM-ddTHH:mm'
+            $('[name="NewGuest.ArrivalDate"]').val(formattedArrivalDate);
         }
+    }
 
     }
+
 
     // ===== Toast notification =====
     function showToast(message) {
@@ -417,7 +419,7 @@ $(function () {
         localStorage.setItem('selectedNationalityId', $(this).val());
     });
 
-    $('#addGuestBtn').click(function () {
+        $('#addGuestBtn').click(function () {
         const guest = {
             OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
             Fullname: $('[name="NewGuest.Fullname"]').val(),
@@ -427,16 +429,29 @@ $(function () {
             NationalityType: $('[name="NewGuest.NationalityType"]').val(),
             NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
             Area: $('[name="NewGuest.Area"]').val(),
-            Date: $('[name="NewGuest.Date"]').val(),
-            ArrivalDate: $('[name="NewGuest.ArrivalDate"]').val()
+            // Convert the input dates to UTC before saving
+            Date: new Date($('[name="NewGuest.Date"]').val()).toISOString(), // Convert to UTC
+            ArrivalDate: new Date($('[name="NewGuest.ArrivalDate"]').val()).toISOString() // Convert to UTC
         };
 
+        // Validation for required fields
         if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
             !guest.NationalityType || !guest.NationalityId || !guest.Date || !guest.ArrivalDate || !guest.Area) {
             alert('Please fill in all required fields.');
             return;
         }
 
+        // If it's the first guest, store the Booking Date and Arrival Date in localStorage as UTC
+        if (guestsBatch.length === 0) {
+            localStorage.setItem('initialBookingDate', guest.Date);
+            localStorage.setItem('initialArrivalDate', guest.ArrivalDate);
+        } else {
+            // For subsequent guests, use the stored UTC dates
+            guest.Date = localStorage.getItem('initialBookingDate');
+            guest.ArrivalDate = localStorage.getItem('initialArrivalDate');
+        }
+
+        // Add guest to the batch and update localStorage
         guestsBatch.push(guest);
         localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
         localStorage.setItem('selectedNationalityType', guest.NationalityType);
@@ -448,6 +463,8 @@ $(function () {
 
         showToast(`Guest "${guest.Fullname}" added successfully!`);
     });
+
+
 
     $('#guestForm').on('submit', function () {
         $batchGuestsJson.val(JSON.stringify(guestsBatch));
