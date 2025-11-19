@@ -174,14 +174,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 _context.GuestBriefings.Add(briefing);
                 _context.SaveChanges();
             }
+            // Convert Unix timestamp to DateTime
+            DateTime arrivalDate;
 
-            // ✅ Step 4: Prepare view model
+            if (!string.IsNullOrEmpty(guest.ArrivalDate) && long.TryParse(guest.ArrivalDate, out long unix))
+            {
+                arrivalDate = DateTimeOffset.FromUnixTimeSeconds(unix).LocalDateTime;
+            }
+            else
+            {
+                arrivalDate = DateTime.Now; // fallback
+            }
+
+            // Prepare view model
             var model = new GuestDetailsViewModel
             {
                 FullName = guest.Fullname,
-                ArrivalDate = DateTime.TryParse(guest.Date, out DateTime parsedArrival)
-                    ? parsedArrival // Assuming parsedArrival is in the correct local time
-                    : DateTime.Now,  // Use current local time if parsing fails
+                ArrivalDate = arrivalDate,  // <-- THIS IS NOW CORRECT
                 WristbandCode = wristBondCode,
                 QRText = briefing.BDateCode,
                 Operators = guest.Operators?.BusinessName ?? "No Operator",
@@ -189,6 +198,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 Nationality = guest.NationalityEntity?.NatName ?? "Unknown",
                 GuestImageBase64 = imageBase64
             };
+
 
             TempData["ToastMessage"] = $"Guest found successfully.";
             TempData["ToastType"] = "success";

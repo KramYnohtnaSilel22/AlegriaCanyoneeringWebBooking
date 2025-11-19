@@ -24,14 +24,18 @@ namespace AlegriaCanyoneeringWebBooking
         // Add ArrivalDateUnixTimestamp to the ViewModel
         public string ArrivalDate { get; set; } // Human-readable arrival date from user input
         public long ArrivalDateUnixTimestamp { get; set; }  // Store Unix timestamp (not in the database)
-        // ✅ Add properties for HTML5 date inputs
-        public string Html5BookingDate => DateTime.TryParse(NewGuest.Date, out var bookingDate)
-            ? bookingDate.ToString("yyyy-MM-dd")
-            : "";
+                                                            // ✅ Add properties for HTML5 date inputs
 
-        public string Html5ArrivalDate => DateTime.TryParse(NewGuest.ArrivalDate, out var arrivalDate)
-            ? arrivalDate.ToString("yyyy-MM-dd")
-            : "";
+        // Add these for datetime-local input binding
+        public string Html5BookingDate { get; set; }
+        public string Html5ArrivalDate { get; set; }
+        //public string Html5BookingDate => DateTime.TryParse(NewGuest.Date, out var bookingDate)
+        //    ? bookingDate.ToString("yyyy-MM-dd")
+        //    : "";
+
+        //public string Html5ArrivalDate => DateTime.TryParse(NewGuest.ArrivalDate, out var arrivalDate)
+        //    ? arrivalDate.ToString("yyyy-MM-dd")
+        //    : "";
         // Add this 👇 for image upload
         [DataType(DataType.Upload)]
         public IFormFile Photo { get; set; }

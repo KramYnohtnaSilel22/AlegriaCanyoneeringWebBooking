@@ -141,7 +141,7 @@
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.Date" class="form-label">Booking Date</label>
-                            <input type="date"
+                            <input type="datetime-local"
                                    name="NewGuest.Date"
                                    class="form-control"
                                    id="BookingDateInput"
@@ -151,7 +151,7 @@
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.ArrivalDate" class="form-label">Arrival Date</label>
-                            <input type="date"
+                            <input type="datetime-local"
                                    name="NewGuest.ArrivalDate"
                                    class="form-control"
                                    id="ArrivalDateInput"
@@ -297,6 +297,7 @@ $(function () {
     }
 
     // ===== Prefill last guest =====
+
     function prefillLastGuest(guest) {
         $('[name="NewGuest.OperatorId"]').val(guest.OperatorId);
         $('[name="NewGuest.Fullname"]').val(guest.Fullname);
@@ -311,8 +312,25 @@ $(function () {
         }, 300);
 
         $('[name="NewGuest.Area"]').val(guest.Area);
-        $('[name="NewGuest.Date"]').val(guest.Date);
-        $('[name="NewGuest.ArrivalDate"]').val(guest.ArrivalDate);
+
+        // ===== Set Booking Date =====
+        if (guest.Date) {
+            const bookingDate = new Date(guest.Date);
+            if (!isNaN(bookingDate.getTime())) {
+                const formattedBookingDate = bookingDate.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+                $('[name="NewGuest.Date"]').val(formattedBookingDate);
+            }
+        }
+
+        // ===== Set Arrival Date =====
+        if (guest.ArrivalDate) {
+            let arrivalDate = new Date(guest.ArrivalDate);
+            if (!isNaN(arrivalDate.getTime())) {
+                let formattedArrivalDate = arrivalDate.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+                $('[name="NewGuest.ArrivalDate"]').val(formattedArrivalDate);
+            }
+        }
+
     }
 
     // ===== Toast notification =====

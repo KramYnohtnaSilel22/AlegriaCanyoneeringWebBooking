@@ -374,10 +374,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 operators = await _context.Operators.ToListAsync();
             }
 
-            // Pass to View as dropdown list (Id = value, BusinessName = text)
-            ViewBag.OperatorList = new SelectList(operators, "Id", "BusinessName");
-
-            // ✅ FIX: Create SelectList with "N/A" display for empty BusinessName
+            // Prepare dropdown with "No Operator" fallback
             var operatorSelectList = operators.Select(o => new
             {
                 Id = o.Id,
@@ -385,7 +382,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }).ToList();
 
             ViewBag.OperatorList = new SelectList(operatorSelectList, "Id", "DisplayName");
-
 
             // Fetch anticipated guests
             var anticipatedGuests = await _context.Guests
@@ -407,7 +403,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                             OperatorId = grp.Key,
                             OperatorList = first.OperatorList,
                             RFID = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
-                            ArrivalDate = first.ArrivalDate, // This is still Unix timestamp
+                            ArrivalDate = first.ArrivalDate,
                             Date = first.Date,
                             BookingStatus = first.BookingStatus
                         };
@@ -429,18 +425,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     model.NewGuest.OperatorId = batchDetails.OperatorId;
                     model.NewGuest.Date = batchDetails.Date;
-                    model.NewGuest.ArrivalDate = batchDetails.ArrivalDate; // Still in Unix timestamp format
+                    model.NewGuest.ArrivalDate = batchDetails.ArrivalDate;
                     model.NewGuest.Area = batchDetails.Area;
                     model.NewGuest.Batch = batchDetails.Batch;
-
                 }
             }
-
-            // Convert ArrivalDate (Unix timestamp) to a human-readable format for the view
-            if (!string.IsNullOrEmpty(model.NewGuest.ArrivalDate) && long.TryParse(model.NewGuest.ArrivalDate, out long unixTimestamp))
+            if (!string.IsNullOrEmpty(model.NewGuest.Date) &&
+             DateTime.TryParse(model.NewGuest.Date, out DateTime bookingDate))
             {
-                model.NewGuest.ArrivalDate = ConvertUnixToDateTime(unixTimestamp).ToString("MMMM dd, yyyy"); // Human-readable format
+                // Ensure it's local time
+                model.Html5BookingDate = bookingDate.ToString("yyyy-MM-ddTHH:mm");
             }
+            else
+            {
+                model.Html5BookingDate = null; // Prevent Razor from printing wrong value
+            }
+
+
+            // Convert Arrival Date (Unix timestamp) to ISO
+            if (!string.IsNullOrEmpty(model.NewGuest.ArrivalDate) &&
+                long.TryParse(model.NewGuest.ArrivalDate, out long unixTimestamp))
+            {
+                var dtArrival = ConvertUnixToDateTime(unixTimestamp);
+                model.Html5ArrivalDate = dtArrival.ToString("yyyy-MM-ddTHH:mm");
+            }
+
 
             ViewBag.IsReadonly = !string.IsNullOrEmpty(batch);
 
@@ -450,8 +459,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // Helper method to convert Unix timestamp to DateTime
         private DateTime ConvertUnixToDateTime(long unixTimestamp)
         {
-            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
-            return dateTime.ToLocalTime();  // Convert to server's local time
+            return DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime.ToLocalTime();
         }
 
 
@@ -478,14 +486,34 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         guest.RFIDCode = generatedRFIDCode;
                         guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
                         guest.Month = DateTime.Today.ToString("MMMM");
+                        // Convert user-input ArrivalDate (datetime-local) to Unix timestamp
+                        if (!string.IsNullOrEmpty(guest.ArrivalDate))
+                        {
+                            // Parse as local datetime (includes date + time)
+                            if (DateTime.TryParse(guest.ArrivalDate, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime dt))
+                            {
+                                // Convert to Unix timestamp using local time
+                                long unixTime = new DateTimeOffset(dt).ToUnixTimeSeconds();
+                                guest.ArrivalDate = unixTime.ToString();
+                            }
+                        }
+                        else
+                        {
+                            // fallback to current local datetime
+                            guest.ArrivalDate = GetCurrentUnixTimestamp().ToString();
+                        }
 
-                        // Generate the current Unix timestamp
-                        long unixTimestamp = GetCurrentUnixTimestamp();
-                        guest.ArrivalDate = unixTimestamp.ToString(); // Save Unix timestamp as string
-                        Console.WriteLine($"Generated Unix Timestamp: {guest.ArrivalDate}");  // Debugging line
-
+                        // ===== Booking Date =====
+                        if (!string.IsNullOrEmpty(guest.Date))
+                        {
+                            if (DateTime.TryParse(guest.Date, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime dtBooking))
+                            {
+                                // Convert to "Mon, 17 September 2018 07:40" format
+                                guest.Date = dtBooking.ToString("ddd, dd MMMM yyyy HH:mm", CultureInfo.InvariantCulture);
+                            }
+                        }
                         guest.DateShort = DateTime.Today.ToString("MMM dd, yyyy");
-                        guest.Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
+                     
 
                         _context.Guests.Add(guest);
                         insertedCount++;
