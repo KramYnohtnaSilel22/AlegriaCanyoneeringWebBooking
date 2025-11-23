@@ -8,7 +8,7 @@ using System.Security.Claims;
 using AlegriaCanyoneeringWebBooking.Helpers;
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
-
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class AuthenticationController : Controller
     {
 
@@ -75,7 +75,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (user.Roles == null)
             {
                 TempData["ErrorMessage"] = "User role not found. Please contact administrato.";
-            
+
                 return View();
             }
 
@@ -115,7 +115,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             HttpContext.Session.SetString("Role", user.Roles.Name);
             HttpContext.Session.SetInt32("UserId", user.Id);
 
-  
+
 
             // Redirect based on role
             if (user.Roles.Name == "Super Admin" || user.Roles.Name == "Admin")
