@@ -517,7 +517,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             try
             {
                 var reservedGuests = await _context.Guests
-                    .Where(g => g.BookingStatus == 2 || g.BookingStatus == 0)
+                    .Where(g => g.BookingStatus == 2 || g.BookingStatus == 3)
                     .Include(g => g.OperatorList)  // ✅ Eager load Operator
                     .Include(g => g.NationalityEntity) // ✅ Eager load Nationality
                     .OrderBy(g => g.Id)
@@ -688,7 +688,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             try
             {
                 var reservedGuests = await _context.Guests
-                    .Where(g => g.BookingStatus == 2 || g.BookingStatus == 0) // Reserved or Anticipated
+                    .Where(g => g.BookingStatus == 2 || g.BookingStatus == 3) // Reserved or Anticipated
                     .OrderByDescending(g => g.Id)
                     .ToListAsync();
 
@@ -766,7 +766,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 // Update booking status for all guests in the batch
                 foreach (var guest in batchGuests)
                 {
-                    guest.BookingStatus = 3; // Assuming 3 = Confirmed/Booked
+                    guest.BookingStatus = 0; // Assuming 3 = Confirmed/Booked
                     guest.ArrivalDate = DateTime.UtcNow.ToString("yy/mm/dd/tt");
                 }
 
@@ -1016,10 +1016,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             return bookingStatus switch
             {
-                0 => "anticipated",
+                3 => "anticipated",
                 1 => "cancelled",
                 2 => "confirmed",
-                3 => "booked",
+                0 => "booked",
                 _ => "unknown"
             };
         }
