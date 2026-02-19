@@ -564,7 +564,7 @@
                                 </button>
                         `;
 
-    @if (!User.IsInRole("Admin"))
+    @if (User.IsInRole("Super Admin"))
     {
         <text>
                                     actions += `

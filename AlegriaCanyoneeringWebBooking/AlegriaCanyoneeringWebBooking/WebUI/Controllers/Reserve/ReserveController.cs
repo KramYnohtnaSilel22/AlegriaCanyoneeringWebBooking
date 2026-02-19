@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using AlegriaCanyoneeringWebBooking.Domain.Models;
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
+    [Authorize(Roles = "Super Admin,Admin,Operator")]
     public class ReserveController : Controller
     {
 
@@ -1182,6 +1183,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         [HttpPost]
+        [Authorize(Roles = "Super Admin")]
         public async Task<IActionResult> BookedGuest(string BatchCode)
         {
             try
