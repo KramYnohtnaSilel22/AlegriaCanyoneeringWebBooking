@@ -512,7 +512,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                                 guest.Date = dtBooking.ToString("ddd, dd MMMM yyyy HH:mm", CultureInfo.InvariantCulture);
                             }
                         }
-                        guest.DateShort = DateTime.Today.ToString("MMMM dd, yyyy");
+                        guest.DateShort = DateTime.Today.ToString("MMMM dd yyyy");
                      
 
                         _context.Guests.Add(guest);
