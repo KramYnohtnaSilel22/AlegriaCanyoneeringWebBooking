@@ -408,9 +408,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private string GenerateRFIDCode()
         {
-            // I-copy ang imong RFID generation logic dinhi
-            // Example:
-            return "RFID_" + DateTime.Now.ToString("yyyyMMddHHmmssfff");
+            return GetCurrentUnixTimestamp().ToString();
         }
 
         private long GetCurrentUnixTimestamp()

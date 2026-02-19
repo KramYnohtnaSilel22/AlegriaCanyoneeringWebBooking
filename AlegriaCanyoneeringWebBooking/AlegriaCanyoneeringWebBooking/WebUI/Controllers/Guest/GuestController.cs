@@ -587,12 +587,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         private string GenerateRFIDCode()
         {
-            var bytes = new byte[26];  // 26 bytes * 2 characters per byte = 52 characters
-            new Random().NextBytes(bytes);
-            string rfidCode = BitConverter.ToString(bytes).Replace("-", " ");
-
-            // Trim to exactly 51 characters
-            return rfidCode.Substring(0, 51);
+            return GetCurrentUnixTimestamp().ToString();
         }
 
 
