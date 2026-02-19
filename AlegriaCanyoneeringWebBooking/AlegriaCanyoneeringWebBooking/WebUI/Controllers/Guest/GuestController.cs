@@ -504,14 +504,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         }
 
                         // ===== Booking Date =====
-                        if (!string.IsNullOrEmpty(guest.Date))
-                        {
-                            if (DateTime.TryParse(guest.Date, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime dtBooking))
-                            {
-                                // Convert to "Mon, 17 September 2018 07:40" format
-                                guest.Date = dtBooking.ToString("ddd, dd MMMM yyyy HH:mm", CultureInfo.InvariantCulture);
-                            }
-                        }
+                        // Set booking date on the server so clients don't need to supply it.
+                        // Use current local time formatted as: "Mon, 17 September 2018 07:40".
+                        guest.Date = DateTime.Now.ToString("ddd, dd MMMM yyyy HH:mm", CultureInfo.InvariantCulture);
                         guest.DateShort = DateTime.Today.ToString("MMMM dd yyyy");
                      
 
