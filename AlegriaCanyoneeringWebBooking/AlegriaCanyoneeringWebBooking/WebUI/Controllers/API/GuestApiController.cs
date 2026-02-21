@@ -1,15 +1,16 @@
 ﻿
+using AlegriaCanyoneeringWebBooking.Domain.Models;
+using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-using AlegriaCanyoneeringWebBooking.Models;
-using AlegriaCanyoneeringWebBooking.Domain.Models;
-using Microsoft.AspNetCore.Authorization;
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
 
@@ -38,7 +39,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 _logger.LogInformation("CreateBooking started");
 
-                // Validation sa request structure
                 if (request.ValueKind != JsonValueKind.Object)
                 {
                     return BadRequest(new ApiResponse<object>
@@ -61,14 +61,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     });
                 }
 
-                // Generate batch code
                 string batchId = await GenerateBatchCode();
-                string generatedRFIDCode = GenerateRFIDCode();
                 var guests = new List<Guest>();
+
+                // ✅ Base timestamp ONCE for the whole batch
+                long baseUnixTimestamp = GetCurrentUnixTimestamp();
+                string firstGuestRFIDCode = null;
+                int insertedCount = 0;
 
                 foreach (var guestElement in guestsElement.EnumerateArray())
                 {
-                    // Validate required fields
+                    // ===== Validation =====
                     if (!guestElement.TryGetProperty("fullname", out var fullnameElement) ||
                         string.IsNullOrWhiteSpace(fullnameElement.GetString()))
                     {
@@ -113,10 +116,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         });
                     }
 
-                    // IMPORTANTE: I-check kung exist ba ang Operator sa database gamit Inner Join
-                    bool operatorExists = await _context.Operators
-                        .AnyAsync(o => o.Id == operatorId);
-
+                    bool operatorExists = await _context.Operators.AnyAsync(o => o.Id == operatorId);
                     if (!operatorExists)
                     {
                         return BadRequest(new ApiResponse<object>
@@ -127,7 +127,27 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         });
                     }
 
-                    // Create guest entity
+                    // ✅ ArrivalDate: base + (index * 60s) per guest
+                    long uniqueArrival = baseUnixTimestamp + (insertedCount * 60L);
+
+                    // ✅ Check if user provided an arrivalDate in request
+                    if (guestElement.TryGetProperty("arrivalDate", out var arrivalDateElement) &&
+                        !string.IsNullOrWhiteSpace(arrivalDateElement.GetString()))
+                    {
+                        if (DateTime.TryParse(arrivalDateElement.GetString(), CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime dt))
+                        {
+                            long userArrival = new DateTimeOffset(dt).ToUnixTimeSeconds();
+                            uniqueArrival = userArrival + (insertedCount * 60L);
+                        }
+                    }
+
+                    // ✅ RFIDCode: uniqueArrival + 500 + (index * 100)
+                    long rfidTimestamp = uniqueArrival + 500L + (insertedCount * 100L);
+                    string generatedRFIDCode = rfidTimestamp.ToString();
+
+                    if (insertedCount == 0)
+                        firstGuestRFIDCode = generatedRFIDCode;
+
                     var guest = new Guest
                     {
                         Fullname = fullnameElement.GetString()!.Trim(),
@@ -139,31 +159,34 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         NationalityType = guestElement.TryGetProperty("nationalityType", out var nationalityTypeElement) ?
                                          nationalityTypeElement.GetString() ?? "Local" : "Local",
                         NationalityId = nationalityId,
-                        OperatorId = operatorId,  // Kini ang gi-Inner Join nato
+                        OperatorId = operatorId,
                         Area = guestElement.TryGetProperty("area", out var areaElement) ?
                                areaElement.GetString() ?? "Wonder Falls" : "Wonder Falls",
                         BookingStatus = (int)Guest.BookingStatusEnum.anticipated,
                         Batch = batchId,
                         RFID = 1,
+                        // ✅ Unique RFID per guest
                         RFIDCode = generatedRFIDCode,
                         Year = DateTime.Today.Year.ToString(),
                         Month = DateTime.Today.ToString("MMMM"),
-                        ArrivalDate = GetCurrentUnixTimestamp().ToString(),
+                        // ✅ Unique ArrivalDate per guest (+60s each)
+                        ArrivalDate = uniqueArrival.ToString(),
                         DateShort = DateTime.Today.ToString("MMM dd, yyyy"),
-                        Date = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")
+                        Date = DateTime.Now.ToString("ddd, dd MMMM yyyy HH:mm", CultureInfo.InvariantCulture)
                     };
 
                     guests.Add(guest);
                     _context.Guests.Add(guest);
+                    insertedCount++;
                 }
 
                 await _context.SaveChangesAsync();
 
-                // KUNG GUSTO NIMO KUHAON ANG GUEST DATA WITH OPERATOR DETAILS (INNER JOIN)
+                // Fetch saved guests with operator details
                 var guestsWithOperators = await _context.Guests
                     .Where(g => g.Batch == batchId)
-                    .Include(g => g.Operators)  // INNER JOIN sa Operators table
-                    .Include(g => g.NationalityEntity)  // Optional: Inner Join sa Nationality
+                    .Include(g => g.Operators)
+                    .Include(g => g.NationalityEntity)
                     .Select(g => new
                     {
                         g.Id,
@@ -171,7 +194,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         g.Age,
                         g.Gender,
                         g.Batch,
-                        OperatorName = g.Operators != null ? g.Operators.Name : "Unknown", // Kuhaa ang operator name
+                        g.RFIDCode,
+                        g.ArrivalDate,
+                        OperatorName = g.Operators != null ? g.Operators.Name : "Unknown",
                         OperatorId = g.OperatorId,
                         g.NationalityType,
                         g.Area
@@ -188,8 +213,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     {
                         batchId,
                         guestCount = guests.Count,
-                        rfidCode = generatedRFIDCode,
-                        guests = guestsWithOperators,  // I-apil ang guest data with operator details
+                        // ✅ Return first guest's RFID for photo linking
+                        rfidCode = firstGuestRFIDCode,
+                        guests = guestsWithOperators,
                         createdAt = DateTime.UtcNow
                     }
                 });
@@ -198,7 +224,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 var innerMessage = dbEx.InnerException?.Message ?? "No inner exception";
                 _logger.LogError(dbEx, "Database error: {InnerMessage}", innerMessage);
-
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
@@ -209,7 +234,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error in CreateBooking");
-
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
@@ -218,6 +242,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 });
             }
         }
+
         //// POST: api/v1/guests/bookings
         //[HttpPost("bookings")]
         //public async Task<IActionResult> CreateBooking([FromBody] JsonElement request)

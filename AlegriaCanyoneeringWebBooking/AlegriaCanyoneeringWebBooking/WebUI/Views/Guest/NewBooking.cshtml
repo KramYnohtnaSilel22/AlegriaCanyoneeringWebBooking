@@ -199,258 +199,230 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 
 <script>
-function validateImage(input) {
-    const file = input.files[0];
-    const errorDiv = document.getElementById("fileError");
-    errorDiv.textContent = ""; // Clear previous error
-
-    if (!file) return;
-
-    const maxSizeMB = 1; // 1MB max size
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-
-    if (file.size > maxSizeBytes) {
-        errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
-        input.value = ""; // Clear the input
+    function validateImage(input) {
+        const file = input.files[0];
+        const errorDiv = document.getElementById("fileError");
+        errorDiv.textContent = "";
+        if (!file) return;
+        const maxSizeMB = 1;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+        if (file.size > maxSizeBytes) {
+            errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
+            input.value = "";
+        }
     }
-}
 
-$(function () {
-    const $type = $('#NationalityType');
-    const $list = $('#NationalityId');
-    const $operatorInput = $('#OperatorInput');
-    const $tourAreaInput = $('#TourAreaInput');
-    const $arrivalDateInput = $('#ArrivalDateInput');
-    const $batchGuestsJson = $('#BatchGuestsJson');
-    const $saveBtn = $('#saveBtn');
-    const $totalGuestsCount = $('#totalGuestsCount');
-    const $currentBatch = $('#CurrentBatch');
+    $(function () {
+        const $type = $('#NationalityType');
+        const $list = $('#NationalityId');
+        const $operatorInput = $('#OperatorInput');
+        const $tourAreaInput = $('#TourAreaInput');
+        const $arrivalDateInput = $('#ArrivalDateInput');
+        const $batchGuestsJson = $('#BatchGuestsJson');
+        const $saveBtn = $('#saveBtn');
+        const $totalGuestsCount = $('#totalGuestsCount');
+        const $currentBatch = $('#CurrentBatch');
 
-    const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-    const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
+        const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
+        const isReadonly = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
 
-    // ===== Update Nationality Dropdown =====
-    function updateNationalityIdOptions(choice) {
-        $list.empty();
-        const selectedNationalityId = localStorage.getItem('selectedNationalityId');
+        // ===== Update Nationality Dropdown =====
+        function updateNationalityIdOptions(choice) {
+            $list.empty();
+            const selectedNationalityId = localStorage.getItem('selectedNationalityId');
 
-        if (choice === 'Local') {
-            $list.append(new Option('Within Cebu Province', '1'));
-            $list.append(new Option('Outside Cebu Province', '2'));
-
-            if (selectedNationalityId === '1' || selectedNationalityId === '2') {
-                $list.val(selectedNationalityId);
-            }
-
-        } else if (choice === 'Foreign') {
-            $list.append(new Option('Loading...', ''));
-
-            $.getJSON(getNationalitiesUrl)
-                .done(function (data) {
-                    $list.empty();
-           
-
-                    data.forEach(function (item) {
-                        $list.append(new Option(item.natName, item.id));
+            if (choice === 'Local') {
+                $list.append(new Option('Within Cebu Province', '1'));
+                $list.append(new Option('Outside Cebu Province', '2'));
+                if (selectedNationalityId === '1' || selectedNationalityId === '2') {
+                    $list.val(selectedNationalityId);
+                }
+            } else if (choice === 'Foreign') {
+                $list.append(new Option('Loading...', ''));
+                $.getJSON(getNationalitiesUrl)
+                    .done(function (data) {
+                        $list.empty();
+                        data.forEach(function (item) {
+                            $list.append(new Option(item.natName, item.id));
+                        });
+                        setTimeout(() => {
+                            if (selectedNationalityId) {
+                                $list.val(selectedNationalityId);
+                            }
+                        }, 50);
+                    })
+                    .fail(function () {
+                        $list.empty().append(new Option('Error loading', ''));
                     });
+            } else {
+                $list.append(new Option('-- Select --', ''));
+            }
+        }
 
-                    // Apply saved id after options load
-                    setTimeout(() => {
-                        if (selectedNationalityId) {
-                            $list.val(selectedNationalityId);
-                        }
-                    }, 50);
+        // ===== Lock Inputs (Operator & Tour Area only — Arrival Date stays editable) =====
+        function lockInputs() {
+            $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
+            $currentBatch.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
 
-                })
-                .fail(function () {
-                    $list.empty().append(new Option('Error loading', ''));
+            // ✅ Ensure arrival date is always enabled and clickable
+            $arrivalDateInput.prop('readonly', false).css({ 'background-color': '', color: '' });
+        }
+
+        // ===== Display total guests =====
+        function updateTotalGuestsDisplay(guestsBatch) {
+            $totalGuestsCount.text(guestsBatch.length);
+            $saveBtn.prop('disabled', guestsBatch.length < 1);
+        }
+
+        // ===== Prefill last guest (NO event binding here) =====
+        function prefillLastGuest(guest) {
+            $('[name="NewGuest.OperatorId"]').val(guest.OperatorId);
+            $('[name="NewGuest.Fullname"]').val(''); // Clear for next guest entry
+            $('[name="NewGuest.Age"]').val('');
+            $('[name="NewGuest.Gender"]').val(guest.Gender);
+            $('[name="NewGuest.ContactNumber"]').val('');
+            $('[name="NewGuest.NationalityType"]').val(guest.NationalityType).trigger('change');
+
+            setTimeout(() => {
+                $('[name="NewGuest.NationalityId"]').val(guest.NationalityId);
+            }, 300);
+
+            $('[name="NewGuest.Area"]').val(guest.Area);
+
+            // ✅ Keep the current arrival date input value (don't overwrite it)
+            // Only set if input is empty
+            if (!$arrivalDateInput.val() && guest.ArrivalDate) {
+                let arrivalDate = new Date(guest.ArrivalDate);
+                if (!isNaN(arrivalDate.getTime())) {
+                    let formattedArrivalDate = arrivalDate.toLocaleString('sv-SE').slice(0, 16);
+                    $arrivalDateInput.val(formattedArrivalDate);
+                }
+            }
+        }
+
+        // ===== Toast notification =====
+        function showToast(message) {
+            const toastContainer = $('<div></div>')
+                .addClass('toast-container position-fixed top-0 end-0 p-3')
+                .css('z-index', 1080);
+
+            const toast = $('<div></div>')
+                .addClass('toast text-white bg-success border-0')
+                .attr({
+                    role: 'alert',
+                    'aria-live': 'assertive',
+                    'aria-atomic': 'true',
+                    'data-bs-delay': 4000
                 });
 
-        } else {
-            $list.append(new Option('-- Select --', ''));
-        }
-    }
+            const toastHeader = $('<div></div>')
+                .addClass('toast-header bg-success text-white border-0')
+                .html(`
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <small>Now</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                `);
 
-    // ===== Lock Inputs if readonly =====
-    function lockInputs() {
-        $arrivalDateInput.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-        $operatorInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-        $tourAreaInput.prop('disabled', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-        $currentBatch.prop('readonly', true).css({ 'background-color': '#f5f5f5', color: '#888' });
-    }
+            const toastBody = $('<div></div>')
+                .addClass('toast-body')
+                .text(message);
 
-    // ===== Display total guests =====
-    function updateTotalGuestsDisplay(guestsBatch) {
-        $totalGuestsCount.text(guestsBatch.length);
-        $saveBtn.prop('disabled', guestsBatch.length < 1);
-    }
+            toast.append(toastHeader, toastBody);
+            toastContainer.append(toast);
+            $('body').append(toastContainer);
 
-    // ===== Prefill last guest =====
+            var bsToast = new bootstrap.Toast(toast[0]);
+            bsToast.show();
 
-    function prefillLastGuest(guest) {
-        $('[name="NewGuest.OperatorId"]').val(guest.OperatorId);
-        $('[name="NewGuest.Fullname"]').val(guest.Fullname);
-        $('[name="NewGuest.Age"]').val(guest.Age);
-        $('[name="NewGuest.Gender"]').val(guest.Gender);
-        $('[name="NewGuest.ContactNumber"]').val(guest.ContactNumber);
-        $('[name="NewGuest.NationalityType"]').val(guest.NationalityType).trigger('change');
-
-        // Delay to ensure dropdown options are loaded
-        setTimeout(() => {
-            $('[name="NewGuest.NationalityId"]').val(guest.NationalityId);
-        }, 300);
-
-        $('[name="NewGuest.Area"]').val(guest.Area);
-
-    // Ensure Arrival Date is not overwritten when pre-filling
-    if (guest.ArrivalDate) {
-        let arrivalDate = new Date(guest.ArrivalDate);
-        if (!isNaN(arrivalDate.getTime())) {
-            // Format the date to local time as 'yyyy-MM-ddTHH:mm'
-            let formattedArrivalDate = arrivalDate.toLocaleString('sv-SE').slice(0, 16); // 'sv-SE' formats it as 'yyyy-MM-ddTHH:mm'
-            $('[name="NewGuest.ArrivalDate"]').val(formattedArrivalDate);
-        }
-    }
-
-    }
-
-
-    // ===== Toast notification =====
-    function showToast(message) {
-        // Create the outer toast container (like .toast-container)
-        const toastContainer = $('<div></div>')
-            .addClass('toast-container position-fixed top-0 end-0 p-3')
-            .css('z-index', 1080);
-
-        // Create the toast itself
-        const toast = $('<div></div>')
-            .addClass('toast text-white bg-success border-0')
-            .attr({
-                role: 'alert',
-                'aria-live': 'assertive',
-                'aria-atomic': 'true',
-                'data-bs-delay': 4000
+            toast.on('hidden.bs.toast', function () {
+                toastContainer.remove();
             });
-
-        // Create the toast header matching your markup
-        const toastHeader = $('<div></div>')
-            .addClass('toast-header bg-success text-white border-0')
-            .html(`
-                <i class="bi bi-check-circle-fill me-2"></i>
-                <strong class="me-auto">Success</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            `);
-
-        // Create the toast body with your message
-        const toastBody = $('<div></div>')
-            .addClass('toast-body')
-            .text(message);
-
-        // Append header and body to toast
-        toast.append(toastHeader, toastBody);
-
-        // Append toast to container
-        toastContainer.append(toast);
-
-        // Append container to body
-        $('body').append(toastContainer);
-
-        // Show the toast using Bootstrap's JS (assumes Bootstrap JS loaded)
-        var bsToast = new bootstrap.Toast(toast[0]);
-        bsToast.show();
-
-        // Remove toast from DOM after hidden to avoid clutter
-        toast.on('hidden.bs.toast', function () {
-            toastContainer.remove();
-        });
-    }
-
-
-    // ===== Initialization =====
-    const savedType = localStorage.getItem('selectedNationalityType') || $type.val();
-    $type.val(savedType);
-    updateNationalityIdOptions(savedType);
-
-    if (isReadonly) lockInputs();
-
-    let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
-
-    if (guestsBatch.length > 0) {
-        lockInputs();
-        updateTotalGuestsDisplay(guestsBatch);
-        prefillLastGuest(guestsBatch[guestsBatch.length - 1]);
-    } else {
-        updateTotalGuestsDisplay(guestsBatch);
-    }
-
-    // ===== Event Handlers =====
-    $type.on('change', function () {
-        const selectedType = $(this).val();
-        localStorage.setItem('selectedNationalityType', selectedType);
-
-        // Clear previously saved nationality ID on type change
-        localStorage.removeItem('selectedNationalityId');
-
-        updateNationalityIdOptions(selectedType);
-    });
-
-    $list.on('change', function () {
-        localStorage.setItem('selectedNationalityId', $(this).val());
-    });
-
-        $('#addGuestBtn').click(function () {
-        const guest = {
-            OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
-            Fullname: $('[name="NewGuest.Fullname"]').val(),
-            Age: $('[name="NewGuest.Age"]').val(),
-            Gender: $('[name="NewGuest.Gender"]').val(),
-            ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
-            NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-            NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
-            Area: $('[name="NewGuest.Area"]').val(),
-            // Convert the ArrivalDate input to UTC before saving
-            ArrivalDate: new Date($('[name="NewGuest.ArrivalDate"]').val()).toISOString() // Convert to UTC
-        };
-
-        // Validation for required fields (Booking Date is set server-side)
-        if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
-            !guest.NationalityType || !guest.NationalityId || !guest.ArrivalDate || !guest.Area) {
-            alert('Please fill in all required fields.');
-            return;
         }
 
-        // If it's the first guest, store the Arrival Date in localStorage as UTC so subsequent guests share the same arrival
-        if (guestsBatch.length === 0) {
-            localStorage.setItem('initialArrivalDate', guest.ArrivalDate);
+        // ===== Initialization =====
+        const savedType = localStorage.getItem('selectedNationalityType') || $type.val();
+        $type.val(savedType);
+        updateNationalityIdOptions(savedType);
+
+        if (isReadonly) lockInputs();
+
+        let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
+
+        if (guestsBatch.length > 0) {
+            lockInputs();
+            updateTotalGuestsDisplay(guestsBatch);
+            prefillLastGuest(guestsBatch[guestsBatch.length - 1]);
         } else {
-            // For subsequent guests, use the stored UTC arrival date
-            guest.ArrivalDate = localStorage.getItem('initialArrivalDate');
+            updateTotalGuestsDisplay(guestsBatch);
         }
 
-        // Add guest to the batch and update localStorage
-        guestsBatch.push(guest);
-        localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
-        localStorage.setItem('selectedNationalityType', guest.NationalityType);
-        localStorage.setItem('selectedNationalityId', guest.NationalityId);
+        // ===== Nationality Type Change =====
+        $type.on('change', function () {
+            const selectedType = $(this).val();
+            localStorage.setItem('selectedNationalityType', selectedType);
+            localStorage.removeItem('selectedNationalityId');
+            updateNationalityIdOptions(selectedType);
+        });
 
-        updateTotalGuestsDisplay(guestsBatch);
-        lockInputs();
-        prefillLastGuest(guest);
+        $list.on('change', function () {
+            localStorage.setItem('selectedNationalityId', $(this).val());
+        });
 
-        showToast(`Guest "${guest.Fullname}" added successfully!`);
+        // ✅ Arrival Date change listener — placed HERE (not inside prefillLastGuest)
+        $arrivalDateInput.on('change', function () {
+            const val = $(this).val();
+            if (val) {
+                const newDate = new Date(val).toISOString();
+                localStorage.setItem('initialArrivalDate', newDate);
+            }
+        });
+
+        // ===== Add Guest Button =====
+        $('#addGuestBtn').click(function () {
+            const arrivalVal = $arrivalDateInput.val();
+
+            const guest = {
+                OperatorId: parseInt($('[name="NewGuest.OperatorId"]').val()) || null,
+                Fullname: $('[name="NewGuest.Fullname"]').val(),
+                Age: $('[name="NewGuest.Age"]').val(),
+                Gender: $('[name="NewGuest.Gender"]').val(),
+                ContactNumber: $('[name="NewGuest.ContactNumber"]').val(),
+                NationalityType: $('[name="NewGuest.NationalityType"]').val(),
+                NationalityId: parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
+                Area: $('[name="NewGuest.Area"]').val(),
+                // ✅ Use whatever is currently in the arrival date input
+                ArrivalDate: arrivalVal ? new Date(arrivalVal).toISOString() : null
+            };
+
+            if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
+                !guest.NationalityType || !guest.NationalityId || !guest.ArrivalDate || !guest.Area) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            guestsBatch.push(guest);
+            localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
+            localStorage.setItem('selectedNationalityType', guest.NationalityType);
+            localStorage.setItem('selectedNationalityId', guest.NationalityId.toString());
+
+            updateTotalGuestsDisplay(guestsBatch);
+            lockInputs(); // Locks Operator & Tour Area, keeps Arrival Date open
+            prefillLastGuest(guest);
+            showToast(`Guest "${guest.Fullname}" added successfully!`);
+        });
+
+        // ===== Form Submit =====
+        $('#guestForm').on('submit', function () {
+            $batchGuestsJson.val(JSON.stringify(guestsBatch));
+            localStorage.removeItem('guestsBatch');
+            localStorage.removeItem('selectedNationalityType');
+            localStorage.removeItem('selectedNationalityId');
+            localStorage.removeItem('initialArrivalDate');
+        });
+
+        // Hide overlay after load
+        $('#loadingOverlay').fadeOut(300);
     });
-
-
-
-    $('#guestForm').on('submit', function () {
-        $batchGuestsJson.val(JSON.stringify(guestsBatch));
-        localStorage.removeItem('guestsBatch');
-        localStorage.removeItem('selectedNationalityType');
-        localStorage.removeItem('selectedNationalityId');
-    });
-
-    // Hide overlay after load
-    $('#loadingOverlay').fadeOut(300);
-});
 </script>

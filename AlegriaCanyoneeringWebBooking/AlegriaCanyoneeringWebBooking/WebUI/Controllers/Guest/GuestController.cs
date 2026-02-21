@@ -476,49 +476,63 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (batchGuests != null && batchGuests.Count > 0)
                 {
                     int insertedCount = 0;
-                    string generatedRFIDCode = GenerateRFIDCode(); // Will be reused for the image
+
+                    // ✅ Generate base timestamp ONCE for the whole batch
+                    long baseUnixTimestamp = GetCurrentUnixTimestamp();
+                    string firstGuestRFIDCode = null;
 
                     foreach (var guest in batchGuests)
                     {
-                        guest.BookingStatus = (int)Guest.BookingStatusEnum.anticipated;  // 0 = anticipated
+                        // ✅ ArrivalDate: each guest gets +60 seconds from base
+                        long guestArrivalTimestamp = baseUnixTimestamp + (insertedCount * 60L);
+
+                        // ✅ RFIDCode: ArrivalDate + 500 + (index * 100)
+                        long rfidTimestamp = guestArrivalTimestamp + 500L + (insertedCount * 100L);
+                        string generatedRFIDCode = rfidTimestamp.ToString();
+
+                        if (insertedCount == 0)
+                            firstGuestRFIDCode = generatedRFIDCode;
+
+                        guest.BookingStatus = (int)Guest.BookingStatusEnum.anticipated;
                         guest.Batch = batchId;
                         guest.RFID = 1;
                         guest.RFIDCode = generatedRFIDCode;
                         guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
                         guest.Month = DateTime.Today.ToString("MMMM");
-                        // Convert user-input ArrivalDate (datetime-local) to Unix timestamp
+
+                        // ✅ Override ArrivalDate with incremented timestamp per guest
                         if (!string.IsNullOrEmpty(guest.ArrivalDate))
                         {
-                            // Parse as local datetime (includes date + time)
                             if (DateTime.TryParse(guest.ArrivalDate, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime dt))
                             {
-                                // Convert to Unix timestamp using local time
-                                long unixTime = new DateTimeOffset(dt).ToUnixTimeSeconds();
-                                guest.ArrivalDate = unixTime.ToString();
+                                // Use the user's selected date but add per-guest offset (60s each)
+                                long userArrival = new DateTimeOffset(dt).ToUnixTimeSeconds();
+                                long uniqueArrival = userArrival + (insertedCount * 60L);
+                                guest.ArrivalDate = uniqueArrival.ToString();
+
+                                // ✅ Recalculate RFID based on actual user arrival
+                                rfidTimestamp = uniqueArrival + 500L + (insertedCount * 100L);
+                                guest.RFIDCode = rfidTimestamp.ToString();
+
+                                if (insertedCount == 0)
+                                    firstGuestRFIDCode = guest.RFIDCode;
                             }
                         }
                         else
                         {
-                            // fallback to current local datetime
-                            guest.ArrivalDate = GetCurrentUnixTimestamp().ToString();
+                            guest.ArrivalDate = guestArrivalTimestamp.ToString();
                         }
 
-                        // ===== Booking Date =====
-                        // Set booking date on the server so clients don't need to supply it.
-                        // Use current local time formatted as: "Mon, 17 September 2018 07:40".
                         guest.Date = DateTime.Now.ToString("ddd, dd MMMM yyyy HH:mm", CultureInfo.InvariantCulture);
                         guest.DateShort = DateTime.Today.ToString("MMMM dd yyyy");
-                     
 
                         _context.Guests.Add(guest);
                         insertedCount++;
                     }
 
-                    // Save guests first
                     await _context.SaveChangesAsync();
 
-                   
-                    // Now handle photo upload if any
+                    // ✅ Photo is linked to the FIRST guest's RFID code
                     if (Photo != null && Photo.Length > 0)
                     {
                         using (var ms = new MemoryStream())
@@ -526,10 +540,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                             await Photo.CopyToAsync(ms);
                             var guestImage = new GuestImage
                             {
-                                WristbondGuestCode = generatedRFIDCode,
+                                WristbondGuestCode = firstGuestRFIDCode,
                                 Image = ms.ToArray()
                             };
-
                             _context.Add(guestImage);
                             await _context.SaveChangesAsync();
                         }
@@ -538,9 +551,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     TempData["ToastMessage"] = "Guests added successfully";
                     TempData["ToastType"] = "success";
 
-
-                    return RedirectToAction("SaveGuest"); // ✅ Clean redirect, no query string
-
+                    return RedirectToAction("SaveGuest");
                 }
 
                 TempData["ToastMessage"] = "Please add at least one guest before saving!";
@@ -550,7 +561,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             await PopulateDropdowns();
             return View(model);
         }
-
 
         // Helper method to generate the current Unix timestamp
         private long GetCurrentUnixTimestamp()
