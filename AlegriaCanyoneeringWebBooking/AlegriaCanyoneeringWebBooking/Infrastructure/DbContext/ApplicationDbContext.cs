@@ -46,12 +46,15 @@ namespace AlegriaCanyoneeringWebBooking
         public DbSet<Nationality> Nationalities { get; set; }
 
         // //public DbSet<Driver> Drivers { get; set; }
-        //public DbSet<Guide> Guides { get; set; }
+     
         public DbSet<Role> Roles { get; set; }
         public DbSet<Operator> Operators { get; set; }
         public DbSet<GuestBriefing> GuestBriefings { get; set; }
 
         public DbSet<Driver> Drivers { get; set; }
+
+        public DbSet<Guide> Guides { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -225,11 +228,12 @@ namespace AlegriaCanyoneeringWebBooking
 
             // Removed Driver entity configuration
             // modelBuilder.Entity<Driver>().ToTable("driver_details");
-            //modelBuilder.Entity<Guide>().ToTable("tourguide_details");
+         
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<Operator>().ToTable("tbl_operator_mobile");
             modelBuilder.Entity<GuestBriefing>().ToTable("tbl_guestbreifing");
             modelBuilder.Entity<Driver>().ToTable("driver_details");
+            modelBuilder.Entity<Guide>().ToTable("tourguide_details");
         }
     }
 }

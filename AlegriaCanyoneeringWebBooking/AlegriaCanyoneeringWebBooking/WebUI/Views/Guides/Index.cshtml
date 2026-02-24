@@ -1,0 +1,276 @@
+﻿@{
+    ViewData["Title"] = "Tour Guides";
+}
+
+<h2 class="fw-bold mb-4 text-primary">Tour Guides</h2>
+
+<form id="__AjaxAntiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<button type="button" id="btnCreate" class="btn btn-primary mb-3">
+    Create New
+</button>
+
+<div class="table-responsive">
+    <table id="tourGuidesTable" class="table table-bordered table-striped table-sm align-middle w-100">
+        <thead class="table-light">
+            <tr>
+                <th>Photo</th>
+                <th>Full Name</th>
+                <th>Reference</th>
+                <th>Nickname</th>
+                <th>Contact</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<div class="modal fade" id="tourGuideModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="tourGuideModalLabel">Tour Guide</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalContent"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" />
+
+    <style>
+        /* Ensure modal content is visible */
+        #tourGuideModal .modal-content {
+            min-height: 300px;
+        }
+        #modalContent {
+            min-height: 300px;
+            background-color: #fff;
+        }
+    </style>
+
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+    <script>
+        function showToast(message, type = 'success') {
+            let bg = type === 'error' ? 'bg-danger' : 'bg-success';
+            let toast = $(`
+                <div class="toast align-items-center text-white ${bg} border-0 position-fixed top-0 end-0 m-3" style="z-index:9999">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>`);
+            $('body').append(toast);
+            new bootstrap.Toast(toast[0]).show();
+            toast.on('hidden.bs.toast', function () { toast.remove(); });
+        }
+
+        $(function () {
+            var table = $('#tourGuidesTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '@Url.Action("GetTourGuidesData", "Guides")',
+                    type: 'POST',
+                    data: function (d) {
+                        d.__RequestVerificationToken =
+                            $('input[name="__RequestVerificationToken"]').val();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        console.error('Response:', xhr.responseText);
+                        let errorMsg = 'Error loading tour guides data';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error) errorMsg = response.error;
+                        } catch (e) {}
+                        showToast(errorMsg, 'error');
+                    }
+                },
+                columns: [
+                    // ✅ Photo column — shows image from stored path
+                    {
+                        data: 'image',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data) {
+                            if (data) {
+                                return `<img src="${data}"
+                                            style="width:45px; height:45px; object-fit:cover;"
+                                            class="rounded border"
+                                            onerror="this.src='/images/no-photo.png'" />`;
+                            }
+                            return `<div style="width:45px; height:45px;"
+                                        class="rounded border bg-light d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-person-fill text-muted"></i>
+                                    </div>`;
+                        }
+                    },
+                    { data: 'fullName', orderable: false, searchable: false, defaultContent: 'N/A' },
+                    { data: 'rfid', orderable: false, searchable: false, defaultContent: 'N/A' },
+                    { data: 'nickname', orderable: false, searchable: false, defaultContent: '----' },
+                    { data: 'cNumber', orderable: false, searchable: false, defaultContent: '----' },
+                    {
+                        data: 'guideId',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            return `
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="/Guides/Edit/${data}" class="btn btn-sm btn-warning btn-edit">Edit</a>
+                                    <button class="btn btn-sm btn-danger btn-delete"
+                                        data-id="${data}"
+                                        data-name="${row.fullName}">Delete</button>
+                                </div>`;
+                        }
+                    }
+                ],
+                responsive: true,
+                language: {
+                    processing: 'Processing...',
+                    emptyTable: 'No tour guides found',
+                    infoEmpty: 'No tour guides found'
+                }
+            });
+
+            // ✅ Fixed openModal — dispose before reopen
+            function openModal(url, title) {
+                var existingModal = bootstrap.Modal.getInstance(document.getElementById('tourGuideModal'));
+                if (existingModal) existingModal.dispose();
+
+                $('#modalContent').html(`
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Loading form...</p>
+                    </div>
+                `);
+
+                console.log('Loading form from:', url);
+
+                $.get(url, function (res) {
+                    console.log('Form loaded successfully, length:', res.length);
+                    $('#modalContent').html(res);
+                    $('#tourGuideModalLabel').text(title);
+                    new bootstrap.Modal(document.getElementById('tourGuideModal')).show();
+                }).fail(function (xhr) {
+                    console.error('Form load error:');
+                    console.error('Status:', xhr.status);
+                    console.error('StatusText:', xhr.statusText);
+                    console.error('Response:', xhr.responseText);
+
+                    $('#modalContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <h5>Error Loading Form</h5>
+                            <p><strong>Status:</strong> ${xhr.status} ${xhr.statusText}</p>
+                            <p><strong>Response:</strong></p>
+                            <pre style="max-height: 200px; overflow-y: auto;">${xhr.responseText.substring(0, 500)}</pre>
+                        </div>
+                    `);
+                    showToast('Error loading form (Status: ' + xhr.status + ')', 'error');
+                });
+            }
+
+            $('#btnCreate').click(function () {
+                openModal('@Url.Action("Create", "Guides")', 'Create Tour Guide');
+            });
+
+            $('#tourGuidesTable').on('click', '.btn-edit', function (e) {
+                e.preventDefault();
+                openModal($(this).attr('href'), 'Edit Tour Guide');
+            });
+
+            $('#tourGuidesTable').on('click', '.btn-delete', function () {
+                let id = $(this).data('id');
+                let name = $(this).data('name');
+
+                if (confirm(`Delete "${name}"?`)) {
+                    $.post('@Url.Action("DeleteAjax", "Guides")', {
+                        id: id,
+                        __RequestVerificationToken:
+                            $('input[name="__RequestVerificationToken"]').val()
+                    }, function (res) {
+                        if (res.success) {
+                            showToast(res.message);
+                            table.ajax.reload(null, false);
+                        } else {
+                            showToast(res.message, 'error');
+                        }
+                    });
+                }
+            });
+
+            // ✅ FIXED — use FormData to support file uploads AND antiforgery token
+            $('#tourGuideModal').on('submit', 'form', function (e) {
+                e.preventDefault();
+                let form = $(this);
+                let formData = new FormData(form[0]);
+
+                // ✅ Ensure antiforgery token is included
+                let token = $('input[name="__RequestVerificationToken"]').val();
+                if (token) {
+                    formData.set('__RequestVerificationToken', token);
+                }
+
+                let submitBtn = form.find('[type="submit"]');
+                submitBtn.prop('disabled', true)
+                         .html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+
+                console.log('Submitting form to:', form.attr('action'));
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false, // ✅ Required for FormData
+                    contentType: false, // ✅ Required for FormData
+                    success: function (res) {
+                        console.log('Form submit response:', res);
+
+                        if (res.success) {
+                            var modal = bootstrap.Modal.getInstance(
+                                document.getElementById('tourGuideModal')
+                            );
+                            if (modal) modal.hide();
+                            table.ajax.reload(null, false);
+                            showToast(res.message);
+                        } else {
+                            // ✅ Display validation errors
+                            let errorMessage = res.message || 'Validation errors occurred';
+
+                            if (res.errors && Array.isArray(res.errors)) {
+                                let errorList = res.errors.map(e => `<li>${e}</li>`).join('');
+                                errorMessage = `
+                                    <div class="alert alert-danger" role="alert">
+                                        <h5>${res.message}</h5>
+                                        <ul class="mb-0">
+                                            ${errorList}
+                                        </ul>
+                                    </div>
+                                `;
+                                // Prepend errors to form
+                                $(form).prepend(errorMessage);
+                            } else {
+                                showToast(errorMessage, 'error');
+                            }
+
+                            submitBtn.prop('disabled', false).html('Save');
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('Submit error:', xhr.status, xhr.responseText);
+                        submitBtn.prop('disabled', false).html('Save');
+                        showToast('Error saving tour guide (Status: ' + xhr.status + ')', 'error');
+                    }
+                });
+            });
+        });
+    </script>
+}
