@@ -8,11 +8,11 @@ namespace AlegriaCanyoneeringWebBooking.Models
     {
 
         [Key]
-
-        public int DriverId { get; set; }  // bigint → long in C#
+        [Column("id")]
+        public int DriverId { get; set; }
 
         [Column("dposition")]
-        public int DPosition { get; set; }  // int(99) → int in C#
+        public int DPosition { get; set; }
 
         [Required]
         [Column("refid")]
@@ -21,32 +21,32 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [Required]
         [Column("fname")]
-        public string FName { get; set; }  // mediumtext → string
+        public string FName { get; set; }
 
-        [Required]
+        // ✅ NOT Required — optional middle name
         [Column("mname")]
-        public string MName { get; set; }
+        public string? MName { get; set; }
 
         [Required]
         [Column("lname")]
         public string LName { get; set; }
 
-        [Required]
         [Column("pnumber")]
-        public string PNumber { get; set; }
+        public string? PNumber { get; set; }
 
-        [Required]
         [Column("cnumber")]
-        public string CNumber { get; set; }
+        public string? CNumber { get; set; }
 
-        [Required]
+        [Column("ctcdate")]
+        public string? CtcDate { get; set; } // ✅ nullable — not always required
+
         [Column("address")]
-        public string Address { get; set; }
+        public string? Address { get; set; } // ✅ nullable — not always required
 
-        [Required]
+
+        // ✅ Image stored as file path string, not required on form
         [Column("image")]
-        public string Image { get; set; }
-
+        public string? Image { get; set; }
 
 
         // ✅ Add this navigation property

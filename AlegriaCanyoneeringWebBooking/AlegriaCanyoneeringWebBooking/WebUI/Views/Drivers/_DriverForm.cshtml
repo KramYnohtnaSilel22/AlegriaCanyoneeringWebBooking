@@ -1,0 +1,108 @@
+﻿@model AlegriaCanyoneeringWebBooking.Models.Driver
+@{
+    var action = ViewData["Action"]?.ToString() ?? "Create";
+    var formAction = action == "Edit" ? "/Drivers/Edit" : "/Drivers/Create";
+}
+
+<form action="@formAction" method="post" enctype="multipart/form-data" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="DriverId" value="@Model.DriverId" />
+    <input type="hidden" name="DPosition" value="@Model.DPosition" />
+    <input type="hidden" name="Image" value="@Model.Image" />
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Reference ID</label>
+            <input name="RefId" value="@Model.RefId" class="form-control"
+                   readonly style="background-color:#f5f5f5; color:#555;" />
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Position ID</label>
+            <input type="text" value="@Model.DPosition" class="form-control"
+                   readonly style="background-color:#f5f5f5; color:#555;" />
+            <input name="DPosition" type="hidden" value="@Model.DPosition" />
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">First Name <span class="text-danger">*</span></label>
+            <input name="FName" value="@Model.FName" class="form-control" required />
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Middle Name</label>
+            <input name="MName" value="@Model.MName" class="form-control" placeholder="Optional" />
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+            <input name="LName" value="@Model.LName" class="form-control" required />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Phone Number</label>
+            <input name="PNumber" value="@Model.PNumber" class="form-control" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Contact Number</label>
+            <input name="CNumber" value="@Model.CNumber" class="form-control" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">CTC Date <span class="text-danger">*</span></label>
+            <input name="CtcDate" value="@Model.CtcDate" class="form-control" required />
+        </div>
+        <div class="col-md-12 mb-3">
+            <label class="form-label">Address</label>
+            <textarea name="Address" class="form-control" rows="2">@Model.Address</textarea>
+        </div>
+
+        <div class="col-md-12 mb-3">
+            <label class="form-label">Driver Photo</label>
+
+            @if (!string.IsNullOrEmpty(Model?.Image))
+            {
+                <div class="mb-2 d-flex align-items-center gap-3">
+                    <!-- ✅ Direct path — string stored in DB -->
+                    <img src="@Model.Image"
+                         alt="Driver Photo"
+                         id="currentPhoto"
+                         class="rounded border"
+                         style="width:100px; height:100px; object-fit:cover;"
+                         onerror="this.style.display='none'" />
+                    <div>
+                        <small class="text-muted d-block">Current photo</small>
+                        <small class="text-secondary" style="font-size:10px;">@Model.Image</small><br />
+                        <small class="text-muted">Upload new image to replace</small>
+                    </div>
+                </div>
+            }
+
+            <input type="file" name="PhotoFile" id="photoFileInput" class="form-control"
+                   accept="image/jpeg,image/png,image/webp,image/jpg"
+                   onchange="previewPhoto(this)" />
+
+            <div class="mt-2" id="previewContainer" style="display:none;">
+                <small class="text-muted d-block mb-1">New photo preview:</small>
+                <img id="photoPreview" src="#" alt="Preview"
+                     class="rounded border"
+                     style="width:100px; height:100px; object-fit:cover;" />
+            </div>
+        </div>
+    </div>
+
+    <div class="text-end mt-2">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+            @(action == "Edit" ? "Update" : "Save")
+        </button>
+    </div>
+</form>
+
+<script>
+    function previewPhoto(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#photoPreview').attr('src', e.target.result);
+                $('#previewContainer').show();
+                $('#currentPhoto').css('opacity', '0.4');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>

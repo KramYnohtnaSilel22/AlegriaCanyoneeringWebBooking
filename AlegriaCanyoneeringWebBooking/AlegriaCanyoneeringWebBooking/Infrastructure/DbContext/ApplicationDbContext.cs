@@ -51,6 +51,8 @@ namespace AlegriaCanyoneeringWebBooking
         public DbSet<Operator> Operators { get; set; }
         public DbSet<GuestBriefing> GuestBriefings { get; set; }
 
+        public DbSet<Driver> Drivers { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -227,6 +229,7 @@ namespace AlegriaCanyoneeringWebBooking
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<Operator>().ToTable("tbl_operator_mobile");
             modelBuilder.Entity<GuestBriefing>().ToTable("tbl_guestbreifing");
+            modelBuilder.Entity<Driver>().ToTable("driver_details");
         }
     }
 }
