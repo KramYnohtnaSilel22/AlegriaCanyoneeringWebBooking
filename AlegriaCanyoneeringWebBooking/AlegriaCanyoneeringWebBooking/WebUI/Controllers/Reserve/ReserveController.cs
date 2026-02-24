@@ -1271,10 +1271,105 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = "Error confirming booking. Please try again." });
             }
         }
-       
 
+        // =========================================================
+        // ASSIGN DRIVER — GET modal form
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> GetAssignDriverModal(string batch)
+        {
+            // ✅ Get all drivers
+            var allDrivers = await _context.Drivers
+                .OrderBy(d => d.FName)
+                .Select(d => new
+                {
+                    d.DriverId,
+                    d.RefId,
+                    fullName = ((d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? "")).Trim(),
+                    d.Image
+                })
+                .ToListAsync();
 
+            // ✅ FIFO — get drivers already assigned today (ordered by assignment time)
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
+            var assignedTodayRefIds = await _context.DriverAttendances
+                .Where(a => a.Date == today)
+                .OrderBy(a => a.Id) // FIFO — earliest assigned = first out
+                .Select(a => a.DriverId)
+                .ToListAsync();
 
+            // ✅ Split into: available (not assigned today) and busy (assigned today)
+            var availableDrivers = allDrivers
+                .Where(d => !assignedTodayRefIds.Contains(d.RefId))
+                .ToList();
+
+            var busyDrivers = allDrivers
+                .Where(d => assignedTodayRefIds.Contains(d.RefId))
+                .OrderBy(d => assignedTodayRefIds.IndexOf(d.RefId)) // FIFO order
+                .ToList();
+
+            var guestCount = await _context.Guests
+                .CountAsync(g => g.Batch == batch);
+
+            ViewBag.Batch = batch;
+            ViewBag.GuestCount = guestCount;
+            ViewBag.AvailableDrivers = availableDrivers;
+            ViewBag.BusyDrivers = busyDrivers;
+
+            return PartialView("_AssignDriverModal");
+        }
+
+        // =========================================================
+        // ASSIGN DRIVER — POST save
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignDriver(string batch, string driverRefId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batch) || string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Batch and Driver are required." });
+
+                var guestCount = await _context.Guests
+                    .CountAsync(g => g.Batch == batch);
+
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+                // ✅ Save to driver_attendance
+                var attendance = new DriverAttendance
+                {
+                    DriverId = driverRefId,
+                    Date = today,
+                    Passenger = guestCount
+                };
+                _context.DriverAttendances.Add(attendance);
+
+                // ✅ Save to driver_dtr
+                var driver = await _context.Drivers
+                    .FirstOrDefaultAsync(d => d.RefId == driverRefId);
+
+                if (driver != null)
+                {
+                    var dtr = new DriverDtr
+                    {
+                        Rfid = int.TryParse(driver.RefId, out int rfidInt) ? rfidInt : 0,
+                        Date = today,
+                        Passenger = guestCount.ToString(),
+                        ComDateDr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    };
+                    _context.DriverDtrs.Add(dtr);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Driver assigned successfully." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
 
     }
 

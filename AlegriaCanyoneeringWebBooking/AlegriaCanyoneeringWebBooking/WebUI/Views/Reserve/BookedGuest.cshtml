@@ -76,7 +76,25 @@
 
     <!-- Modal Injection Container -->
     <div id="guestDetailsModalContainer"></div>
+
+    <!-- Assign Driver Modal -->
+    <div class="modal fade" id="assignDriverModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" id="assignDriverModalContent">
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Guide Modal -->
+    <div class="modal fade" id="assignGuideModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" id="assignGuideModalContent">
+            </div>
+        </div>
+    </div>
 </div>
+
+
 
 <!-- Toast -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
@@ -87,6 +105,8 @@
         </div>
     </div>
 </div>
+
+
 
 @section Scripts {
     <script>
@@ -245,18 +265,26 @@
                                 return `<span class="badge bg-${badgeMap[data.toLowerCase()] || 'secondary'} text-uppercase">${data}</span>`;
                             }
                         },
-                        {
+                           {
                             data: 'batch',
                             orderable: false,
                             searchable: false,
                             render: function (data) {
                                 return `
-                                    <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
-                                        <i class="fas fa-eye me-1"></i> View
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-warning print-batch-details" data-batch="${data}">
-                                        <i class="fas fa-print me-1"></i> Print
-                                    </button>`;
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
+                                            <i class="fas fa-eye me-1"></i> View
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-warning print-batch-details" data-batch="${data}">
+                                            <i class="fas fa-print me-1"></i> Print
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
+                                            <i class="fas fa-user-tie me-1"></i> Guide
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
+                                            <i class="fas fa-car me-1"></i> Driver
+                                        </button>
+                                    </div>`;
                             }
                         }
                     ],
@@ -308,5 +336,32 @@
 
 
         });
+
+               // ================================
+        // 🚗 Assign Driver Modal
+        // ================================
+        $('#batchesTableContainer').on('click', '.assign-driver', function () {
+            const batch = $(this).data('batch');
+            $('#assignDriverModalContent').html(`
+                <div class="text-center p-4">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="mt-2 text-muted">Loading drivers...</p>
+                </div>
+            `);
+
+            const modal = new bootstrap.Modal(document.getElementById('assignDriverModal'));
+            modal.show();
+
+            $.get('@Url.Action("GetAssignDriverModal", "Reserve")', { batch: batch })
+                .done(function (html) {
+                    $('#assignDriverModalContent').html(html);
+                })
+                .fail(function () {
+                    $('#assignDriverModalContent').html(`
+                        <div class="alert alert-danger m-3">Failed to load drivers.</div>
+                    `);
+                });
+        });
+       
     </script>
 }
