@@ -1278,97 +1278,251 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAssignDriverModal(string batch)
         {
-            // ✅ Get all drivers
-            var allDrivers = await _context.Drivers
-                .OrderBy(d => d.FName)
-                .Select(d => new
+            try
+            {
+                var allDrivers = await _context.Drivers
+                    .OrderBy(d => d.FName)
+                    .Select(d => new
+                    {
+                        d.DriverId,
+                        d.RefId,
+                        fullName = ((d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? "")).Trim(),
+                        d.Image
+                    })
+                    .ToListAsync();
+
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+                // ✅ FIFO from driver_priority table
+                var priorityToday = await _context.DriverIdPriors
+                    .Where(p => p.Date == today)
+                    .OrderBy(p => p.Id)
+                    .ToListAsync();
+
+                // ✅ Map rfid int back to RefId string
+                var busyRefIds = new List<string>();
+                foreach (var p in priorityToday)
                 {
-                    d.DriverId,
-                    d.RefId,
-                    fullName = ((d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? "")).Trim(),
-                    d.Image
-                })
-                .ToListAsync();
+                    var matched = allDrivers.FirstOrDefault(d =>
+                        int.TryParse(d.RefId, out int rid) && rid == p.DriverIdPriorValue);
+                    if (matched != null && !busyRefIds.Contains(matched.RefId))
+                        busyRefIds.Add(matched.RefId);
+                }
 
-            // ✅ FIFO — get drivers already assigned today (ordered by assignment time)
-            var today = DateTime.Now.ToString("yyyy-MM-dd");
-            var assignedTodayRefIds = await _context.DriverAttendances
-                .Where(a => a.Date == today)
-                .OrderBy(a => a.Id) // FIFO — earliest assigned = first out
-                .Select(a => a.DriverId)
-                .ToListAsync();
+                // ✅ Pull ALL attendance today in-memory — avoid EF Core SQL translation errors
+                var allAttendanceToday = await _context.DriverAttendances
+                    .Where(a => a.Date == today)
+                    .ToListAsync();
 
-            // ✅ Split into: available (not assigned today) and busy (assigned today)
-            var availableDrivers = allDrivers
-                .Where(d => !assignedTodayRefIds.Contains(d.RefId))
-                .ToList();
+                // ✅ Filter in-memory for pipe-formatted entries
+                var driverBatchMap = allAttendanceToday
+                    .Where(a => !string.IsNullOrEmpty(a.DriverId) && a.DriverId.Contains("|"))
+                    .Select(a => new
+                    {
+                        refId = a.DriverId.Split('|')[0],
+                        batchCode = a.DriverId.Split('|').Length > 1 ? a.DriverId.Split('|')[1] : ""
+                    })
+                    .GroupBy(x => x.refId)
+                    .ToDictionary(g => g.Key, g => g.First().batchCode);
 
-            var busyDrivers = allDrivers
-                .Where(d => assignedTodayRefIds.Contains(d.RefId))
-                .OrderBy(d => assignedTodayRefIds.IndexOf(d.RefId)) // FIFO order
-                .ToList();
+                var availableDrivers = allDrivers
+                    .Where(d => !busyRefIds.Contains(d.RefId))
+                    .Select(d => new
+                    {
+                        d.DriverId,
+                        d.RefId,
+                        d.fullName,
+                        Image = d.Image ?? ""
+                    })
+                    .ToList();
 
-            var guestCount = await _context.Guests
-                .CountAsync(g => g.Batch == batch);
+                var busyDriversList = allDrivers
+                    .Where(d => busyRefIds.Contains(d.RefId))
+                    .OrderBy(d => busyRefIds.IndexOf(d.RefId))
+                    .Select(d => new
+                    {
+                        d.DriverId,
+                        d.RefId,
+                        d.fullName,
+                        Image = d.Image ?? "",
+                        assignedBatch = driverBatchMap.ContainsKey(d.RefId)
+                                        ? driverBatchMap[d.RefId]
+                                        : ""
+                    })
+                    .ToList();
 
-            ViewBag.Batch = batch;
-            ViewBag.GuestCount = guestCount;
-            ViewBag.AvailableDrivers = availableDrivers;
-            ViewBag.BusyDrivers = busyDrivers;
+                var guestCount = await _context.Guests
+                    .CountAsync(g => g.Batch == batch);
 
-            return PartialView("_AssignDriverModal");
+                ViewBag.Batch = batch ?? "";
+                ViewBag.GuestCount = guestCount;
+                ViewBag.AvailableDrivers = availableDrivers.Cast<dynamic>().ToList();
+                ViewBag.BusyDrivers = busyDriversList.Cast<dynamic>().ToList();
+
+                return PartialView("_AssignDriverModal");
+            }
+            catch (Exception ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return Content($@"
+            <div class='modal-header bg-danger text-white'>
+                <h5 class='modal-title'>Error Loading Drivers</h5>
+                <button type='button' class='btn-close btn-close-white' data-bs-dismiss='modal'></button>
+            </div>
+            <div class='modal-body'>
+                <div class='alert alert-danger'>
+                    <i class='fas fa-exclamation-triangle me-2'></i>
+                    <strong>Error:</strong> {inner}
+                </div>
+            </div>
+            <div class='modal-footer'>
+                <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
+            </div>", "text/html");
+            }
         }
 
         // =========================================================
-        // ASSIGN DRIVER — POST save
+        // ASSIGN MULTIPLE DRIVERS — POST save
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignDriver(string batch, string driverRefId)
+        public async Task<IActionResult> AssignDrivers(string batch, List<string> driverRefIds)
         {
             try
             {
-                if (string.IsNullOrEmpty(batch) || string.IsNullOrEmpty(driverRefId))
-                    return Json(new { success = false, message = "Batch and Driver are required." });
+                if (string.IsNullOrEmpty(batch) || driverRefIds == null || !driverRefIds.Any())
+                    return Json(new { success = false, message = "Batch and at least one Driver are required." });
 
                 var guestCount = await _context.Guests
                     .CountAsync(g => g.Batch == batch);
 
                 var today = DateTime.Now.ToString("yyyy-MM-dd");
+                var nowFull = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-                // ✅ Save to driver_attendance
-                var attendance = new DriverAttendance
+                int driversCount = driverRefIds.Count;
+                int basePassengers = guestCount / driversCount;
+                int remainder = guestCount % driversCount;
+
+                var assignedNames = new List<string>();
+
+                for (int i = 0; i < driversCount; i++)
                 {
-                    DriverId = driverRefId,
-                    Date = today,
-                    Passenger = guestCount
-                };
-                _context.DriverAttendances.Add(attendance);
+                    var driverRefId = driverRefIds[i];
 
-                // ✅ Save to driver_dtr
-                var driver = await _context.Drivers
-                    .FirstOrDefaultAsync(d => d.RefId == driverRefId);
+                    var driver = await _context.Drivers
+                        .FirstOrDefaultAsync(d => d.RefId == driverRefId);
 
-                if (driver != null)
-                {
-                    var dtr = new DriverDtr
+                    if (driver == null) continue;
+
+                    int rfidValue = int.TryParse(driver.RefId, out int parsed) ? parsed : driver.DriverId;
+                    int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
+
+                    // ✅ Store ONLY RefId — clean, no pipe mixing
+                    _context.DriverAttendances.Add(new DriverAttendance
                     {
-                        Rfid = int.TryParse(driver.RefId, out int rfidInt) ? rfidInt : 0,
+                        DriverId = driverRefId,   // ✅ just "100001" not "100001|15127"
                         Date = today,
-                        Passenger = guestCount.ToString(),
-                        ComDateDr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    };
-                    _context.DriverDtrs.Add(dtr);
+                        Passenger = assignedPassengers
+                    });
+
+                    // ✅ driver_dtr
+                    _context.DriverDtrs.Add(new DriverDtr
+                    {
+                        Rfid = rfidValue,
+                        Date = today,
+                        Passenger = assignedPassengers.ToString(),
+                        ComDateDr = nowFull
+                    });
+
+                    // ✅ driver_priority FIFO — store batch here for tracking
+                    _context.DriverIdPriors.Add(new DriverIdPrior
+                    {
+                        DriverIdPriorValue = rfidValue,
+                        Date = today,
+                        Passenger = assignedPassengers
+                    });
+
+                    assignedNames.Add($"{driver.FName} {driver.LName}");
                 }
 
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Driver assigned successfully." });
+                var names = string.Join(", ", assignedNames);
+                return Json(new { success = true, message = $"{driversCount} driver(s) assigned: {names}" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
             }
+        }
+
+        // =========================================================
+        // CLEAR DRIVER — mark trip done, driver becomes available
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearDriverAssignment(string driverRefId)
+        {
+            try
+            {
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+                // ✅ Pull all today in-memory — avoid EF Core StartsWith translation issue
+                var allAttendanceToday = await _context.DriverAttendances
+                    .Where(a => a.Date == today)
+                    .ToListAsync();
+
+                var toRemove = allAttendanceToday
+                    .Where(a => !string.IsNullOrEmpty(a.DriverId)
+                             && a.DriverId.StartsWith(driverRefId + "|"))
+                    .ToList();
+
+                if (toRemove.Any())
+                    _context.DriverAttendances.RemoveRange(toRemove);
+
+                // ✅ Remove FIRST entry from driver_priority (FIFO — earliest out)
+                int rfidValue = int.TryParse(driverRefId, out int rid) ? rid : 0;
+
+                var firstPriority = await _context.DriverIdPriors
+                    .Where(p => p.Date == today && p.DriverIdPriorValue == rfidValue)
+                    .OrderBy(p => p.Id)
+                    .FirstOrDefaultAsync();
+
+                if (firstPriority != null)
+                    _context.DriverIdPriors.Remove(firstPriority);
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Driver is now available." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+        // =========================================================
+        // GET assigned batches — hide rows in BookedGuest table
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> GetAssignedBatches()
+        {
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+            // ✅ Pull all in-memory — avoid EF Core Contains translation issue
+            var allEntries = await _context.DriverAttendances
+                .Where(a => a.Date == today)
+                .Select(a => a.DriverId)
+                .ToListAsync();
+
+            var assignedBatches = allEntries
+                .Where(id => !string.IsNullOrEmpty(id) && id.Contains("|"))
+                .Select(id => id.Split('|')[1])
+                .Where(b => !string.IsNullOrEmpty(b))
+                .Distinct()
+                .ToList();
+
+            return Json(new { assignedBatches });
         }
 
     }

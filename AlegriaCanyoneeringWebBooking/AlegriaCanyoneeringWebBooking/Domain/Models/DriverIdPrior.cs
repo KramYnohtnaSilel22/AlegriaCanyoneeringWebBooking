@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AlegriaCanyoneeringWebBooking.Models
 {
-    [Table("driver_idprior")]
+    [Table("driver_priority")]
     public class DriverIdPrior
     {
         [Key]

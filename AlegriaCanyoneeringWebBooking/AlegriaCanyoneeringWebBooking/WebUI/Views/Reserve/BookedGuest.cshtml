@@ -337,11 +337,12 @@
 
         });
 
-               // ================================
+        // ================================
         // 🚗 Assign Driver Modal
         // ================================
         $('#batchesTableContainer').on('click', '.assign-driver', function () {
             const batch = $(this).data('batch');
+
             $('#assignDriverModalContent').html(`
                 <div class="text-center p-4">
                     <div class="spinner-border text-info" role="status"></div>
@@ -356,11 +357,30 @@
                 .done(function (html) {
                     $('#assignDriverModalContent').html(html);
                 })
-                .fail(function () {
+                .fail(function (xhr) {
+                    console.error('Status:', xhr.status);
+                    console.error('Response:', xhr.responseText);
                     $('#assignDriverModalContent').html(`
-                        <div class="alert alert-danger m-3">Failed to load drivers.</div>
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Error Loading Drivers</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}<br/>
+                                <small>${xhr.responseText.substring(0, 300)}</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
                     `);
                 });
+        });
+
+        // ✅ Reload table after modal closes to hide assigned batches
+        $('#assignDriverModal').on('hidden.bs.modal', function () {
+            if (table) table.ajax.reload(null, false);
         });
        
     </script>
