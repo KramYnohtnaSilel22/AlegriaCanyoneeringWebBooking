@@ -382,6 +382,99 @@
         $('#assignDriverModal').on('hidden.bs.modal', function () {
             if (table) table.ajax.reload(null, false);
         });
-       
+        // ================================
+        // 🧭 Assign Guide — Session Tracking
+        // ================================
+        const sessionAssignedGuides = new Set();
+
+        $('#batchesTableContainer').on('click', '.assign-guide', function () {
+            const batch = $(this).data('batch');
+
+            if (sessionAssignedGuides.has(String(batch))) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Already Assigned!',
+                    html: `Batch <strong>${batch}</strong> already has guide(s) assigned.<br><br>
+                           Click <strong>View Busy Guides</strong> to manage them.`,
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-clock me-1"></i> View Busy Guides',
+                    cancelButtonText: 'Close'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        openGuideModalOnBusyTab(batch);
+                    }
+                });
+                return;
+            }
+
+            openGuideModal(batch);
+        });
+
+        function openGuideModal(batch) {
+            $('#assignGuideModalContent').html(`
+                <div class="text-center p-4">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="mt-2 text-muted">Loading guides...</p>
+                </div>
+            `);
+            const modal = new bootstrap.Modal(document.getElementById('assignGuideModal'));
+            modal.show();
+
+            $.get('@Url.Action("GetAssignGuideModal", "Reserve")', { batch: batch })
+                .done(function (html) {
+                    $('#assignGuideModalContent').html(html);
+                })
+                .fail(function (xhr) {
+                    $('#assignGuideModalContent').html(`
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Error Loading Guides</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}<br/>
+                                <small>${xhr.responseText.substring(0, 300)}</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    `);
+                });
+        }
+
+        function openGuideModalOnBusyTab(batch) {
+            $('#assignGuideModalContent').html(`
+                <div class="text-center p-4">
+                    <div class="spinner-border text-warning" role="status"></div>
+                    <p class="mt-2 text-muted">Loading busy guides...</p>
+                </div>
+            `);
+            const modal = new bootstrap.Modal(document.getElementById('assignGuideModal'));
+            modal.show();
+
+            $.get('@Url.Action("GetAssignGuideModal", "Reserve")', { batch: batch })
+                .done(function (html) {
+                    $('#assignGuideModalContent').html(html);
+                    setTimeout(() => switchGuideTab('busy'), 100);
+                });
+        }
+
+        $(document).on('guideAssigned', function (e, batch) {
+            sessionAssignedGuides.add(String(batch));
+        });
+
+        $(document).on('guideFreed', function (e, batch) {
+            sessionAssignedGuides.delete(String(batch));
+        });
+
+        $('#assignGuideModal').on('hidden.bs.modal', function () {
+            if (table) table.ajax.reload(null, false);
+        });
+
+
+
     </script>
 }

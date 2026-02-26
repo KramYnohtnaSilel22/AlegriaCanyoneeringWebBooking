@@ -59,7 +59,6 @@ namespace AlegriaCanyoneeringWebBooking
         public DbSet<DriverDtr> DriverDtrs { get; set; }
 
         public DbSet<DriverIdPrior> DriverIdPriors { get; set; }
-        public DbSet<TourDtr> TourDtrs { get; set; }
  
         public DbSet<TourGuideAttendance> TourGuideAttendances { get; set; }
         public DbSet<TourGuideDtr> TourGuideDtrs { get; set; }
@@ -248,7 +247,6 @@ namespace AlegriaCanyoneeringWebBooking
             modelBuilder.Entity<DriverAttendance>().ToTable("driver_attendance");
             modelBuilder.Entity<DriverDtr>().ToTable("driver_dtr");
             modelBuilder.Entity<DriverIdPrior>().ToTable("driver_priority");
-            modelBuilder.Entity<TourDtr>().ToTable("tour_dtr");
             modelBuilder.Entity<TourGuideAttendance>().ToTable("tourguide_attendance");
             modelBuilder.Entity<TourGuideDtr>().ToTable("tourguide_dtr");
 

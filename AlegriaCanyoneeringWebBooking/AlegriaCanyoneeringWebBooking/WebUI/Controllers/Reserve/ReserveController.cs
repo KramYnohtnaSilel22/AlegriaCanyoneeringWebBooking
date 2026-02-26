@@ -1272,6 +1272,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
+
         // =========================================================
         // ASSIGN DRIVER — GET modal form
         // =========================================================
@@ -1293,13 +1294,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 var today = DateTime.Now.ToString("yyyy-MM-dd");
 
-                // ✅ FIFO from driver_priority table
+                // ✅ LIFO — newest assigned = last in cycle (bottom of list)
                 var priorityToday = await _context.DriverIdPriors
                     .Where(p => p.Date == today)
-                    .OrderBy(p => p.Id)
+                    .OrderByDescending(p => p.Id)
                     .ToListAsync();
 
-                // ✅ Map rfid int back to RefId string
+                // ✅ Build busyRefIds in LIFO order
                 var busyRefIds = new List<string>();
                 foreach (var p in priorityToday)
                 {
@@ -1309,33 +1310,55 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         busyRefIds.Add(matched.RefId);
                 }
 
-                // ✅ Pull ALL attendance today in-memory — avoid EF Core SQL translation errors
+                // ✅ Pull ALL attendance today in-memory
                 var allAttendanceToday = await _context.DriverAttendances
                     .Where(a => a.Date == today)
                     .ToListAsync();
 
-                // ✅ Filter in-memory for pipe-formatted entries
-                var driverBatchMap = allAttendanceToday
-                    .Where(a => !string.IsNullOrEmpty(a.DriverId) && a.DriverId.Contains("|"))
-                    .Select(a => new
-                    {
-                        refId = a.DriverId.Split('|')[0],
-                        batchCode = a.DriverId.Split('|').Length > 1 ? a.DriverId.Split('|')[1] : ""
-                    })
-                    .GroupBy(x => x.refId)
-                    .ToDictionary(g => g.Key, g => g.First().batchCode);
+                // ✅ Map RefId → total passengers
+                var passengerMap = allAttendanceToday
+                    .Where(a => !string.IsNullOrEmpty(a.DriverId))
+                    .GroupBy(a => a.DriverId)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Passenger));
 
-                var availableDrivers = allDrivers
+                // ✅ ALL drivers in Available — free first, busy at bottom
+                var freeDrivers = allDrivers
                     .Where(d => !busyRefIds.Contains(d.RefId))
                     .Select(d => new
                     {
                         d.DriverId,
                         d.RefId,
                         d.fullName,
-                        Image = d.Image ?? ""
+                        Image = d.Image ?? "",
+                        isBusy = false,
+                        passengers = 0
                     })
                     .ToList();
 
+                // ✅ Busy drivers at bottom — LIFO order (newest assigned = bottom-most)
+                var busyDriversForAvailable = allDrivers
+                    .Where(d => busyRefIds.Contains(d.RefId))
+                    .OrderByDescending(d => busyRefIds.IndexOf(d.RefId)) // newest = last
+                    .Select(d => new
+                    {
+                        d.DriverId,
+                        d.RefId,
+                        d.fullName,
+                        Image = d.Image ?? "",
+                        isBusy = true,
+                        passengers = passengerMap.ContainsKey(d.RefId)
+                                     ? passengerMap[d.RefId]
+                                     : 0
+                    })
+                    .ToList();
+
+                // ✅ Combine: free on top, busy at bottom
+                var availableDrivers = freeDrivers
+                    .Cast<dynamic>()
+                    .Concat(busyDriversForAvailable.Cast<dynamic>())
+                    .ToList();
+
+                // ✅ Busy tab still shows busy drivers (LIFO — newest = #1)
                 var busyDriversList = allDrivers
                     .Where(d => busyRefIds.Contains(d.RefId))
                     .OrderBy(d => busyRefIds.IndexOf(d.RefId))
@@ -1345,9 +1368,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         d.RefId,
                         d.fullName,
                         Image = d.Image ?? "",
-                        assignedBatch = driverBatchMap.ContainsKey(d.RefId)
-                                        ? driverBatchMap[d.RefId]
-                                        : ""
+                        passengers = passengerMap.ContainsKey(d.RefId)
+                                     ? passengerMap[d.RefId]
+                                     : 0
                     })
                     .ToList();
 
@@ -1356,7 +1379,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 ViewBag.Batch = batch ?? "";
                 ViewBag.GuestCount = guestCount;
-                ViewBag.AvailableDrivers = availableDrivers.Cast<dynamic>().ToList();
+                ViewBag.AvailableDrivers = availableDrivers;
                 ViewBag.BusyDrivers = busyDriversList.Cast<dynamic>().ToList();
 
                 return PartialView("_AssignDriverModal");
@@ -1393,12 +1416,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (string.IsNullOrEmpty(batch) || driverRefIds == null || !driverRefIds.Any())
                     return Json(new { success = false, message = "Batch and at least one Driver are required." });
 
-                var guestCount = await _context.Guests
-                    .CountAsync(g => g.Batch == batch);
-
                 var today = DateTime.Now.ToString("yyyy-MM-dd");
                 var nowFull = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
+                var guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
                 int driversCount = driverRefIds.Count;
                 int basePassengers = guestCount / driversCount;
                 int remainder = guestCount % driversCount;
@@ -1417,15 +1438,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     int rfidValue = int.TryParse(driver.RefId, out int parsed) ? parsed : driver.DriverId;
                     int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
 
-                    // ✅ Store ONLY RefId — clean, no pipe mixing
+                    // ✅ Always add new attendance record (allows re-assignment / cycling)
                     _context.DriverAttendances.Add(new DriverAttendance
                     {
-                        DriverId = driverRefId,   // ✅ just "100001" not "100001|15127"
+                        DriverId = driverRefId,
                         Date = today,
                         Passenger = assignedPassengers
                     });
 
-                    // ✅ driver_dtr
                     _context.DriverDtrs.Add(new DriverDtr
                     {
                         Rfid = rfidValue,
@@ -1434,7 +1454,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         ComDateDr = nowFull
                     });
 
-                    // ✅ driver_priority FIFO — store batch here for tracking
+                    // ✅ Add to priority — pushes driver down the cycle list
                     _context.DriverIdPriors.Add(new DriverIdPrior
                     {
                         DriverIdPriorValue = rfidValue,
@@ -1457,7 +1477,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // =========================================================
-        // CLEAR DRIVER — mark trip done, driver becomes available
+        // CLEAR DRIVER — optional, kept for manual override
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1467,29 +1487,26 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 var today = DateTime.Now.ToString("yyyy-MM-dd");
 
-                // ✅ Pull all today in-memory — avoid EF Core StartsWith translation issue
                 var allAttendanceToday = await _context.DriverAttendances
                     .Where(a => a.Date == today)
                     .ToListAsync();
 
                 var toRemove = allAttendanceToday
-                    .Where(a => !string.IsNullOrEmpty(a.DriverId)
-                             && a.DriverId.StartsWith(driverRefId + "|"))
+                    .Where(a => a.DriverId == driverRefId)
                     .ToList();
 
                 if (toRemove.Any())
                     _context.DriverAttendances.RemoveRange(toRemove);
 
-                // ✅ Remove FIRST entry from driver_priority (FIFO — earliest out)
                 int rfidValue = int.TryParse(driverRefId, out int rid) ? rid : 0;
 
-                var firstPriority = await _context.DriverIdPriors
+                // ✅ Remove ALL priority entries for this driver today (full reset)
+                var allPriority = await _context.DriverIdPriors
                     .Where(p => p.Date == today && p.DriverIdPriorValue == rfidValue)
-                    .OrderBy(p => p.Id)
-                    .FirstOrDefaultAsync();
+                    .ToListAsync();
 
-                if (firstPriority != null)
-                    _context.DriverIdPriors.Remove(firstPriority);
+                if (allPriority.Any())
+                    _context.DriverIdPriors.RemoveRange(allPriority);
 
                 await _context.SaveChangesAsync();
 
@@ -1502,14 +1519,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // =========================================================
-        // GET assigned batches — hide rows in BookedGuest table
+        // GET assigned batches
         // =========================================================
         [HttpGet]
         public async Task<IActionResult> GetAssignedBatches()
         {
             var today = DateTime.Now.ToString("yyyy-MM-dd");
 
-            // ✅ Pull all in-memory — avoid EF Core Contains translation issue
             var allEntries = await _context.DriverAttendances
                 .Where(a => a.Date == today)
                 .Select(a => a.DriverId)
@@ -1525,6 +1541,226 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return Json(new { assignedBatches });
         }
 
+
+        // =========================================================
+        // ASSIGN GUIDE — GET modal form
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> GetAssignGuideModal(string batch)
+        {
+            try
+            {
+                var allGuides = await _context.Guides
+                    .OrderBy(g => g.FName)
+                    .Select(g => new
+                    {
+                        g.GuideId,
+                        g.Rfid,
+                        fullName = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? "")).Trim(),
+                        g.Image
+                    })
+                    .ToListAsync();
+
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+                long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
+
+                // ✅ LIFO — newest assigned shows last (bottom of cycle)
+                var attendanceToday = await _context.TourGuideAttendances
+                    .Where(a => a.Date == today)
+                    .OrderByDescending(a => a.Id)
+                    .ToListAsync();
+
+                var busyRfids = new List<string>();
+                foreach (var a in attendanceToday)
+                {
+                    if (!string.IsNullOrEmpty(a.TGId) && !busyRfids.Contains(a.TGId))
+                        busyRfids.Add(a.TGId);
+                }
+
+                // ✅ Passenger map from tourguide_dtr
+                var guideDtrToday = await _context.TourGuideDtrs
+                    .Where(d => d.Date == todayLong)
+                    .ToListAsync();
+
+                var guidePassengerMap = guideDtrToday
+                    .GroupBy(d => d.Rfid)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0));
+
+                // ✅ Free guides on top
+                var freeGuides = allGuides
+                    .Where(g => !busyRfids.Contains(g.Rfid))
+                    .Select(g => new
+                    {
+                        g.GuideId,
+                        g.Rfid,
+                        g.fullName,
+                        Image = g.Image ?? "",
+                        isBusy = false,
+                        passengers = 0
+                    })
+                    .ToList();
+
+                // ✅ Busy guides at bottom — LIFO (newest = bottom-most)
+                var busyGuidesForAvailable = allGuides
+                    .Where(g => busyRfids.Contains(g.Rfid))
+                    .OrderByDescending(g => busyRfids.IndexOf(g.Rfid))
+                    .Select(g => new
+                    {
+                        g.GuideId,
+                        g.Rfid,
+                        g.fullName,
+                        Image = g.Image ?? "",
+                        isBusy = true,
+                        passengers = long.TryParse(g.Rfid, out long rfidLong) && guidePassengerMap.ContainsKey(rfidLong)
+                                     ? guidePassengerMap[rfidLong]
+                                     : 0
+                    })
+                    .ToList();
+
+                // ✅ Combine: free on top, busy at bottom
+                var availableGuides = freeGuides
+                    .Cast<dynamic>()
+                    .Concat(busyGuidesForAvailable.Cast<dynamic>())
+                    .ToList();
+
+                // ✅ Busy tab — info only (LIFO order)
+                var busyGuidesList = allGuides
+                    .Where(g => busyRfids.Contains(g.Rfid))
+                    .OrderBy(g => busyRfids.IndexOf(g.Rfid))
+                    .Select(g => new
+                    {
+                        g.GuideId,
+                        g.Rfid,
+                        g.fullName,
+                        Image = g.Image ?? "",
+                        passengers = long.TryParse(g.Rfid, out long rfidLong2) && guidePassengerMap.ContainsKey(rfidLong2)
+                                     ? guidePassengerMap[rfidLong2]
+                                     : 0
+                    })
+                    .ToList();
+
+                var guestCount = await _context.Guests
+                    .CountAsync(g => g.Batch == batch);
+
+                ViewBag.Batch = batch ?? "";
+                ViewBag.GuestCount = guestCount;
+                ViewBag.AvailableGuides = availableGuides;
+                ViewBag.BusyGuides = busyGuidesList.Cast<dynamic>().ToList();
+
+                return PartialView("_AssignGuideModal");
+            }
+            catch (Exception ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return Content($@"
+            <div class='modal-header bg-danger text-white'>
+                <h5 class='modal-title'>Error Loading Guides</h5>
+                <button type='button' class='btn-close btn-close-white' data-bs-dismiss='modal'></button>
+            </div>
+            <div class='modal-body'>
+                <div class='alert alert-danger'>
+                    <strong>Error:</strong> {inner}
+                </div>
+            </div>
+            <div class='modal-footer'>
+                <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
+            </div>", "text/html");
+            }
+        }
+
+        // =========================================================
+        // ASSIGN MULTIPLE GUIDES — POST save (no conflict block)
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignGuides(string batch, List<string> guideRfids)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batch) || guideRfids == null || !guideRfids.Any())
+                    return Json(new { success = false, message = "Batch and at least one Guide are required." });
+
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+                var nowFull = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
+
+                var guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                int guidesCount = guideRfids.Count;
+                int basePassengers = guestCount / guidesCount;
+                int remainder = guestCount % guidesCount;
+
+                var assignedNames = new List<string>();
+
+                for (int i = 0; i < guidesCount; i++)
+                {
+                    var guideRfid = guideRfids[i];
+
+                    var guide = await _context.Guides
+                        .FirstOrDefaultAsync(g => g.Rfid == guideRfid);
+
+                    if (guide == null) continue;
+
+                    long rfidLong = long.TryParse(guide.Rfid, out long parsed) ? parsed : guide.GuideId;
+                    int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
+
+                    // ✅ Always add — allows re-assignment / cycling
+                    _context.TourGuideAttendances.Add(new TourGuideAttendance
+                    {
+                        TGId = guide.Rfid,
+                        Date = today,
+                        Rfid = guide.Rfid
+                    });
+
+                    _context.TourGuideDtrs.Add(new TourGuideDtr
+                    {
+                        Rfid = rfidLong,
+                        Date = todayLong,
+                        NoOfGuest = assignedPassengers.ToString(),
+                        ComDate = nowFull
+                    });
+
+                    assignedNames.Add($"{guide.FName} {guide.LName}");
+                }
+
+                await _context.SaveChangesAsync();
+
+                var names = string.Join(", ", assignedNames);
+                return Json(new { success = true, message = $"{guidesCount} guide(s) assigned: {names}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+        // =========================================================
+        // CLEAR GUIDE — optional manual reset
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearGuideAssignment(string guideRfid)
+        {
+            try
+            {
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+                // ✅ Remove ALL attendance entries for this guide today (full reset)
+                var toRemove = await _context.TourGuideAttendances
+                    .Where(a => a.Date == today && a.TGId == guideRfid)
+                    .ToListAsync();
+
+                if (toRemove.Any())
+                    _context.TourGuideAttendances.RemoveRange(toRemove);
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Guide is now available." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
     }
 
 }
