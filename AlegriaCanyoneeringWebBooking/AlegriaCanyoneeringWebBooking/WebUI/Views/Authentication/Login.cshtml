@@ -3,16 +3,20 @@
     Layout = "Layout_Login";
     ViewData["Title"] = "Login";
 }
+
 <style>
+    /* ===== Eye Icon Styling ===== */
     .eye-icon {
         color: #6c757d;
         font-size: 20px;
+        transition: color 0.2s ease;
     }
 
         .eye-icon:hover {
             color: #007bff;
         }
 
+    /* ===== Login Container ===== */
     .login-container {
         height: 100vh;
         display: flex;
@@ -24,6 +28,45 @@
     body, html {
         overflow: hidden;
         height: 100%;
+    }
+
+    /* ===== Loading Button Styling ===== */
+    .spinner-border-sm {
+        width: 1.2rem;
+        height: 1.2rem;
+        border-width: 0.2em;
+    }
+
+    .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.9;
+    }
+
+    .btn-loading {
+        position: relative;
+    }
+
+    /* ===== Smooth Transitions ===== */
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+    .form-control {
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+    /* ===== Card Styling ===== */
+    .card {
+        border-radius: 10px;
+    }
+
+    .card-body {
+        border-radius: 10px;
     }
 </style>
 
@@ -37,33 +80,71 @@
                         <div class="text-center mb-4">
                             <img src="/images/alegrialogo2025.jpeg" alt="Logo" class="img-fluid" style="max-height: 100px;" />
                         </div>
+
                         <h4 class="text-center fw-bold mb-4">Login</h4>
 
-                        <form asp-action="Login" asp-controller="Authentication" method="post" novalidate>
+                        <!-- Login Form -->
+                        <form asp-action="Login" asp-controller="Authentication" method="post" novalidate id="loginForm">
                             @Html.AntiForgeryToken()
 
+                            <!-- Username Field -->
                             <div class="mb-3">
-                                <label asp-for="Username" class="form-label"><i class="fa fa-user"></i> Username</label>
-                                <input asp-for="Username" class="form-control rounded-3" placeholder="Enter Username" />
-                                <span asp-validation-for="Username" class="text-danger"></span>
+                                <label asp-for="Username" class="form-label">
+                                    <i class="fa fa-user"></i> Username
+                                </label>
+                                <input asp-for="Username"
+                                       class="form-control rounded-3"
+                                       placeholder="Enter Username"
+                                       autocomplete="username"
+                                       required />
+                                <span asp-validation-for="Username" class="text-danger d-block mt-1"></span>
                             </div>
 
+                            <!-- Password Field -->
                             <div class="mb-3 position-relative">
-                                <label asp-for="Password" class="form-label"><i class="fa fa-lock"></i> Password</label>
+                                <label asp-for="Password" class="form-label">
+                                    <i class="fa fa-lock"></i> Password
+                                </label>
                                 <div class="position-relative">
-                                    <input asp-for="Password" type="password" class="form-control rounded-3" placeholder="Enter Password" id="passwordField" />
-                                    <i class="fas fa-eye eye-icon" id="openEye" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
-                                    <i class="fas fa-eye-slash eye-icon d-none" id="closedEye" onclick="togglePassword()" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;"></i>
+                                    <input asp-for="Password"
+                                           type="password"
+                                           class="form-control rounded-3"
+                                           placeholder="Enter Password"
+                                           id="passwordField"
+                                           autocomplete="current-password"
+                                           required />
+                                    <!-- Eye Icon for Show Password -->
+                                    <i class="fas fa-eye eye-icon"
+                                       id="openEye"
+                                       onclick="togglePassword()"
+                                       title="Show password"
+                                       style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;">
+                                    </i>
+                                    <!-- Eye Slash Icon for Hide Password -->
+                                    <i class="fas fa-eye-slash eye-icon d-none"
+                                       id="closedEye"
+                                       onclick="togglePassword()"
+                                       title="Hide password"
+                                       style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer;">
+                                    </i>
                                 </div>
-                                <span asp-validation-for="Password" class="text-danger"></span>
+                                <span asp-validation-for="Password" class="text-danger d-block mt-1"></span>
                             </div>
 
+                            <!-- Login Button -->
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg">Log In</button>
+                                <button type="submit"
+                                        class="btn btn-primary btn-lg"
+                                        id="loginBtn">
+                                    Log In
+                                </button>
                             </div>
 
+                            <!-- Forgot Password Link -->
                             <div class="text-center mt-3">
-                                <a asp-action="ForgotPassword" asp-controller="Authentication">Forgot password?</a>
+                                <a asp-action="ForgotPassword" asp-controller="Authentication" class="text-decoration-none">
+                                    Forgot password?
+                                </a>
                             </div>
                         </form>
                     </div>
@@ -73,18 +154,31 @@
     </div>
 </div>
 
-<!-- Scripts -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+<!-- ===== Required CDN Libraries ===== -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+      integrity="sha512-iecdLmaskl7CVJkEzyD6lkDNlzVoc6+fLJr7H5qDpart/9+P13aZN4jExcpkbjHt69yk6qrs+E4E/wAwiY3S5Q=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer" />
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ===== Toggle Password Visibility =====
+    // ============================================
+    // LOGIN FORM COMPLETE SCRIPT
+    // ============================================
+
+    /**
+     * Toggle password visibility between text and dots
+     */
     function togglePassword() {
         const passwordField = document.getElementById('passwordField');
         const openEye = document.getElementById('openEye');
         const closedEye = document.getElementById('closedEye');
+
+        if (!passwordField) return;
+
         if (passwordField.type === "password") {
             passwordField.type = "text";
             openEye.classList.add('d-none');
@@ -96,53 +190,167 @@
         }
     }
 
-    // ===== Toast Function =====
+    /**
+     * Display toast notification
+     * param {string} message - The message to display
+     * param {string} type - Type of toast: 'danger', 'warning', 'success'
+     */
     function showToast(message, type = 'danger') {
-        let bgClass = 'bg-danger', icon = 'bi-exclamation-triangle-fill', title = 'Warning';
+        let bgClass = 'bg-danger';
+        let title = 'Error';
+
         if (type === 'warning') {
             bgClass = 'bg-warning';
-            icon = 'bi-exclamation-circle-fill';
             title = 'Warning';
+        } else if (type === 'success') {
+            bgClass = 'bg-success';
+            title = 'Success';
         }
 
-        const toastContainer = $('<div></div>')
-            .addClass('toast-container position-fixed top-0 end-0 p-3')
-            .css('z-index', 1080);
+        // Create toast container
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '1080';
 
-        const toast = $('<div></div>')
-            .addClass(`toast text-white ${bgClass} border-0`)
-            .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast text-white ${bgClass} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.setAttribute('data-bs-delay', '4000');
 
-        const toastHeader = $('<div></div>')
-            .addClass(`toast-header ${bgClass} text-white border-0`)
-            .html(`
-                <i class="bi ${icon} me-2"></i>
-                <strong class="me-auto">${title}</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            `);
+        // Create toast header
+        const toastHeader = document.createElement('div');
+        toastHeader.className = `toast-header ${bgClass} text-white border-0`;
+        toastHeader.innerHTML = `
+            <i class="fas fa-circle-exclamation me-2"></i>
+            <strong class="me-auto">${title}</strong>
+            <small>Now</small>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        `;
 
-        const toastBody = $('<div></div>')
-            .addClass('toast-body')
-            .text(message);
+        // Create toast body
+        const toastBody = document.createElement('div');
+        toastBody.className = 'toast-body';
+        toastBody.textContent = message;
 
-        toast.append(toastHeader, toastBody);
-        toastContainer.append(toast);
-        $('body').append(toastContainer);
+        // Assemble toast
+        toast.appendChild(toastHeader);
+        toast.appendChild(toastBody);
+        toastContainer.appendChild(toast);
+        document.body.appendChild(toastContainer);
 
-        new bootstrap.Toast(toast[0]).show();
-        toast.on('hidden.bs.toast', function () { toastContainer.remove(); });
+        // Show toast using Bootstrap
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Remove container when toast is hidden
+        toast.addEventListener('hidden.bs.toast', function () {
+            toastContainer.remove();
+        });
     }
 
-    // ===== Display Danger or Warning Toasts from TempData =====
+    /**
+     * Set login button to loading or normal state
+     * param {boolean} isLoading - True to show loading state, false to reset
+     */
+    function setLoginButtonLoading(isLoading) {
+        const loginBtn = document.getElementById('loginBtn');
+
+        if (!loginBtn) {
+            console.warn('Login button not found');
+            return;
+        }
+
+        if (isLoading) {
+            loginBtn.disabled = true;
+            loginBtn.classList.add('btn-loading');
+            loginBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Logging in...
+            `;
+        } else {
+            loginBtn.disabled = false;
+            loginBtn.classList.remove('btn-loading');
+            loginBtn.innerHTML = 'Log In';
+        }
+    }
+
+    /**
+     * Check if form has server-side validation errors
+     */
+    function hasValidationErrors() {
+        const loginForm = document.getElementById('loginForm');
+        if (!loginForm) return false;
+
+        const errorSpans = loginForm.querySelectorAll('.text-danger');
+        return Array.from(errorSpans).some(span => span.textContent.trim() !== '');
+    }
+
+    /**
+     * Initialize login form - runs on DOMContentLoaded
+     */
+    function initializeLoginForm() {
+        const loginForm = document.getElementById('loginForm');
+
+        if (!loginForm) {
+            console.warn('Login form with id="loginForm" not found');
+            return;
+        }
+
+        // Check for server-side validation errors on page load
+        if (hasValidationErrors()) {
+            setLoginButtonLoading(false);
+        }
+
+        // Handle form submission
+        loginForm.addEventListener('submit', function (e) {
+            // Prevent default form submission
+            e.preventDefault();
+
+            // Validate form on client side
+            if (!loginForm.checkValidity()) {
+                // Show validation messages
+                loginForm.classList.add('was-validated');
+                return;
+            }
+
+            // Form is valid - show loading state
+            setLoginButtonLoading(true);
+            loginForm.classList.add('was-validated');
+
+            // Submit form after brief delay to ensure UI updates
+            setTimeout(function () {
+                loginForm.submit();
+            }, 100);
+        });
+    }
+
+    /**
+     * Initialize when DOM is fully loaded
+     */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeLoginForm);
+    } else {
+        initializeLoginForm();
+    }
+
+    // ===== Display Messages from TempData =====
     $(document).ready(function () {
         @if (TempData["ErrorMessage"] != null)
         {
-                <text>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ErrorMessage"])), 'danger');</text>
+                <text>
+                showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ErrorMessage"])), 'danger');
+                setLoginButtonLoading(false);
+                </text>
         }
         else if (TempData["WarningMessage"] != null)
         {
-                <text>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["WarningMessage"])), 'warning');</text>
+                <text>
+                showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["WarningMessage"])), 'warning');
+                setLoginButtonLoading(false);
+                </text>
         }
     });
 </script>

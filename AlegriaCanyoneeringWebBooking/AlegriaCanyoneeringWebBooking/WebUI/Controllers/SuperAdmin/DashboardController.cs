@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
-    [Authorize(Roles = "Super Admin,Admin,Operator")]
+    [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;

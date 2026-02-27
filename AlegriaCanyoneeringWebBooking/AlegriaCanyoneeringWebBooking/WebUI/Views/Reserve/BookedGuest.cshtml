@@ -272,18 +272,37 @@
                             render: function (data) {
                                 return `
                                     <div class="d-flex flex-wrap gap-1">
-                                        <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
-                                            <i class="fas fa-eye me-1"></i> View
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-warning print-batch-details" data-batch="${data}">
-                                            <i class="fas fa-print me-1"></i> Print
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
-                                            <i class="fas fa-user-tie me-1"></i> Guide
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
-                                            <i class="fas fa-car me-1"></i> Driver
-                                        </button>
+                                   
+
+                               @if (User.IsInRole("Staff"))
+                                {
+                                  <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
+                                  <i class="fas fa-eye me-1"></i> View
+                                  </button>
+                                  <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
+                                  <i class="fas fa-user-tie me-1"></i> Guide
+                                  </button>
+                                  <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
+                                   <i class="fas fa-car me-1"></i> Driver
+                                  </button>
+                               }
+
+                               else
+                                    {
+                                <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </button>
+                                <button type="button" class="btn btn-sm btn-warning print-batch-details" data-batch="${data}">
+                                    <i class="fas fa-print me-1"></i> Print
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
+                                    <i class="fas fa-user-tie me-1"></i> Guide
+                                </button>
+                                <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
+                                    <i class="fas fa-car me-1"></i> Driver
+                                </button>
+                                   }
+
                                     </div>`;
                             }
                         }

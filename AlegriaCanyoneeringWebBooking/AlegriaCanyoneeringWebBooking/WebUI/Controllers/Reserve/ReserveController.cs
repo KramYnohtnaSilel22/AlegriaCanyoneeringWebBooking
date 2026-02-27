@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using AlegriaCanyoneeringWebBooking.Domain.Models;
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
-    [Authorize(Roles = "Super Admin,Admin,Operator")]
+    [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
     public class ReserveController : Controller
     {
 

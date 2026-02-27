@@ -33,7 +33,7 @@
     <nav class="sidebar" id="sidebar" role="navigation" aria-label="Sidebar Navigation">
         <div class="text-center mb-4">
 
-            @if (User.IsInRole("Operator") || User.IsInRole("Super Admin") || User.IsInRole("Admin"))
+            @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator") | User.IsInRole("Staff"))
             {
                 <span class="navbar-brand fw-bold text-white" style="display: inline-block; text-decoration: none; cursor: default;">
                     <img src="~/images/alegrialogo2025.jpeg" alt="Alegria Logo" />
@@ -67,10 +67,9 @@
             <a asp-controller="Guest" asp-action="SaveGuest"><i class="bi bi-person-plus-fill me-2"></i> <span>Save Guest</span></a>
             <a asp-controller="Reserve" asp-action="ReserveBooking"><i class="bi bi-journal-check me-2"></i> <span>Reserve Bookings</span></a>
             <!-- Operator -->
-            @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
+           @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
             {
                 <a asp-controller="Reserve" asp-action="BookedGuest"><i class="bi bi-clipboard-check me-2"></i> <span>Booked Guest</span></a>
-            
             }
         }
              @if (User.IsInRole("Admin") || User.IsInRole("Super Admin"))
@@ -83,8 +82,20 @@
 
                   }
 
+        <!-- Para sa Staff-->
+        @if (User.IsInRole("Staff"))
+        {
 
-        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
+            <div class="section-title">Main</div>
+            <a asp-controller="Dashboard" asp-action="Index">
+                <i class="bi bi-speedometer2 me-2"></i> <span>Dashboard</span>
+            </a>
+
+            <a asp-controller="Reserve" asp-action="BookedGuest"><i class="bi bi-clipboard-check me-2"></i> <span>Booked Guest</span></a>
+        }
+
+
+        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator") | User.IsInRole("Staff"))
         {
             <div class="section-title">Settings</div>
 
@@ -132,7 +143,7 @@
                 }
 
                 @* ✅ For Super Admin and Admin - Change Password & Update Info *@
-                @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
+             @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator") || User.IsInRole("Staff"))
                 {
                     @if (User.IsInRole("Admin"))
                     {

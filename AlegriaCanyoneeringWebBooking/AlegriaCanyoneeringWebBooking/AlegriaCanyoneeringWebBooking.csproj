@@ -127,5 +127,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="WebUI\wwwroot\uploads\drivers\" />
+  </ItemGroup>
+
 
 </Project>
