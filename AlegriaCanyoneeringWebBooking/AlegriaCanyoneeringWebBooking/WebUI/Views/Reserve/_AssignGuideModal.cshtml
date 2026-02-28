@@ -20,11 +20,21 @@
             <span><i class="fas fa-layer-group me-1 text-success"></i><strong>Batch:</strong> @batch</span>
             <span><i class="fas fa-users me-1 text-primary"></i><strong>Guests:</strong> @guestCount</span>
             <span class="badge bg-info text-white">
-                <i class="fas fa-user-tie me-1"></i> Recommended: @recommendedGuides guide@(recommendedGuides != 1 ? "s" : "")
+                <i class="fas fa-user-tie me-1"></i> Limit: @recommendedGuides guide@(recommendedGuides != 1 ? "s" : "")
             </span>
             <span class="badge bg-success">
-                <i class="fas fa-user-tie me-1"></i> Selected: <span id="guideSelectedCount">0</span>
+                <i class="fas fa-user-tie me-1"></i> Selected: <span id="guideSelectedCount">0</span> / @recommendedGuides
             </span>
+        </div>
+    </div>
+
+    <!-- ✅ Limit Warning Banner (hidden by default) -->
+    <div id="guideLimitWarning" class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" style="display:none !important;">
+        <i class="fas fa-ban fa-lg"></i>
+        <div>
+            <strong>Limit Reached!</strong>
+            You can only assign <strong>@recommendedGuides guide@(recommendedGuides != 1 ? "s" : "")</strong> for this batch (@guestCount guests).
+            Deselect a guide to choose a different one.
         </div>
     </div>
 
@@ -80,7 +90,6 @@
                              style="cursor:pointer;"
                              onclick="toggleSelectGuide(this)">
                             <div class="card-body d-flex align-items-center gap-3 p-2">
-                                <!-- Cycle number -->
                                 <div class="text-muted fw-bold" style="font-size:13px; min-width:24px;">
                                     @cyclePos
                                 </div>
@@ -145,7 +154,7 @@
         </div>
     </div>
 
-    <!-- On Trip Panel — info only -->
+    <!-- On Trip Panel -->
     <div id="guide-panel-busy" style="display:none;">
         <div class="alert alert-info py-2 small mb-2">
             <i class="fas fa-info-circle me-1"></i>
@@ -229,30 +238,71 @@
             background-color: #cfe2ff;
         }
 
+        .guide-card.limit-locked {
+            opacity: 0.45;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+
     .selected-guide-card {
         border-left: 4px solid #198754 !important;
     }
 </style>
 
 <script>
-    var selectedGuides = {};
+    var selectedGuides   = {};
+    var guideLimit       = @recommendedGuides;   // ✅ Hard limit from server
 
+    // ================================
+    // ✅ CORE: Toggle select with hard limit
+    // ================================
     function toggleSelectGuide(card) {
         var wrapper  = $(card).closest('.guide-item');
         var rfid     = wrapper.data('rfid');
         var fullName = wrapper.data('fullname');
         var image    = wrapper.data('image');
 
+        // Already selected → deselect
         if (selectedGuides[rfid]) {
             deselectGuide(rfid);
-        } else {
-            selectedGuides[rfid] = { rfid, fullName, image };
-            $(card).addClass('selected');
-            $(card).find('.guide-status-badge')
-                   .removeClass('bg-success bg-warning text-dark').addClass('bg-primary').text('Selected');
-            addToSelectedGuidePanel(rfid, fullName, image);
+            return;
         }
+
+        // ✅ HARD LIMIT CHECK — block if already at limit
+        var currentCount = Object.keys(selectedGuides).length;
+        if (currentCount >= guideLimit) {
+            $('#guideLimitWarning').show();
+
+            // Shake the warning banner
+            $('#guideLimitWarning').addClass('border border-danger shadow-sm');
+            setTimeout(() => $('#guideLimitWarning').removeClass('border border-danger shadow-sm'), 1500);
+            return;
+        }
+
+        // Select
+        selectedGuides[rfid] = { rfid, fullName, image };
+        $(card).addClass('selected');
+        $(card).find('.guide-status-badge')
+               .removeClass('bg-success bg-warning text-dark')
+               .addClass('bg-primary')
+               .text('Selected');
+        addToSelectedGuidePanel(rfid, fullName, image);
         updateGuideSelectedCount();
+
+        // ✅ Lock remaining unselected cards if limit reached
+        if (Object.keys(selectedGuides).length >= guideLimit) {
+            lockUnselectedGuides();
+        }
+    }
+
+    function lockUnselectedGuides() {
+        $('#guideLimitWarning').show();
+        $('.guide-item .guide-card:not(.selected)').addClass('limit-locked');
+    }
+
+    function unlockAllGuides() {
+        $('#guideLimitWarning').hide();
+        $('.guide-item .guide-card').removeClass('limit-locked');
     }
 
     function addToSelectedGuidePanel(rfid, fullName, image) {
@@ -283,17 +333,24 @@
     function deselectGuide(rfid) {
         delete selectedGuides[rfid];
         $(`.guide-item[data-rfid="${rfid}"] .guide-card`).removeClass('selected');
-        var hasTrip = $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`).hasClass('bg-warning');
-        if (hasTrip) {
-            $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`)
-                .removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
+
+        var badge = $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`);
+        if (badge.text() === 'On Trip') {
+            badge.removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
         } else {
-            $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`)
-                .removeClass('bg-primary').addClass('bg-success').text('Free');
+            badge.removeClass('bg-primary text-dark').addClass('bg-success').text('Free');
         }
+
         $(`#selected-guide-card-${rfid}`).remove();
         if ($('#selectedGuideList').children().length === 0)
             $('#selectedGuidesSection').hide();
+
+        // ✅ Unlock cards when below limit again
+        unlockAllGuides();
+        if (Object.keys(selectedGuides).length >= guideLimit) {
+            lockUnselectedGuides();
+        }
+
         updateGuideSelectedCount();
     }
 
@@ -333,12 +390,10 @@
             return;
         }
 
-        // ✅ Warn if selected count doesn't match recommended
-        var recommended = @recommendedGuides;
-        if (rfids.length !== recommended) {
-            if (!confirm(`Recommended guides for this batch is ${recommended}, but you selected ${rfids.length}. Continue anyway?`)) {
-                return;
-            }
+        // ✅ Final safety check — should never exceed because of UI lock
+        if (rfids.length > guideLimit) {
+            alert(`You cannot assign more than ${guideLimit} guide(s) for this batch.`);
+            return;
         }
 
         $('#btnConfirmAssignGuide')

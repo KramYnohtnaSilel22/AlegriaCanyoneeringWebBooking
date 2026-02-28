@@ -20,11 +20,21 @@
             <span><i class="fas fa-layer-group me-1 text-info"></i><strong>Batch:</strong> @batch</span>
             <span><i class="fas fa-users me-1 text-primary"></i><strong>Guests:</strong> @guestCount</span>
             <span class="badge bg-info text-white">
-                <i class="fas fa-car me-1"></i> Recommended: @recommendedDrivers driver@(recommendedDrivers != 1 ? "s" : "")
+                <i class="fas fa-car me-1"></i> Limit: @recommendedDrivers driver@(recommendedDrivers != 1 ? "s" : "")
             </span>
             <span class="badge bg-primary">
-                <i class="fas fa-car me-1"></i> Selected: <span id="selectedCount">0</span>
+                <i class="fas fa-car me-1"></i> Selected: <span id="selectedCount">0</span> / @recommendedDrivers
             </span>
+        </div>
+    </div>
+
+    <!-- ✅ Limit Warning Banner -->
+    <div id="driverLimitWarning" class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" style="display:none !important;">
+        <i class="fas fa-ban fa-lg"></i>
+        <div>
+            <strong>Limit Reached!</strong>
+            You can only assign <strong>@recommendedDrivers driver@(recommendedDrivers != 1 ? "s" : "")</strong> for this batch (@guestCount guests).
+            Deselect a driver to choose a different one.
         </div>
     </div>
 
@@ -56,7 +66,7 @@
         </li>
     </ul>
 
-    <!-- Drivers Panel — all drivers, cycle order -->
+    <!-- Drivers Panel -->
     <div id="panel-available">
         <p class="text-muted small mb-2">
             <i class="fas fa-sync-alt me-1"></i>
@@ -144,7 +154,7 @@
         </div>
     </div>
 
-    <!-- On Trip Panel — info only -->
+    <!-- On Trip Panel -->
     <div id="panel-busy" style="display:none;">
         <div class="alert alert-info py-2 small mb-2">
             <i class="fas fa-info-circle me-1"></i>
@@ -230,6 +240,12 @@
             background-color: #cfe2ff;
         }
 
+        .driver-card.limit-locked {
+            opacity: 0.45;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+
     .selected-driver-card {
         border-left: 4px solid #0d6efd !important;
     }
@@ -248,23 +264,56 @@
 
 <script>
     var selectedDrivers = {};
+    var driverLimit     = @recommendedDrivers;   // ✅ Hard limit from server
 
+    // ================================
+    // ✅ CORE: Toggle select with hard limit
+    // ================================
     function toggleSelectDriver(card) {
         var wrapper  = $(card).closest('.driver-item');
         var refId    = wrapper.data('refid');
         var fullName = wrapper.data('fullname');
         var image    = wrapper.data('image');
 
+        // Already selected → deselect
         if (selectedDrivers[refId]) {
             deselectDriver(refId);
-        } else {
-            selectedDrivers[refId] = { refId, fullName, image };
-            $(card).addClass('selected');
-            $(card).find('.status-badge')
-                   .removeClass('bg-success bg-warning text-dark').addClass('bg-primary').text('Selected');
-            addToSelectedPanel(refId, fullName, image);
+            return;
         }
+
+        // ✅ HARD LIMIT CHECK — block if already at limit
+        var currentCount = Object.keys(selectedDrivers).length;
+        if (currentCount >= driverLimit) {
+            $('#driverLimitWarning').show();
+            $('#driverLimitWarning').addClass('border border-danger shadow-sm');
+            setTimeout(() => $('#driverLimitWarning').removeClass('border border-danger shadow-sm'), 1500);
+            return;
+        }
+
+        // Select
+        selectedDrivers[refId] = { refId, fullName, image };
+        $(card).addClass('selected');
+        $(card).find('.status-badge')
+               .removeClass('bg-success bg-warning text-dark')
+               .addClass('bg-primary')
+               .text('Selected');
+        addToSelectedPanel(refId, fullName, image);
         updateSelectedCount();
+
+        // ✅ Lock remaining unselected cards if limit reached
+        if (Object.keys(selectedDrivers).length >= driverLimit) {
+            lockUnselectedDrivers();
+        }
+    }
+
+    function lockUnselectedDrivers() {
+        $('#driverLimitWarning').show();
+        $('.driver-item .driver-card:not(.selected)').addClass('limit-locked');
+    }
+
+    function unlockAllDrivers() {
+        $('#driverLimitWarning').hide();
+        $('.driver-item .driver-card').removeClass('limit-locked');
     }
 
     function addToSelectedPanel(refId, fullName, image) {
@@ -295,17 +344,24 @@
     function deselectDriver(refId) {
         delete selectedDrivers[refId];
         $(`.driver-item[data-refid="${refId}"] .driver-card`).removeClass('selected');
-        var hasTrip = $(`.driver-item[data-refid="${refId}"] .status-badge`).hasClass('bg-warning');
-        if (hasTrip) {
-            $(`.driver-item[data-refid="${refId}"] .status-badge`)
-                .removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
+
+        var badge = $(`.driver-item[data-refid="${refId}"] .status-badge`);
+        if (badge.text() === 'On Trip') {
+            badge.removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
         } else {
-            $(`.driver-item[data-refid="${refId}"] .status-badge`)
-                .removeClass('bg-primary').addClass('bg-success').text('Free');
+            badge.removeClass('bg-primary text-dark').addClass('bg-success').text('Free');
         }
+
         $(`#selected-card-${refId}`).remove();
         if ($('#selectedDriverList').children().length === 0)
             $('#selectedDriversSection').hide();
+
+        // ✅ Unlock when below limit again
+        unlockAllDrivers();
+        if (Object.keys(selectedDrivers).length >= driverLimit) {
+            lockUnselectedDrivers();
+        }
+
         updateSelectedCount();
     }
 
@@ -345,12 +401,10 @@
             return;
         }
 
-        // ✅ Warn if selected count doesn't match recommended
-        var recommended = @recommendedDrivers;
-        if (refIds.length !== recommended) {
-            if (!confirm(`Recommended drivers for this batch is ${recommended}, but you selected ${refIds.length}. Continue anyway?`)) {
-                return;
-            }
+        // ✅ Final safety check
+        if (refIds.length > driverLimit) {
+            alert(`You cannot assign more than ${driverLimit} driver(s) for this batch.`);
+            return;
         }
 
         $('#btnConfirmAssignDriver')
