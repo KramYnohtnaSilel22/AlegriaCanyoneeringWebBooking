@@ -40,7 +40,7 @@ namespace AlegriaCanyoneeringWebBooking
 
             Database.ExecuteSqlRaw(@"
     INSERT INTO `role` (RoleId, Name)
-    SELECT * FROM (SELECT 3 AS RoleId, 'Staff' AS Name) AS tmp
+    SELECT * FROM (SELECT 4 AS RoleId, 'Staff' AS Name) AS tmp
     WHERE NOT EXISTS (SELECT 1 FROM `role` WHERE RoleId = 4);
 ");
 
