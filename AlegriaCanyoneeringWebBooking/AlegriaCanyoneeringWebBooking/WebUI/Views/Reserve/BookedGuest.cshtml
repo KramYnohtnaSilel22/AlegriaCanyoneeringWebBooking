@@ -294,19 +294,15 @@
 
                                 @if (User.IsInRole("Super Admin"))
                                 {
-                                        <text>
-                                        actions += `
-                                            <button type="button"
-                                                    class="btn btn-sm btn-info d-flex align-items-center px-3 py-2"
-                                                    onclick="showQrModal('${data}', '', 0, '')">
-                                                <i class="fas fa-qrcode me-1"></i> QR
-                                            </button>
-                                            <button type="button"
-                                                    class="btn btn-sm btn-success d-flex align-items-center px-3 py-2 confirm-batch-btn"
-                                                    data-batch="${data}">
-                                                <i class="fas fa-check me-1"></i> Confirm
-                                            </button>`;
-                                        </text>
+                                             <text>
+                                            actions += `
+                                                <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
+                                                    <i class="fas fa-user-tie me-1"></i> Guide
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
+                                                    <i class="fas fa-car me-1"></i> Driver
+                                                </button>`;
+                                            </text>
                                 }
 
                                 actions += `</div>`;
