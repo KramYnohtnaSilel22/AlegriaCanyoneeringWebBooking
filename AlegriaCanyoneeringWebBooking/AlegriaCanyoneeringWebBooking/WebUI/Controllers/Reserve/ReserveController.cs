@@ -806,20 +806,206 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (string.IsNullOrEmpty(batchCode))
                 return BadRequest("Batch code is required.");
 
+            // =========================================================
+            // LOAD OPERATORS
+            // =========================================================
+
             var operators = await _context.Operators
-                .Select(o => new { o.Id, o.BusinessName })
+                .Select(o => new
+                {
+                    o.Id,
+                    o.BusinessName
+                })
                 .ToListAsync();
 
+
+            // =========================================================
+            // LOAD GUESTS
+            // =========================================================
+
             var guests = await _context.Guests
-                      .Include(g => g.NationalityEntity) // Include Nationality
+                .Include(g => g.NationalityEntity)
                 .Where(g => g.Batch == batchCode)
                 .ToListAsync();
 
-            var guestsWithOperatorName = guests.Select(g => new GuestWithOperatorVM
-            {
-                Guest = g,
-                OperatorName = operators.FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "No Operator"
-            }).ToList();
+
+            var guestsWithOperatorName = guests
+                .Select(g => new GuestWithOperatorVM
+                {
+                    Guest = g,
+                    OperatorName = operators
+                        .FirstOrDefault(o => o.Id == g.OperatorId)?.BusinessName ?? "No Operator"
+                })
+                .ToList();
+
+
+            // =========================================================
+            // DATE VALUES
+            // =========================================================
+
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
+            var todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
+
+
+            // =========================================================
+            // GET ASSIGNED GUIDES TODAY
+            // =========================================================
+
+            var attendanceToday = await _context.TourGuideAttendances
+                .Where(a => a.Date == today)
+                .ToListAsync();
+
+
+            var assignedGuideRfids = attendanceToday
+                .Where(a => !string.IsNullOrEmpty(a.TGId))
+                .Select(a => a.TGId)
+                .Distinct()
+                .ToList();
+
+
+            var guideDtrToday = await _context.TourGuideDtrs
+                .Where(d => d.Date == todayLong)
+                .ToListAsync();
+
+
+            var guidePassengerMap = guideDtrToday
+                .GroupBy(d => d.Rfid)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Sum(x =>
+                        int.TryParse(x.NoOfGuest, out int p) ? p : 0)
+                );
+
+
+            // =========================================================
+            // LOAD GUIDE ENTITIES FROM DATABASE
+            // =========================================================
+
+            var guideEntities = await _context.Guides
+                .Where(g => assignedGuideRfids.Contains(g.Rfid))
+                .Select(g => new
+                {
+                    g.Rfid,
+                    g.FName,
+                    g.MName,
+                    g.LName,
+                    g.Image
+                })
+                .ToListAsync();
+
+
+            // =========================================================
+            // PROCESS GUIDE PASSENGERS IN MEMORY
+            // =========================================================
+
+            var assignedGuides = guideEntities
+              .Select(g =>
+              {
+                  int passengers = 0;   // ✅ MUST be int, not long
+
+                  if (long.TryParse(g.Rfid, out long rfidLong))
+                  {
+                      guidePassengerMap.TryGetValue(rfidLong, out passengers);
+                  }
+
+                  return new
+                  {
+                      Rfid = g.Rfid,
+                      fullName = $"{g.FName ?? ""} {g.MName ?? ""} {g.LName ?? ""}".Trim(),
+                      Image = g.Image,
+                      passengers = passengers
+                  };
+              })
+              .ToList();
+
+
+            // =========================================================
+            // GET ASSIGNED DRIVERS TODAY
+            // =========================================================
+
+            var priorityToday = await _context.DriverIdPriors
+                .Where(p => p.Date == today)
+                .ToListAsync();
+
+
+            var assignedDriverRids = priorityToday
+                .Select(p => p.DriverIdPriorValue)
+                .Distinct()
+                .ToList();
+
+
+            var attendanceDriverToday = await _context.DriverAttendances
+                .Where(a => a.Date == today)
+                .ToListAsync();
+
+
+            var driverPassengerMap = attendanceDriverToday
+                .Where(a => !string.IsNullOrEmpty(a.DriverId))
+                .GroupBy(a => a.DriverId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Sum(x => x.Passenger)
+                );
+
+
+            // =========================================================
+            // LOAD DRIVER ENTITIES FROM DATABASE
+            // =========================================================
+
+            var driverEntities = await _context.Drivers
+                .Where(d => d.RefId != null)
+                .Select(d => new
+                {
+                    d.RefId,
+                    d.FName,
+                    d.MName,
+                    d.LName,
+                    d.Image
+                })
+                .ToListAsync();
+
+
+            // =========================================================
+            // PROCESS DRIVER PASSENGERS IN MEMORY
+            // =========================================================
+
+            var assignedDrivers = driverEntities
+                .Where(d =>
+                {
+                    if (int.TryParse(d.RefId, out int refIdInt))
+                    {
+                        return assignedDriverRids.Contains(refIdInt);
+                    }
+
+                    return false;
+                })
+                .Select(d =>
+                {
+                    int passengers = 0;
+
+                    if (int.TryParse(d.RefId, out int refIdInt))
+                    {
+                        driverPassengerMap.TryGetValue(refIdInt.ToString(), out passengers);
+                    }
+
+                    return new
+                    {
+                        RefId = d.RefId,
+                        fullName = $"{d.FName ?? ""} {d.MName ?? ""} {d.LName ?? ""}".Trim(),
+                        Image = d.Image,
+                        passengers = passengers
+                    };
+                })
+                .ToList();
+
+
+            // =========================================================
+            // PASS TO VIEW
+            // =========================================================
+
+            ViewBag.AssignedGuides = assignedGuides;
+            ViewBag.AssignedDrivers = assignedDrivers;
+
 
             return PartialView("ViewGuestDetails", guestsWithOperatorName);
         }
@@ -948,7 +1134,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GetGuestsData(string? startDate, string? endDate)
@@ -961,6 +1146,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
+            // ✅ Operators see only their own guests
             int? currentOperatorId = null;
             if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
                 currentOperatorId = parsedId;
@@ -972,7 +1158,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (DateTime.TryParse(endDate, out DateTime ed))
                 endUnix = new DateTimeOffset(ed.Date.AddDays(1).AddTicks(-1)).ToUnixTimeSeconds();
 
-            // Query joined Guests + Operators with bookingStatus
             var query = from g in _context.Guests
                         join o in _context.Operators on g.OperatorId equals o.Id
                         where g.BookingStatus == 0
@@ -982,6 +1167,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                             OperatorName = o.BusinessName
                         };
 
+            // ✅ Filter operator's own guests only
             if (currentOperatorId.HasValue)
                 query = query.Where(x => x.Guest.OperatorId == currentOperatorId.Value);
 
@@ -991,28 +1177,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     x.Guest.Batch.Contains(search) ||
                     x.OperatorName.Contains(search));
 
-            // Filter DB first for non-null ArrivalDate
             if (startUnix.HasValue && endUnix.HasValue)
-            {
                 query = query.Where(x => !string.IsNullOrEmpty(x.Guest.ArrivalDate));
-            }
 
             var guestsList = await query.ToListAsync();
 
-            // Apply date filter safely in-memory
             if (startUnix.HasValue && endUnix.HasValue)
             {
                 guestsList = guestsList
                     .Where(x =>
                         long.TryParse(x.Guest.ArrivalDate, out var unix) &&
                         unix >= startUnix.Value &&
-                        unix <= endUnix.Value
-                    )
+                        unix <= endUnix.Value)
                     .ToList();
             }
 
-
-            // Group data after filtering
             var groupedData = guestsList
                 .GroupBy(x => new { x.Guest.Batch, x.OperatorName })
                 .Select(g => new
@@ -1020,12 +1199,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     batch = g.Key.Batch,
                     operatorName = g.Key.OperatorName,
                     totalGuests = g.Count(),
-                    arrivalDate = g.First().Guest.ArrivalDate, // Use stored Unix timestamp
+                    arrivalDate = g.First().Guest.ArrivalDate,
                     status = "Confirmed"
                 })
                 .ToList();
 
-            // Pagination after grouping
             var pagedData = groupedData.Skip(start).Take(length);
 
             return Json(new
@@ -1294,74 +1472,58 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 var today = DateTime.Now.ToString("yyyy-MM-dd");
 
-                // ✅ LIFO — newest assigned = last in cycle (bottom of list)
                 var priorityToday = await _context.DriverIdPriors
                     .Where(p => p.Date == today)
-                    .OrderByDescending(p => p.Id)
                     .ToListAsync();
 
-                // ✅ Build busyRefIds in LIFO order
-                var busyRefIds = new List<string>();
-                foreach (var p in priorityToday)
-                {
-                    var matched = allDrivers.FirstOrDefault(d =>
-                        int.TryParse(d.RefId, out int rid) && rid == p.DriverIdPriorValue);
-                    if (matched != null && !busyRefIds.Contains(matched.RefId))
-                        busyRefIds.Add(matched.RefId);
-                }
+                var lastAssignmentMap = priorityToday
+                    .GroupBy(p => p.DriverIdPriorValue)
+                    .ToDictionary(g => g.Key, g => g.Max(x => x.Id));
 
-                // ✅ Pull ALL attendance today in-memory
                 var allAttendanceToday = await _context.DriverAttendances
                     .Where(a => a.Date == today)
                     .ToListAsync();
 
-                // ✅ Map RefId → total passengers
                 var passengerMap = allAttendanceToday
                     .Where(a => !string.IsNullOrEmpty(a.DriverId))
                     .GroupBy(a => a.DriverId)
                     .ToDictionary(g => g.Key, g => g.Sum(x => x.Passenger));
 
-                // ✅ ALL drivers in Available — free first, busy at bottom
-                var freeDrivers = allDrivers
-                    .Where(d => !busyRefIds.Contains(d.RefId))
-                    .Select(d => new
-                    {
-                        d.DriverId,
-                        d.RefId,
-                        d.fullName,
-                        Image = d.Image ?? "",
-                        isBusy = false,
-                        passengers = 0
+                var availableDrivers = allDrivers
+                    .OrderBy(d => {
+                        int.TryParse(d.RefId, out int rid);
+                        return lastAssignmentMap.ContainsKey(rid) ? 1 : 0;
                     })
-                    .ToList();
-
-                // ✅ Busy drivers at bottom — LIFO order (newest assigned = bottom-most)
-                var busyDriversForAvailable = allDrivers
-                    .Where(d => busyRefIds.Contains(d.RefId))
-                    .OrderByDescending(d => busyRefIds.IndexOf(d.RefId)) // newest = last
-                    .Select(d => new
-                    {
-                        d.DriverId,
-                        d.RefId,
-                        d.fullName,
-                        Image = d.Image ?? "",
-                        isBusy = true,
-                        passengers = passengerMap.ContainsKey(d.RefId)
-                                     ? passengerMap[d.RefId]
-                                     : 0
+                    .ThenBy(d => {
+                        int.TryParse(d.RefId, out int rid);
+                        return lastAssignmentMap.ContainsKey(rid) ? lastAssignmentMap[rid] : 0;
                     })
-                    .ToList();
-
-                // ✅ Combine: free on top, busy at bottom
-                var availableDrivers = freeDrivers
+                    .ThenBy(d => d.fullName)
+                    .Select(d => {
+                        int.TryParse(d.RefId, out int rid);
+                        return new
+                        {
+                            d.DriverId,
+                            d.RefId,
+                            d.fullName,
+                            Image = d.Image ?? "",
+                            hasTrip = lastAssignmentMap.ContainsKey(rid),
+                            passengers = passengerMap.ContainsKey(d.RefId)
+                                         ? passengerMap[d.RefId] : 0
+                        };
+                    })
                     .Cast<dynamic>()
-                    .Concat(busyDriversForAvailable.Cast<dynamic>())
                     .ToList();
 
-                // ✅ Busy tab still shows busy drivers (LIFO — newest = #1)
                 var busyDriversList = allDrivers
-                    .Where(d => busyRefIds.Contains(d.RefId))
-                    .OrderBy(d => busyRefIds.IndexOf(d.RefId))
+                    .Where(d => {
+                        int.TryParse(d.RefId, out int rid);
+                        return lastAssignmentMap.ContainsKey(rid);
+                    })
+                    .OrderBy(d => {
+                        int.TryParse(d.RefId, out int rid);
+                        return lastAssignmentMap[rid];
+                    })
                     .Select(d => new
                     {
                         d.DriverId,
@@ -1369,18 +1531,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         d.fullName,
                         Image = d.Image ?? "",
                         passengers = passengerMap.ContainsKey(d.RefId)
-                                     ? passengerMap[d.RefId]
-                                     : 0
+                                     ? passengerMap[d.RefId] : 0
                     })
+                    .Cast<dynamic>()
                     .ToList();
 
                 var guestCount = await _context.Guests
                     .CountAsync(g => g.Batch == batch);
 
+                // ✅ Formula: 1 driver per 10 guests, rounded up
+                int recommendedDrivers = (int)Math.Ceiling(guestCount / 10.0);
+
                 ViewBag.Batch = batch ?? "";
                 ViewBag.GuestCount = guestCount;
+                ViewBag.RecommendedDrivers = recommendedDrivers;
                 ViewBag.AvailableDrivers = availableDrivers;
-                ViewBag.BusyDrivers = busyDriversList.Cast<dynamic>().ToList();
+                ViewBag.BusyDrivers = busyDriversList;
 
                 return PartialView("_AssignDriverModal");
             }
@@ -1477,7 +1643,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // =========================================================
-        // CLEAR DRIVER — optional, kept for manual override
+        // CLEAR DRIVER — optional manual reset
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1546,6 +1712,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // ASSIGN GUIDE — GET modal form
         // =========================================================
         [HttpGet]
+        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetAssignGuideModal(string batch)
         {
             try
@@ -1564,18 +1731,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 var today = DateTime.Now.ToString("yyyy-MM-dd");
                 long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
 
-                // ✅ LIFO — newest assigned shows last (bottom of cycle)
                 var attendanceToday = await _context.TourGuideAttendances
                     .Where(a => a.Date == today)
-                    .OrderByDescending(a => a.Id)
                     .ToListAsync();
 
-                var busyRfids = new List<string>();
-                foreach (var a in attendanceToday)
-                {
-                    if (!string.IsNullOrEmpty(a.TGId) && !busyRfids.Contains(a.TGId))
-                        busyRfids.Add(a.TGId);
-                }
+                // ✅ Get last assignment ID per guide — higher ID = more recently assigned = goes to bottom
+                var lastAssignmentMap = attendanceToday
+                    .Where(a => !string.IsNullOrEmpty(a.TGId))
+                    .GroupBy(a => a.TGId)
+                    .ToDictionary(g => g.Key, g => g.Max(x => x.Id));
 
                 // ✅ Passenger map from tourguide_dtr
                 var guideDtrToday = await _context.TourGuideDtrs
@@ -1586,47 +1750,29 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .GroupBy(d => d.Rfid)
                     .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0));
 
-                // ✅ Free guides on top
-                var freeGuides = allGuides
-                    .Where(g => !busyRfids.Contains(g.Rfid))
+                // ✅ ALL guides — never assigned first (alphabetical), then oldest assignment near top, newest = bottom
+                var availableGuides = allGuides
+                    .OrderBy(g => lastAssignmentMap.ContainsKey(g.Rfid) ? 1 : 0)
+                    .ThenBy(g => lastAssignmentMap.ContainsKey(g.Rfid)
+                                 ? lastAssignmentMap[g.Rfid] : 0)
+                    .ThenBy(g => g.fullName)
                     .Select(g => new
                     {
                         g.GuideId,
                         g.Rfid,
                         g.fullName,
                         Image = g.Image ?? "",
-                        isBusy = false,
-                        passengers = 0
-                    })
-                    .ToList();
-
-                // ✅ Busy guides at bottom — LIFO (newest = bottom-most)
-                var busyGuidesForAvailable = allGuides
-                    .Where(g => busyRfids.Contains(g.Rfid))
-                    .OrderByDescending(g => busyRfids.IndexOf(g.Rfid))
-                    .Select(g => new
-                    {
-                        g.GuideId,
-                        g.Rfid,
-                        g.fullName,
-                        Image = g.Image ?? "",
-                        isBusy = true,
+                        hasTrip = lastAssignmentMap.ContainsKey(g.Rfid),
                         passengers = long.TryParse(g.Rfid, out long rfidLong) && guidePassengerMap.ContainsKey(rfidLong)
-                                     ? guidePassengerMap[rfidLong]
-                                     : 0
+                                     ? guidePassengerMap[rfidLong] : 0
                     })
-                    .ToList();
-
-                // ✅ Combine: free on top, busy at bottom
-                var availableGuides = freeGuides
                     .Cast<dynamic>()
-                    .Concat(busyGuidesForAvailable.Cast<dynamic>())
                     .ToList();
 
-                // ✅ Busy tab — info only (LIFO order)
+                // ✅ On Trip tab — only those assigned today, oldest first
                 var busyGuidesList = allGuides
-                    .Where(g => busyRfids.Contains(g.Rfid))
-                    .OrderBy(g => busyRfids.IndexOf(g.Rfid))
+                    .Where(g => lastAssignmentMap.ContainsKey(g.Rfid))
+                    .OrderBy(g => lastAssignmentMap[g.Rfid])
                     .Select(g => new
                     {
                         g.GuideId,
@@ -1634,18 +1780,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         g.fullName,
                         Image = g.Image ?? "",
                         passengers = long.TryParse(g.Rfid, out long rfidLong2) && guidePassengerMap.ContainsKey(rfidLong2)
-                                     ? guidePassengerMap[rfidLong2]
-                                     : 0
+                                     ? guidePassengerMap[rfidLong2] : 0
                     })
+                    .Cast<dynamic>()
                     .ToList();
 
                 var guestCount = await _context.Guests
                     .CountAsync(g => g.Batch == batch);
 
+                // ✅ Formula: 1 guide per 2 guests, rounded up  
+                int recommendedGuides = (int)Math.Ceiling(guestCount / 2.0);
+
                 ViewBag.Batch = batch ?? "";
                 ViewBag.GuestCount = guestCount;
+                ViewBag.RecommendedGuides = recommendedGuides;
                 ViewBag.AvailableGuides = availableGuides;
-                ViewBag.BusyGuides = busyGuidesList.Cast<dynamic>().ToList();
+                ViewBag.BusyGuides = busyGuidesList;
 
                 return PartialView("_AssignGuideModal");
             }
@@ -1669,10 +1819,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // =========================================================
-        // ASSIGN MULTIPLE GUIDES — POST save (no conflict block)
+        // ASSIGN MULTIPLE GUIDES — POST save
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
+        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> AssignGuides(string batch, List<string> guideRfids)
         {
             try
@@ -1738,6 +1889,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
+        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> ClearGuideAssignment(string guideRfid)
         {
             try
@@ -1760,7 +1912,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
             }
-        }
+        } 
     }
 
 }

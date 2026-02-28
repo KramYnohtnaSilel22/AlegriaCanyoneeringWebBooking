@@ -1,6 +1,7 @@
 ﻿@{
     var batch = ViewBag.Batch as string;
     var guestCount = (int)(ViewBag.GuestCount ?? 0);
+    var recommendedGuides = (int)(ViewBag.RecommendedGuides ?? 0);
     var availableGuides = ViewBag.AvailableGuides as IEnumerable<dynamic>;
     var busyGuides = ViewBag.BusyGuides as IEnumerable<dynamic>;
 }
@@ -18,6 +19,9 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><i class="fas fa-layer-group me-1 text-success"></i><strong>Batch:</strong> @batch</span>
             <span><i class="fas fa-users me-1 text-primary"></i><strong>Guests:</strong> @guestCount</span>
+            <span class="badge bg-info text-white">
+                <i class="fas fa-user-tie me-1"></i> Recommended: @recommendedGuides guide@(recommendedGuides != 1 ? "s" : "")
+            </span>
             <span class="badge bg-success">
                 <i class="fas fa-user-tie me-1"></i> Selected: <span id="guideSelectedCount">0</span>
             </span>
@@ -39,53 +43,58 @@
         <li class="nav-item">
             <button class="nav-link active" id="guide-tab-available" onclick="switchGuideTab('available')">
                 <i class="fas fa-check-circle text-success me-1"></i>
-                Available
+                Guides
                 <span class="badge bg-success ms-1">@(availableGuides?.Count() ?? 0)</span>
             </button>
         </li>
         <li class="nav-item">
             <button class="nav-link" id="guide-tab-busy" onclick="switchGuideTab('busy')">
                 <i class="fas fa-clock text-warning me-1"></i>
-                Busy
+                On Trip
                 <span class="badge bg-warning text-dark ms-1">@(busyGuides?.Count() ?? 0)</span>
             </button>
         </li>
     </ul>
 
-    <!-- Available Guides Panel -->
+    <!-- Guides Panel — all guides, cycle order -->
     <div id="guide-panel-available">
         <p class="text-muted small mb-2">
-            <i class="fas fa-hand-pointer me-1"></i>
-            Click a guide to select. Busy guides appear at the bottom and can still be selected.
+            <i class="fas fa-sync-alt me-1"></i>
+            Guides are ordered by cycle — most recently assigned appears at the bottom.
         </p>
         <div class="row g-2" id="availableGuideList">
             @if (availableGuides != null && availableGuides.Any())
             {
+                int cyclePos = 1;
                 foreach (var g in availableGuides)
                 {
-                    bool isBusy = (bool)(g.isBusy ?? false);
-                    <div class="col-md-6 guide-item @(isBusy ? "guide-busy-row" : "")"
+                    bool hasTrip = (bool)(g.hasTrip ?? false);
+                    <div class="col-md-6 guide-item"
                          data-name="@g.fullName.ToLower()"
                          data-ref="@g.Rfid.ToLower()"
                          data-panel="available"
                          data-rfid="@g.Rfid"
                          data-fullname="@g.fullName"
                          data-image="@(g.Image ?? "")">
-                        <div class="card guide-card border-2 h-100 @(isBusy ? "border-warning" : "")"
-                             style="cursor:pointer; @(isBusy ? "opacity:0.75;" : "")"
+                        <div class="card guide-card border-2 h-100"
+                             style="cursor:pointer;"
                              onclick="toggleSelectGuide(this)">
                             <div class="card-body d-flex align-items-center gap-3 p-2">
+                                <!-- Cycle number -->
+                                <div class="text-muted fw-bold" style="font-size:13px; min-width:24px;">
+                                    @cyclePos
+                                </div>
                                 @if (!string.IsNullOrEmpty((string)g.Image))
                                 {
                                     <img src="@g.Image"
-                                         style="width:50px;height:50px;object-fit:cover;"
-                                         class="rounded-circle border @(isBusy ? "border-warning" : "")" />
+                                         style="width:48px;height:48px;object-fit:cover;"
+                                         class="rounded-circle border" />
                                 }
                                 else
                                 {
-                                    <div style="width:50px;height:50px;"
-                                         class="rounded-circle border @(isBusy ? "border-warning bg-light" : "bg-secondary") d-flex align-items-center justify-content-center">
-                                        <i class="fas fa-user @(isBusy ? "text-warning" : "text-white")"></i>
+                                    <div style="width:48px;height:48px;"
+                                         class="rounded-circle border bg-secondary d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-user text-white"></i>
                                     </div>
                                 }
                                 <div class="flex-grow-1">
@@ -93,16 +102,16 @@
                                     <div class="text-muted" style="font-size:11px;">
                                         <i class="fas fa-id-card me-1"></i>RFID: @g.Rfid
                                     </div>
-                                    @if (isBusy)
+                                    @if (hasTrip)
                                     {
                                         <div style="font-size:10px;" class="text-warning">
-                                            <i class="fas fa-users me-1"></i>Currently serving: @g.passengers pax
+                                            <i class="fas fa-users me-1"></i>Last trip: @g.passengers pax
                                         </div>
                                     }
                                 </div>
-                                @if (isBusy)
+                                @if (hasTrip)
                                 {
-                                    <span class="badge bg-warning text-dark guide-status-badge">Busy</span>
+                                    <span class="badge bg-warning text-dark guide-status-badge">On Trip</span>
                                 }
                                 else
                                 {
@@ -111,6 +120,7 @@
                             </div>
                         </div>
                     </div>
+                    cyclePos++;
                 }
             }
             else
@@ -135,12 +145,11 @@
         </div>
     </div>
 
-    <!-- Busy Guides Panel — info only -->
+    <!-- On Trip Panel — info only -->
     <div id="guide-panel-busy" style="display:none;">
         <div class="alert alert-info py-2 small mb-2">
             <i class="fas fa-info-circle me-1"></i>
-            Guides currently on a trip. They are still selectable from the
-            <strong>Available</strong> tab and will cycle to the bottom automatically.
+            Guides currently on a trip today. Select from the <strong>Guides</strong> tab to re-assign.
         </div>
         <div class="row g-2" id="busyGuideList">
             @if (busyGuides != null && busyGuides.Any())
@@ -177,7 +186,7 @@
                                         <i class="fas fa-users me-1"></i>Passengers: @g.passengers
                                     </div>
                                 </div>
-                                <span class="badge bg-warning text-dark">Busy</span>
+                                <span class="badge bg-warning text-dark">On Trip</span>
                             </div>
                         </div>
                     </div>
@@ -187,7 +196,7 @@
             else
             {
                 <div class="col-12 text-center text-muted py-3">
-                    <i class="fas fa-check-circle text-success me-1"></i> No guides are busy today.
+                    <i class="fas fa-check-circle text-success me-1"></i> No guides on trip today.
                 </div>
             }
         </div>
@@ -222,11 +231,6 @@
 
     .selected-guide-card {
         border-left: 4px solid #198754 !important;
-    }
-
-    .guide-busy-row .guide-card:hover {
-        border-color: #ffc107 !important;
-        background-color: #fffbf0;
     }
 </style>
 
@@ -279,11 +283,10 @@
     function deselectGuide(rfid) {
         delete selectedGuides[rfid];
         $(`.guide-item[data-rfid="${rfid}"] .guide-card`).removeClass('selected');
-        // ✅ Restore correct badge
-        var isBusy = $(`.guide-item[data-rfid="${rfid}"]`).hasClass('guide-busy-row');
-        if (isBusy) {
+        var hasTrip = $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`).hasClass('bg-warning');
+        if (hasTrip) {
             $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`)
-                .removeClass('bg-primary').addClass('bg-warning text-dark').text('Busy');
+                .removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
         } else {
             $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`)
                 .removeClass('bg-primary').addClass('bg-success').text('Free');
@@ -328,6 +331,14 @@
         if (rfids.length === 0) {
             alert('Please select at least one guide.');
             return;
+        }
+
+        // ✅ Warn if selected count doesn't match recommended
+        var recommended = @recommendedGuides;
+        if (rfids.length !== recommended) {
+            if (!confirm(`Recommended guides for this batch is ${recommended}, but you selected ${rfids.length}. Continue anyway?`)) {
+                return;
+            }
         }
 
         $('#btnConfirmAssignGuide')

@@ -14,11 +14,16 @@
             <i class="fas fa-user-check"></i> Booked Guests
         </h2>
 
-        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin"))
+        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator") || User.IsInRole("Staff"))
+
         {
+
             <button id="btnViewGuestOfDay" class="btn btn-primary shadow-sm">
+
                 <i class="fas fa-calendar-day me-1 text-warning"></i> Guest of the Day
+
             </button>
+
         }
     </div>
 
@@ -110,15 +115,15 @@
 
 @section Scripts {
     <script>
-            // ================================
+             // ================================
         // 🔔 Toast Utility
         // ================================
-                  function showToast(message, title = 'Notification', type = 'danger') {
+        function showToast(message, title = 'Notification', type = 'danger') {
             const toastTypes = {
                 success: { icon: 'bi-check-circle-fill', bg: 'bg-success text-white' },
-                danger: { icon: 'bi-exclamation-triangle-fill', bg: 'bg-danger text-white' },
+                danger:  { icon: 'bi-exclamation-triangle-fill', bg: 'bg-danger text-white' },
                 warning: { icon: 'bi-exclamation-circle-fill', bg: 'bg-warning text-dark' },
-                info: { icon: 'bi-info-circle-fill', bg: 'bg-info text-dark' }
+                info:    { icon: 'bi-info-circle-fill', bg: 'bg-info text-dark' }
             };
 
             const { icon, bg } = toastTypes[type] || toastTypes.info;
@@ -133,38 +138,26 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
                     <div class="toast-body">${message}</div>
-                </div>
-            `;
+                </div>`;
 
             const $toast = $(toastHtml).appendTo('.toast-container');
             const bsToast = new bootstrap.Toast($toast[0]);
             bsToast.show();
-
             $toast.on('hidden.bs.toast', () => $toast.remove());
         }
 
-
         // ================================
-        // 🧭 Guest of the Day Modal
+        // 🧭 Guest of the Day — Load Today in DataTable
         // ================================
         $('#btnViewGuestOfDay').on('click', function () {
-            const modalContainer = $('#guestDetailsModalContainer');
-            modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary"></div><p>Loading...</p></div>');
+            const today = new Date().toISOString().split('T')[0]; // yyyy-MM-dd
 
-            $.get('@Url.Action("GetGuestOfTheDay", "Reserve")')
-                .done(function (res) {
-                    if (res.success === false && res.message) {
-                        showToast(res.message);
-                        modalContainer.empty();
-                        return;
-                    }
-                    modalContainer.html(res);
-                    const modal = new bootstrap.Modal(document.getElementById('guestOfTheDayModal'));
-                    modal.show();
-                })
-                .fail(function () {
-                    modalContainer.html('<p class="text-danger text-center mt-4">Error fetching data. Please try again.</p>');
-                });
+            // ✅ Set both date inputs to today
+            $('#startDate').val(today);
+            $('#endDate').val(today);
+
+            // ✅ Trigger the filter form to load today's batches in DataTable
+            $('#filterForm').trigger('submit');
         });
 
         // ================================
@@ -172,12 +165,11 @@
         // ================================
         $(document).ready(function () {
             var table = null;
-            var toast = new bootstrap.Toast(document.getElementById('liveToast'));
 
             $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
                 const startDate = $('#startDate').val();
-                const endDate = $('#endDate').val();
+                const endDate   = $('#endDate').val();
 
                 if (!startDate || !endDate) {
                     showToast('Please select both start and end dates.');
@@ -210,7 +202,7 @@
                         type: 'POST',
                         data: function (d) {
                             d.startDate = startDate;
-                            d.endDate = endDate;
+                            d.endDate   = endDate;
                             d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
                         },
                         error: function (xhr) {
@@ -265,45 +257,60 @@
                                 return `<span class="badge bg-${badgeMap[data.toLowerCase()] || 'secondary'} text-uppercase">${data}</span>`;
                             }
                         },
-                           {
+                        {
                             data: 'batch',
                             orderable: false,
                             searchable: false,
                             render: function (data) {
-                                return `
-                                    <div class="d-flex flex-wrap gap-1">
-                                   
+                                var actions = `<div class="d-flex flex-wrap gap-1">`;
 
-                               @if (User.IsInRole("Staff"))
+                                @if (User.IsInRole("Staff"))
                                 {
-                                  <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
-                                  <i class="fas fa-eye me-1"></i> View
-                                  </button>
-                                  <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
-                                  <i class="fas fa-user-tie me-1"></i> Guide
-                                  </button>
-                                  <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
-                                   <i class="fas fa-car me-1"></i> Driver
-                                  </button>
-                               }
+                                        <text>
+                                        actions += `
+                                            <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
+                                                <i class="fas fa-user-tie me-1"></i> Guide
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
+                                                <i class="fas fa-car me-1"></i> Driver
+                                            </button>`;
+                                        </text>
+                                }
+                                else
+                                {
+                                        <text>
+                                        actions += `
+                                            <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-warning print-batch-details" data-batch="${data}">
+                                                <i class="fas fa-print me-1"></i> Print
+                                            </button>`;
+                                        </text>
+                                }
 
-                               else
-                                    {
-                                <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
-                                    <i class="fas fa-eye me-1"></i> View
-                                </button>
-                                <button type="button" class="btn btn-sm btn-warning print-batch-details" data-batch="${data}">
-                                    <i class="fas fa-print me-1"></i> Print
-                                </button>
-                                <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
-                                    <i class="fas fa-user-tie me-1"></i> Guide
-                                </button>
-                                <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
-                                    <i class="fas fa-car me-1"></i> Driver
-                                </button>
-                                   }
+                                @if (User.IsInRole("Super Admin"))
+                                {
+                                        <text>
+                                        actions += `
+                                            <button type="button"
+                                                    class="btn btn-sm btn-info d-flex align-items-center px-3 py-2"
+                                                    onclick="showQrModal('${data}', '', 0, '')">
+                                                <i class="fas fa-qrcode me-1"></i> QR
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-success d-flex align-items-center px-3 py-2 confirm-batch-btn"
+                                                    data-batch="${data}">
+                                                <i class="fas fa-check me-1"></i> Confirm
+                                            </button>`;
+                                        </text>
+                                }
 
-                                    </div>`;
+                                actions += `</div>`;
+                                return actions;
                             }
                         }
                     ],
@@ -332,168 +339,100 @@
                     .fail(function () { showToast('Failed to load guest details.'); });
             });
 
-        $('#batchesTableContainer').on('click', '.print-batch-details', function () {
-            const batchCode = $(this).data('batch');
-
-            // Temporary form nga mo-submit gamit POST
-            const form = $('<form>', {
-                action: '@Url.Action("PrintBatchGuests", "Reserve")',
-                method: 'POST',
-                target: '_blank' // mo-open sa bag-ong tab
+            $('#batchesTableContainer').on('click', '.print-batch-details', function () {
+                const batchCode = $(this).data('batch');
+                const form = $('<form>', {
+                    action: '@Url.Action("PrintBatchGuests", "Reserve")',
+                    method: 'POST',
+                    target: '_blank'
+                });
+                $('<input>').attr({ type: 'hidden', name: 'batchCode', value: batchCode }).appendTo(form);
+                form.appendTo('body').submit().remove();
             });
 
-            // Hidden input para sa batchCode
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'batchCode',
-                value: batchCode
-            }).appendTo(form);
+            // ================================
+            // 🚗 Assign Driver Modal
+            // ================================
+            $('#batchesTableContainer').on('click', '.assign-driver', function () {
+                const batch = $(this).data('batch');
 
-            // I-append sa body, i-submit, dayon i-remove
-            form.appendTo('body').submit().remove();
-        });
+                $('#assignDriverModalContent').html(`
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-info" role="status"></div>
+                        <p class="mt-2 text-muted">Loading drivers...</p>
+                    </div>`);
 
+                const modal = new bootstrap.Modal(document.getElementById('assignDriverModal'));
+                modal.show();
 
-        });
-
-        // ================================
-        // 🚗 Assign Driver Modal
-        // ================================
-        $('#batchesTableContainer').on('click', '.assign-driver', function () {
-            const batch = $(this).data('batch');
-
-            $('#assignDriverModalContent').html(`
-                <div class="text-center p-4">
-                    <div class="spinner-border text-info" role="status"></div>
-                    <p class="mt-2 text-muted">Loading drivers...</p>
-                </div>
-            `);
-
-            const modal = new bootstrap.Modal(document.getElementById('assignDriverModal'));
-            modal.show();
-
-            $.get('@Url.Action("GetAssignDriverModal", "Reserve")', { batch: batch })
-                .done(function (html) {
-                    $('#assignDriverModalContent').html(html);
-                })
-                .fail(function (xhr) {
-                    console.error('Status:', xhr.status);
-                    console.error('Response:', xhr.responseText);
-                    $('#assignDriverModalContent').html(`
-                        <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title">Error Loading Drivers</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="alert alert-danger">
-                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}<br/>
-                                <small>${xhr.responseText.substring(0, 300)}</small>
+                $.get('@Url.Action("GetAssignDriverModal", "Reserve")', { batch: batch })
+                    .done(function (html) {
+                        $('#assignDriverModalContent').html(html);
+                    })
+                    .fail(function (xhr) {
+                        $('#assignDriverModalContent').html(`
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">Error Loading Drivers</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                    `);
-                });
-        });
+                            <div class="modal-body">
+                                <div class="alert alert-danger">
+                                    <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>`);
+                    });
+            });
 
-        // ✅ Reload table after modal closes to hide assigned batches
-        $('#assignDriverModal').on('hidden.bs.modal', function () {
-            if (table) table.ajax.reload(null, false);
-        });
-        // ================================
-        // 🧭 Assign Guide — Session Tracking
-        // ================================
-        const sessionAssignedGuides = new Set();
+            $('#assignDriverModal').on('hidden.bs.modal', function () {
+                if (table) table.ajax.reload(null, false);
+            });
 
-        $('#batchesTableContainer').on('click', '.assign-guide', function () {
-            const batch = $(this).data('batch');
+            // ================================
+            // 🧭 Assign Guide Modal
+            // ================================
+            $('#batchesTableContainer').on('click', '.assign-guide', function () {
+                const batch = $(this).data('batch');
+                openGuideModal(batch);
+            });
 
-            if (sessionAssignedGuides.has(String(batch))) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Already Assigned!',
-                    html: `Batch <strong>${batch}</strong> already has guide(s) assigned.<br><br>
-                           Click <strong>View Busy Guides</strong> to manage them.`,
-                    showCancelButton: true,
-                    confirmButtonColor: '#198754',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="fas fa-clock me-1"></i> View Busy Guides',
-                    cancelButtonText: 'Close'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        openGuideModalOnBusyTab(batch);
-                    }
-                });
-                return;
+            function openGuideModal(batch) {
+                $('#assignGuideModalContent').html(`
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2 text-muted">Loading guides...</p>
+                    </div>`);
+
+                const modal = new bootstrap.Modal(document.getElementById('assignGuideModal'));
+                modal.show();
+
+                $.get('@Url.Action("GetAssignGuideModal", "Reserve")', { batch: batch })
+                    .done(function (html) {
+                        $('#assignGuideModalContent').html(html);
+                    })
+                    .fail(function (xhr) {
+                        $('#assignGuideModalContent').html(`
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">Error Loading Guides</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-danger">
+                                    <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>`);
+                    });
             }
 
-            openGuideModal(batch);
-        });
+            $('#assignGuideModal').on('hidden.bs.modal', function () {
+                if (table) table.ajax.reload(null, false);
+            });
 
-        function openGuideModal(batch) {
-            $('#assignGuideModalContent').html(`
-                <div class="text-center p-4">
-                    <div class="spinner-border text-success" role="status"></div>
-                    <p class="mt-2 text-muted">Loading guides...</p>
-                </div>
-            `);
-            const modal = new bootstrap.Modal(document.getElementById('assignGuideModal'));
-            modal.show();
-
-            $.get('@Url.Action("GetAssignGuideModal", "Reserve")', { batch: batch })
-                .done(function (html) {
-                    $('#assignGuideModalContent').html(html);
-                })
-                .fail(function (xhr) {
-                    $('#assignGuideModalContent').html(`
-                        <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title">Error Loading Guides</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="alert alert-danger">
-                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}<br/>
-                                <small>${xhr.responseText.substring(0, 300)}</small>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                    `);
-                });
-        }
-
-        function openGuideModalOnBusyTab(batch) {
-            $('#assignGuideModalContent').html(`
-                <div class="text-center p-4">
-                    <div class="spinner-border text-warning" role="status"></div>
-                    <p class="mt-2 text-muted">Loading busy guides...</p>
-                </div>
-            `);
-            const modal = new bootstrap.Modal(document.getElementById('assignGuideModal'));
-            modal.show();
-
-            $.get('@Url.Action("GetAssignGuideModal", "Reserve")', { batch: batch })
-                .done(function (html) {
-                    $('#assignGuideModalContent').html(html);
-                    setTimeout(() => switchGuideTab('busy'), 100);
-                });
-        }
-
-        $(document).on('guideAssigned', function (e, batch) {
-            sessionAssignedGuides.add(String(batch));
-        });
-
-        $(document).on('guideFreed', function (e, batch) {
-            sessionAssignedGuides.delete(String(batch));
-        });
-
-        $('#assignGuideModal').on('hidden.bs.modal', function () {
-            if (table) table.ajax.reload(null, false);
-        });
-
-
-
+        }); // end document.ready
     </script>
 }
