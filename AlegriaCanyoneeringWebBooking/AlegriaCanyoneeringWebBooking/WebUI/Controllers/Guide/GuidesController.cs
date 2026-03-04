@@ -1,9 +1,11 @@
 ﻿using AlegriaCanyoneeringWebBooking;
 using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [Route("Guides")]
+[Authorize(Roles = "Super Admin,Admin,Operator")]
 public class GuidesController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -56,6 +58,7 @@ public class GuidesController : Controller
     // =========================================================
     [HttpPost("Create")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Operator")]
     public async Task<IActionResult> Create(Guide model, IFormFile? PhotoFile)
     {
         ModelState.Remove("Image");
@@ -120,6 +123,7 @@ public class GuidesController : Controller
     // EDIT GET
     // =========================================================
     [HttpGet("Edit/{id}")]
+    [Authorize(Roles = "Operator")]
     public async Task<IActionResult> Edit(int id)
     {
         try
@@ -257,6 +261,7 @@ public class GuidesController : Controller
     // DELETE
     // =========================================================
     [HttpPost("DeleteAjax")]
+
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteAjax(int id)
     {

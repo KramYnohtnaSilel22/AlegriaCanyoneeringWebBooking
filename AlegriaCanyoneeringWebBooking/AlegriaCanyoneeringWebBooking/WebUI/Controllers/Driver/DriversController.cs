@@ -1,9 +1,11 @@
 ﻿using AlegriaCanyoneeringWebBooking;
 using AlegriaCanyoneeringWebBooking.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [Route("Drivers")]
+[Authorize(Roles = "Super Admin,Admin,Operator")]
 public class DriversController : Controller
 {
     private readonly ApplicationDbContext _context;
