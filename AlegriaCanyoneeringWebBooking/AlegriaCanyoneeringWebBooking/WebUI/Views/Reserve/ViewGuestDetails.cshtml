@@ -18,7 +18,7 @@
     .modal-content {
         border-radius: 16px;
         border: none;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 30px rgba(0,0,0,.1);
         overflow: hidden;
     }
 
@@ -39,11 +39,10 @@
         background-color: #ffffff;
     }
 
-    /* --- Action Bar --- */
     .action-bar {
         background: #f8f9fa;
         border-bottom: 1px solid #e9ecef;
-        padding: 0.75rem 1rem;
+        padding: .75rem 1rem;
         position: sticky;
         top: 0;
         z-index: 10;
@@ -54,14 +53,9 @@
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: .4rem;
         }
 
-            .action-bar .btn i {
-                font-size: 1rem;
-            }
-
-    /* --- Tables --- */
     .table {
         border-radius: 12px;
         overflow: hidden;
@@ -94,35 +88,34 @@
         margin-bottom: 1rem;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: .5rem;
     }
 
         .section-title i {
             color: #0d6efd;
         }
 
-    /* --- Staff Cards --- */
     .staff-card {
-        transition: background 0.15s;
+        transition: background .15s;
     }
 
         .staff-card:hover {
             background-color: #f8f9fa;
         }
+
+    .pax-badge {
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 999px;
+    }
 </style>
 
 @{
     string FormatArrivalDate(string unixTimestamp)
     {
-        if (string.IsNullOrEmpty(unixTimestamp))
-            return "N/A";
-
+        if (string.IsNullOrEmpty(unixTimestamp)) return "N/A";
         if (long.TryParse(unixTimestamp, out var unix))
-        {
-            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
-            return dateTime.ToString("MMMM dd, yyyy hh:mm tt");
-        }
-
+            return DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime().ToString("MMMM dd, yyyy hh:mm tt");
         return unixTimestamp;
     }
 }
@@ -135,7 +128,7 @@
             <!-- Header -->
             <div class="modal-header">
                 <h5 class="modal-title" id="guestDetailsModalLabel">
-                    Booking Details - Batch: @Model.FirstOrDefault()?.Guest.Batch
+                    Booking Details — Batch: @Model.FirstOrDefault()?.Guest.Batch
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -153,11 +146,10 @@
             <!-- Body -->
             <div class="modal-body" id="guestDetailsContent">
 
-                <!-- ✅ Assigned Tour Guides & Drivers -->
-             
+                <!-- Assigned Staff Cards -->
                 <div class="row g-3 mb-4">
 
-                    <!-- Assigned Guides -->
+                    <!-- ── Assigned Guides ── -->
                     <div class="col-md-6">
                         <div class="card border-success h-100">
                             <div class="card-header bg-success text-white py-2 d-flex align-items-center justify-content-between">
@@ -173,6 +165,7 @@
                                     <div class="d-flex flex-column gap-2">
                                         @foreach (var g in assignedGuides)
                                         {
+                                            int gpax = (int)(g.passengers ?? 0);
                                             <div class="d-flex align-items-center gap-2 p-2 border rounded staff-card">
                                                 @if (!string.IsNullOrEmpty((string)g.Image))
                                                 {
@@ -189,8 +182,10 @@
                                                 }
                                                 <div class="flex-grow-1">
                                                     <div class="fw-semibold small">@g.fullName</div>
+                                                    <div class="text-muted" style="font-size:10px;">
+                                                        <i class="fas fa-id-card me-1"></i>RFID: @g.Rfid
+                                                    </div>
                                                 </div>
-                                                
                                             </div>
                                         }
                                     </div>
@@ -206,7 +201,7 @@
                         </div>
                     </div>
 
-                    <!-- Assigned Drivers -->
+                    <!-- ── Assigned Drivers ── -->
                     <div class="col-md-6">
                         <div class="card border-info h-100">
                             <div class="card-header bg-info text-white py-2 d-flex align-items-center justify-content-between">
@@ -222,6 +217,7 @@
                                     <div class="d-flex flex-column gap-2">
                                         @foreach (var d in assignedDrivers)
                                         {
+                                            int dpax = (int)(d.passengers ?? 0);
                                             <div class="d-flex align-items-center gap-2 p-2 border rounded staff-card">
                                                 @if (!string.IsNullOrEmpty((string)d.Image))
                                                 {
@@ -233,13 +229,15 @@
                                                 {
                                                     <div style="width:40px;height:40px;"
                                                          class="rounded-circle border border-info bg-light d-flex align-items-center justify-content-center flex-shrink-0">
-                                                        <i class="fas fa-user text-info"></i>
+                                                        <i class="fas fa-car text-info"></i>
                                                     </div>
                                                 }
                                                 <div class="flex-grow-1">
-                                                    <div class="fw-semibold small">@d.fullName</div>                   
+                                                    <div class="fw-semibold small">@d.fullName</div>
+                                                    <div class="text-muted" style="font-size:10px;">
+                                                        <i class="fas fa-id-card me-1"></i>Ref: @d.RefId
+                                                    </div>
                                                 </div>
-                                               
                                             </div>
                                         }
                                     </div>
@@ -301,7 +299,6 @@
                         <h6 class="section-title">
                             <i class="fas fa-users"></i> Companion Guests
                         </h6>
-
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
                                 <thead>
@@ -354,18 +351,15 @@
 <script>
     document.getElementById('printButton').addEventListener('click', function () {
         var batchCode = '@Model.FirstOrDefault()?.Guest.Batch';
-
         if (batchCode) {
-            var form = document.createElement('form');
+            var form  = document.createElement('form');
             form.method = 'POST';
             form.action = '/Reserve/PrintBatchGuests';
             form.target = '_blank';
-
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'batchCode';
+            var input   = document.createElement('input');
+            input.type  = 'hidden';
+            input.name  = 'batchCode';
             input.value = batchCode;
-
             form.appendChild(input);
             document.body.appendChild(form);
             form.submit();

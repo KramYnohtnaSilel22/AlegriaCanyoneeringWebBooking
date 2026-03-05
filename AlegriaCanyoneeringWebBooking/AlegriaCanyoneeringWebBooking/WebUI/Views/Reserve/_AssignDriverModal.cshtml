@@ -158,8 +158,8 @@
                          data-image="@(d.Image ?? "")">
 
                         <div class="card driver-card border-2 h-100
-                                                    @(isAbsent ? "driver-absent-card" : "")
-                                                    @(isTopN ? "driver-top-card" : "")"
+                                                            @(isAbsent ? "driver-absent-card" : "")
+                                                            @(isTopN ? "driver-top-card" : "")"
                              style="cursor:pointer;"
                              onclick="toggleSelectDriver(this)">
 
@@ -213,9 +213,9 @@
                                     }
                                     else if (hasTrip)
                                     {
-                                        <div style="font-size:10px;" class="text-warning trip-info">
+                                      @*   <div style="font-size:10px;" class="text-warning trip-info">
                                             <i class="fas fa-users me-1"></i>Last: @d.passengers pax
-                                        </div>
+                                        </div> *@
                                     }
                                     else
                                     {
@@ -322,7 +322,7 @@
                                         <div class="text-muted" style="font-size:10px;">
                                             <i class="fas fa-id-card me-1"></i>Ref: @d.RefId
                                         </div>
-                                        <div style="font-size:10px;"
+                                        @* <div style="font-size:10px;"
                                              class="@(isAbsent ? "text-danger" : "text-info")"
                                              id="pax-label-@d.RefId">
                                             <i class="fas fa-users me-1"></i>
@@ -333,7 +333,7 @@
                                                     <i class="fas fa-user-times"></i> <em>Absent</em>
                                                 </span>
                                             }
-                                        </div>
+                                        </div> *@
                                     </div>
 
                                     <!-- Action Buttons -->
