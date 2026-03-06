@@ -418,7 +418,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // GET GUESTS BY BATCH
         // ✅ Guides: passenger count from TourGuideDtr.NoOfGuest
         // ✅ Drivers: passenger count from DriverDtr.Passenger
-        // ✅ Both scoped via BatchAssignment.BatchCode
+        // ✅ Absent = explicitly marked (MarkGuideAbsent / MarkDriverAbsent)
+        // ✅ Drivers/Guides with 0 pax from distribution still show
         // =========================================================
         [HttpGet]
         public async Task<IActionResult> GetGuestsByBatch(string batchCode)
@@ -446,7 +447,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
 
-            // ── GUIDES — scoped via BatchAssignment.BatchCode ────────────
+            // ── GUIDES ───────────────────────────────────────────────────
             var assignedGuideIds = await _context.BatchAssignments
                 .Where(b => b.BatchCode == batchCode && b.GuideId != null)
                 .Select(b => b.GuideId)
@@ -458,36 +459,58 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Select(g => new { g.GuideId, g.Rfid, g.FName, g.MName, g.LName, g.Image })
                 .ToListAsync();
 
-            // ✅ Passenger count from TourGuideDtr (Date = yyyyMMdd long, Rfid = long)
             var guideRfidLongs = guideEntities
                 .Where(g => long.TryParse(g.Rfid, out _))
                 .Select(g => long.Parse(g.Rfid))
                 .ToList();
 
             var guideDtrToday = await _context.TourGuideDtrs
-                 .Where(d => guideRfidLongs.Contains(d.Rfid) && d.Date == todayLong)
-                 .ToListAsync();
+                .Where(d => guideRfidLongs.Contains(d.Rfid) && d.Date == todayLong)
+                .ToListAsync();
 
             var guidePassengerMap = guideDtrToday
                 .GroupBy(d => d.Rfid)
                 .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0));
 
-            var assignedGuides = guideEntities.Select(g =>
-            {
-                int passengers = 0;
-                if (long.TryParse(g.Rfid, out long rfidLong))
-                    guidePassengerMap.TryGetValue(rfidLong, out passengers);
+            // ✅ Absent guide = has DTR today with ALL NoOfGuest == "0"
+            var absentGuideRfids = guideRfidLongs
+                .Where(rfid =>
+                {
+                    var records = guideDtrToday.Where(d => d.Rfid == rfid).ToList();
+                    return records.Any() && records.All(d => d.NoOfGuest == "0");
+                })
+                .ToHashSet();
 
-                return new
+            // ✅ FIXED: explicit named assignments in anonymous type
+            var assignedGuides = guideEntities
+                .Select(g =>
+                {
+                    long.TryParse(g.Rfid, out long rfidLong);
+                    int passengers = 0;
+                    guidePassengerMap.TryGetValue(rfidLong, out passengers);
+                    bool isAbsent = absentGuideRfids.Contains(rfidLong);
+                    string fullName = $"{g.FName ?? ""} {g.MName ?? ""} {g.LName ?? ""}".Trim();
+
+                    return new
+                    {
+                        Rfid = g.Rfid,
+                        fullName = fullName,        // ✅ explicit assignment
+                        Image = g.Image,
+                        passengers = passengers,
+                        isAbsent = isAbsent
+                    };
+                })
+                .Where(g => !g.isAbsent)
+                .Select(g => new
                 {
                     Rfid = g.Rfid,
-                    fullName = $"{g.FName ?? ""} {g.MName ?? ""} {g.LName ?? ""}".Trim(),
+                    fullName = g.fullName,
                     Image = g.Image,
-                    passengers
-                };
-            }).ToList();
+                    passengers = g.passengers
+                })
+                .ToList<object>();
 
-            // ── DRIVERS — scoped via BatchAssignment.BatchCode ───────────
+            // ── DRIVERS ──────────────────────────────────────────────────
             var assignedDriverIds = await _context.BatchAssignments
                 .Where(b => b.BatchCode == batchCode && b.DriverId != null)
                 .Select(b => b.DriverId)
@@ -499,7 +522,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Select(d => new { d.DriverId, d.RefId, d.FName, d.MName, d.LName, d.Image })
                 .ToListAsync();
 
-            // ✅ Passenger count from DriverDtr (Rfid = int(RefId), Date = unix timestamp)
             var driverRfidInts = driverEntities
                 .Where(d => int.TryParse(d.RefId, out _))
                 .Select(d => int.Parse(d.RefId))
@@ -515,27 +537,65 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .GroupBy(d => d.Rfid)
                 .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0));
 
-            var assignedDrivers = driverEntities.Select(d =>
-            {
-                int passengers = 0;
-                if (int.TryParse(d.RefId, out int rfidInt))
-                    driverPassengerMap.TryGetValue(rfidInt, out passengers);
+            var driverAttendanceToday = await _context.DriverAttendances
+                .Where(a => driverEntities.Select(d => d.RefId).Contains(a.DriverId)
+                         && string.Compare(a.Date, UnixTodayStart()) >= 0
+                         && string.Compare(a.Date, UnixTodayEnd()) < 0)
+                .ToListAsync();
 
-                return new
+            var attendancePassengerMap = driverAttendanceToday
+                .GroupBy(a => a.DriverId)
+                .ToDictionary(g => g.Key, g => g.Max(x => x.Passenger));
+
+            // ✅ Absent driver = ALL DTR records today are "0" + attendance is 0
+            var absentDriverRefIds = new HashSet<string>();
+            foreach (var d in driverEntities)
+            {
+                if (!int.TryParse(d.RefId, out int rInt)) continue;
+                var dtrRecords = driverDtrToday.Where(x => x.Rfid == rInt).ToList();
+                if (!dtrRecords.Any()) continue;
+
+                bool allZero = dtrRecords.All(x => x.Passenger == "0");
+                bool attendanceZero = !attendancePassengerMap.ContainsKey(d.RefId)
+                                      || attendancePassengerMap[d.RefId] == 0;
+
+                if (allZero && attendanceZero)
+                    absentDriverRefIds.Add(d.RefId);
+            }
+
+            // ✅ FIXED: explicit named assignments in anonymous type
+            var assignedDrivers = driverEntities
+                .Select(d =>
+                {
+                    int.TryParse(d.RefId, out int rfidInt);
+                    int passengers = 0;
+                    driverPassengerMap.TryGetValue(rfidInt, out passengers);
+                    string fullName = $"{d.FName ?? ""} {d.MName ?? ""} {d.LName ?? ""}".Trim();
+
+                    return new
+                    {
+                        RefId = d.RefId,
+                        fullName = fullName,        // ✅ explicit assignment
+                        Image = d.Image,
+                        passengers = passengers,
+                        isAbsent = absentDriverRefIds.Contains(d.RefId)
+                    };
+                })
+                .Where(d => !d.isAbsent)
+                .Select(d => new
                 {
                     RefId = d.RefId,
-                    fullName = $"{d.FName ?? ""} {d.MName ?? ""} {d.LName ?? ""}".Trim(),
+                    fullName = d.fullName,
                     Image = d.Image,
-                    passengers
-                };
-            }).ToList();
+                    passengers = d.passengers
+                })
+                .ToList<object>();
 
             ViewBag.AssignedGuides = assignedGuides;
             ViewBag.AssignedDrivers = assignedDrivers;
 
             return PartialView("ViewGuestDetails", guestsWithOperatorName);
         }
-
 
 
         public async Task<IActionResult> reservebooking()
@@ -1267,12 +1327,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-
         // =========================================================
         // GET ASSIGN DRIVER MODAL
-        // ✅ FIFO from DriverIdPrior (priority Id)
+        // ✅ FIFO from DriverAttendance.Id (no DriverIdPrior)
         // ✅ Passenger count from DriverDtr.Passenger
-        // ✅ Absent detection: has priority + DTR today + Passenger == 0
+        // ✅ Absent detection: has attendance today + DTR today + Passenger == 0
         // =========================================================
         [HttpGet]
         public async Task<IActionResult> GetAssignDriverModal(string batch)
@@ -1290,15 +1349,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     })
                     .ToListAsync();
 
-                // ✅ FIFO from DriverIdPrior — Date = unix timestamp
-                var priorityToday = await _context.DriverIdPriors
-                    .Where(p => string.Compare(p.Date, UnixTodayStart()) >= 0
-                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                // ✅ FIFO from DriverAttendance — Date = unix timestamp
+                var attendanceToday = await _context.DriverAttendances
+                    .Where(a => string.Compare(a.Date, UnixTodayStart()) >= 0
+                             && string.Compare(a.Date, UnixTodayEnd()) < 0)
                     .ToListAsync();
 
-                // ✅ FIFO: last priority Id per driver (higher Id = most recently assigned = bottom of queue)
-                var lastAssignmentMap = priorityToday
-                    .GroupBy(p => p.DriverIdPriorValue)
+                // ✅ FIFO: last attendance Id per driver (DriverId = RefId string)
+                var lastAssignmentMap = attendanceToday
+                    .Where(a => !string.IsNullOrEmpty(a.DriverId))
+                    .GroupBy(a => a.DriverId)
                     .ToDictionary(g => g.Key, g => g.Max(x => x.Id));
 
                 // ✅ Passenger totals from DriverDtr — Date = unix timestamp
@@ -1311,27 +1371,20 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .GroupBy(d => d.Rfid)
                     .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0));
 
-                // ✅ Absent = has priority today + DTR today + total Passenger == 0
-                var driversWithDtrRfidSet = driverDtrToday.Select(d => d.Rfid).ToHashSet();
+                // ✅ Absent = has attendance today + DTR today + total Passenger == 0
                 var absentDriverRefIds = new HashSet<string>();
-
                 foreach (var d in allDrivers)
                 {
+                    if (!lastAssignmentMap.ContainsKey(d.RefId)) continue;
                     if (!int.TryParse(d.RefId, out int rInt)) continue;
-                    if (!lastAssignmentMap.ContainsKey(rInt)) continue;
-
-                    if (driversWithDtrRfidSet.Contains(rInt)
-                        && driverPassengerMap.ContainsKey(rInt)
-                        && driverPassengerMap[rInt] == 0)
-                    {
+                    if (driverPassengerMap.ContainsKey(rInt) && driverPassengerMap[rInt] == 0)
                         absentDriverRefIds.Add(d.RefId);
-                    }
                 }
 
-                // ✅ FIFO order: never-assigned first → oldest → newest
+                // ✅ FIFO order: never-assigned first → oldest attendance Id → newest
                 var orderedDrivers = allDrivers
-                    .OrderBy(d => { int.TryParse(d.RefId, out int rid); return lastAssignmentMap.ContainsKey(rid) ? 1 : 0; })
-                    .ThenBy(d => { int.TryParse(d.RefId, out int rid); return lastAssignmentMap.ContainsKey(rid) ? lastAssignmentMap[rid] : 0; })
+                    .OrderBy(d => lastAssignmentMap.ContainsKey(d.RefId) ? 1 : 0)
+                    .ThenBy(d => lastAssignmentMap.ContainsKey(d.RefId) ? lastAssignmentMap[d.RefId] : 0)
                     .ThenBy(d => d.fullName)
                     .ToList();
 
@@ -1346,7 +1399,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         d.RefId,
                         d.fullName,
                         Image = d.Image ?? "",
-                        hasTrip = lastAssignmentMap.ContainsKey(refInt),
+                        hasTrip = lastAssignmentMap.ContainsKey(d.RefId),
                         isAbsent = absentDriverRefIds.Contains(d.RefId),
                         queuePosition = i + 1,
                         passengers = refInt > 0 && driverPassengerMap.ContainsKey(refInt)
@@ -1355,7 +1408,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
 
                 var assignedTodayList = orderedDrivers
-                    .Where(d => { int.TryParse(d.RefId, out int rid); return lastAssignmentMap.ContainsKey(rid); })
+                    .Where(d => lastAssignmentMap.ContainsKey(d.RefId))
                     .ToList();
 
                 var busyDriversRaw = new List<object>();
@@ -1407,10 +1460,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // =========================================================
         // ASSIGN DRIVERS — POST
-        // ✅ Inserts DriverAttendance + DriverDtr + DriverIdPrior + BatchAssignment
-        // ✅ DriverAttendance: DriverId = RefId, Date = unix, Passenger = count
-        // ✅ DriverDtr: Rfid = int(RefId), Date = unix, Passenger = count string
-        // ✅ DriverIdPrior: DriverIdPriorValue = int(RefId), Date = unix, Passenger = count
+        // ✅ Inserts DriverAttendance + DriverDtr + BatchAssignment
+        // ✅ No DriverIdPrior
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1451,7 +1502,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     int rfidValue = int.TryParse(driver.RefId, out int parsed) ? parsed : driver.DriverId;
                     int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
 
-                    // ✅ DriverAttendance — DriverId = RefId, Date = unix timestamp
+                    // ✅ DriverAttendance — DriverId = RefId string, Date = unix
                     _context.DriverAttendances.Add(new DriverAttendance
                     {
                         DriverId = driverRefId,
@@ -1459,21 +1510,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         Passenger = assignedPassengers
                     });
 
-                    // ✅ DriverDtr — Rfid = int(RefId), Date = unix, ComDateDr = DtrDateNow()
+                    // ✅ DriverDtr — Rfid = int(RefId), Date = unix
                     _context.DriverDtrs.Add(new DriverDtr
                     {
                         Rfid = rfidValue,
                         Date = UnixNow(),
                         Passenger = assignedPassengers.ToString(),
                         ComDateDr = DtrDateNow()
-                    });
-
-                    // ✅ DriverIdPrior — DriverIdPriorValue = int(RefId), Date = unix
-                    _context.DriverIdPriors.Add(new DriverIdPrior
-                    {
-                        DriverIdPriorValue = rfidValue,
-                        Date = UnixNow(),
-                        Passenger = assignedPassengers
                     });
 
                     // ✅ BatchAssignment
@@ -1543,7 +1586,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // =========================================================
         // REMOVE DRIVER ASSIGNMENT
-        // ✅ Removes DriverAttendance + DriverDtr + DriverIdPrior + BatchAssignment
+        // ✅ Removes DriverAttendance + DriverDtr + BatchAssignment
+        // ✅ No DriverIdPrior
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1577,16 +1621,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (dtrs.Any())
                     _context.DriverDtrs.RemoveRange(dtrs);
 
-                // Remove DriverIdPrior
-                var priorities = await _context.DriverIdPriors
-                    .Where(p => p.DriverIdPriorValue == rfidInt
-                             && string.Compare(p.Date, UnixTodayStart()) >= 0
-                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
-                    .ToListAsync();
-
-                if (priorities.Any())
-                    _context.DriverIdPriors.RemoveRange(priorities);
-
                 // Remove BatchAssignment
                 var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.RefId == driverRefId);
                 if (driver != null)
@@ -1611,7 +1645,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // =========================================================
         // MARK DRIVER ABSENT — Passenger = 0, stays in FIFO queue
-        // ✅ Touches DriverAttendance + DriverIdPrior + DriverDtr
+        // ✅ Ensures DriverAttendance exists (FIFO position)
+        // ✅ Replaces DriverDtr with Passenger = "0"
+        // ✅ No DriverIdPrior
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1625,7 +1661,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (!int.TryParse(driverRefId, out int rfidInt))
                     return Json(new { success = false, message = "Invalid driver Ref ID." });
 
-                // ✅ Ensure DriverAttendance exists — driver stays in rotation
+                // ✅ Ensure DriverAttendance exists — driver stays in FIFO rotation
                 var attendance = await _context.DriverAttendances
                     .Where(a => a.DriverId == driverRefId
                              && string.Compare(a.Date, UnixTodayStart()) >= 0
@@ -1644,23 +1680,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 else
                 {
                     attendance.Passenger = 0;
-                }
-
-                // ✅ Ensure DriverIdPrior exists — driver cycles to queue bottom
-                var priority = await _context.DriverIdPriors
-                    .Where(p => p.DriverIdPriorValue == rfidInt
-                             && string.Compare(p.Date, UnixTodayStart()) >= 0
-                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
-                    .FirstOrDefaultAsync();
-
-                if (priority == null)
-                {
-                    _context.DriverIdPriors.Add(new DriverIdPrior
-                    {
-                        DriverIdPriorValue = rfidInt,
-                        Date = UnixNow(),
-                        Passenger = 0
-                    });
                 }
 
                 // ✅ Replace DriverDtr with Passenger = "0"
@@ -1692,7 +1711,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // =========================================================
-        // CLEAR DRIVER — remove DriverAttendance + DriverIdPrior (keep DriverDtr)
+        // CLEAR DRIVER — remove DriverAttendance only
+        // ✅ No DriverIdPrior to clean up
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1703,7 +1723,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (string.IsNullOrEmpty(driverRefId))
                     return Json(new { success = false, message = "Driver Ref ID is required." });
 
-                // Remove DriverAttendance
                 var attendances = await _context.DriverAttendances
                     .Where(a => a.DriverId == driverRefId
                              && string.Compare(a.Date, UnixTodayStart()) >= 0
@@ -1712,19 +1731,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 if (attendances.Any())
                     _context.DriverAttendances.RemoveRange(attendances);
-
-                // Remove DriverIdPrior
-                if (int.TryParse(driverRefId, out int rfidInt))
-                {
-                    var priorities = await _context.DriverIdPriors
-                        .Where(p => p.DriverIdPriorValue == rfidInt
-                                 && string.Compare(p.Date, UnixTodayStart()) >= 0
-                                 && string.Compare(p.Date, UnixTodayEnd()) < 0)
-                        .ToListAsync();
-
-                    if (priorities.Any())
-                        _context.DriverIdPriors.RemoveRange(priorities);
-                }
 
                 await _context.SaveChangesAsync();
                 return Json(new { success = true, message = "Driver is now available." });
