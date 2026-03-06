@@ -97,11 +97,10 @@
     </ul>
 
     <!-- ============================================
-         PANEL: FIFO QUEUE — Guide Selection
+         PANEL: FIFO QUEUE
          ============================================ -->
     <div id="panel-guides">
 
-        <!-- Auto-Select Suggestion Bar -->
         @if (availableGuides != null && availableGuides.Any() && recommendedGuides > 0)
         {
             <div class="d-flex align-items-center gap-2 flex-wrap mb-3 p-2 rounded border border-success border-opacity-25 bg-success bg-opacity-10">
@@ -116,10 +115,8 @@
                         if (!gIsAbsent)
                         {
                             int gQPos = (int)(g.queuePosition ?? 0);
-                            string gFirstName = ((string)(g.fullName ?? "")).Split(' ')[0];
-                            <span class="badge bg-success py-1 px-2">
-                                #@gQPos @gFirstName
-                            </span>
+                            string gFirst = ((string)(g.fullName ?? "")).Split(' ')[0];
+                            <span class="badge bg-success py-1 px-2">#@gQPos @gFirst</span>
                             shownCount++;
                         }
                     }
@@ -131,7 +128,7 @@
                 <button class="btn btn-success btn-sm ms-auto py-0 px-2"
                         style="font-size:11px;"
                         onclick="autoSelectTopGuides()"
-                        title="Automatically select the next @recommendedGuides guide(s) in queue">
+                        title="Auto-select next @recommendedGuides guide(s)">
                     <i class="fas fa-check-double me-1"></i>Auto-Select Top @recommendedGuides
                 </button>
             </div>
@@ -147,7 +144,6 @@
                     int qPos = (int)(g.queuePosition ?? 0);
                     bool isTopN = qPos <= recommendedGuides && !isAbsent;
 
-                    // ✅ null-safe strings for data attributes
                     string gRfid = (string)(g.Rfid ?? "");
                     string gFullName = (string)(g.fullName ?? "");
                     string gImage = (string)(g.Image ?? "");
@@ -170,9 +166,7 @@
 
                             <div class="card-body d-flex align-items-center gap-2 p-2">
 
-                                <!-- Queue Position Badge -->
-                                <div class="d-flex flex-column align-items-center flex-shrink-0"
-                                     style="min-width:34px;">
+                                <div class="d-flex flex-column align-items-center flex-shrink-0" style="min-width:34px;">
                                     <span class="badge @(isAbsent ? "bg-danger" : (isTopN ? "bg-success" : "bg-secondary"))"
                                           style="font-size:11px; width:30px; text-align:center;">
                                         #@qPos
@@ -187,11 +181,10 @@
                                     }
                                 </div>
 
-                                <!-- Avatar -->
                                 @if (!string.IsNullOrEmpty(gImage))
                                 {
                                     <img src="@gImage"
-                                         style="width:44px;height:44px;object-fit:cover; @(isAbsent ? "filter:grayscale(70%);" : "")"
+                                         style="width:44px;height:44px;object-fit:cover;@(isAbsent ? "filter:grayscale(70%);" : "")"
                                          class="rounded-circle border @(isAbsent ? "border-danger" : "")" />
                                 }
                                 else
@@ -202,7 +195,6 @@
                                     </div>
                                 }
 
-                                <!-- Info -->
                                 <div class="flex-grow-1 overflow-hidden">
                                     <div class="fw-semibold small text-truncate @(isAbsent ? "text-decoration-line-through text-muted" : "")">
                                         @gFullName
@@ -218,9 +210,10 @@
                                     }
                                     else if (hasTrip)
                                     {
-                                      @*   <div style="font-size:10px;" class="text-warning trip-info">
-                                            <i class="fas fa-users me-1"></i>Last: @g.passengers pax
-                                        </div> *@
+                                        <!-- ✅ FIXED: was empty @* comment *@ block — Razor parser bug -->
+                                        <div style="font-size:10px;" class="text-warning trip-info">
+                                            <i class="fas fa-users me-1"></i>On Trip
+                                        </div>
                                     }
                                     else
                                     {
@@ -230,7 +223,6 @@
                                     }
                                 </div>
 
-                                <!-- Status Badge -->
                                 @if (isAbsent)
                                 {
                                     <span class="badge bg-danger guide-status-badge">Absent</span>
@@ -257,7 +249,6 @@
             }
         </div>
 
-        <!-- Selected Guides Section -->
         <div id="selectedGuidesSection" class="mt-3" style="display:none;">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <h6 class="fw-bold text-success mb-0">
@@ -272,7 +263,7 @@
     </div>
 
     <!-- ============================================
-         PANEL: ASSIGNED TODAY (Edit / Absent / Remove)
+         PANEL: ASSIGNED TODAY
          ============================================ -->
     <div id="panel-assigned" style="display:none;">
 
@@ -290,8 +281,8 @@
                 {
                     bool isAbsent = (bool)(g.isAbsent ?? false);
                     int queuePosN = (int)(g.queuePos ?? 0);
+                    int gPax = (int)(g.passengers ?? 0);
 
-                    // ✅ null-safe strings
                     string bRfid = (string)(g.Rfid ?? "");
                     string bFullName = (string)(g.fullName ?? "");
                     string bImage = (string)(g.Image ?? "");
@@ -300,20 +291,17 @@
                         <div class="card @(isAbsent ? "border-danger bg-danger bg-opacity-5" : "border-warning")">
                             <div class="card-body p-2">
 
-                                <!-- Guide Info Row -->
                                 <div class="d-flex align-items-center gap-2">
 
-                                    <!-- Queue # -->
                                     <div class="@(isAbsent ? "text-danger" : "text-warning") fw-bold text-center flex-shrink-0"
                                          style="font-size:14px; min-width:28px;">
                                         #@queuePosN
                                     </div>
 
-                                    <!-- Avatar -->
                                     @if (!string.IsNullOrEmpty(bImage))
                                     {
                                         <img src="@bImage"
-                                             style="width:44px;height:44px;object-fit:cover; @(isAbsent ? "filter:grayscale(70%);" : "")"
+                                             style="width:44px;height:44px;object-fit:cover;@(isAbsent ? "filter:grayscale(70%);" : "")"
                                              class="rounded-circle border @(isAbsent ? "border-danger" : "border-warning")" />
                                     }
                                     else
@@ -324,7 +312,6 @@
                                         </div>
                                     }
 
-                                    <!-- Info -->
                                     <div class="flex-grow-1 overflow-hidden">
                                         <div class="fw-semibold small text-truncate @(isAbsent ? "text-decoration-line-through text-muted" : "")">
                                             @bFullName
@@ -332,21 +319,21 @@
                                         <div class="text-muted" style="font-size:10px;">
                                             <i class="fas fa-id-card me-1"></i>RFID: @bRfid
                                         </div>
-                                        @* <div style="font-size:10px;"
+                                        <!-- ✅ RESTORED: was commented out — JS saveEditGuide & handleGuideAbsent need this -->
+                                        <div style="font-size:10px;"
                                              class="@(isAbsent ? "text-danger" : "text-info")"
                                              id="pax-label-@bRfid">
                                             <i class="fas fa-users me-1"></i>
-                                            Passengers: <strong id="pax-value-@bRfid">@g.passengers</strong>
+                                            Passengers: <strong id="pax-value-@bRfid">@gPax</strong>
                                             @if (isAbsent)
                                             {
-                                                <span class="ms-1">
+                                                <span class="ms-1 text-danger">
                                                     <i class="fas fa-user-times"></i> <em>Absent</em>
                                                 </span>
                                             }
-                                        </div> *@
+                                        </div>
                                     </div>
 
-                                    <!-- Action Buttons -->
                                     <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
                                         @if (isAbsent)
                                         {
@@ -365,24 +352,20 @@
                                                         title="Edit passenger count"
                                                         id="edit-btn-@bRfid"
                                                         data-rfid="@bRfid"
-                                                        data-pax="@g.passengers"
+                                                        data-pax="@gPax"
                                                         onclick="toggleEditGuide($(this).data('rfid'), $(this).data('pax'))">
                                                     <i class="fas fa-pencil-alt"></i>
                                                 </button>
                                             }
-
-                                            <!-- Mark/Unmark Absent Button -->
                                             <button class="btn @(isAbsent ? "btn-outline-success" : "btn-outline-secondary") btn-sm py-0 px-1"
                                                     style="font-size:10px;"
-                                                    title="@(isAbsent ? "Unmark Absent — restore guests" : "Mark as Absent (0 guests, stays in queue)")"
+                                                    title="@(isAbsent ? "Unmark Absent — restore guests" : "Mark as Absent")"
                                                     id="absent-btn-@bRfid"
                                                     data-rfid="@bRfid"
                                                     data-isabsent="@isAbsent.ToString().ToLower()"
                                                     onclick="handleGuideAbsent(this)">
                                                 <i class="fas @(isAbsent ? "fa-user-check" : "fa-user-times")"></i>
                                             </button>
-
-                                            <!-- Remove -->
                                             <button class="btn btn-outline-danger btn-sm py-0 px-1"
                                                     style="font-size:10px;"
                                                     title="Remove guide assignment"
@@ -396,7 +379,6 @@
 
                                 </div>
 
-                                <!-- Inline Edit Form -->
                                 <div id="edit-form-@bRfid" class="mt-2 pt-2 border-top" style="display:none;">
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <label class="text-muted small mb-0" style="white-space:nowrap;">
@@ -405,7 +387,7 @@
                                         <input type="number"
                                                id="edit-pax-@bRfid"
                                                class="form-control form-control-sm"
-                                               value="@g.passengers"
+                                               value="@gPax"
                                                min="1"
                                                style="max-width:80px;" />
                                         <button class="btn btn-primary btn-sm py-0 px-2"
@@ -418,7 +400,7 @@
                                         <button class="btn btn-secondary btn-sm py-0 px-2"
                                                 style="font-size:11px;"
                                                 data-rfid="@bRfid"
-                                                data-pax="@g.passengers"
+                                                data-pax="@gPax"
                                                 onclick="toggleEditGuide($(this).data('rfid'), $(this).data('pax'))">
                                             Cancel
                                         </button>
@@ -441,7 +423,6 @@
 
 </div>
 
-<!-- Footer -->
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
         <i class="fas fa-times me-1"></i> Cancel
@@ -453,7 +434,6 @@
     </button>
 </div>
 
-<!-- ===== STYLES ===== -->
 <style>
     .guide-card {
         transition: all 0.2s;
@@ -510,7 +490,6 @@
     }
 </style>
 
-<!-- ===== SCRIPTS ===== -->
 <script>
     var selectedGuides = {};
     var guideLimit     = @recommendedGuides;
@@ -520,7 +499,6 @@
         $('#guideLimitWarning').show();
         $('.guide-item:not(.guide-absent-item) .guide-card:not(.selected)').addClass('limit-locked');
     }
-
     function unlockGuideCards() {
         $('#guideLimitWarning').hide();
         $('.guide-item .guide-card').removeClass('limit-locked');
@@ -534,11 +512,7 @@
         var hasTrip  = wrapper.data('hastrip')  === 'true';
         var isAbsent = wrapper.data('isabsent') === 'true' || wrapper.data('isabsent') === true;
 
-        if (isAbsent) {
-            showToast(`${fullName} is marked as absent and cannot be selected.`, 'Absent Guide', 'warning');
-            return;
-        }
-
+        if (isAbsent) { showToast(`${fullName} is marked as absent and cannot be selected.`, 'Absent Guide', 'warning'); return; }
         if (selectedGuides[rfid]) { deselectGuide(rfid, hasTrip); return; }
 
         if (Object.keys(selectedGuides).length >= guideLimit) {
@@ -550,13 +524,9 @@
 
         selectedGuides[rfid] = { rfid, fullName, image, hasTrip };
         $(card).addClass('selected');
-        $(card).find('.guide-status-badge')
-               .removeClass('bg-success bg-warning text-dark')
-               .addClass('bg-primary').text('Selected');
-
+        $(card).find('.guide-status-badge').removeClass('bg-success bg-warning text-dark').addClass('bg-primary').text('Selected');
         addGuideToSelectedPanel(rfid, fullName, image);
         updateGuideSelectedCount();
-
         if (Object.keys(selectedGuides).length >= guideLimit) lockUnselectedGuideCards();
     }
 
@@ -565,31 +535,26 @@
         var count = 0;
         $('#availableGuideList .guide-item').each(function () {
             if (count >= guideLimit) return false;
-            var isAbsent   = $(this).data('isabsent') === 'true' || $(this).data('isabsent') === true;
-            var card       = $(this).find('.guide-card');
+            var isAbsent = $(this).data('isabsent') === 'true' || $(this).data('isabsent') === true;
+            var card     = $(this).find('.guide-card');
             if (!isAbsent && !card.hasClass('limit-locked') && !card.hasClass('selected')) {
-                toggleSelectGuide(card[0]);
-                count++;
+                toggleSelectGuide(card[0]); count++;
             }
         });
-        if (count === 0) showToast('No available guides to auto-select (all may be absent).', 'Info', 'info');
+        if (count === 0) showToast('No available guides to auto-select.', 'Info', 'info');
         else showToast(`${count} guide(s) auto-selected from FIFO queue.`, 'Auto-Selected', 'success');
     }
 
     function deselectGuide(rfid, hasTrip) {
         if (hasTrip === undefined && selectedGuides[rfid]) hasTrip = selectedGuides[rfid].hasTrip;
         delete selectedGuides[rfid];
-
         var card  = $(`.guide-item[data-guiderfid="${rfid}"] .guide-card`);
         var badge = $(`.guide-item[data-guiderfid="${rfid}"] .guide-status-badge`);
         card.removeClass('selected');
-
         if (hasTrip) badge.removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
         else badge.removeClass('bg-primary text-dark').addClass('bg-success').text('Free');
-
         $(`#selected-guide-card-${rfid}`).remove();
         if ($('#selectedGuideList').children().length === 0) $('#selectedGuidesSection').hide();
-
         unlockGuideCards();
         if (Object.keys(selectedGuides).length >= guideLimit) lockUnselectedGuideCards();
         updateGuideSelectedCount();
@@ -598,10 +563,7 @@
     function addGuideToSelectedPanel(rfid, fullName, image) {
         var imgHtml = image
             ? `<img src="${image}" style="width:38px;height:38px;object-fit:cover;" class="rounded-circle border" />`
-            : `<div style="width:38px;height:38px;" class="rounded-circle border bg-secondary d-flex align-items-center justify-content-center">
-                   <i class="fas fa-user text-white" style="font-size:14px;"></i>
-               </div>`;
-
+            : `<div style="width:38px;height:38px;" class="rounded-circle border bg-secondary d-flex align-items-center justify-content-center"><i class="fas fa-user text-white" style="font-size:14px;"></i></div>`;
         $('#selectedGuideList').append(`
             <div class="col-md-6" id="selected-guide-card-${rfid}">
                 <div class="card selected-guide-card border h-100">
@@ -611,8 +573,7 @@
                             <div class="fw-semibold small text-truncate">${fullName}</div>
                             <div class="text-muted" style="font-size:10px;">RFID: ${rfid}</div>
                         </div>
-                        <button class="btn btn-outline-danger btn-sm py-0 px-1"
-                                style="font-size:10px;" onclick="deselectGuide('${rfid}')">
+                        <button class="btn btn-outline-danger btn-sm py-0 px-1" style="font-size:10px;" onclick="deselectGuide('${rfid}')">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -621,9 +582,7 @@
         $('#selectedGuidesSection').show();
     }
 
-    function clearAllSelectedGuides() {
-        Object.keys(selectedGuides).forEach(rfid => deselectGuide(rfid));
-    }
+    function clearAllSelectedGuides() { Object.keys(selectedGuides).forEach(rfid => deselectGuide(rfid)); }
 
     function updateGuideSelectedCount() {
         var count = Object.keys(selectedGuides).length;
@@ -640,54 +599,35 @@
         $('.guide-item').show();
     }
 
-    // ✅ FIXED: jQuery camelCases data-rfid-search → rfidSearch
     function filterGuides() {
         var q = $('#guideSearch').val().toLowerCase();
         $('.guide-item[data-panel="guides"]').each(function () {
             var name = $(this).data('name')       || '';
-            var rfid = $(this).data('rfidSearch') || '';   // ✅ was 'rfid-search' — broken
+            var rfid = $(this).data('rfidSearch') || '';
             $(this).toggle(name.includes(q) || rfid.includes(q));
         });
     }
 
     function toggleEditGuide(rfid, currentPax) {
         var form = $(`#edit-form-${rfid}`);
-        if (form.is(':visible')) {
-            form.slideUp(150);
-            $(`#edit-pax-${rfid}`).val(currentPax);
-        } else {
-            $('[id^="edit-form-"]').not(form).slideUp(150);
-            form.slideDown(150);
-            $(`#edit-pax-${rfid}`).focus().select();
-        }
+        if (form.is(':visible')) { form.slideUp(150); $(`#edit-pax-${rfid}`).val(currentPax); }
+        else { $('[id^="edit-form-"]').not(form).slideUp(150); form.slideDown(150); $(`#edit-pax-${rfid}`).focus().select(); }
     }
 
     function saveEditGuide(rfid) {
         var passengers = parseInt($(`#edit-pax-${rfid}`).val());
-        if (isNaN(passengers) || passengers < 1) {
-            alert('Please enter a valid passenger count (minimum 1).\nTo mark absent, use the Absent button.');
-            return;
-        }
+        if (isNaN(passengers) || passengers < 1) { alert('Please enter a valid passenger count (minimum 1).'); return; }
         var btn = $(`#save-btn-${rfid}`);
         btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
         $.ajax({
-            url: '@Url.Action("EditGuideAssignment", "Reserve")',
-            type: 'POST',
-            data: {
-                guideRfid  : rfid,
-                passengers : passengers,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-            },
+            url: '@Url.Action("EditGuideAssignment", "Reserve")', type: 'POST',
+            data: { guideRfid: rfid, passengers: passengers, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
             success: function (res) {
                 if (res.success) {
-                    $(`#pax-label-${rfid}`).html(
-                        `<i class="fas fa-users me-1"></i>Passengers: <strong id="pax-value-${rfid}">${passengers}</strong>`
-                    );
+                    $(`#pax-label-${rfid}`).html(`<i class="fas fa-users me-1"></i>Passengers: <strong id="pax-value-${rfid}">${passengers}</strong>`);
                     $(`#edit-form-${rfid}`).slideUp(150);
                     showToast(res.message, 'Updated', 'success');
-                } else {
-                    showToast(res.message, 'Error', 'danger');
-                }
+                } else showToast(res.message, 'Error', 'danger');
             },
             error: function () { showToast('Error updating guide assignment.', 'Error', 'danger'); },
             complete: function () { btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Save'); }
@@ -708,45 +648,28 @@
             return;
         }
 
-        if (!confirm(`Mark "${fullName}" as absent?\n\n✔ Guest count → 0\n✔ Guide stays in FIFO rotation\n✔ Cannot be selected for new batches today`))
-            return;
-
+        if (!confirm(`Mark "${fullName}" as absent?\n\n✔ Guest count → 0\n✔ Guide stays in FIFO rotation\n✔ Cannot be selected for new batches today`)) return;
         $(btn).prop('disabled', true);
         $.ajax({
-            url: '@Url.Action("MarkGuideAbsent", "Reserve")',
-            type: 'POST',
-            data: {
-                guideRfid: rfid,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-            },
+            url: '@Url.Action("MarkGuideAbsent", "Reserve")', type: 'POST',
+            data: { guideRfid: rfid, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
             success: function (res) {
                 if (res.success) {
-                    $(`#pax-label-${rfid}`).html(
-                        `<i class="fas fa-users me-1"></i>Passengers: <strong id="pax-value-${rfid}">0</strong>` +
-                        `<span class="text-danger ms-1"><i class="fas fa-user-times"></i> <em>Absent</em></span>`
-                    );
+                    $(`#pax-label-${rfid}`).html(`<i class="fas fa-users me-1"></i>Passengers: <strong id="pax-value-${rfid}">0</strong><span class="text-danger ms-1"><i class="fas fa-user-times"></i> <em>Absent</em></span>`);
                     row.find('.card').removeClass('border-warning').addClass('border-danger bg-danger bg-opacity-5');
                     row.find('.badge.bg-warning').removeClass('bg-warning text-dark').addClass('bg-danger').text('Absent');
                     fullNameEl.addClass('text-decoration-line-through text-muted');
                     $(`#edit-btn-${rfid}`).hide();
-                    $(btn).data('isabsent', 'true')
-                          .removeClass('btn-outline-secondary').addClass('btn-outline-success')
-                          .attr('title', 'Unmark Absent — restore guests')
-                          .html('<i class="fas fa-user-check"></i>');
-
+                    $(btn).data('isabsent','true').removeClass('btn-outline-secondary').addClass('btn-outline-success')
+                          .attr('title','Unmark Absent — restore guests').html('<i class="fas fa-user-check"></i>');
                     var qCard = $(`.guide-item[data-guiderfid="${rfid}"]`);
-                    qCard.addClass('guide-absent-item').attr('data-isabsent', 'true');
+                    qCard.addClass('guide-absent-item').attr('data-isabsent','true');
                     qCard.find('.guide-card').addClass('guide-absent-card').removeClass('guide-top-card');
-                    qCard.find('.guide-status-badge')
-                         .removeClass('bg-warning text-dark bg-success bg-primary')
-                         .addClass('bg-danger').text('Absent');
+                    qCard.find('.guide-status-badge').removeClass('bg-warning text-dark bg-success bg-primary').addClass('bg-danger').text('Absent');
                     qCard.find('.trip-info').remove();
-
                     if (selectedGuides[rfid]) deselectGuide(rfid, false);
                     showToast(res.message, 'Marked Absent', 'warning');
-                } else {
-                    showToast(res.message, 'Error', 'danger');
-                }
+                } else showToast(res.message, 'Error', 'danger');
             },
             error: function () { showToast('Error marking guide absent.', 'Error', 'danger'); },
             complete: function () { $(btn).prop('disabled', false); }
@@ -754,91 +677,51 @@
     }
 
     function confirmRemoveGuide(rfid, fullName) {
-        if (!confirm(`Remove "${fullName}" from today's assignment?\n\nThis will fully unassign them and clear their DTR record for today.\nThey will return to the FIFO queue as if never assigned today.`))
-            return;
-
+        if (!confirm(`Remove "${fullName}" from today's assignment?\n\nThis will fully unassign them.\nThey will return to the FIFO queue.`)) return;
         var row = $(`#assigned-row-${rfid}`);
         row.find('.btn').prop('disabled', true);
         $.ajax({
-            url: '@Url.Action("RemoveGuideAssignment", "Reserve")',
-            type: 'POST',
-            data: {
-                guideRfid: rfid,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-            },
+            url: '@Url.Action("RemoveGuideAssignment", "Reserve")', type: 'POST',
+            data: { guideRfid: rfid, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
             success: function (res) {
                 if (res.success) {
                     row.fadeOut(300, function () {
                         $(this).remove();
                         var remaining = $('#assignedGuideList .assigned-guide-row').length;
                         $('#assignedCountBadge').text(remaining);
-                        if (remaining === 0) {
-                            $('#assignedGuideList').html(`
-                                <div class="col-12 text-center text-muted py-3" id="noAssignedMsg">
-                                    <i class="fas fa-check-circle text-success me-1"></i> No guides assigned today.
-                                </div>`);
-                        }
+                        if (remaining === 0) $('#assignedGuideList').html(`<div class="col-12 text-center text-muted py-3"><i class="fas fa-check-circle text-success me-1"></i> No guides assigned today.</div>`);
                     });
-
                     var guideCard = $(`.guide-item[data-guiderfid="${rfid}"]`);
-                    guideCard.attr('data-hastrip', 'false').attr('data-isabsent', 'false').removeClass('guide-absent-item');
+                    guideCard.attr('data-hastrip','false').attr('data-isabsent','false').removeClass('guide-absent-item');
                     guideCard.find('.guide-card').removeClass('guide-absent-card guide-top-card');
-                    guideCard.find('.guide-status-badge')
-                             .removeClass('bg-warning text-dark bg-danger bg-primary')
-                             .addClass('bg-success').text('Free');
+                    guideCard.find('.guide-status-badge').removeClass('bg-warning text-dark bg-danger bg-primary').addClass('bg-success').text('Free');
                     guideCard.find('.trip-info').remove();
-
                     unlockGuideCards();
                     if (Object.keys(selectedGuides).length >= guideLimit) lockUnselectedGuideCards();
                     if (selectedGuides[rfid]) deselectGuide(rfid, false);
-
                     showToast(res.message, 'Removed', 'success');
-                } else {
-                    row.find('.btn').prop('disabled', false);
-                    showToast(res.message, 'Error', 'danger');
-                }
+                } else { row.find('.btn').prop('disabled', false); showToast(res.message, 'Error', 'danger'); }
             },
-            error: function () {
-                row.find('.btn').prop('disabled', false);
-                showToast('Error removing guide assignment.', 'Error', 'danger');
-            }
+            error: function () { row.find('.btn').prop('disabled', false); showToast('Error removing guide assignment.', 'Error', 'danger'); }
         });
     }
 
     function confirmAssignGuides(batch) {
         var rfids = Object.keys(selectedGuides);
         if (rfids.length === 0) { alert('Please select at least one guide.'); return; }
-        if (rfids.length > guideLimit) {
-            alert(`Maximum ${guideLimit} guide(s) allowed for ${guestTotal} guests.\nYou selected ${rfids.length}.`);
-            return;
-        }
-
-        $('#btnConfirmAssignGuide').prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-1"></span>Assigning...');
-
+        if (rfids.length > guideLimit) { alert(`Maximum ${guideLimit} guide(s) allowed for ${guestTotal} guests.`); return; }
+        $('#btnConfirmAssignGuide').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Assigning...');
         $.ajax({
-            url: '@Url.Action("AssignGuides", "Reserve")',
-            type: 'POST',
-            traditional: true,
-            data: {
-                batch      : batch,
-                guideRfids : rfids,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-            },
+            url: '@Url.Action("AssignGuides", "Reserve")', type: 'POST', traditional: true,
+            data: { batch: batch, guideRfids: rfids, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
             success: function (res) {
                 if (res.success) {
                     $(document).trigger('guideAssigned', [batch]);
                     bootstrap.Modal.getInstance(document.getElementById('assignGuideModal')).hide();
                     showToast(res.message, 'Success', 'success');
-                } else {
-                    showToast(res.message, 'Error', 'danger');
-                    resetAssignGuideBtn(rfids.length);
-                }
+                } else { showToast(res.message, 'Error', 'danger'); resetAssignGuideBtn(rfids.length); }
             },
-            error: function () {
-                showToast('Error assigning guides.', 'Error', 'danger');
-                resetAssignGuideBtn(rfids.length);
-            }
+            error: function () { showToast('Error assigning guides.', 'Error', 'danger'); resetAssignGuideBtn(rfids.length); }
         });
     }
 
