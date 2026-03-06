@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <!-- FIFO Queue Explanation -->
+  @*   <!-- FIFO Queue Explanation -->
     <div class="alert alert-info py-2 mb-3 small">
         <div class="d-flex align-items-start gap-2">
             <i class="fas fa-sort-numeric-up mt-1 flex-shrink-0"></i>
@@ -51,7 +51,7 @@
                 0 passengers, still cycles in queue.
             </div>
         </div>
-    </div>
+    </div> *@
 
     <!-- Limit Warning Banner -->
     <div id="driverLimitWarning"
@@ -79,14 +79,14 @@
     <!-- Tabs -->
     <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
-            <button class="nav-link active" id="tab-drivers" onclick="switchDriverTab('drivers')">
+            <button class="nav-link active" id="tab-driver-drivers" onclick="switchDriverTab('drivers')">
                 <i class="fas fa-sort-numeric-up text-info me-1"></i>
                 Queue
                 <span class="badge bg-info ms-1">@totalDrivers</span>
             </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="tab-assigned" onclick="switchDriverTab('assigned')">
+            <button class="nav-link" id="tab-driver-assigned" onclick="switchDriverTab('assigned')">
                 <i class="fas fa-clock text-warning me-1"></i>
                 Assigned Today
                 <span class="badge bg-warning text-dark ms-1" id="driverAssignedCountBadge">
@@ -99,7 +99,7 @@
     <!-- ============================================
          PANEL: FIFO QUEUE — Driver Selection
          ============================================ -->
-    <div id="panel-drivers">
+    <div id="panel-driver-drivers">
 
         <!-- Auto-Select Suggestion Bar -->
         @if (availableDrivers != null && availableDrivers.Any() && recommendedDrivers > 0)
@@ -116,7 +116,7 @@
                         if (!dIsAbsent)
                         {
                             int dQPos = (int)(d.queuePosition ?? 0);
-                            string dFirstName = ((string)d.fullName ?? "").Split(' ')[0];
+                            string dFirstName = ((string)(d.fullName ?? "")).Split(' ')[0];
                             <span class="badge bg-info py-1 px-2">
                                 #@dQPos @dFirstName
                             </span>
@@ -147,19 +147,24 @@
                     int qPos = (int)(d.queuePosition ?? 0);
                     bool isTopN = qPos <= recommendedDrivers && !isAbsent;
 
+                    // ✅ null-safe strings for data attributes
+                    string dRefId = (string)(d.RefId ?? "");
+                    string dFullName = (string)(d.fullName ?? "");
+                    string dImage = (string)(d.Image ?? "");
+
                     <div class="col-md-6 driver-item @(isAbsent ? "driver-absent-item" : "")"
-                         data-name="@d.fullName.ToLower()"
-                         data-ref-search="@d.RefId.ToLower()"
+                         data-name="@dFullName.ToLower()"
+                         data-ref-search="@dRefId.ToLower()"
                          data-panel="drivers"
-                         data-refid="@d.RefId"
-                         data-fullname="@d.fullName"
+                         data-refid="@dRefId"
+                         data-fullname="@dFullName"
                          data-hastrip="@hasTrip.ToString().ToLower()"
                          data-isabsent="@isAbsent.ToString().ToLower()"
-                         data-image="@(d.Image ?? "")">
+                         data-image="@dImage">
 
                         <div class="card driver-card border-2 h-100
-                                                            @(isAbsent ? "driver-absent-card" : "")
-                                                            @(isTopN ? "driver-top-card" : "")"
+                                            @(isAbsent ? "driver-absent-card" : "")
+                                            @(isTopN ? "driver-top-card" : "")"
                              style="cursor:pointer;"
                              onclick="toggleSelectDriver(this)">
 
@@ -183,9 +188,9 @@
                                 </div>
 
                                 <!-- Avatar -->
-                                @if (!string.IsNullOrEmpty((string)d.Image))
+                                @if (!string.IsNullOrEmpty(dImage))
                                 {
-                                    <img src="@d.Image"
+                                    <img src="@dImage"
                                          style="width:44px;height:44px;object-fit:cover; @(isAbsent ? "filter:grayscale(70%);" : "")"
                                          class="rounded-circle border @(isAbsent ? "border-danger" : "")" />
                                 }
@@ -200,10 +205,10 @@
                                 <!-- Info -->
                                 <div class="flex-grow-1 overflow-hidden">
                                     <div class="fw-semibold small text-truncate @(isAbsent ? "text-decoration-line-through text-muted" : "")">
-                                        @d.fullName
+                                        @dFullName
                                     </div>
                                     <div class="text-muted" style="font-size:10px;">
-                                        <i class="fas fa-id-card me-1"></i>Ref: @d.RefId
+                                        <i class="fas fa-id-card me-1"></i>Ref: @dRefId
                                     </div>
                                     @if (isAbsent)
                                     {
@@ -213,9 +218,9 @@
                                     }
                                     else if (hasTrip)
                                     {
-                                      @*   <div style="font-size:10px;" class="text-warning trip-info">
+                                        <div style="font-size:10px;" class="text-warning trip-info">
                                             <i class="fas fa-users me-1"></i>Last: @d.passengers pax
-                                        </div> *@
+                                        </div>
                                     }
                                     else
                                     {
@@ -269,7 +274,7 @@
     <!-- ============================================
          PANEL: ASSIGNED TODAY (Edit / Absent / Remove)
          ============================================ -->
-    <div id="panel-assigned" style="display:none;">
+    <div id="panel-driver-assigned" style="display:none;">
 
         <div class="alert alert-info py-2 small mb-2">
             <i class="fas fa-info-circle me-1"></i>
@@ -285,8 +290,13 @@
                 {
                     bool isAbsent = (bool)(d.isAbsent ?? false);
                     int queuePosN = (int)(d.queuePos ?? 0);
+                    int dPax = (int)(d.passengers ?? 0);   // ✅ null-safe
 
-                    <div class="col-12 assigned-driver-row" id="assigned-row-@d.RefId">
+                    string bRefId = (string)(d.RefId ?? "");
+                    string bFullName = (string)(d.fullName ?? "");
+                    string bImage = (string)(d.Image ?? "");
+
+                    <div class="col-12 assigned-driver-row" id="assigned-row-@bRefId">
                         <div class="card @(isAbsent ? "border-danger bg-danger bg-opacity-5" : "border-warning")">
                             <div class="card-body p-2">
 
@@ -300,9 +310,9 @@
                                     </div>
 
                                     <!-- Avatar -->
-                                    @if (!string.IsNullOrEmpty((string)d.Image))
+                                    @if (!string.IsNullOrEmpty(bImage))
                                     {
-                                        <img src="@d.Image"
+                                        <img src="@bImage"
                                              style="width:44px;height:44px;object-fit:cover; @(isAbsent ? "filter:grayscale(70%);" : "")"
                                              class="rounded-circle border @(isAbsent ? "border-danger" : "border-warning")" />
                                     }
@@ -317,23 +327,23 @@
                                     <!-- Info -->
                                     <div class="flex-grow-1 overflow-hidden">
                                         <div class="fw-semibold small text-truncate @(isAbsent ? "text-decoration-line-through text-muted" : "")">
-                                            @d.fullName
+                                            @bFullName
                                         </div>
                                         <div class="text-muted" style="font-size:10px;">
-                                            <i class="fas fa-id-card me-1"></i>Ref: @d.RefId
+                                            <i class="fas fa-id-card me-1"></i>Ref: @bRefId
                                         </div>
-                                        @* <div style="font-size:10px;"
+                                        <div style="font-size:10px;"
                                              class="@(isAbsent ? "text-danger" : "text-info")"
-                                             id="pax-label-@d.RefId">
+                                             id="pax-label-@bRefId">
                                             <i class="fas fa-users me-1"></i>
-                                            Passengers: <strong id="pax-value-@d.RefId">@d.passengers</strong>
+                                            Passengers: <strong id="pax-value-@bRefId">@dPax</strong>
                                             @if (isAbsent)
                                             {
                                                 <span class="ms-1">
                                                     <i class="fas fa-user-times"></i> <em>Absent</em>
                                                 </span>
                                             }
-                                        </div> *@
+                                        </div>
                                     </div>
 
                                     <!-- Action Buttons -->
@@ -353,9 +363,9 @@
                                                 <button class="btn btn-outline-primary btn-sm py-0 px-1"
                                                         style="font-size:10px;"
                                                         title="Edit passenger count"
-                                                        id="edit-btn-@d.RefId"
-                                                        data-refid="@d.RefId"
-                                                        data-pax="@d.passengers"
+                                                        id="edit-btn-@bRefId"
+                                                        data-refid="@bRefId"
+                                                        data-pax="@dPax"
                                                         onclick="toggleEditDriver($(this).data('refid'), $(this).data('pax'))">
                                                     <i class="fas fa-pencil-alt"></i>
                                                 </button>
@@ -365,8 +375,8 @@
                                             <button class="btn @(isAbsent ? "btn-outline-success" : "btn-outline-secondary") btn-sm py-0 px-1"
                                                     style="font-size:10px;"
                                                     title="@(isAbsent ? "Unmark Absent — restore passengers" : "Mark as Absent (0 passengers, stays in queue)")"
-                                                    id="absent-btn-@d.RefId"
-                                                    data-refid="@d.RefId"
+                                                    id="absent-btn-@bRefId"
+                                                    data-refid="@bRefId"
                                                     data-isabsent="@isAbsent.ToString().ToLower()"
                                                     onclick="handleDriverAbsent(this)">
                                                 <i class="fas @(isAbsent ? "fa-user-check" : "fa-user-times")"></i>
@@ -376,8 +386,8 @@
                                             <button class="btn btn-outline-danger btn-sm py-0 px-1"
                                                     style="font-size:10px;"
                                                     title="Remove driver assignment"
-                                                    data-refid="@d.RefId"
-                                                    data-fullname="@d.fullName"
+                                                    data-refid="@bRefId"
+                                                    data-fullname="@bFullName"
                                                     onclick="confirmRemoveDriver($(this).data('refid'), $(this).data('fullname'))">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -387,28 +397,28 @@
                                 </div>
 
                                 <!-- Inline Edit Form -->
-                                <div id="edit-form-@d.RefId" class="mt-2 pt-2 border-top" style="display:none;">
+                                <div id="edit-form-@bRefId" class="mt-2 pt-2 border-top" style="display:none;">
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <label class="text-muted small mb-0" style="white-space:nowrap;">
                                             <i class="fas fa-users me-1"></i>Passengers:
                                         </label>
                                         <input type="number"
-                                               id="edit-pax-@d.RefId"
+                                               id="edit-pax-@bRefId"
                                                class="form-control form-control-sm"
-                                               value="@d.passengers"
+                                               value="@dPax"
                                                min="1"
                                                style="max-width:80px;" />
                                         <button class="btn btn-primary btn-sm py-0 px-2"
                                                 style="font-size:11px;"
-                                                id="save-btn-@d.RefId"
-                                                data-refid="@d.RefId"
+                                                id="save-btn-@bRefId"
+                                                data-refid="@bRefId"
                                                 onclick="saveEditDriver($(this).data('refid'))">
                                             <i class="fas fa-save me-1"></i>Save
                                         </button>
                                         <button class="btn btn-secondary btn-sm py-0 px-2"
                                                 style="font-size:11px;"
-                                                data-refid="@d.RefId"
-                                                data-pax="@d.passengers"
+                                                data-refid="@bRefId"
+                                                data-pax="@dPax"
                                                 onclick="toggleEditDriver($(this).data('refid'), $(this).data('pax'))">
                                             Cancel
                                         </button>
@@ -495,24 +505,20 @@
             color: #0dcaf0 !important;
         }
 
-    #panel-assigned .card {
+    #panel-driver-assigned .card {
         transition: all 0.3s;
     }
 </style>
 
 <!-- ===== SCRIPTS ===== -->
 <script>
-    var selectedDrivers = {};
-    var driverLimit     = @recommendedDrivers;
+    var selectedDrivers  = {};
+    var driverLimit      = @recommendedDrivers;
     var driverGuestTotal = @guestCount;
 
-    // ============================================
-    // LOCK / UNLOCK unselected cards
-    // ============================================
     function lockUnselectedDriverCards() {
         $('#driverLimitWarning').show();
-        $('.driver-item:not(.driver-absent-item) .driver-card:not(.selected)')
-            .addClass('limit-locked');
+        $('.driver-item:not(.driver-absent-item) .driver-card:not(.selected)').addClass('limit-locked');
     }
 
     function unlockDriverCards() {
@@ -520,9 +526,6 @@
         $('.driver-item .driver-card').removeClass('limit-locked');
     }
 
-    // ============================================
-    // FIFO: Toggle select — blocks absent, enforces limit
-    // ============================================
     function toggleSelectDriver(card) {
         var wrapper  = $(card).closest('.driver-item');
         var refId    = wrapper.data('refid');
@@ -536,10 +539,7 @@
             return;
         }
 
-        if (selectedDrivers[refId]) {
-            deselectDriver(refId, hasTrip);
-            return;
-        }
+        if (selectedDrivers[refId]) { deselectDriver(refId, hasTrip); return; }
 
         if (Object.keys(selectedDrivers).length >= driverLimit) {
             $('#driverLimitWarning').show();
@@ -552,80 +552,48 @@
         $(card).addClass('selected');
         $(card).find('.driver-status-badge')
                .removeClass('bg-info bg-warning text-dark text-white')
-               .addClass('bg-primary')
-               .text('Selected');
+               .addClass('bg-primary').text('Selected');
 
         addDriverToSelectedPanel(refId, fullName, image);
         updateDriverSelectedCount();
-
-        if (Object.keys(selectedDrivers).length >= driverLimit) {
-            lockUnselectedDriverCards();
-        }
+        if (Object.keys(selectedDrivers).length >= driverLimit) lockUnselectedDriverCards();
     }
 
-    // ============================================
-    // FIFO: Auto-select top N non-absent drivers
-    // ============================================
     function autoSelectTopDrivers() {
         clearAllSelectedDrivers();
         var count = 0;
-
         $('#availableDriverList .driver-item').each(function () {
             if (count >= driverLimit) return false;
-
-            var isAbsent   = $(this).data('isabsent') === 'true' || $(this).data('isabsent') === true;
-            var card       = $(this).find('.driver-card');
-            var isLocked   = card.hasClass('limit-locked');
-            var isSelected = card.hasClass('selected');
-
-            if (!isAbsent && !isLocked && !isSelected) {
+            var isAbsent = $(this).data('isabsent') === 'true' || $(this).data('isabsent') === true;
+            var card     = $(this).find('.driver-card');
+            if (!isAbsent && !card.hasClass('limit-locked') && !card.hasClass('selected')) {
                 toggleSelectDriver(card[0]);
                 count++;
             }
         });
-
-        if (count === 0) {
-            showToast('No available drivers to auto-select (all may be absent).', 'Info', 'info');
-        } else {
-            showToast(`${count} driver(s) auto-selected from FIFO queue.`, 'Auto-Selected', 'success');
-        }
+        if (count === 0) showToast('No available drivers to auto-select (all may be absent).', 'Info', 'info');
+        else showToast(`${count} driver(s) auto-selected from FIFO queue.`, 'Auto-Selected', 'success');
     }
 
-    // ============================================
-    // Deselect
-    // ============================================
     function deselectDriver(refId, hasTrip) {
-        if (hasTrip === undefined && selectedDrivers[refId])
-            hasTrip = selectedDrivers[refId].hasTrip;
-
+        if (hasTrip === undefined && selectedDrivers[refId]) hasTrip = selectedDrivers[refId].hasTrip;
         delete selectedDrivers[refId];
 
         var card  = $(`.driver-item[data-refid="${refId}"] .driver-card`);
         var badge = $(`.driver-item[data-refid="${refId}"] .driver-status-badge`);
-
         card.removeClass('selected');
 
-        if (hasTrip) {
-            badge.removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
-        } else {
-            badge.removeClass('bg-primary text-dark').addClass('bg-info text-white').text('Free');
-        }
+        if (hasTrip) badge.removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
+        else badge.removeClass('bg-primary text-dark').addClass('bg-info text-white').text('Free');
 
         $(`#selected-driver-card-${refId}`).remove();
-        if ($('#selectedDriverList').children().length === 0)
-            $('#selectedDriversSection').hide();
+        if ($('#selectedDriverList').children().length === 0) $('#selectedDriversSection').hide();
 
         unlockDriverCards();
-        if (Object.keys(selectedDrivers).length >= driverLimit) {
-            lockUnselectedDriverCards();
-        }
-
+        if (Object.keys(selectedDrivers).length >= driverLimit) lockUnselectedDriverCards();
         updateDriverSelectedCount();
     }
 
-    // ============================================
-    // Add to Selected Panel
-    // ============================================
     function addDriverToSelectedPanel(refId, fullName, image) {
         var imgHtml = image
             ? `<img src="${image}" style="width:38px;height:38px;object-fit:cover;" class="rounded-circle border" />`
@@ -643,14 +611,12 @@
                             <div class="text-muted" style="font-size:10px;">Ref: ${refId}</div>
                         </div>
                         <button class="btn btn-outline-danger btn-sm py-0 px-1"
-                                style="font-size:10px;"
-                                onclick="deselectDriver('${refId}')">
+                                style="font-size:10px;" onclick="deselectDriver('${refId}')">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
             </div>`);
-
         $('#selectedDriversSection').show();
     }
 
@@ -664,30 +630,25 @@
         $('#btnDriverSelectedCount').text(count);
     }
 
-    // ============================================
-    // Tab switch + Search filter
-    // ============================================
     function switchDriverTab(tab) {
-        $('#panel-drivers, #panel-assigned').hide();
-        $('#tab-drivers, #tab-assigned').removeClass('active');
-        $(`#panel-${tab}`).show();
-        $(`#tab-${tab}`).addClass('active');
+        $('#panel-driver-drivers, #panel-driver-assigned').hide();
+        $('#tab-driver-drivers, #tab-driver-assigned').removeClass('active');
+        $(`#panel-driver-${tab}`).show();
+        $(`#tab-driver-${tab}`).addClass('active');
         $('#driverSearch').val('');
         $('.driver-item').show();
     }
 
+    // ✅ FIXED: jQuery camelCases data-ref-search → refSearch
     function filterDrivers() {
         var q = $('#driverSearch').val().toLowerCase();
         $('.driver-item[data-panel="drivers"]').each(function () {
-            var name = $(this).data('name');
-            var ref  = $(this).data('ref-search');
+            var name = $(this).data('name')      || '';
+            var ref  = $(this).data('refSearch') || '';   // ✅ was 'ref-search' — broken
             $(this).toggle(name.includes(q) || ref.includes(q));
         });
     }
 
-    // ============================================
-    // EDIT — inline toggle + save
-    // ============================================
     function toggleEditDriver(refId, currentPax) {
         var form = $(`#edit-form-${refId}`);
         if (form.is(':visible')) {
@@ -702,15 +663,12 @@
 
     function saveEditDriver(refId) {
         var passengers = parseInt($(`#edit-pax-${refId}`).val());
-
         if (isNaN(passengers) || passengers < 1) {
             alert('Please enter a valid passenger count (minimum 1).\nTo mark absent, use the Absent button.');
             return;
         }
-
         var btn = $(`#save-btn-${refId}`);
         btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-
         $.ajax({
             url: '@Url.Action("EditDriverAssignment", "Reserve")',
             type: 'POST',
@@ -730,18 +688,11 @@
                     showToast(res.message, 'Error', 'danger');
                 }
             },
-            error: function () {
-                showToast('Error updating driver assignment.', 'Error', 'danger');
-            },
-            complete: function () {
-                btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Save');
-            }
+            error: function () { showToast('Error updating driver assignment.', 'Error', 'danger'); },
+            complete: function () { btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Save'); }
         });
     }
 
-    // ============================================
-    // MARK/UNMARK ABSENT
-    // ============================================
     function handleDriverAbsent(btn) {
         var refId      = $(btn).data('refid');
         var isAbsent   = $(btn).data('isabsent') === true || $(btn).data('isabsent') === 'true';
@@ -750,18 +701,16 @@
         var fullName   = fullNameEl.text().trim();
 
         if (isAbsent) {
-            // UNMARK — show edit form to restore passenger count
             $(`#edit-form-${refId}`).slideDown(150);
             $(`#edit-pax-${refId}`).val(1).focus().select();
             showToast('Enter the correct passenger count to restore this driver.', 'Unmark Absent', 'info');
             return;
         }
 
-        if (!confirm(`Mark "${fullName}" as absent?\n\n✔ Passenger count → 0\n✔ Driver stays in FIFO rotation (cycles to queue bottom)\n✔ Cannot be selected for new batches today`))
+        if (!confirm(`Mark "${fullName}" as absent?\n\n✔ Passenger count → 0\n✔ Driver stays in FIFO rotation\n✔ Cannot be selected for new batches today`))
             return;
 
         $(btn).prop('disabled', true);
-
         $.ajax({
             url: '@Url.Action("MarkDriverAbsent", "Reserve")',
             type: 'POST',
@@ -775,62 +724,40 @@
                         `<i class="fas fa-users me-1"></i>Passengers: <strong id="pax-value-${refId}">0</strong>` +
                         `<span class="text-danger ms-1"><i class="fas fa-user-times"></i> <em>Absent</em></span>`
                     );
-
-                    row.find('.card')
-                       .removeClass('border-warning')
-                       .addClass('border-danger bg-danger bg-opacity-5');
-
+                    row.find('.card').removeClass('border-warning').addClass('border-danger bg-danger bg-opacity-5');
                     row.find('.badge.bg-warning').removeClass('bg-warning text-dark').addClass('bg-danger').text('Absent');
                     fullNameEl.addClass('text-decoration-line-through text-muted');
-
                     $(`#edit-btn-${refId}`).hide();
                     $(btn).data('isabsent', 'true')
-                          .removeClass('btn-outline-secondary')
-                          .addClass('btn-outline-success')
+                          .removeClass('btn-outline-secondary').addClass('btn-outline-success')
                           .attr('title', 'Unmark Absent — restore passengers')
                           .html('<i class="fas fa-user-check"></i>');
 
-                    // Update driver card in Queue panel
                     var qCard = $(`.driver-item[data-refid="${refId}"]`);
-                    qCard.addClass('driver-absent-item')
-                         .attr('data-isabsent', 'true');
-                    qCard.find('.driver-card')
-                         .addClass('driver-absent-card')
-                         .removeClass('driver-top-card');
+                    qCard.addClass('driver-absent-item').attr('data-isabsent', 'true');
+                    qCard.find('.driver-card').addClass('driver-absent-card').removeClass('driver-top-card');
                     qCard.find('.driver-status-badge')
                          .removeClass('bg-warning text-dark bg-info bg-primary text-white')
-                         .addClass('bg-danger')
-                         .text('Absent');
+                         .addClass('bg-danger').text('Absent');
                     qCard.find('.trip-info').remove();
 
-                    if (selectedDrivers[refId]) {
-                        deselectDriver(refId, false);
-                    }
-
+                    if (selectedDrivers[refId]) deselectDriver(refId, false);
                     showToast(res.message, 'Marked Absent', 'warning');
                 } else {
                     showToast(res.message, 'Error', 'danger');
                 }
             },
-            error: function () {
-                showToast('Error marking driver absent.', 'Error', 'danger');
-            },
-            complete: function () {
-                $(btn).prop('disabled', false);
-            }
+            error: function () { showToast('Error marking driver absent.', 'Error', 'danger'); },
+            complete: function () { $(btn).prop('disabled', false); }
         });
     }
 
-    // ============================================
-    // REMOVE — confirm + AJAX + UI update
-    // ============================================
     function confirmRemoveDriver(refId, fullName) {
         if (!confirm(`Remove "${fullName}" from today's assignment?\n\nThis will fully unassign them and clear their DTR record for today.\nThey will return to the FIFO queue as if never assigned today.`))
             return;
 
         var row = $(`#assigned-row-${refId}`);
         row.find('.btn').prop('disabled', true);
-
         $.ajax({
             url: '@Url.Action("RemoveDriverAssignment", "Reserve")',
             type: 'POST',
@@ -842,10 +769,8 @@
                 if (res.success) {
                     row.fadeOut(300, function () {
                         $(this).remove();
-
                         var remaining = $('#assignedDriverList .assigned-driver-row').length;
                         $('#driverAssignedCountBadge').text(remaining);
-
                         if (remaining === 0) {
                             $('#assignedDriverList').html(`
                                 <div class="col-12 text-center text-muted py-3" id="noAssignedDriverMsg">
@@ -854,27 +779,17 @@
                         }
                     });
 
-                    // Reset driver card in Queue panel back to Free
                     var driverCard = $(`.driver-item[data-refid="${refId}"]`);
-                    driverCard.attr('data-hastrip', 'false')
-                              .attr('data-isabsent', 'false')
-                              .removeClass('driver-absent-item');
-                    driverCard.find('.driver-card')
-                              .removeClass('driver-absent-card driver-top-card');
+                    driverCard.attr('data-hastrip', 'false').attr('data-isabsent', 'false').removeClass('driver-absent-item');
+                    driverCard.find('.driver-card').removeClass('driver-absent-card driver-top-card');
                     driverCard.find('.driver-status-badge')
                               .removeClass('bg-warning text-dark bg-danger bg-primary')
-                              .addClass('bg-info text-white')
-                              .text('Free');
+                              .addClass('bg-info text-white').text('Free');
                     driverCard.find('.trip-info').remove();
 
                     unlockDriverCards();
-                    if (Object.keys(selectedDrivers).length >= driverLimit) {
-                        lockUnselectedDriverCards();
-                    }
-
-                    if (selectedDrivers[refId]) {
-                        deselectDriver(refId, false);
-                    }
+                    if (Object.keys(selectedDrivers).length >= driverLimit) lockUnselectedDriverCards();
+                    if (selectedDrivers[refId]) deselectDriver(refId, false);
 
                     showToast(res.message, 'Removed', 'success');
                 } else {
@@ -889,24 +804,15 @@
         });
     }
 
-    // ============================================
-    // ASSIGN DRIVERS — POST with limit check
-    // ============================================
     function confirmAssignDrivers(batch) {
         var refIds = Object.keys(selectedDrivers);
-
-        if (refIds.length === 0) {
-            alert('Please select at least one driver.');
-            return;
-        }
-
+        if (refIds.length === 0) { alert('Please select at least one driver.'); return; }
         if (refIds.length > driverLimit) {
             alert(`Maximum ${driverLimit} driver(s) allowed for ${driverGuestTotal} guests.\nYou selected ${refIds.length}.`);
             return;
         }
 
-        $('#btnConfirmAssignDriver')
-            .prop('disabled', true)
+        $('#btnConfirmAssignDriver').prop('disabled', true)
             .html('<span class="spinner-border spinner-border-sm me-1"></span>Assigning...');
 
         $.ajax({
@@ -921,9 +827,7 @@
             success: function (res) {
                 if (res.success) {
                     $(document).trigger('driverAssigned', [batch]);
-                    bootstrap.Modal.getInstance(
-                        document.getElementById('assignDriverModal')
-                    ).hide();
+                    bootstrap.Modal.getInstance(document.getElementById('assignDriverModal')).hide();
                     showToast(res.message, 'Success', 'success');
                 } else {
                     showToast(res.message, 'Error', 'danger');
@@ -938,8 +842,7 @@
     }
 
     function resetAssignDriverBtn(count) {
-        $('#btnConfirmAssignDriver')
-            .prop('disabled', false)
+        $('#btnConfirmAssignDriver').prop('disabled', false)
             .html(`<i class="fas fa-car me-1"></i> Assign Selected Drivers (<span id="btnDriverSelectedCount">${count}</span>)`);
     }
 </script>

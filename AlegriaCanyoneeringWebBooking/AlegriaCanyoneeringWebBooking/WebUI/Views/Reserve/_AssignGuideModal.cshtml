@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <!-- FIFO Queue Explanation -->
+  @*   <!-- FIFO Queue Explanation -->
     <div class="alert alert-success py-2 mb-3 small">
         <div class="d-flex align-items-start gap-2">
             <i class="fas fa-sort-numeric-up mt-1 flex-shrink-0"></i>
@@ -51,7 +51,7 @@
                 0 guests, still cycles in queue.
             </div>
         </div>
-    </div>
+    </div> *@
 
     <!-- Limit Warning Banner -->
     <div id="guideLimitWarning"
@@ -79,17 +79,17 @@
     <!-- Tabs -->
     <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
-            <button class="nav-link active" id="tab-guides" onclick="switchGuideTab('guides')">
+            <button class="nav-link active" id="tab-guide-guides" onclick="switchGuideTab('guides')">
                 <i class="fas fa-sort-numeric-up text-success me-1"></i>
                 Queue
                 <span class="badge bg-success ms-1">@totalGuides</span>
             </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="tab-assigned" onclick="switchGuideTab('assigned')">
+            <button class="nav-link" id="tab-guide-assigned" onclick="switchGuideTab('assigned')">
                 <i class="fas fa-clock text-warning me-1"></i>
                 Assigned Today
-                <span class="badge bg-warning text-dark ms-1" id="assignedCountBadge">
+                <span class="badge bg-warning text-dark ms-1" id="guideAssignedCountBadge">
                     @(busyGuides?.Count() ?? 0)
                 </span>
             </button>
@@ -99,7 +99,7 @@
     <!-- ============================================
          PANEL: FIFO QUEUE
          ============================================ -->
-    <div id="panel-guides">
+    <div id="panel-guide-guides">
 
         @if (availableGuides != null && availableGuides.Any() && recommendedGuides > 0)
         {
@@ -265,7 +265,7 @@
     <!-- ============================================
          PANEL: ASSIGNED TODAY
          ============================================ -->
-    <div id="panel-assigned" style="display:none;">
+    <div id="panel-guide-assigned" style="display:none;">
 
         <div class="alert alert-info py-2 small mb-2">
             <i class="fas fa-info-circle me-1"></i>
@@ -591,10 +591,10 @@
     }
 
     function switchGuideTab(tab) {
-        $('#panel-guides, #panel-assigned').hide();
-        $('#tab-guides, #tab-assigned').removeClass('active');
-        $(`#panel-${tab}`).show();
-        $(`#tab-${tab}`).addClass('active');
+        $('#panel-guide-guides, #panel-guide-assigned').hide();
+        $('#tab-guide-guides, #tab-guide-assigned').removeClass('active');
+        $(`#panel-guide-${tab}`).show();
+        $(`#tab-guide-${tab}`).addClass('active');
         $('#guideSearch').val('');
         $('.guide-item').show();
     }
@@ -688,7 +688,7 @@
                     row.fadeOut(300, function () {
                         $(this).remove();
                         var remaining = $('#assignedGuideList .assigned-guide-row').length;
-                        $('#assignedCountBadge').text(remaining);
+                        $('#guideAssignedCountBadge').text(remaining);
                         if (remaining === 0) $('#assignedGuideList').html(`<div class="col-12 text-center text-muted py-3"><i class="fas fa-check-circle text-success me-1"></i> No guides assigned today.</div>`);
                     });
                     var guideCard = $(`.guide-item[data-guiderfid="${rfid}"]`);
