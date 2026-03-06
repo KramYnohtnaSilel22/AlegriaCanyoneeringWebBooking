@@ -25,16 +25,12 @@ public class DriversController : Controller
     }
 
     // =========================================================
-    // CREATE GET — with auto RefId and DPosition
+    // CREATE GET — with auto RefId, DPosition = Unix timestamp
     // =========================================================
     [HttpGet("Create")]
     public async Task<IActionResult> Create()
     {
-        // ✅ Get max DriverId-based sequence (simpler and reliable)
-        var maxId = await _context.Drivers.MaxAsync(d => (int?)d.DriverId) ?? 0;
-        int nextSequence = maxId + 1;
-
-        // ✅ Simple auto-increment RefId starting at 100000
+        // ✅ Auto-increment RefId from Drivers table
         var allRefIds = await _context.Drivers.Select(d => d.RefId).ToListAsync();
         int nextRefId = 100000;
         var numericRefIds = allRefIds
@@ -45,9 +41,8 @@ public class DriversController : Controller
         if (numericRefIds.Any())
             nextRefId = numericRefIds.Max() + 1;
 
-        // ✅ DPosition auto-increment
-        var maxDPosition = await _context.Drivers.MaxAsync(d => (int?)d.DPosition) ?? 100000;
-        int nextDPosition = maxDPosition + 1;
+        // ✅ DPosition = current Unix timestamp
+        int nextDPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         ViewData["Action"] = "Create";
         return PartialView("_DriverForm", new Driver
@@ -65,8 +60,7 @@ public class DriversController : Controller
     public async Task<IActionResult> Create(Driver model, IFormFile? PhotoFile)
     {
         ModelState.Remove("Image");
-        ModelState.Remove("Guests"); // ✅ Remove navigation property from validation
-
+        ModelState.Remove("Guests");
         if (!ModelState.IsValid)
         {
             var errors = ModelState.Values
@@ -75,14 +69,12 @@ public class DriversController : Controller
                 .ToList();
             return Json(new { success = false, message = "Validation failed: " + string.Join(", ", errors) });
         }
-
         try
         {
-            // ✅ Check duplicate RefId
+            // ✅ Check duplicate RefId — auto-fix if collision
             bool refIdExists = await _context.Drivers.AnyAsync(d => d.RefId == model.RefId);
             if (refIdExists)
             {
-                // Auto-fix: generate new unique RefId
                 var maxRefId = await _context.Drivers
                     .Where(d => d.RefId != null)
                     .Select(d => d.RefId)
@@ -95,21 +87,15 @@ public class DriversController : Controller
                 model.RefId = next.ToString();
             }
 
-            // ✅ Check duplicate DPosition
-            bool dposExists = await _context.Drivers.AnyAsync(d => d.DPosition == model.DPosition);
-            if (dposExists)
-            {
-                var maxDPos = await _context.Drivers.MaxAsync(d => (int?)d.DPosition) ?? 100000;
-                model.DPosition = maxDPos + 1;
-            }
+            // ✅ DPosition = Unix timestamp, shift +1 if duplicate
+            model.DPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            while (await _context.Drivers.AnyAsync(d => d.DPosition == model.DPosition))
+                model.DPosition++;
 
-            // ✅ Add this before saving — prevent null DB error
             model.MName = string.IsNullOrWhiteSpace(model.MName) ? "" : model.MName;
             model.Image = await SavePhotoToWwwRoot(PhotoFile);
-
             _context.Add(model);
             await _context.SaveChangesAsync();
-
             return Json(new { success = true, message = "Driver created successfully." });
         }
         catch (Exception ex)
@@ -130,7 +116,6 @@ public class DriversController : Controller
         {
             var driver = await _context.Drivers.FindAsync(id);
             if (driver == null) return NotFound();
-
             ViewData["Action"] = "Edit";
             return PartialView("_DriverForm", driver);
         }
@@ -142,6 +127,7 @@ public class DriversController : Controller
 
     // =========================================================
     // EDIT POST
+    // ✅ DPosition preserved — not changed on edit
     // =========================================================
     [HttpPost("Edit")]
     [ValidateAntiForgeryToken]
@@ -149,8 +135,7 @@ public class DriversController : Controller
     {
         ModelState.Remove("Image");
         ModelState.Remove("MName");
-        ModelState.Remove("Guests"); // ✅ Remove navigation property from validation
-
+        ModelState.Remove("Guests");
         if (!ModelState.IsValid)
         {
             var errors = ModelState.Values
@@ -159,16 +144,13 @@ public class DriversController : Controller
                 .ToList();
             return Json(new { success = false, message = "Validation failed: " + string.Join(", ", errors) });
         }
-
         try
         {
             var newPath = await SavePhotoToWwwRoot(PhotoFile);
             if (newPath != null)
                 model.Image = newPath;
-
             _context.Update(model);
             await _context.SaveChangesAsync();
-
             return Json(new { success = true, message = "Driver updated successfully." });
         }
         catch (DbUpdateConcurrencyException)
@@ -181,7 +163,6 @@ public class DriversController : Controller
             return Json(new { success = false, message = innerMsg });
         }
     }
-
 
     // =========================================================
     // DELETE
@@ -198,7 +179,6 @@ public class DriversController : Controller
 
             _context.Drivers.Remove(driver);
             await _context.SaveChangesAsync();
-
             return Json(new { success = true, message = "Driver deleted successfully." });
         }
         catch (Exception ex)
@@ -272,41 +252,25 @@ public class DriversController : Controller
 
         try
         {
-            // ✅ Match the path from Program.cs: WebUI/wwwroot
             string wwwrootPath = _hostEnvironment.WebRootPath;
 
             if (string.IsNullOrEmpty(wwwrootPath))
             {
-                // Fallback: construct path to match Program.cs configuration
-                // Try WebUI/wwwroot first (matches Program.cs)
                 wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "WebUI", "wwwroot");
-
-                // If WebUI/wwwroot doesn't exist, try root wwwroot
                 if (!Directory.Exists(wwwrootPath))
-                {
                     wwwrootPath = Path.Combine(_hostEnvironment.ContentRootPath, "wwwroot");
-                }
             }
 
             var uploadsFolder = Path.Combine(wwwrootPath, "uploads", "drivers");
-
-            // Create directory if it doesn't exist
             if (!Directory.Exists(uploadsFolder))
-            {
                 Directory.CreateDirectory(uploadsFolder);
-            }
 
-            // Generate unique filename
             var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(photo.FileName)}";
             var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-            // Save file
             using (var stream = new FileStream(filePath, FileMode.Create))
-            {
                 await photo.CopyToAsync(stream);
-            }
 
-            // Return web-accessible path
             return $"/uploads/drivers/{uniqueFileName}";
         }
         catch (Exception ex)

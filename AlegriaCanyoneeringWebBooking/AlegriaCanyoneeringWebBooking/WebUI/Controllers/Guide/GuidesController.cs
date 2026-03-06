@@ -25,7 +25,7 @@ public class GuidesController : Controller
     }
 
     // =========================================================
-    // CREATE GET — with auto Rfid and TPosition
+    // CREATE GET — with auto Rfid, TPosition = Unix timestamp
     // =========================================================
     [HttpGet("Create")]
     public async Task<IActionResult> Create()
@@ -41,9 +41,8 @@ public class GuidesController : Controller
         if (numericRefIds.Any())
             nextRefId = numericRefIds.Max() + 1;
 
-        // ✅ TPosition auto-increment
-        var maxTPosition = await _context.Guides.MaxAsync(t => (int?)t.TPosition) ?? 100000;
-        int nextTPosition = maxTPosition + 1;
+        // ✅ TPosition = current Unix timestamp (seconds since epoch)
+        int nextTPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         ViewData["Action"] = "Create";
         return PartialView("_GuideForm", new Guide
@@ -76,7 +75,7 @@ public class GuidesController : Controller
 
         try
         {
-            // ✅ Check duplicate Rfid
+            // ✅ Check duplicate Rfid — auto-fix if collision
             bool rfIdExists = await _context.Guides.AnyAsync(t => t.Rfid == model.Rfid);
             if (rfIdExists)
             {
@@ -92,13 +91,11 @@ public class GuidesController : Controller
                 model.Rfid = next.ToString();
             }
 
-            // ✅ Check duplicate TPosition
-            bool tposExists = await _context.Guides.AnyAsync(t => t.TPosition == model.TPosition);
-            if (tposExists)
-            {
-                var maxTPos = await _context.Guides.MaxAsync(t => (int?)t.TPosition) ?? 100000;
-                model.TPosition = maxTPos + 1;
-            }
+            // ✅ TPosition = Unix timestamp — assigned fresh at save time,
+            //    not trusting the form value. Shift +1 if somehow duplicate.
+            model.TPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            while (await _context.Guides.AnyAsync(t => t.TPosition == model.TPosition))
+                model.TPosition++;
 
             // ✅ Prevent null DB errors
             model.MName = string.IsNullOrWhiteSpace(model.MName) ? "" : model.MName;
@@ -140,6 +137,7 @@ public class GuidesController : Controller
 
     // =========================================================
     // EDIT POST
+    // ✅ TPosition is preserved from existing record — not changed on edit
     // =========================================================
     [HttpPost("Edit")]
     [ValidateAntiForgeryToken]
@@ -167,7 +165,6 @@ public class GuidesController : Controller
             var newPath = await SavePhotoToWwwRoot(PhotoFile, "tourguides");
             if (newPath != null)
                 model.Image = newPath;
-            // else: keeps existing image from hidden input
 
             _context.Update(model);
             await _context.SaveChangesAsync();
