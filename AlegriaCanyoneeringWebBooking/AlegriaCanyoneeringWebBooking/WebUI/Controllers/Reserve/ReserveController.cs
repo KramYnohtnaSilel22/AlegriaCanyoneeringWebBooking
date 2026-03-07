@@ -1329,10 +1329,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // =========================================================
         // GET ASSIGN DRIVER MODAL
-        // ✅ FIFO from DriverAttendance.Id (no DriverIdPrior)
-        // ✅ Passenger count from DriverDtr.Passenger
-        // ✅ Absent detection: has attendance today + DTR today + Passenger == 0
-        // ✅ FIX: RefId parsed as long (not int) — supports IDs > 2,147,483,647
+        // ✅ FIFO ordered by Driver.DPosition (Unix timestamp)
+        // ✅ DPosition passed to ViewBag for display in modal
         // =========================================================
         [HttpGet]
         public async Task<IActionResult> GetAssignDriverModal(string batch)
@@ -1340,13 +1338,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             try
             {
                 var allDrivers = await _context.Drivers
-                    .OrderBy(d => d.FName)
+                    .OrderBy(d => d.DPosition)                          // ✅ FIFO by DPosition
                     .Select(d => new
                     {
                         d.DriverId,
                         d.RefId,
                         fullName = ((d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? "")).Trim(),
-                        d.Image
+                        d.Image,
+                        d.DPosition                                     // ✅ included
                     })
                     .ToListAsync();
 
@@ -1356,35 +1355,27 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                              && string.Compare(a.Date, UnixTodayEnd()) < 0)
                     .ToListAsync();
 
-                // ✅ FIFO: last attendance Id per driver (DriverId = RefId string)
                 var lastAssignmentMap = attendanceToday
                     .Where(a => !string.IsNullOrEmpty(a.DriverId))
                     .GroupBy(a => a.DriverId)
                     .ToDictionary(g => g.Key, g => g.Max(x => x.Id));
 
-                // ✅ Passenger totals from DriverDtr — Date = unix timestamp
                 var driverDtrToday = await _context.DriverDtrs
                     .Where(d => string.Compare(d.Date, UnixTodayStart()) >= 0
                              && string.Compare(d.Date, UnixTodayEnd()) < 0)
                     .ToListAsync();
 
-                // DriverDtr.Rfid is an int column. For large RefIds (> int.MaxValue),
-                // AssignDrivers stores driver.DriverId as the Rfid value instead.
-                // So driverPassengerMap key is always int — no change needed here.
                 var driverPassengerMap = driverDtrToday
                     .GroupBy(d => d.Rfid)
                     .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0));
 
-                // ✅ FIX: resolve the correct Rfid key per driver (same logic as AssignDrivers)
-                // If RefId fits int → use it; otherwise use DriverId (that's what was stored in DriverDtr)
                 int GetRfidKey(int driverId, string refId)
                 {
                     if (long.TryParse(refId, out long l) && l > 0 && l <= int.MaxValue)
                         return (int)l;
-                    return driverId;   // fallback: DriverId was used as Rfid when assigning
+                    return driverId;
                 }
 
-                // ✅ Absent = has attendance today + DTR today with Passenger == 0
                 var absentDriverRefIds = new HashSet<string>();
                 foreach (var d in allDrivers)
                 {
@@ -1394,18 +1385,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         absentDriverRefIds.Add(d.RefId);
                 }
 
-                // ✅ FIFO order: never-assigned first → oldest attendance Id → newest
+                // ✅ FIFO order: by DPosition (already ordered from DB)
+                //    never-assigned first, then by DPosition for assigned ones
                 var orderedDrivers = allDrivers
                     .OrderBy(d => lastAssignmentMap.ContainsKey(d.RefId) ? 1 : 0)
-                    .ThenBy(d => lastAssignmentMap.ContainsKey(d.RefId) ? lastAssignmentMap[d.RefId] : 0)
-                    .ThenBy(d => d.fullName)
+                    .ThenBy(d => d.DPosition)                           // ✅ DPosition as tiebreaker
                     .ToList();
 
                 var availableDriversRaw = new List<object>();
                 for (int i = 0; i < orderedDrivers.Count; i++)
                 {
                     var d = orderedDrivers[i];
-                    int rfidKey = GetRfidKey(d.DriverId, d.RefId);   // ✅ no overflow
+                    int rfidKey = GetRfidKey(d.DriverId, d.RefId);
                     availableDriversRaw.Add(new
                     {
                         d.DriverId,
@@ -1416,7 +1407,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         isAbsent = absentDriverRefIds.Contains(d.RefId),
                         queuePosition = i + 1,
                         passengers = driverPassengerMap.ContainsKey(rfidKey)
-                                            ? driverPassengerMap[rfidKey] : 0
+                                        ? driverPassengerMap[rfidKey] : 0,
+                        dPosition = d.DPosition                         // ✅ pass to view
                     });
                 }
 
@@ -1428,7 +1420,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 for (int i = 0; i < assignedTodayList.Count; i++)
                 {
                     var d = assignedTodayList[i];
-                    int rfidKey2 = GetRfidKey(d.DriverId, d.RefId);  // ✅ no overflow
+                    int rfidKey2 = GetRfidKey(d.DriverId, d.RefId);
                     busyDriversRaw.Add(new
                     {
                         d.DriverId,
@@ -1438,7 +1430,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         isAbsent = absentDriverRefIds.Contains(d.RefId),
                         queuePos = i + 1,
                         passengers = driverPassengerMap.ContainsKey(rfidKey2)
-                                     ? driverPassengerMap[rfidKey2] : 0
+                                     ? driverPassengerMap[rfidKey2] : 0,
+                        dPosition = d.DPosition                         // ✅ pass to view
                     });
                 }
 
@@ -1469,7 +1462,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 </div>", "text/html");
             }
         }
-
 
         // =========================================================
         // ASSIGN DRIVERS — POST

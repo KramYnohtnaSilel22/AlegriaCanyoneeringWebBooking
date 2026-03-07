@@ -1,5 +1,6 @@
 ﻿using AlegriaCanyoneeringWebBooking;
 using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.WebUI.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -240,6 +241,121 @@ public class DriversController : Controller
                 data = new List<object>(),
                 error = ex.Message
             });
+        }
+    }
+
+    // =========================================================
+    // ARRANGE QUEUE GET — show drivers ordered by DPosition
+    // =========================================================
+    [HttpGet("Arrange")]
+    public async Task<IActionResult> Arrange()
+    {
+        var drivers = await _context.Drivers
+            .OrderBy(d => d.DPosition)
+            .Select(d => new
+            {
+                d.DriverId,
+                d.RefId,
+                fullName = (d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? ""),
+                d.Image,
+                d.DPosition
+            })
+            .ToListAsync();
+
+        return View(drivers.Select(d => new DriverQueueItem
+        {
+            DriverId = d.DriverId,
+            RefId = d.RefId,
+            FullName = d.fullName.Trim(),
+            Image = d.Image,
+            DPosition = d.DPosition
+        }).ToList());
+    }
+
+    // =========================================================
+    // SAVE QUEUE ORDER — POST reordered driver IDs
+    // Uses the smallest existing DPosition as base so the
+    // original #1 value is preserved in the queue sequence
+    // =========================================================
+    [HttpPost("Arrange")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveQueueOrder([FromBody] List<int> driverIds)
+    {
+        try
+        {
+            if (driverIds == null || !driverIds.Any())
+                return Json(new { success = false, message = "No driver IDs provided." });
+
+            var drivers = await _context.Drivers
+                .Where(d => driverIds.Contains(d.DriverId))
+                .ToListAsync();
+
+            // Use the smallest existing DPosition as base
+            // so the overall queue origin stays stable
+            int baseTimestamp = drivers.Min(d => d.DPosition);
+
+            for (int i = 0; i < driverIds.Count; i++)
+            {
+                var driver = drivers.FirstOrDefault(d => d.DriverId == driverIds[i]);
+                if (driver != null)
+                    driver.DPosition = baseTimestamp + (i * 10);
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = $"Queue order saved for {driverIds.Count} driver(s)." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
+
+    // =========================================================
+    // AUTO QUEUE
+    // ✅ DPosition < 1_000_000_000 = old auto-increment / zero → fix
+    // ✅ DPosition ≥ 1_000_000_000 = valid Unix timestamp → leave
+    // =========================================================
+    [HttpPost("AutoQueue")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AutoQueue()
+    {
+        try
+        {
+            const int UnixThreshold = 1_000_000_000;
+
+            var allDrivers = await _context.Drivers
+                .OrderBy(d => d.DPosition)
+                .ToListAsync();
+
+            int lastTimestamp = allDrivers
+                .Where(d => d.DPosition >= UnixThreshold)
+                .Select(d => d.DPosition)
+                .DefaultIfEmpty((int)DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 10)
+                .Max();
+
+            int fixedCount = 0;
+
+            foreach (var driver in allDrivers)
+            {
+                if (driver.DPosition < UnixThreshold)
+                {
+                    lastTimestamp += 10;
+                    while (allDrivers.Any(d => d.DriverId != driver.DriverId && d.DPosition == lastTimestamp))
+                        lastTimestamp++;
+                    driver.DPosition = lastTimestamp;
+                    fixedCount++;
+                }
+            }
+
+            if (fixedCount == 0)
+                return Json(new { success = true, message = "All drivers already have a valid queue timestamp. Nothing changed.", count = 0 });
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = $"{fixedCount} driver(s) assigned a queue timestamp.", count = fixedCount });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
         }
     }
 

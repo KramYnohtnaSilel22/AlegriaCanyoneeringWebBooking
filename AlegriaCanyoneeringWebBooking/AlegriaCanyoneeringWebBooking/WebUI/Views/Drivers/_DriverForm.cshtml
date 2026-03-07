@@ -44,7 +44,11 @@
         </div>
         <div class="col-md-6 mb-3">
             <label class="form-label">CTC Date <span class="text-danger">*</span></label>
-            <input name="CtcDate" value="@Model.CtcDate" class="form-control" required />
+            <input name="CtcDate"
+                   type="date"
+                   value="@(DateTime.TryParse(Model.CtcDate, out var d) ? d.ToString("yyyy-MM-dd") : "")"
+                   class="form-control"
+                   required />
         </div>
         <div class="col-md-12 mb-3">
             <label class="form-label">Address</label>

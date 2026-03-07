@@ -114,6 +114,9 @@
                 @* ✅ For Super Admin only *@
                 @if (User.IsInRole("Super Admin"))
                 {
+                    <a class="d-block py-1 text-white text-decoration-none" asp-controller="Drivers" asp-action="Arrange">
+                        <i class="bi bi-layers-half me-2"></i> <span>Arrange Drivers</span>
+                    </a>
                     <a class="d-block py-1 text-white text-decoration-none" asp-controller="Drivers" asp-action="Index">
                         <i class="bi bi-layers-half me-2"></i> <span>Drivers</span>
                     </a>
