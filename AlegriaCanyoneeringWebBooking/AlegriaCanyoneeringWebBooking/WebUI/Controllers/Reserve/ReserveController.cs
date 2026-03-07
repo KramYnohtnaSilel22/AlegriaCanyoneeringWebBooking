@@ -911,12 +911,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return Json(new { assignedBatches });
         }
 
-
         // =========================================================
         // GET ASSIGN GUIDE MODAL
-        // ✅ FIFO from TourGuideAttendance (attendance Id)
-        // ✅ Passenger count from TourGuideDtr.NoOfGuest
-        // ✅ Absent detection: has attendance + DTR today + NoOfGuest == 0
+        // ✅ FIFO ordered by Guide.TPosition (Unix timestamp)
+        // ✅ TPosition passed to ViewBag for display in modal
         // =========================================================
         [HttpGet]
         public async Task<IActionResult> GetAssignGuideModal(string batch)
@@ -924,13 +922,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             try
             {
                 var allGuides = await _context.Guides
-                    .OrderBy(g => g.FName)
+                    .OrderBy(g => g.TPosition)                          // ✅ FIFO by TPosition
                     .Select(g => new
                     {
                         g.GuideId,
                         g.Rfid,
                         fullName = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? "")).Trim(),
-                        g.Image
+                        g.Image,
+                        g.TPosition                                     // ✅ included
                     })
                     .ToListAsync();
 
@@ -972,11 +971,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     }
                 }
 
-                // ✅ FIFO order: never-assigned first → oldest → newest
+                // ✅ FIFO order: never-assigned first → then by TPosition
                 var orderedGuides = allGuides
                     .OrderBy(g => lastAssignmentMap.ContainsKey(g.Rfid) ? 1 : 0)
-                    .ThenBy(g => lastAssignmentMap.ContainsKey(g.Rfid) ? lastAssignmentMap[g.Rfid] : 0)
-                    .ThenBy(g => g.fullName)
+                    .ThenBy(g => g.TPosition)                           // ✅ TPosition as tiebreaker
                     .ToList();
 
                 var availableGuidesRaw = new List<object>();
@@ -994,7 +992,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         isAbsent = absentGuideRfids.Contains(g.Rfid),
                         queuePosition = i + 1,
                         passengers = rfidL > 0 && guidePassengerMap.ContainsKey(rfidL)
-                                        ? guidePassengerMap[rfidL] : 0
+                                            ? guidePassengerMap[rfidL] : 0,
+                        tPosition = g.TPosition                     // ✅ pass to view
                     });
                 }
 
@@ -1016,7 +1015,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         isAbsent = absentGuideRfids.Contains(g.Rfid),
                         queuePos = i + 1,
                         passengers = rfidL2 > 0 && guidePassengerMap.ContainsKey(rfidL2)
-                                     ? guidePassengerMap[rfidL2] : 0
+                                     ? guidePassengerMap[rfidL2] : 0,
+                        tPosition = g.TPosition                        // ✅ pass to view
                     });
                 }
 
@@ -1053,7 +1053,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // ASSIGN GUIDES — POST
         // ✅ Inserts TourGuideAttendance + TourGuideDtr + BatchAssignment
         // ✅ TourGuideAttendance: TGId = Rfid, Date = unix
-        // ✅ TourGuideDtr: Rfid = long, Date = yyyyMMdd long, NoOfGuest = passenger split
+        // ✅ TourGuideDtr: Rfid = long, Date = yyyyMMdd long
+        // ✅ After assignment, guide TPosition updated → moves to bottom of FIFO queue
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1096,7 +1097,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     long rfidLong = long.TryParse(guide.Rfid, out long parsed) ? parsed : guide.GuideId;
                     int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
 
-                    // ✅ TourGuideAttendance — TGId = Rfid, Date = unix timestamp
                     _context.TourGuideAttendances.Add(new TourGuideAttendance
                     {
                         TGId = guide.Rfid,
@@ -1104,7 +1104,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         Rfid = guide.Rfid
                     });
 
-                    // ✅ TourGuideDtr — Date = yyyyMMdd long, ComDate = DtrDateNow()
                     _context.TourGuideDtrs.Add(new TourGuideDtr
                     {
                         Rfid = rfidLong,
@@ -1113,7 +1112,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         ComDate = DtrDateNow()
                     });
 
-                    // ✅ BatchAssignment
                     _context.BatchAssignments.Add(new BatchAssignment
                     {
                         BatchCode = batch,
@@ -1121,6 +1119,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         GuideId = guide.GuideId,
                         DriverId = null
                     });
+
+                    // ✅ Update TPosition so guide moves to the bottom of the FIFO queue
+                    guide.TPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                     assignedNames.Add($"{guide.FName} {guide.LName}");
                 }
@@ -1531,6 +1532,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         GuideId = null,
                         DriverId = driver.DriverId
                     });
+
+                    // ✅ Update DPosition so driver moves to the bottom of the FIFO queue
+                    driver.DPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                     assignedNames.Add($"{driver.FName} {driver.LName}");
                 }

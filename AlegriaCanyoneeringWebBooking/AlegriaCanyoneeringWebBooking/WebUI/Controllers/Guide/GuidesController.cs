@@ -1,5 +1,6 @@
 ﻿using AlegriaCanyoneeringWebBooking;
 using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.WebUI.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -273,6 +274,118 @@ public class GuidesController : Controller
         catch (Exception ex)
         {
             return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // =========================================================
+    // ARRANGE QUEUE GET — show guides ordered by TPosition
+    // =========================================================
+    [HttpGet("Arrange")]
+    public async Task<IActionResult> Arrange()
+    {
+        var guides = await _context.Guides
+            .OrderBy(g => g.TPosition)
+            .Select(g => new
+            {
+                g.GuideId,
+                g.Rfid,
+                fullName = (g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? ""),
+                g.Image,
+                g.TPosition
+            })
+            .ToListAsync();
+
+        return View(guides.Select(g => new GuideQueueItem
+        {
+            GuideId = g.GuideId,
+            Rfid = g.Rfid,
+            FullName = g.fullName.Trim(),
+            Image = g.Image,
+            TPosition = g.TPosition
+        }).ToList());
+    }
+
+    // =========================================================
+    // SAVE QUEUE ORDER — POST reordered guide IDs
+    // =========================================================
+    [HttpPost("Arrange")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveQueueOrder([FromBody] List<int> guideIds)
+    {
+        try
+        {
+            if (guideIds == null || !guideIds.Any())
+                return Json(new { success = false, message = "No guide IDs provided." });
+
+            var guides = await _context.Guides
+                .Where(g => guideIds.Contains(g.GuideId))
+                .ToListAsync();
+
+            // Use smallest existing TPosition as base — preserves queue origin
+            int baseTimestamp = guides.Min(g => g.TPosition);
+
+            for (int i = 0; i < guideIds.Count; i++)
+            {
+                var guide = guides.FirstOrDefault(g => g.GuideId == guideIds[i]);
+                if (guide != null)
+                    guide.TPosition = baseTimestamp + (i * 10);
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = $"Queue order saved for {guideIds.Count} guide(s)." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
+
+    // =========================================================
+    // AUTO QUEUE — assign Unix timestamp to guides missing one
+    // ✅ TPosition < 1_000_000_000 = old auto-increment / zero → fix
+    // ✅ TPosition ≥ 1_000_000_000 = valid Unix timestamp → leave
+    // =========================================================
+    [HttpPost("AutoQueue")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AutoQueue()
+    {
+        try
+        {
+            const int UnixThreshold = 1_000_000_000;
+
+            var allGuides = await _context.Guides
+                .OrderBy(g => g.TPosition)
+                .ToListAsync();
+
+            int lastTimestamp = allGuides
+                .Where(g => g.TPosition >= UnixThreshold)
+                .Select(g => g.TPosition)
+                .DefaultIfEmpty((int)DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 10)
+                .Max();
+
+            int fixedCount = 0;
+
+            foreach (var guide in allGuides)
+            {
+                if (guide.TPosition < UnixThreshold)
+                {
+                    lastTimestamp += 10;
+                    while (allGuides.Any(g => g.GuideId != guide.GuideId && g.TPosition == lastTimestamp))
+                        lastTimestamp++;
+                    guide.TPosition = lastTimestamp;
+                    fixedCount++;
+                }
+            }
+
+            if (fixedCount == 0)
+                return Json(new { success = true, message = "All guides already have a valid queue timestamp. Nothing changed.", count = 0 });
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = $"{fixedCount} guide(s) assigned a queue timestamp.", count = fixedCount });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
         }
     }
 

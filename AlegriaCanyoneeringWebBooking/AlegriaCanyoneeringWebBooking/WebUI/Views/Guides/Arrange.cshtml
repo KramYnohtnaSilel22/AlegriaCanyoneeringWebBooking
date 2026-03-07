@@ -1,0 +1,349 @@
+﻿@model List<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.GuideQueueItem>
+@{
+    ViewData["Title"] = "Arrange Guide Queue";
+}
+
+<form id="__AjaxAntiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold text-success mb-0">
+            <i class="fas fa-sort-numeric-up me-2"></i>Guide Queue Order
+        </h2>
+        <small class="text-muted">
+            Drag rows or use ↑↓ buttons to reorder. Click <strong>Save Order</strong> to apply.
+        </small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Guides" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Guides
+        </a>
+        <button id="btnAutoQueue" class="btn btn-outline-success" onclick="autoQueue()">
+            <i class="fas fa-magic me-1"></i>Auto Queue Missing
+        </button>
+        <button id="btnSaveOrder" class="btn btn-success text-white" onclick="saveOrder()">
+            <i class="fas fa-save me-1"></i>Save Order
+        </button>
+    </div>
+</div>
+
+<!-- Info Banner -->
+<div class="alert alert-success py-2 small mb-3">
+    <i class="fas fa-info-circle me-1"></i>
+    <strong>FIFO Queue</strong> — #1 is assigned first. Each guide receives a
+    <strong>TPosition</strong> spaced <strong>10 seconds</strong> apart when saved.
+    Guides with lower TPosition are assigned earlier.
+    &nbsp;|&nbsp;
+    <span class="text-success fw-semibold">
+        <i class="fas fa-magic me-1"></i>Auto Queue Missing
+    </span>
+    = assigns a Unix timestamp only to guides who don't have one yet.
+</div>
+
+<!-- Unsaved changes banner -->
+<div id="unsavedBanner" class="alert alert-warning py-2 small mb-3" style="display:none;">
+    <i class="fas fa-exclamation-triangle me-1"></i>
+    You have <strong>unsaved changes</strong>. Click <strong>Save Order</strong> to apply.
+</div>
+
+<!-- Queue Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-bordered table-sm align-middle mb-0" id="queueTable">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:50px;" class="text-center text-muted">
+                        <i class="fas fa-grip-vertical"></i>
+                    </th>
+                    <th style="width:60px;" class="text-center">#</th>
+                    <th style="width:60px;">Photo</th>
+                    <th>Full Name</th>
+                    <th style="width:160px;">RFID</th>
+                    <th style="width:140px;" class="text-center">TPosition</th>
+                    <th style="width:100px;" class="text-center">Move</th>
+                </tr>
+            </thead>
+            <tbody id="queueBody">
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    var g = Model[i];
+                    <tr data-id="@g.GuideId" class="queue-row">
+
+                        <!-- Drag Handle -->
+                        <td class="text-center text-muted drag-handle" style="cursor:grab;">
+                            <i class="fas fa-grip-vertical"></i>
+                        </td>
+
+                        <!-- Queue # -->
+                        <td class="text-center fw-bold queue-num text-success">@(i + 1)</td>
+
+                        <!-- Photo -->
+                        <td>
+                            @if (!string.IsNullOrEmpty(g.Image))
+                            {
+                                <img src="@g.Image"
+                                     style="width:40px;height:40px;object-fit:cover;"
+                                     class="rounded-circle border" />
+                            }
+                            else
+                            {
+                                <div style="width:40px;height:40px;"
+                                     class="rounded-circle border bg-secondary d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-user text-white" style="font-size:14px;"></i>
+                                </div>
+                            }
+                        </td>
+
+                        <!-- Name -->
+                        <td class="fw-semibold">@g.FullName</td>
+
+                        <!-- RFID -->
+                        <td class="text-muted small">
+                            <i class="fas fa-id-card me-1"></i>@g.Rfid
+                        </td>
+
+                        <!-- TPosition (live preview) -->
+                        <td class="text-center">
+                            @if (g.TPosition < 1_000_000_000)
+                            {
+                                <span class="badge bg-warning text-dark border tpos-preview"
+                                      style="font-size:10px; font-family:monospace;"
+                                      title="No Unix timestamp — click Auto Queue">
+                                    @g.TPosition
+                                    <i class="fas fa-exclamation-triangle ms-1"></i>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark border tpos-preview"
+                                      style="font-size:10px; font-family:monospace;">
+                                    @g.TPosition
+                                </span>
+                            }
+                        </td>
+
+                        <!-- Move Buttons -->
+                        <td class="text-center">
+                            <div class="d-flex gap-1 justify-content-center">
+                                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                        title="Move Up"
+                                        onclick="moveRow(this, -1)">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                        title="Move Down"
+                                        onclick="moveRow(this, 1)">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                        </td>
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-3 d-flex justify-content-end gap-2">
+    <a href="/Guides" class="btn btn-outline-secondary">
+        <i class="fas fa-times me-1"></i>Cancel
+    </a>
+    <button id="btnSaveOrder2" class="btn btn-success text-white" onclick="saveOrder()">
+        <i class="fas fa-save me-1"></i>Save Order
+    </button>
+</div>
+
+@section Scripts {
+    @* SortableJS for drag-and-drop *@
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+    <script>
+        var isDirty = false;
+
+        // ============================================================
+        // Drag-and-drop via SortableJS
+        // ============================================================
+        var sortable = Sortable.create(document.getElementById('queueBody'), {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'table-success',
+            onEnd: function () {
+                refreshNumbers();
+                markDirty();
+            }
+        });
+
+        // ============================================================
+        // ↑↓ Button move
+        // ============================================================
+        function moveRow(btn, direction) {
+            var row = $(btn).closest('tr');
+            if (direction === -1) {
+                var prev = row.prev('tr');
+                if (prev.length) row.insertBefore(prev);
+            } else {
+                var next = row.next('tr');
+                if (next.length) row.insertAfter(next);
+            }
+            refreshNumbers();
+            markDirty();
+        }
+
+        // ============================================================
+        // Refresh queue numbers after reorder
+        // ============================================================
+        function refreshNumbers() {
+            $('#queueBody tr').each(function (i) {
+                $(this).find('.queue-num').text(i + 1);
+            });
+        }
+
+        // ============================================================
+        // Mark unsaved changes
+        // ============================================================
+        function markDirty() {
+            isDirty = true;
+            $('#unsavedBanner').show();
+        }
+
+        // ============================================================
+        // AUTO QUEUE — assign Unix timestamp to guides missing one
+        // ============================================================
+        function autoQueue() {
+            var btn = $('#btnAutoQueue');
+            btn.prop('disabled', true)
+               .html('<span class="spinner-border spinner-border-sm me-1"></span>Checking...');
+
+            $.ajax({
+                url: '/Guides/AutoQueue',
+                type: 'POST',
+                headers: {
+                    'RequestVerificationToken':
+                        $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (res) {
+                    if (res.success) {
+                        showToast(res.message, 'Auto Queue', res.count > 0 ? 'success' : 'info');
+                        if (res.count > 0) {
+                            setTimeout(() => location.reload(), 1200);
+                        }
+                    } else {
+                        showToast(res.message, 'Error', 'danger');
+                    }
+                },
+                error: function () {
+                    showToast('Error running auto queue.', 'Error', 'danger');
+                },
+                complete: function () {
+                    btn.prop('disabled', false)
+                       .html('<i class="fas fa-magic me-1"></i>Auto Queue Missing');
+                }
+            });
+        }
+
+        // ============================================================
+        // Save Order — POST ordered IDs to controller
+        // ============================================================
+        function saveOrder() {
+            var ids = [];
+            $('#queueBody tr').each(function () {
+                ids.push(parseInt($(this).data('id')));
+            });
+
+            var btns = $('#btnSaveOrder, #btnSaveOrder2');
+            btns.prop('disabled', true)
+                .html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+
+            $.ajax({
+                url: '/Guides/Arrange',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(ids),
+                headers: {
+                    'RequestVerificationToken':
+                        $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (res) {
+                    if (res.success) {
+                        isDirty = false;
+                        $('#unsavedBanner').hide();
+                        showToast(res.message, 'Success', 'success');
+                        // Refresh TPosition preview badges
+                        var base = Math.floor(Date.now() / 1000);
+                        $('#queueBody tr').each(function (i) {
+                            $(this).find('.tpos-preview').text(base + (i * 10));
+                        });
+                    } else {
+                        showToast(res.message, 'Error', 'danger');
+                    }
+                },
+                error: function () {
+                    showToast('Error saving queue order.', 'Error', 'danger');
+                },
+                complete: function () {
+                    btns.prop('disabled', false)
+                        .html('<i class="fas fa-save me-1"></i>Save Order');
+                }
+            });
+        }
+
+        // ============================================================
+        // Warn before leaving with unsaved changes
+        // ============================================================
+        window.addEventListener('beforeunload', function (e) {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // ============================================================
+        // Toast helper
+        // ============================================================
+        if (typeof showToast === 'undefined') {
+            function showToast(message, title, type) {
+                var bg = type === 'success' ? 'bg-success'
+                       : type === 'danger'  ? 'bg-danger'
+                       : type === 'warning' ? 'bg-warning text-dark'
+                       : 'bg-info';
+                var toast = $(`
+                    <div class="toast align-items-center text-white ${bg} border-0
+                                position-fixed top-0 end-0 m-3" style="z-index:9999;">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <strong>${title}:</strong> ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                                    data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>`);
+                $('body').append(toast);
+                new bootstrap.Toast(toast[0], { delay: 3500 }).show();
+                toast.on('hidden.bs.toast', () => toast.remove());
+            }
+        }
+    </script>
+
+    <style>
+        .queue-row:hover {
+            background-color: #f0fff4;
+        }
+
+        .drag-handle:hover {
+            color: #198754 !important;
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #d1e7dd !important;
+        }
+
+        #queueTable th, #queueTable td {
+            vertical-align: middle;
+        }
+    </style>
+}
