@@ -1,0 +1,170 @@
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.DriverDtrReportViewModel>
+<link href="~/css/ReportsDriverDtr.css" rel="stylesheet" />
+
+@{
+    var totalDrivers = ViewBag.TotalDrivers ?? 0;
+    var totalTrips = ViewBag.TotalTrips ?? 0;
+    var totalPassenger = ViewBag.TotalPassenger ?? 0;
+    var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    DateTime.TryParse(dateFrom, out var fromDt);
+    DateTime.TryParse(dateTo, out var toDt);
+}
+
+<div class="card mt-4 shadow">
+    <!-- Header -->
+    <div class="card-header bg-info text-white d-flex flex-wrap justify-content-between align-items-center">
+        <h5 class="mb-2 mb-md-0">
+            <i class="bi bi-card-list me-2"></i>Driver DTR Report
+        </h5>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Filter Form -->
+            <form method="get" asp-action="DriverDtr" id="filterForm"
+                  class="d-flex flex-wrap align-items-center gap-2">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">From:</label>
+                    <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom"
+                           class="form-control form-control-sm" required />
+                </div>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">To:</label>
+                    <input type="date" id="dateTo" name="dateTo" value="@dateTo"
+                           class="form-control form-control-sm" required />
+                </div>
+                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </form>
+
+            <!-- Print Dropdown -->
+            <div class="btn-group mt-2 mt-sm-0">
+                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="#" id="btnDownloadPDF">
+                            <i class="bi bi-file-earmark-pdf"></i> Print as PDF
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="btnDownloadExcel">
+                            <i class="bi bi-file-earmark-excel"></i> Print as Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body report-container">
+
+        <!-- Title Box -->
+        <div class="report-title-box text-center mb-4">
+            <h3 class="fw-bold">Driver Daily Time Record</h3>
+            <p class="text-muted small mb-0">(Trip count and passenger summary per driver)</p>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid mb-3"
+             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
+             data-date-to="@toDt.ToString("MMMM d, yyyy")">
+            <div class="row g-2">
+                <div class="col-6 col-md-3 fw-bold">Date From:</div>
+                <div class="col-6 col-md-3" id="displayDateFrom">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
+                <div class="col-6 col-md-3 fw-bold">Date To:</div>
+                <div class="col-6 col-md-3" id="displayDateTo">@toDt.ToString("dddd, MMMM d, yyyy")</div>
+
+                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
+                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
+                <div class="col-6 col-md-3 fw-bold">Attraction:</div>
+                <div class="col-6 col-md-3">Canyoneering Adventure</div>
+            </div>
+        </div>
+
+        <!-- Summary Badges -->
+  @*       <div class="d-flex flex-wrap gap-3 mb-3">
+            <span class="badge bg-secondary fs-6 px-3 py-2">
+                <i class="bi bi-person-badge me-1"></i>
+                Drivers: <strong>@totalDrivers</strong>
+            </span>
+            <span class="badge bg-dark fs-6 px-3 py-2">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                Total Trips: <strong>@totalTrips</strong>
+            </span>
+            <span class="badge bg-primary fs-6 px-3 py-2">
+                <i class="bi bi-people me-1"></i>
+                Total Passengers: <strong>@totalPassenger</strong>
+            </span>
+        </div> *@
+
+        <!-- Table -->
+        <div class="table-responsive">
+            <table id="driverDtrTable"
+                   class="table table-bordered table-striped table-sm text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width:60px;">Seq.</th>
+                        <th class="text-start">Driver Name</th>
+                        <th style="width:120px;">Ref ID</th>
+                        <th style="width:130px;">No. of Trips</th>
+                        <th style="width:150px;">Total Passengers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int seq = 1;
+                        if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    No DTR records found for the selected date range.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@seq</td>
+                                    <td class="text-start fw-semibold">@item.DriverName</td>
+                                    <td class="text-muted small">@item.RefId</td>
+                                    <td>
+                                        <span class="badge bg-secondary px-2">@item.TripCount</span>
+                                    </td>
+                                    <td><strong>@item.TotalPassenger</strong></td>
+                                </tr>
+                                seq++;
+                            }
+                        }
+                    }
+                </tbody>
+                <tfoot class="fw-bold table-secondary">
+                    <tr>
+                        <td colspan="3" class="text-start">TOTAL:</td>
+                        <td>@totalTrips</td>
+                        <td>@totalPassenger</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <p class="note-text mt-3 small text-muted">
+            <em>Note: Each trip count represents one DTR entry. Passengers are summed across all trips within the selected date range.</em>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="~/js/ReportsDriverDtr.js?v=1" asp-append-version="true"></script>
+}

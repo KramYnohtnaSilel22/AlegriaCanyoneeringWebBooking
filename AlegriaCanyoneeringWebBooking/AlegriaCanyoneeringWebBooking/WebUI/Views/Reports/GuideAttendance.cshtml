@@ -1,0 +1,153 @@
+﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.GuideAttendanceReportViewModel>
+<link href="~/css/ReportsGuideAttendance.css" rel="stylesheet" />
+
+@{
+    var totalGuests = ViewBag.TotalGuests ?? 0;
+    var totalRecords = ViewBag.TotalRecords ?? 0;
+    var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    DateTime.TryParse(dateFrom, out var fromDt);
+    DateTime.TryParse(dateTo, out var toDt);
+}
+
+<div class="card mt-4 shadow">
+    <!-- Header -->
+    <div class="card-header bg-success text-white d-flex flex-wrap justify-content-between align-items-center">
+        <h5 class="mb-2 mb-md-0">
+            <i class="bi bi-calendar-check me-2"></i>Tour Guide Attendance Report
+        </h5>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Filter Form -->
+            <form method="get" asp-action="GuideAttendance" id="filterForm"
+                  class="d-flex flex-wrap align-items-center gap-2">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">From:</label>
+                    <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom"
+                           class="form-control form-control-sm" required />
+                </div>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">To:</label>
+                    <input type="date" id="dateTo" name="dateTo" value="@dateTo"
+                           class="form-control form-control-sm" required />
+                </div>
+                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </form>
+
+            <!-- Print Dropdown -->
+            <div class="btn-group mt-2 mt-sm-0">
+                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="#" id="btnDownloadPDF">
+                            <i class="bi bi-file-earmark-pdf"></i> Print as PDF
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="btnDownloadExcel">
+                            <i class="bi bi-file-earmark-excel"></i> Print as Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body report-container">
+
+        <!-- Title Box -->
+        <div class="report-title-box text-center mb-4">
+            <h3 class="fw-bold">Tour Guide Attendance Record</h3>
+            <p class="text-muted small mb-0">(Summary of tour guide guests by date)</p>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid mb-3"
+             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
+             data-date-to="@toDt.ToString("MMMM d, yyyy")">
+            <div class="row g-2">
+                <div class="col-6 col-md-3 fw-bold">Date From:</div>
+                <div class="col-6 col-md-3" id="displayDateFrom">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
+                <div class="col-6 col-md-3 fw-bold">Date To:</div>
+                <div class="col-6 col-md-3" id="displayDateTo">@toDt.ToString("dddd, MMMM d, yyyy")</div>
+
+                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
+                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
+                <div class="col-6 col-md-3 fw-bold">Attraction:</div>
+                <div class="col-6 col-md-3">Canyoneering Adventure</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+            <table id="guideAttendanceTable"
+                   class="table table-bordered table-striped table-sm text-center align-middle">
+                <thead class="table-success">
+                    <tr>
+                        <th style="width:60px;">Seq.</th>
+                        <th class="text-start">Guide Name</th>
+                        <th style="width:160px;">RFID</th>
+                        <th style="width:200px;">Date</th>
+                        <th style="width:120px;">Guests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int seq = 1;
+                        if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    No attendance records found for the selected date range.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@seq</td>
+                                    <td class="text-start fw-semibold">@item.GuideName</td>
+                                    <td class="text-muted small">@item.Rfid</td>
+                                    <td>@item.Date</td>
+                                    <td><strong>@item.Guests</strong></td>
+                                </tr>
+                                seq++;
+                            }
+                        }
+                    }
+                </tbody>
+                <tfoot class="fw-bold table-secondary">
+                    <tr>
+                        <td colspan="4" class="text-start">TOTAL:</td>
+                        <td>@totalGuests</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <p class="note-text mt-3 small text-muted">
+            <em>
+                Note: Report shows all tour guide attendance entries within the selected date range.
+                Guest count reflects the number of guests handled per assignment.
+            </em>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="~/js/ReportsGuideAttendance.js?v=2" asp-append-version="true"></script>
+}
