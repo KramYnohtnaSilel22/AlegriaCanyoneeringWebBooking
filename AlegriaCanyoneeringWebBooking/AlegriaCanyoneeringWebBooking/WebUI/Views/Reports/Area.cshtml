@@ -1,0 +1,229 @@
+﻿@model IEnumerable<TourismReportViewModel>
+<link href="~/css/ReportsArea.css" rel="stylesheet" />
+
+@{
+    var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var selectedArea = ViewBag.SelectedArea as string ?? "";
+    var areas = ViewBag.Areas as List<string> ?? new List<string> { "Wonder Falls", "Kanlaob", "Kawasan Exit" };
+
+    var totalThisProvinceMale = Model?.Sum(x => x.ThisProvinceMale) ?? 0;
+    var totalThisProvinceFemale = Model?.Sum(x => x.ThisProvinceFemale) ?? 0;
+    var totalOtherProvinceMale = Model?.Sum(x => x.OtherProvinceMale) ?? 0;
+    var totalOtherProvinceFemale = Model?.Sum(x => x.OtherProvinceFemale) ?? 0;
+    var totalForeignMale = Model?.Sum(x => x.ForeignMale) ?? 0;
+    var totalForeignFemale = Model?.Sum(x => x.ForeignFemale) ?? 0;
+
+    var grandTotalMale = totalThisProvinceMale + totalOtherProvinceMale + totalForeignMale;
+    var grandTotalFemale = totalThisProvinceFemale + totalOtherProvinceFemale + totalForeignFemale;
+    var grandTotal = grandTotalMale + grandTotalFemale;
+}
+
+<div class="card mt-4 shadow">
+    <div class="card-header bg-primary text-white d-flex flex-wrap justify-content-between align-items-center">
+        <h5 class="mb-2 mb-md-0">Guest Visitor Report</h5>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Filter Form -->
+            <form method="get" asp-action="Area" id="filterForm"
+                  class="d-flex flex-wrap align-items-center gap-2">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="text-white fw-bold">From:</label>
+                    <input type="date" name="dateFrom" id="dateFrom" value="@ViewBag.DateFrom"
+                           class="form-control form-control-sm" required />
+                </div>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="text-white fw-bold">To:</label>
+                    <input type="date" name="dateTo" id="dateTo" value="@ViewBag.DateTo"
+                           class="form-control form-control-sm" required />
+                </div>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="text-white fw-bold">Area:</label>
+                    <select name="area" class="form-select form-select-sm" style="min-width:140px;">
+                        <option value="" selected="@(string.IsNullOrEmpty(selectedArea) ? "selected" : null)">— All Areas —</option>
+                        @foreach (var a in areas)
+                        {
+                            <option value="@a" selected="@(selectedArea == a ? "selected" : null)">@a</option>
+                        }
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </form>
+
+            <!-- Print Dropdown -->
+            <div class="btn-group mt-2 mt-sm-0">
+                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="#" id="btnDownloadPDF">
+                            <i class="bi bi-file-earmark-pdf"></i> Print as PDF
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="btnDownloadExcel">
+                            <i class="bi bi-file-earmark-excel"></i> Print as Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body report-container">
+        <div class="report-title-box text-center mb-4">
+            <h3 class="fw-bold">Tourism Attraction Visitor Record</h3>
+            @if (!string.IsNullOrEmpty(selectedArea))
+            {
+                <div class="mt-1">
+                    <span class="badge bg-primary fs-6 px-3">@selectedArea</span>
+                </div>
+            }
+            <p class="text-muted small mb-0">(This recording form can be used instead of just counting the visitors)</p>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-grid mb-3">
+            <div class="row g-2">
+                <div class="col-6 col-md-3 fw-bold">Date From:</div>
+                <div class="col-6 col-md-3">
+                    @(DateTime.TryParse(dateFrom, out var from) ? from.ToString("dddd, MMMM d, yyyy") : "N/A")
+                </div>
+                <div class="col-6 col-md-3 fw-bold">Date To:</div>
+                <div class="col-6 col-md-3">
+                    @(DateTime.TryParse(dateTo, out var to) ? to.ToString("dddd, MMMM d, yyyy") : "N/A")
+                </div>
+
+                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
+                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
+                <div class="col-6 col-md-3 fw-bold">Area:</div>
+                <div class="col-6 col-md-3">
+                    @(string.IsNullOrEmpty(selectedArea) ? "All Areas" : selectedArea)
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+            <table id="tourismReportTable"
+                   class="table table-bordered table-striped table-sm text-center align-middle">
+                <thead class="table-primary">
+                    <tr>
+                        <th rowspan="4">Seq.</th>
+                        <th rowspan="4">
+                            @if (ViewBag.GroupByMonth == true)
+                            {
+                                <text>Month</text>
+                            }
+                            else
+                            {
+                                <text>Date<br />Week Day<br />(Mon-Sun)</text>
+                            }
+                        </th>
+                        <th colspan="9">*** Place of Residences</th>
+                        <th colspan="3" rowspan="2">Grand Total Number of Visitors</th>
+                    </tr>
+                    <tr>
+                        <th colspan="6">Philippines</th>
+                        <th colspan="3" rowspan="2">Foreign Country Residence</th>
+                    </tr>
+                    <tr>
+                        <th colspan="3">This Province</th>
+                        <th colspan="3">Other Province</th>
+                    </tr>
+                    <tr>
+                        <th>Male</th>
+                        <th>Female</th>
+                        <th>Total</th>
+                        <th>Male</th>
+                        <th>Female</th>
+                        <th>Total</th>
+                        <th>Male</th>
+                        <th>Female</th>
+                        <th>Total</th>
+                        <th>Male</th>
+                        <th>Female</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @{
+                        int seq = 1;
+                        if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="14" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox me-2" style="font-size:1.4rem;"></i><br />
+                                    <span class="fw-semibold">No data found</span>
+                                    @if (!string.IsNullOrEmpty(selectedArea))
+                                    {
+                                        <span> for <strong>@selectedArea</strong></span>
+                                    }
+                                    <span> in the selected date range.</span>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@seq</td>
+                                    <td>@item.Label</td>
+                                    <td>@item.ThisProvinceMale</td>
+                                    <td>@item.ThisProvinceFemale</td>
+                                    <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
+                                    <td>@item.OtherProvinceMale</td>
+                                    <td>@item.OtherProvinceFemale</td>
+                                    <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
+                                    <td>@item.ForeignMale</td>
+                                    <td>@item.ForeignFemale</td>
+                                    <td>@(item.ForeignMale + item.ForeignFemale)</td>
+                                    <td>@item.TotalMale</td>
+                                    <td>@item.TotalFemale</td>
+                                    <td>@item.GrandTotal</td>
+                                </tr>
+                                seq++;
+                            }
+                        }
+                    }
+                </tbody>
+
+                <tfoot class="fw-bold table-secondary">
+                    <tr>
+                        <td colspan="2">@(ViewBag.GroupByMonth == true ? "Period Total" : "Monthly Total")</td>
+                        <td>@totalThisProvinceMale</td>
+                        <td>@totalThisProvinceFemale</td>
+                        <td>@(totalThisProvinceMale + totalThisProvinceFemale)</td>
+                        <td>@totalOtherProvinceMale</td>
+                        <td>@totalOtherProvinceFemale</td>
+                        <td>@(totalOtherProvinceMale + totalOtherProvinceFemale)</td>
+                        <td>@totalForeignMale</td>
+                        <td>@totalForeignFemale</td>
+                        <td>@(totalForeignMale + totalForeignFemale)</td>
+                        <td>@grandTotalMale</td>
+                        <td>@grandTotalFemale</td>
+                        <td>@grandTotal</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <p class="note-text mt-3 small text-muted">
+            <em>Note: Total number must be recorded. Residence entries are optional. @(ViewBag.GroupByMonth == true ? "Period" : "Monthly") totals must be recorded.</em>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="~/js/ReportsArea.js" asp-append-version="true"></script>
+}
