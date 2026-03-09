@@ -356,23 +356,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(report);
         }
 
+        private static readonly List<string> GuideAreas = new()
+        {
+            "Wonder Falls",
+            "Kanlaob",
+            "Kawasan Exit"
+        };
+
         // =========================================================
         // GUIDE ATTENDANCE REPORT
-        // GET /Reports/GuideAttendance?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd
+        // GET /Reports/GuideAttendance?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd&area=
         // ✅ Joins TourGuideAttendance.TGId → Guide.Rfid → Guide name
         // ✅ Date column in tourguide_attendance = Unix timestamp string
         // ✅ Guest count from TourGuideDtr.NoOfGuest (Date = yyyyMMdd long)
+        // ✅ Route via BatchAssignment → Guest.Area (TGId → Guide.Rfid → batch)
+        // ✅ area filter: Wonder Falls | Kanlaob | Kawasan Exit
         // =========================================================
         [HttpGet]
-        public async Task<IActionResult> GuideAttendance(string? dateFrom, string? dateTo)
+        public async Task<IActionResult> GuideAttendance(string? dateFrom, string? dateTo, string? area)
         {
-            // Default: today
             dateFrom ??= DateTime.Today.ToString("yyyy-MM-dd");
             dateTo ??= DateTime.Today.ToString("yyyy-MM-dd");
+            area ??= "";
 
-            // Convert filter dates to Unix timestamp range
             DateTime fromDt = DateTime.Parse(dateFrom).Date;
-            DateTime toDt = DateTime.Parse(dateTo).Date.AddDays(1); // inclusive end
+            DateTime toDt = DateTime.Parse(dateTo).Date.AddDays(1);
 
             long fromUnix = new DateTimeOffset(fromDt, TimeSpan.Zero).ToUnixTimeSeconds();
             long toUnix = new DateTimeOffset(toDt, TimeSpan.Zero).ToUnixTimeSeconds();
@@ -388,63 +396,128 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // ✅ Build yyyyMMdd range for TourGuideDtr lookup
             long dtrFrom = long.Parse(fromDt.ToString("yyyyMMdd"));
-            long dtrTo = long.Parse(toDt.AddDays(-1).ToString("yyyyMMdd")); // back off 1 day — toDt already +1
+            long dtrTo = long.Parse(toDt.AddDays(-1).ToString("yyyyMMdd"));
 
             // ✅ Guest count from TourGuideDtr (Date = yyyyMMdd long)
             var guideDtrs = await _context.TourGuideDtrs
                 .Where(d => d.Date >= dtrFrom && d.Date <= dtrTo)
                 .ToListAsync();
 
-            // Map Rfid(long) → total NoOfGuest per day
             var dtrGuestMap = guideDtrs
                 .GroupBy(d => d.Rfid)
                 .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0));
 
-            // ✅ Load all guides for name lookup
+            // ✅ Load all guides for name + Rfid lookup
             var guides = await _context.Guides
                 .Select(g => new
                 {
+                    g.GuideId,
                     g.Rfid,
                     fullName = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? "")).Trim()
                 })
                 .ToListAsync();
 
-            var guideMap = guides.ToDictionary(g => g.Rfid, g => g.fullName);
+            var guideNameMap = guides.ToDictionary(g => g.Rfid, g => g.fullName);
+            var guideIdMap = guides.ToDictionary(g => g.Rfid, g => g.GuideId);
 
-            // ✅ Build report rows — one row per attendance record
+            // ✅ Load BatchAssignments → GuideId → BatchCodes
+            var batchAssignments = await _context.BatchAssignments
+                .Where(b => b.GuideId != null)
+                .Select(b => new { b.GuideId, b.BatchCode })
+                .ToListAsync();
+
+            var batchesByGuideId = batchAssignments
+                .Where(b => b.GuideId.HasValue)
+                .GroupBy(b => b.GuideId!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.BatchCode).Distinct().ToList());
+
+            // ✅ Load Guests: Batch → Area (Route)
+            var guests = await _context.Guests
+                .Where(g => g.Batch != null && g.Area != null)
+                .Select(g => new { g.Batch, g.Area })
+                .ToListAsync();
+
+            var areaByBatch = guests
+                .GroupBy(g => g.Batch!)
+                .ToDictionary(g => g.Key, g => g.First().Area ?? "");
+
+            // ✅ Build report rows
             var report = attendance
                 .OrderBy(a => a.Date)
                 .Select(a =>
                 {
-                    // Convert Unix timestamp back to display date
                     string displayDate = "";
-                    if (long.TryParse(a.Date, out long unixTs))
-                        displayDate = DateTimeOffset.FromUnixTimeSeconds(unixTs)
-                                        .ToLocalTime()
-                                        .ToString("MMMM d, yyyy");
+                    string displayTime = "";
 
-                    // Guest count: match Rfid string → long for DTR lookup
-                    int guests = 0;
+                    if (long.TryParse(a.Date, out long unixTs))
+                    {
+                        var dto = DateTimeOffset.FromUnixTimeSeconds(unixTs).ToLocalTime();
+                        displayDate = dto.ToString("MMMM d, yyyy");
+                        displayTime = dto.ToString("hh:mm tt");
+                    }
+
+                    // Guest count
+                    int guests2 = 0;
                     if (long.TryParse(a.TGId, out long rfidLong) && dtrGuestMap.ContainsKey(rfidLong))
-                        guests = dtrGuestMap[rfidLong];
+                        guests2 = dtrGuestMap[rfidLong];
+
+                    // Route via Guide.GuideId → BatchAssignment → Guest.Area
+                    string route = "";
+                    if (guideIdMap.ContainsKey(a.TGId))
+                    {
+                        int guideIntId = guideIdMap[a.TGId];
+                        if (batchesByGuideId.ContainsKey(guideIntId))
+                        {
+                            foreach (var batch in batchesByGuideId[guideIntId])
+                            {
+                                if (batch != null && areaByBatch.ContainsKey(batch))
+                                {
+                                    route = areaByBatch[batch];
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
                     return new GuideAttendanceReportViewModel
                     {
-                        GuideName = guideMap.ContainsKey(a.TGId) ? guideMap[a.TGId] : a.TGId,
+                        GuideName = guideNameMap.ContainsKey(a.TGId) ? guideNameMap[a.TGId] : a.TGId,
                         Rfid = a.TGId,
                         Date = displayDate,
-                        Guests = guests
+                        Time = displayTime,
+                        Guests = guests2,
+                        Route = route
                     };
                 })
                 .ToList();
 
+            // ✅ Filter by area if selected
+            if (!string.IsNullOrEmpty(area))
+            {
+                report = report
+                    .Where(r => r.Route.Equals(area, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            // Period display
+            DateTime parsedFrom = DateTime.Parse(dateFrom);
+            DateTime parsedTo = DateTime.Parse(dateTo);
+            string period = parsedFrom == parsedTo
+                ? parsedFrom.ToString("MMMM d, yyyy").ToUpper()
+                : parsedFrom.ToString("MMM d").ToUpper() + " - " + parsedTo.ToString("MMM d, yyyy").ToUpper();
+
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
+            ViewBag.Period = period;
+            ViewBag.SelectedArea = area;
+            ViewBag.Areas = GuideAreas;
             ViewBag.TotalGuests = report.Sum(r => r.Guests);
             ViewBag.TotalRecords = report.Count;
 
             return View(report);
         }
+
+
 
         // =========================================================
         // DRIVER DTR REPORT — PAYROLL FORMAT
@@ -599,24 +672,33 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-
         // =========================================================
-        // GUIDE DTR REPORT
-        // GET /Reports/GuideDtr?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd
-        // ✅ Grouped by guide — shows TripCount + TotalGuests only
+        // GUIDE DTR REPORT — PAYROLL FORMAT
+        // GET /Reports/GuideDtr?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd&area=
+        // ✅ Grouped by guide — TripCount (jumps) × rate = GrossSalary = NetPay
         // ✅ TourGuideDtr.Rfid (long) matched to Guide.Rfid (string)
         // ✅ TourGuideDtr.Date = yyyyMMdd as long (NOT unix)
+        // ✅ Rates: Wonder Falls=500 | Kawasan Exit=600 | Kanlaob=0
+        // ✅ area filter: Wonder Falls | Kanlaob | Kawasan Exit
         // =========================================================
+        private static int GetGuideRate(string area) => area switch
+        {
+            "Wonder Falls" => 500,
+            "Kawasan Exit" => 600,
+            "Kanlaob" => 500,
+            _ => 0
+        };
+
         [HttpGet]
-        public async Task<IActionResult> GuideDtr(string? dateFrom, string? dateTo)
+        public async Task<IActionResult> GuideDtr(string? dateFrom, string? dateTo, string? area)
         {
             dateFrom ??= DateTime.Today.ToString("yyyy-MM-dd");
             dateTo ??= DateTime.Today.ToString("yyyy-MM-dd");
+            area ??= "";
 
             // ✅ Convert yyyy-MM-dd → yyyyMMdd long for TourGuideDtr.Date
             DateTime.TryParse(dateFrom, out var fromDt);
             DateTime.TryParse(dateTo, out var toDt);
-
             long dtrFrom = long.Parse(fromDt.ToString("yyyyMMdd"));
             long dtrTo = long.Parse(toDt.ToString("yyyyMMdd"));
 
@@ -625,38 +707,120 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Where(d => d.Date >= dtrFrom && d.Date <= dtrTo)
                 .ToListAsync();
 
-            // ✅ Load all guides — build Rfid(long) → name map
+            // ✅ Load all guides — build Rfid(long) → (GuideId, name)
             var guides = await _context.Guides
                 .Select(g => new
                 {
+                    g.GuideId,
                     g.Rfid,
-                    fullName = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? "")).Trim()
+                    fullName = ((g.LName ?? "").ToUpper() + ", " + (g.FName ?? "").ToUpper()
+                               + (!string.IsNullOrWhiteSpace(g.MName) ? " " + g.MName.ToUpper() : "")).Trim()
                 })
                 .ToListAsync();
 
-            // Map long rfid → guide name  (parse Guide.Rfid string as long)
             var rfidNameMap = guides
                 .Where(g => long.TryParse(g.Rfid, out _))
                 .ToDictionary(g => long.Parse(g.Rfid), g => g.fullName);
 
-            // ✅ Group by Rfid → TripCount + TotalGuests
+            var rfidGuideIdMap = guides
+                .Where(g => long.TryParse(g.Rfid, out _))
+                .ToDictionary(g => long.Parse(g.Rfid), g => g.GuideId);
+
+            // ✅ Load BatchAssignments → GuideId → BatchCodes
+            var batchAssignments = await _context.BatchAssignments
+                .Where(b => b.GuideId != null)
+                .Select(b => new { b.GuideId, b.BatchCode })
+                .ToListAsync();
+
+            var batchesByGuideId = batchAssignments
+                .Where(b => b.GuideId.HasValue)
+                .GroupBy(b => b.GuideId!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.BatchCode).Distinct().ToList());
+
+            // ✅ Load Guests: Batch → Area
+            var guests = await _context.Guests
+                .Where(g => g.Batch != null && g.Area != null)
+                .Select(g => new { g.Batch, g.Area })
+                .ToListAsync();
+
+            var areaByBatch = guests
+                .GroupBy(g => g.Batch!)
+                .ToDictionary(g => g.Key, g => g.First().Area ?? "");
+
+            // Build rfid(long) → area
+            var rfidAreaMap = new Dictionary<long, string>();
+            foreach (var kv in rfidGuideIdMap)
+            {
+                long rfid = kv.Key;
+                int guideId = kv.Value;
+                if (!batchesByGuideId.ContainsKey(guideId)) continue;
+                foreach (var batch in batchesByGuideId[guideId])
+                {
+                    if (batch != null && areaByBatch.ContainsKey(batch))
+                    {
+                        rfidAreaMap[rfid] = areaByBatch[batch];
+                        break;
+                    }
+                }
+            }
+
+            // ✅ Group by Rfid → TripCount + TotalGuests + area + salary
             var report = dtrs
                 .GroupBy(d => d.Rfid)
-                .Select(g => new GuideDtrReportViewModel
+                .Select(g =>
                 {
-                    Rfid = g.Key.ToString(),
-                    GuideName = rfidNameMap.ContainsKey(g.Key) ? rfidNameMap[g.Key] : $"Rfid: {g.Key}",
-                    TripCount = g.Count(),
-                    TotalGuests = g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0)
+                    string guideArea = rfidAreaMap.ContainsKey(g.Key) ? rfidAreaMap[g.Key] : "";
+                    int rate = GetGuideRate(guideArea);
+                    int jumps = g.Count();                   // Number of jumps = trips
+                    int totalPax = g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0);
+                    decimal gross = jumps * rate;
+
+                    return new GuideDtrReportViewModel
+                    {
+                        Rfid = g.Key.ToString(),
+                        GuideName = rfidNameMap.ContainsKey(g.Key) ? rfidNameMap[g.Key] : $"Rfid: {g.Key}",
+                        Address = "Alegria, Cebu",
+                        Designation = "Guide",
+                        TripCount = jumps,
+                        TotalGuests = totalPax,
+                        RatePerJump = rate,
+                        GrossSalary = gross,
+                        NetPay = gross,
+                        PlaceOfIssue = "Alegria, Cebu",
+                        Area = guideArea
+                    };
                 })
-                .OrderByDescending(r => r.TripCount)
                 .ToList();
+
+            // ✅ Filter by area if selected
+            if (!string.IsNullOrEmpty(area))
+                report = report
+                    .Where(r => r.Area.Equals(area, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+            report = report.OrderBy(r => r.GuideName).ToList();
+
+            // Period display
+            string period = fromDt.ToString("MMMM dd").ToUpper() + " - " + toDt.ToString("dd, yyyy").ToUpper();
+            if (fromDt.Month != toDt.Month || fromDt.Year != toDt.Year)
+                period = fromDt.ToString("MMMM dd").ToUpper() + " - " + toDt.ToString("MMMM dd, yyyy").ToUpper();
+
+            // Rate label for header
+            string rateLabel = string.IsNullOrEmpty(area)
+                ? "Varies by Area"
+                : $"₱{GetGuideRate(area):N0} / Jump";
 
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
+            ViewBag.Period = period;
+            ViewBag.SelectedArea = area;
+            ViewBag.Areas = GuideAreas;
+            ViewBag.RateLabel = rateLabel;
             ViewBag.TotalGuides = report.Count;
             ViewBag.TotalTrips = report.Sum(r => r.TripCount);
             ViewBag.TotalGuests = report.Sum(r => r.TotalGuests);
+            ViewBag.TotalGross = report.Sum(r => r.GrossSalary);
+            ViewBag.TotalNetPay = report.Sum(r => r.NetPay);
 
             return View(report);
         }

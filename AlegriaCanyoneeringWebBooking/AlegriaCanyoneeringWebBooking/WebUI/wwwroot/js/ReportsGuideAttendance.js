@@ -4,10 +4,10 @@
     $("#btnDownloadPDF").on("click", async function () {
         if (!window.jspdf) { alert("jsPDF failed to load."); return; }
 
-        const element = document.querySelector(".report-container");
+        const element = document.getElementById("printArea");
         if (!element) { alert("Report not found."); return; }
 
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+        const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#fff" });
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
         const { jsPDF } = window.jspdf;
@@ -15,12 +15,16 @@
 
         const pageW = pdf.internal.pageSize.getWidth();
         const pageH = pdf.internal.pageSize.getHeight();
+        const margin = 8;
         const imgProps = pdf.getImageProperties(imgData);
-        const scale = Math.min((pageW - 10) / imgProps.width, (pageH - 10) / imgProps.height);
+        const scale = Math.min(
+            (pageW - margin * 2) / imgProps.width,
+            (pageH - margin * 2) / imgProps.height
+        );
         const w = imgProps.width * scale;
         const h = imgProps.height * scale;
 
-        pdf.addImage(imgData, "JPEG", (pageW - w) / 2, (pageH - h) / 2, w, h);
+        pdf.addImage(imgData, "JPEG", (pageW - w) / 2, margin, w, h);
         pdf.save(`GuideAttendance_${new Date().toISOString().slice(0, 10)}.pdf`);
     });
 
@@ -31,13 +35,7 @@
         const table = document.getElementById("guideAttendanceTable");
         if (!table) { alert("Table not found."); return; }
 
-        // ---- Read dates ----
-        let dateFromText = "N/A";
-        let dateToText = "N/A";
-        const displayFrom = document.getElementById("displayDateFrom");
-        const displayTo = document.getElementById("displayDateTo");
-        if (displayFrom) dateFromText = displayFrom.innerText.trim();
-        if (displayTo) dateToText = displayTo.innerText.trim();
+        const period = document.getElementById("displayPeriod")?.innerText?.trim() || "N/A";
 
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet("Guide Attendance", {
@@ -50,110 +48,108 @@
             }
         });
 
-        // ---- Column widths ----
+        // ---- Column widths (4 cols) ----
         ws.columns = [
-            { width: 8 },  // Seq
-            { width: 38 },  // Guide Name
-            { width: 20 },  // RFID
-            { width: 28 },  // Date
-            { width: 12 }   // Guests
+            { width: 6 },   // Seq
+            { width: 32 },   // Name
+            { width: 22 },   // Date & Time
+            { width: 26 }    // Route
         ];
 
-        // ---- Government header ----
-        const setCell = (addr, value, bold, size) => {
+        const setCell = (addr, value, opts = {}) => {
             const cell = ws.getCell(addr);
             cell.value = value;
-            cell.font = { bold: bold ?? false, size: size ?? 10 };
-            cell.alignment = { horizontal: "center", vertical: "middle" };
+            cell.font = { bold: opts.bold ?? false, size: opts.size ?? 10, ...(opts.font || {}) };
+            cell.alignment = { horizontal: opts.align ?? "center", vertical: "middle", wrapText: opts.wrap ?? false };
+            if (opts.fill) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: opts.fill } };
+            if (opts.border) cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
         };
 
-        ws.mergeCells("A1:E1"); setCell("A1", "Republic of the Philippines", false, 11);
-        ws.mergeCells("A2:E2"); setCell("A2", "Province of Cebu", false, 10);
-        ws.mergeCells("A3:E3"); setCell("A3", "Municipality of Alegria", false, 10);
-        ws.getRow(4).height = 5;
-        ws.mergeCells("A5:E5"); setCell("A5", "Tour Guide Attendance Record", true, 13);
-        ws.mergeCells("A6:E6"); setCell("A6", `${dateFromText} - ${dateToText}`, true, 10);
-        ws.getRow(7).height = 5;
+        const borderAll = (cell) => {
+            cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        };
 
-        // ---- Table header row 8 ----
-        const headers = ["Seq.", "Guide Name", "RFID", "Date", "Guests"];
-        headers.forEach((label, i) => {
-            const col = String.fromCharCode(65 + i);
-            const cell = ws.getCell(`${col}8`);
-            cell.value = label;
-            cell.font = { bold: true, size: 10 };
-            cell.alignment = { horizontal: "center", vertical: "middle" };
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1E7DD" } };
-            cell.border = {
-                top: { style: "thin" }, left: { style: "thin" },
-                bottom: { style: "thin" }, right: { style: "thin" }
-            };
-        });
-        ws.getRow(8).height = 18;
+        // ---- Gov Header ----
+        ws.mergeCells("A1:D1"); setCell("A1", "TOURIST TOUR GUIDE", { bold: true, size: 13 });
+        ws.mergeCells("A2:D2"); setCell("A2", "Project", { size: 10 });
+        ws.mergeCells("A3:D3"); setCell("A3", "MUNICIPALITY OF ALEGRIA", { bold: true, size: 11 });
+        ws.mergeCells("A4:D4"); setCell("A4", `PERIOD: ${period}`, { bold: true, size: 10 });
+        ws.getRow(5).height = 4;
+
+        // ---- Table Header row 6 ----
+        const thFill = "FFEEEEEE";
+        setCell("A6", "", { bold: true, fill: thFill, border: true });
+        setCell("B6", "NAME", { bold: true, fill: thFill, border: true });
+        setCell("C6", "DATE & TIME", { bold: true, fill: thFill, border: true });
+        setCell("D6", "ROUTE", { bold: true, fill: thFill, border: true });
+        ws.getRow(6).height = 16;
 
         // ---- Body rows ----
         const tbody = table.querySelector("tbody");
+        let rowIdx = 7;
+
         if (tbody) {
             Array.from(tbody.querySelectorAll("tr")).forEach(tr => {
-                const cells = Array.from(tr.querySelectorAll("td")).map(td => td.innerText.trim());
-                if (cells.length >= 5 && !cells[1].includes("No attendance")) {
-                    const row = ws.addRow([
-                        Number(cells[0]) || 0,  // Seq
-                        cells[1],               // Guide Name
-                        cells[2],               // RFID
-                        cells[3],               // Date
-                        Number(cells[4]) || 0   // Guests
-                    ]);
+                const tds = Array.from(tr.querySelectorAll("td")).map(td => td.innerText.trim());
+                // Skip no-data colspan row
+                if (tds.length < 4) return;
 
-                    row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
-                    row.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
-                    row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
-                    row.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
-                    row.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
-                    row.getCell(5).numFmt = "#,##0";
-                    row.getCell(5).font = { bold: true };
+                const row = ws.getRow(rowIdx);
+                row.height = 16;
 
-                    for (let c = 1; c <= 5; c++) {
-                        row.getCell(c).border = {
-                            top: { style: "thin" }, left: { style: "thin" },
-                            bottom: { style: "thin" }, right: { style: "thin" }
-                        };
-                    }
-                }
+                row.getCell(1).value = tds[0];
+                row.getCell(2).value = tds[1];
+                row.getCell(3).value = tds[2];
+                row.getCell(4).value = tds[3];
+
+                row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+                row.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
+                row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
+                row.getCell(4).alignment = { horizontal: "left", vertical: "middle" };
+
+                [1, 2, 3, 4].forEach(c => borderAll(row.getCell(c)));
+                rowIdx++;
             });
         }
 
-        // ---- Totals row ----
-        const tfoot = table.querySelector("tfoot tr");
-        if (tfoot) {
-            const tf = Array.from(tfoot.querySelectorAll("td")).map(td => td.innerText.trim());
-            const totalRow = ws.addRow([
-                "", "", "", "TOTAL:",
-                Number(tf[tf.length - 1].replace(/[^0-9]/g, "")) || 0
-            ]);
-            totalRow.font = { bold: true, size: 10 };
-            totalRow.getCell(4).alignment = { horizontal: "right", vertical: "middle" };
-            totalRow.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
-            totalRow.getCell(5).numFmt = "#,##0";
-            totalRow.eachCell(cell => {
-                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F5F5" } };
-                cell.border = {
-                    top: { style: "thin" }, left: { style: "thin" },
-                    bottom: { style: "thin" }, right: { style: "thin" }
-                };
-            });
-        }
+        // Spacer
+        ws.getRow(rowIdx).height = 8; rowIdx++;
 
-        // ---- Footer note ----
-        const noteRow = ws.addRow([]);
-        const noteIdx = noteRow.number;
-        ws.mergeCells(`A${noteIdx}:E${noteIdx}`);
-        ws.getCell(`A${noteIdx}`).value = "System Generated Report - Tour Guide Attendance Summary";
-        ws.getCell(`A${noteIdx}`).font = { italic: true, size: 9 };
-        ws.getCell(`A${noteIdx}`).alignment = { horizontal: "left", vertical: "middle" };
+        // ---- Footer Certification ----
+        const certRow = rowIdx;
+        for (let r = certRow; r <= certRow + 4; r++) ws.getRow(r).height = 13;
 
-        ws.pageSetup.printArea = `A1:E${noteIdx}`;
-        ws.pageSetup.printTitlesRow = "8:8";
+        ws.mergeCells(`A${certRow}:A${certRow + 4}`);
+        ws.getCell(`A${certRow}`).value = "CERTIFIED\nEach person whose name appears on this roll had rendered services for the time stated.";
+        ws.getCell(`A${certRow}`).font = { size: 9 };
+        ws.getCell(`A${certRow}`).alignment = { horizontal: "left", vertical: "top", wrapText: true };
+
+        ws.mergeCells(`B${certRow}:C${certRow + 4}`);
+        ws.getCell(`B${certRow}`).value = "Approved for Payment:";
+        ws.getCell(`B${certRow}`).font = { size: 10 };
+        ws.getCell(`B${certRow}`).alignment = { horizontal: "center", vertical: "middle" };
+
+        ws.mergeCells(`D${certRow}:D${certRow + 4}`);
+        ws.getCell(`D${certRow}`).value = "Each person whose name appears on the above roll has been paid the amount stated opposite his name after identifying them.";
+        ws.getCell(`D${certRow}`).font = { size: 9 };
+        ws.getCell(`D${certRow}`).alignment = { horizontal: "left", vertical: "top", wrapText: true };
+
+        rowIdx = certRow + 5;
+
+        // Sig lines
+        setCell(`A${rowIdx}`, "PICHEY L. LENDIO", { bold: true, size: 10, border: true });
+        setCell(`B${rowIdx}`, "HON. VERNA V. MAGALLON", { bold: true, size: 10, border: true });
+        ws.mergeCells(`B${rowIdx}:C${rowIdx}`);
+        setCell(`D${rowIdx}`, "JOSE WILSON C PATRIARCA", { bold: true, size: 10, border: true });
+
+        rowIdx++;
+        setCell(`A${rowIdx}`, "Name & Signature of Timekeeper", { size: 9 });
+        ws.mergeCells(`B${rowIdx}:C${rowIdx}`);
+        setCell(`B${rowIdx}`, "Name & Signature of Approving Officer", { size: 9 });
+        setCell(`D${rowIdx}`, "Name & Signature of Disbursing", { size: 9 });
+
+        ws.pageSetup.printArea = `A1:D${rowIdx}`;
+        ws.pageSetup.printTitlesRow = "6:6";
 
         // ---- Export ----
         const buffer = await wb.xlsx.writeBuffer();

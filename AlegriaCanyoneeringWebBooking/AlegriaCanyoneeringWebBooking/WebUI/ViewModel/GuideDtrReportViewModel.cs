@@ -4,7 +4,14 @@
     {
         public string GuideName { get; set; } = "";
         public string Rfid { get; set; } = "";
-        public int TripCount { get; set; }  // number of DTR records (trips)
-        public int TotalGuests { get; set; } // sum of NoOfGuest
+        public string Address { get; set; } = "Alegria, Cebu";
+        public string Designation { get; set; } = "Guide";
+        public int TripCount { get; set; }   // jumps / trips
+        public int TotalGuests { get; set; }   // total guests across trips
+        public int RatePerJump { get; set; }   // Wonder Falls=500, Kawasan Exit=600, Kanlaob=0
+        public decimal GrossSalary { get; set; }   // TripCount × RatePerJump
+        public decimal NetPay { get; set; }   // = GrossSalary
+        public string PlaceOfIssue { get; set; } = "Alegria, Cebu";
+        public string Area { get; set; } = "";
     }
 }
