@@ -2,25 +2,29 @@
 <link href="~/css/ReportsDriverDtr.css" rel="stylesheet" />
 
 @{
-    var totalDrivers = ViewBag.TotalDrivers ?? 0;
-    var totalTrips = ViewBag.TotalTrips ?? 0;
-    var totalPassenger = ViewBag.TotalPassenger ?? 0;
+    var totalPassenger = (int)(ViewBag.TotalPassenger ?? 0);
+    var totalGross = (decimal)(ViewBag.TotalGross ?? 0m);
+    var totalNetPay = (decimal)(ViewBag.TotalNetPay ?? 0m);
+    var period = ViewBag.Period as string ?? "";
     var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
     var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var selectedArea = ViewBag.SelectedArea as string ?? "";
+    var areas = ViewBag.Areas as List<string> ?? new List<string> { "Wonder Falls", "Kanlaob", "Kawasan Exit" };
+    var areaDisplay = string.IsNullOrEmpty(selectedArea) ? "ALL AREAS" : selectedArea.ToUpper();
 
     DateTime.TryParse(dateFrom, out var fromDt);
     DateTime.TryParse(dateTo, out var toDt);
+
+    var rows = Model?.ToList() ?? new List<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.DriverDtrReportViewModel>();
 }
 
 <div class="card mt-4 shadow">
-    <!-- Header -->
-    <div class="card-header bg-info text-white d-flex flex-wrap justify-content-between align-items-center">
+    <!-- Card Header — hidden on print -->
+    <div class="card-header bg-info text-white d-flex flex-wrap justify-content-between align-items-center no-print">
         <h5 class="mb-2 mb-md-0">
             <i class="bi bi-card-list me-2"></i>Driver DTR Report
         </h5>
-
         <div class="d-flex flex-wrap align-items-center gap-2">
-            <!-- Filter Form -->
             <form method="get" asp-action="DriverDtr" id="filterForm"
                   class="d-flex flex-wrap align-items-center gap-2">
                 <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
@@ -33,12 +37,20 @@
                     <input type="date" id="dateTo" name="dateTo" value="@dateTo"
                            class="form-control form-control-sm" required />
                 </div>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">Area:</label>
+                    <select name="area" class="form-select form-select-sm" style="min-width:140px;">
+                        <option value="" selected="@(string.IsNullOrEmpty(selectedArea) ? "selected" : null)">— All Areas —</option>
+                        @foreach (var a in areas)
+                        {
+                            <option value="@a" selected="@(selectedArea == a ? "selected" : null)">@a</option>
+                        }
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
                     <i class="bi bi-search"></i> Search
                 </button>
             </form>
-
-            <!-- Print Dropdown -->
             <div class="btn-group mt-2 mt-sm-0">
                 <button type="button" class="btn btn-info btn-sm dropdown-toggle"
                         data-bs-toggle="dropdown">
@@ -60,105 +72,132 @@
         </div>
     </div>
 
-    <!-- Body -->
-    <div class="card-body report-container">
+    <!-- Payroll Form Body -->
+    <div class="card-body report-container" id="printArea">
 
-        <!-- Title Box -->
-        <div class="report-title-box text-center mb-4">
-            <h3 class="fw-bold">Driver Daily Time Record</h3>
-            <p class="text-muted small mb-0">(Trip count and passenger summary per driver)</p>
+        <!-- ===== GOVERNMENT PAYROLL HEADER ===== -->
+        <div class="pay-top-header text-center">
+            <div class="pay-project-label">Project</div>
         </div>
 
-        <!-- Info Grid -->
-        <div class="info-grid mb-3"
-             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
-             data-date-to="@toDt.ToString("MMMM d, yyyy")">
-            <div class="row g-2">
-                <div class="col-6 col-md-3 fw-bold">Date From:</div>
-                <div class="col-6 col-md-3" id="displayDateFrom">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
-                <div class="col-6 col-md-3 fw-bold">Date To:</div>
-                <div class="col-6 col-md-3" id="displayDateTo">@toDt.ToString("dddd, MMMM d, yyyy")</div>
-
-                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
-                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
-                <div class="col-6 col-md-3 fw-bold">Attraction:</div>
-                <div class="col-6 col-md-3">Canyoneering Adventure</div>
+        <div class="pay-meta-row">
+            <div class="pay-meta-left">
+                <div>LGU : &nbsp;<strong>MUNICIPALITY OF ALEGRIA</strong></div>
+                <div class="pay-project-name"><strong id="displayArea">@areaDisplay</strong></div>
+            </div>
+            <div class="pay-meta-right">
+                Period: <strong id="displayPeriod">@period</strong>
             </div>
         </div>
 
-        <!-- Summary Badges -->
-  @*       <div class="d-flex flex-wrap gap-3 mb-3">
-            <span class="badge bg-secondary fs-6 px-3 py-2">
-                <i class="bi bi-person-badge me-1"></i>
-                Drivers: <strong>@totalDrivers</strong>
-            </span>
-            <span class="badge bg-dark fs-6 px-3 py-2">
-                <i class="bi bi-arrow-repeat me-1"></i>
-                Total Trips: <strong>@totalTrips</strong>
-            </span>
-            <span class="badge bg-primary fs-6 px-3 py-2">
-                <i class="bi bi-people me-1"></i>
-                Total Passengers: <strong>@totalPassenger</strong>
-            </span>
-        </div> *@
-
-        <!-- Table -->
+        <!-- ===== PAYROLL TABLE ===== -->
         <div class="table-responsive">
-            <table id="driverDtrTable"
-                   class="table table-bordered table-striped table-sm text-center align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th style="width:60px;">Seq.</th>
-                        <th class="text-start">Driver Name</th>
-                        <th style="width:120px;">Ref ID</th>
-                        <th style="width:130px;">No. of Trips</th>
-                        <th style="width:150px;">Total Passengers</th>
+            <table id="driverDtrTable" class="pay-table">
+                <thead>
+                    <tr class="pay-thead-top">
+                        <th rowspan="2" class="col-seq">&nbsp;</th>
+                        <th rowspan="2" class="col-name">Name</th>
+                        <th rowspan="2" class="col-address">Address</th>
+                        <th rowspan="2" class="col-desig">Designation</th>
+                        <th rowspan="2" class="col-pax">Number<br />of<br />Passenger</th>
+                        <th rowspan="2" class="col-rate">Rate<br />per<br />Day</th>
+                        <th rowspan="2" class="col-gross">Gross<br />Salary</th>
+                        <th rowspan="2" class="col-net">NET PAY</th>
+                        <th rowspan="2" class="col-seq2">&nbsp;</th>
+                        <th rowspan="2" class="col-sig">Signature or<br />Thumbmark</th>
+                        <th colspan="3" class="col-ctax-header">COMMUNITY TAX</th>
+                    </tr>
+                    <tr class="pay-thead-bottom">
+                        <th class="col-ctax-num">Number</th>
+                        <th class="col-ctax-date">Date</th>
+                        <th class="col-ctax-place">Place of<br />Issue</th>
                     </tr>
                 </thead>
                 <tbody>
                     @{
                         int seq = 1;
-                        if (Model == null || !Model.Any())
+                        if (!rows.Any())
                         {
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>
+                                <td colspan="12" class="text-center py-4 text-muted">
                                     No DTR records found for the selected date range.
                                 </td>
                             </tr>
                         }
                         else
                         {
-                            foreach (var item in Model)
+                            foreach (var item in rows)
                             {
                                 <tr>
-                                    <td>@seq</td>
-                                    <td class="text-start fw-semibold">@item.DriverName</td>
-                                    <td class="text-muted small">@item.RefId</td>
-                                    <td>
-                                        <span class="badge bg-secondary px-2">@item.TripCount</span>
-                                    </td>
-                                    <td><strong>@item.TotalPassenger</strong></td>
+                                    <td class="col-seq text-center">@seq</td>
+                                    <td class="col-name">@item.DriverName</td>
+                                    <td class="col-address">@item.Address</td>
+                                    <td class="col-desig text-center">@item.Designation</td>
+                                    <td class="col-pax text-center" data-pax="@item.TotalPassenger">@item.TotalPassenger</td>
+                                    <td class="col-rate text-center" data-rate="@item.RatePerDay">@item.RatePerDay</td>
+                                    <td class="col-gross text-end" data-gross="@item.GrossSalary.ToString("F2")">@item.GrossSalary.ToString("N2")</td>
+                                    <td class="col-net text-end" data-net="@item.NetPay.ToString("F2")">@item.NetPay.ToString("N2")</td>
+                                    <td class="col-seq2 text-center">@seq</td>
+                                    <td class="col-sig"></td>
+                                    <td class="col-ctax-num"></td>
+                                    <td class="col-ctax-date"></td>
+                                    <td class="col-ctax-place text-center">@item.PlaceOfIssue</td>
                                 </tr>
                                 seq++;
                             }
                         }
                     }
                 </tbody>
-                <tfoot class="fw-bold table-secondary">
-                    <tr>
-                        <td colspan="3" class="text-start">TOTAL:</td>
-                        <td>@totalTrips</td>
-                        <td>@totalPassenger</td>
+                <tfoot>
+                    <tr class="pay-total-row">
+                        <td colspan="4"></td>
+                        <td class="text-center fw-bold" id="grandTotalPax">@totalPassenger</td>
+                        <td></td>
+                        <td class="text-end fw-bold" id="grandTotalGross">@totalGross.ToString("N2")</td>
+                        <td class="text-end fw-bold" id="grandTotalNet">@totalNetPay.ToString("N2")</td>
+                        <td colspan="5"></td>
                     </tr>
                 </tfoot>
             </table>
         </div>
 
-        <p class="note-text mt-3 small text-muted">
-            <em>Note: Each trip count represents one DTR entry. Passengers are summed across all trips within the selected date range.</em>
-        </p>
-    </div>
+        <!-- ===== FOOTER CERTIFICATION ===== -->
+        <div class="pay-footer">
+            <div class="pay-cert-row">
+                <div class="pay-cert-left">
+                    <div class="pay-cert-title">CERTIFIED:</div>
+                    <div class="pay-cert-body">
+                        Each person whose name appears on this<br />
+                        roll had rendered services for the time stated.
+                    </div>
+                    <div class="pay-sig-block">
+                        <div class="pay-sig-name">DESMOND KENNITH A. PLATERO</div>
+                        <div class="pay-sig-label">Municipal Tourism Officer - Designate</div>
+                    </div>
+                </div>
+                <div class="pay-cert-mid">
+                    <div class="pay-approved-text">Approved for Payment:</div>
+                    <div class="pay-sig-block">
+                        <div class="pay-sig-name">GILBERTO F. MAGALLON, M.D.</div>
+                        <div class="pay-sig-label">Municipal Mayor</div>
+                    </div>
+                </div>
+                <div class="pay-cert-right">
+                    <div class="pay-cert-title">CERTIFIED:</div>
+                    <div class="pay-cert-body">
+                        Each person whose name appears on the above
+                        roll has been paid the amount stated opposite his
+                        name after identifying them.
+                    </div>
+                    <div class="pay-sig-block">
+                        <div class="pay-sig-name">C/O REGISTER PAYROLL</div>
+                        <div class="pay-sig-label">Disbursing officer</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /report-container -->
 </div>
 
 @section Scripts {
@@ -166,5 +205,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <script src="~/js/ReportsDriverDtr.js?v=1" asp-append-version="true"></script>
+    <script src="~/js/ReportsDriverDtr.js?v=2" asp-append-version="true"></script>
 }

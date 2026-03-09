@@ -216,22 +216,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(viewModel);
         }
 
+        private static readonly List<string> AttendanceAreas = new()
+        {
+            "Wonder Falls",
+            "Kanlaob",
+            "Kawasan Exit"
+        };
+
         // =========================================================
         // DRIVER ATTENDANCE REPORT
-        // GET /Reports/DriverAttendance?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd
+        // GET /Reports/DriverAttendance?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd&area=
         // ✅ Joins DriverAttendance.DriverId → Driver.RefId → Driver name
+        // ✅ Joins Driver.DriverId → BatchAssignment → Guest.Area (Route)
+        // ✅ Time extracted from unix timestamp
         // ✅ Date column in driver_attendance = Unix timestamp string
+        // ✅ area filter: Wonder Falls | Kanlaob | Kawasan Exit
         // =========================================================
         [HttpGet]
-        public async Task<IActionResult> DriverAttendance(string? dateFrom, string? dateTo)
+        public async Task<IActionResult> DriverAttendance(string? dateFrom, string? dateTo, string? area)
         {
-            // Default: today
             dateFrom ??= DateTime.Today.ToString("yyyy-MM-dd");
             dateTo ??= DateTime.Today.ToString("yyyy-MM-dd");
+            area ??= "";
 
-            // Convert filter dates to Unix timestamp range
             DateTime fromDt = DateTime.Parse(dateFrom).Date;
-            DateTime toDt = DateTime.Parse(dateTo).Date.AddDays(1); // inclusive end
+            DateTime toDt = DateTime.Parse(dateTo).Date.AddDays(1);
 
             long fromUnix = new DateTimeOffset(fromDt, TimeSpan.Zero).ToUnixTimeSeconds();
             long toUnix = new DateTimeOffset(toDt, TimeSpan.Zero).ToUnixTimeSeconds();
@@ -239,47 +248,108 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             string fromStr = fromUnix.ToString();
             string toStr = toUnix.ToString();
 
-            // Load attendance in range
+            // ✅ Load attendance in range
             var attendance = await _context.DriverAttendances
                 .Where(a => string.Compare(a.Date, fromStr) >= 0
                          && string.Compare(a.Date, toStr) < 0)
                 .ToListAsync();
 
-            // Load all drivers for name lookup
+            // ✅ Load all drivers: RefId string → (DriverId int, fullName)
             var drivers = await _context.Drivers
                 .Select(d => new
                 {
+                    d.DriverId,
                     d.RefId,
                     fullName = ((d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? "")).Trim()
                 })
                 .ToListAsync();
 
-            var driverMap = drivers.ToDictionary(d => d.RefId, d => d.fullName);
+            var driverByRefId = drivers.ToDictionary(d => d.RefId, d => d);
 
-            // Build report rows
+            // ✅ Load BatchAssignments → map DriverId(int) → list of BatchCodes
+            var batchAssignments = await _context.BatchAssignments
+                .Where(b => b.DriverId != null)
+                .Select(b => new { b.DriverId, b.BatchCode })
+                .ToListAsync();
+
+            var batchesByDriverId = batchAssignments
+                .Where(b => b.DriverId.HasValue)
+                .GroupBy(b => b.DriverId!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.BatchCode).Distinct().ToList());
+
+            // ✅ Load Guests: Batch → Area (Route)
+            var guests = await _context.Guests
+                .Where(g => g.Batch != null && g.Area != null)
+                .Select(g => new { g.Batch, g.Area })
+                .ToListAsync();
+
+            var areaByBatch = guests
+                .GroupBy(g => g.Batch!)
+                .ToDictionary(g => g.Key, g => g.First().Area ?? "");
+
+            // ✅ Build report rows
             var report = attendance
                 .OrderBy(a => a.Date)
                 .Select(a =>
                 {
-                    // Convert Unix timestamp back to display date
                     string displayDate = "";
+                    string displayTime = "";
+
                     if (long.TryParse(a.Date, out long unixTs))
-                        displayDate = DateTimeOffset.FromUnixTimeSeconds(unixTs)
-                                        .ToLocalTime()
-                                        .ToString("MMMM d, yyyy");
+                    {
+                        var dto = DateTimeOffset.FromUnixTimeSeconds(unixTs).ToLocalTime();
+                        displayDate = dto.ToString("MMMM d, yyyy");
+                        displayTime = dto.ToString("hh:mm tt");
+                    }
+
+                    // Resolve driver name
+                    string driverName = a.DriverId;
+                    int? driverIntId = null;
+                    if (driverByRefId.ContainsKey(a.DriverId))
+                    {
+                        var d = driverByRefId[a.DriverId];
+                        driverName = d.fullName;
+                        driverIntId = d.DriverId;
+                    }
+
+                    // Resolve Route via BatchAssignment → Guest.Area
+                    string route = "";
+                    if (driverIntId.HasValue && batchesByDriverId.ContainsKey(driverIntId.Value))
+                    {
+                        foreach (var batch in batchesByDriverId[driverIntId.Value])
+                        {
+                            if (batch != null && areaByBatch.ContainsKey(batch))
+                            {
+                                route = areaByBatch[batch];
+                                break;
+                            }
+                        }
+                    }
 
                     return new DriverAttendanceReportViewModel
                     {
-                        DriverName = driverMap.ContainsKey(a.DriverId) ? driverMap[a.DriverId] : a.DriverId,
+                        DriverName = driverName,
                         RefId = a.DriverId,
                         Date = displayDate,
-                        Passenger = a.Passenger
+                        Time = displayTime,
+                        Passenger = a.Passenger,
+                        Route = route
                     };
                 })
                 .ToList();
 
+            // ✅ Filter by area if selected
+            if (!string.IsNullOrEmpty(area))
+            {
+                report = report
+                    .Where(r => r.Route.Equals(area, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
+            ViewBag.SelectedArea = area;
+            ViewBag.Areas = AttendanceAreas;
             ViewBag.TotalPassenger = report.Sum(r => r.Passenger);
             ViewBag.TotalRecords = report.Count;
 
@@ -377,17 +447,26 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // =========================================================
-        // DRIVER DTR REPORT
-        // GET /Reports/DriverDtr?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd
-        // ✅ Grouped by driver — shows TripCount + TotalPassenger only
+        // DRIVER DTR REPORT — PAYROLL FORMAT
+        // GET /Reports/DriverDtr?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd&area=Wonderfalls
+        // ✅ Grouped by driver — TotalPassenger × 100 = GrossSalary = NetPay
         // ✅ DriverDtr.Rfid (int) matched to Driver.RefId (string)
         // ✅ DriverDtr.Date = unix timestamp string
+        // ✅ area filter: Wonderfalls | Canlaob Exit | Kawasan Exit
         // =========================================================
+        private static readonly List<string> DriverAreas = new()
+        {
+            "Wonder Falls",
+            "Kanlaob",
+            "Kawasan Exit"
+        };
+
         [HttpGet]
-        public async Task<IActionResult> DriverDtr(string? dateFrom, string? dateTo)
+        public async Task<IActionResult> DriverDtr(string? dateFrom, string? dateTo, string? area)
         {
             dateFrom ??= DateTime.Today.ToString("yyyy-MM-dd");
             dateTo ??= DateTime.Today.ToString("yyyy-MM-dd");
+            area ??= "";
 
             DateTime fromDt = DateTime.Parse(dateFrom).Date;
             DateTime toDt = DateTime.Parse(dateTo).Date.AddDays(1);
@@ -405,41 +484,121 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .ToListAsync();
 
             // ✅ Load all drivers — build Rfid(int) → name map
-            //    Driver.RefId is a string; DriverDtr.Rfid is an int
             var drivers = await _context.Drivers
                 .Select(d => new
                 {
                     d.RefId,
-                    fullName = ((d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? "")).Trim()
+                    fullName = ((d.LName ?? "").ToUpper() + ", " + (d.FName ?? "").ToUpper()
+                               + (!string.IsNullOrWhiteSpace(d.MName) ? " " + d.MName.ToUpper() : "")).Trim()
                 })
                 .ToListAsync();
 
-            // Map int rfid → driver name  (parse RefId as int for matching)
             var rfidNameMap = drivers
                 .Where(d => int.TryParse(d.RefId, out _))
                 .ToDictionary(d => int.Parse(d.RefId), d => d.fullName);
 
-            // ✅ Group by Rfid → TripCount + TotalPassenger
-            var report = dtrs
-                .GroupBy(d => d.Rfid)
-                .Select(g => new DriverDtrReportViewModel
+            // ✅ Build rfid → area map via BatchAssignment → Guest.Area
+            //    Used to filter DTR rows by selected area
+            var driversList = await _context.Drivers
+                .Select(d => new { d.DriverId, d.RefId })
+                .ToListAsync();
+
+            var driverIdByRefId = driversList
+                .Where(d => int.TryParse(d.RefId, out _))
+                .ToDictionary(d => int.Parse(d.RefId), d => d.DriverId);
+
+            var batchAssignments = await _context.BatchAssignments
+                .Where(b => b.DriverId != null)
+                .Select(b => new { b.DriverId, b.BatchCode })
+                .ToListAsync();
+
+            var batchesByDriver = batchAssignments
+                .Where(b => b.DriverId.HasValue)
+                .GroupBy(b => b.DriverId!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.BatchCode).ToHashSet());
+
+            var guestAreas = await _context.Guests
+                .Where(g => g.Batch != null && g.Area != null)
+                .Select(g => new { g.Batch, g.Area })
+                .ToListAsync();
+
+            var areaByBatch = guestAreas
+                .GroupBy(g => g.Batch!)
+                .ToDictionary(g => g.Key, g => g.First().Area ?? "");
+
+            // Build rfid(int) → area string
+            var rfidAreaMap = new Dictionary<int, string>();
+            foreach (var rfidKv in driverIdByRefId)
+            {
+                int rfid = rfidKv.Key;
+                int driverId = rfidKv.Value;
+                if (!batchesByDriver.ContainsKey(driverId)) continue;
+                foreach (var batch in batchesByDriver[driverId])
                 {
-                    RefId = g.Key.ToString(),
-                    DriverName = rfidNameMap.ContainsKey(g.Key) ? rfidNameMap[g.Key] : $"Rfid: {g.Key}",
-                    TripCount = g.Count(),
-                    TotalPassenger = g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0)
+                    if (batch != null && areaByBatch.ContainsKey(batch))
+                    {
+                        rfidAreaMap[rfid] = areaByBatch[batch];
+                        break;
+                    }
+                }
+            }
+
+            // ✅ Filter DTR rows by area if selected
+            var filteredDtrs = string.IsNullOrEmpty(area)
+                ? dtrs
+                : dtrs.Where(d =>
+                    rfidAreaMap.ContainsKey(d.Rfid) &&
+                    rfidAreaMap[d.Rfid].Equals(area, StringComparison.OrdinalIgnoreCase)
+                  ).ToList();
+
+            const int RatePerDay = 100;
+
+            // ✅ Group by Rfid → TripCount + TotalPassenger + compute salary
+            var report = filteredDtrs
+                .GroupBy(d => d.Rfid)
+                .Select(g =>
+                {
+                    int totalPax = g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0);
+                    decimal gross = totalPax * RatePerDay;
+                    return new DriverDtrReportViewModel
+                    {
+                        RefId = g.Key.ToString(),
+                        DriverName = rfidNameMap.ContainsKey(g.Key) ? rfidNameMap[g.Key] : $"Rfid: {g.Key}",
+                        Address = "Alegria, Cebu",
+                        Designation = "Driver",
+                        TripCount = g.Count(),
+                        TotalPassenger = totalPax,
+                        RatePerDay = RatePerDay,
+                        GrossSalary = gross,
+                        NetPay = gross,        // Net = Gross (no deductions)
+                        PlaceOfIssue = "Alegria, Cebu"
+                    };
                 })
-                .OrderByDescending(r => r.TripCount)
+                .OrderBy(r => r.DriverName)
                 .ToList();
+
+            // ✅ Period display
+            DateTime parsedFrom = DateTime.Parse(dateFrom);
+            DateTime parsedTo = DateTime.Parse(dateTo);
+            string period = parsedFrom.ToString("MMMM dd").ToUpper() + " - " + parsedTo.ToString("dd, yyyy").ToUpper();
+            if (parsedFrom.Month != parsedTo.Month || parsedFrom.Year != parsedTo.Year)
+                period = parsedFrom.ToString("MMMM dd").ToUpper() + " - " + parsedTo.ToString("MMMM dd, yyyy").ToUpper();
 
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
+            ViewBag.Period = period;
+            ViewBag.SelectedArea = area;
+            ViewBag.Areas = DriverAreas;
             ViewBag.TotalDrivers = report.Count;
             ViewBag.TotalTrips = report.Sum(r => r.TripCount);
             ViewBag.TotalPassenger = report.Sum(r => r.TotalPassenger);
+            ViewBag.TotalGross = report.Sum(r => r.GrossSalary);
+            ViewBag.TotalNetPay = report.Sum(r => r.NetPay);
 
             return View(report);
         }
+
+
 
         // =========================================================
         // GUIDE DTR REPORT

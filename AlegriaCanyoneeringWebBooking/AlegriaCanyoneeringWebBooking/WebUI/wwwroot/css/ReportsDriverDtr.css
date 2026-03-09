@@ -1,75 +1,244 @@
-﻿.report-container {
+﻿/* ============================================================
+   DRIVER DTR — Government Payroll Form Style
+   ============================================================ */
+
+.report-container {
     background: white;
-    padding: 20px;
-    max-width: 100%;
-    overflow-x: auto;
+    padding: 16px;
+    max-width: 1050px;
+    margin: 0 auto;
     box-sizing: border-box;
-}
-
-.report-title-box {
-    border: 2px solid #000;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 20px;
-    page-break-inside: avoid;
-}
-
-    .report-title-box h3 {
-        margin: 0 0 5px 0;
-        font-weight: bold;
-        font-size: 24px;
-    }
-
-    .report-title-box p {
-        margin: 0;
-        font-size: 12px;
-    }
-
-.info-grid {
-    display: table;
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-    page-break-inside: avoid;
-}
-
-#driverDtrTable {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-    margin-top: 20px;
-}
-
-    #driverDtrTable th,
-    #driverDtrTable td {
-        border: 2px solid #000;
-        padding: 10px;
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    #driverDtrTable thead th {
-        background-color: #343a40;
-        color: #fff;
-        font-weight: bold;
-        position: sticky;
-        top: 0;
-    }
-
-    #driverDtrTable tbody td {
-        background-color: #fff;
-    }
-
-    #driverDtrTable tfoot td {
-        background-color: #f5f5f5;
-        font-weight: bold;
-    }
-
-.note-text {
+    font-family: Arial, sans-serif;
     font-size: 12px;
-    margin-top: 10px;
-    font-style: italic;
-    page-break-inside: avoid;
+}
+
+/* ---- Payroll Header ---- */
+.pay-top-header {
+    margin-bottom: 2px;
+}
+
+.pay-project-label {
+    font-size: 13px;
+    font-weight: normal;
+    letter-spacing: 1px;
+}
+
+.pay-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-top: 1px solid #000;
+    padding: 4px 0;
+    margin-bottom: 0;
+    font-size: 12px;
+}
+
+.pay-meta-left {
+    flex: 1;
+}
+
+.pay-project-name {
+    font-size: 14px;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+}
+
+.pay-meta-right {
+    text-align: right;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* ---- Payroll Table ---- */
+.pay-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    table-layout: fixed;
+}
+
+    .pay-table th,
+    .pay-table td {
+        border: 1px solid #000;
+        padding: 3px 4px;
+        vertical-align: middle;
+        font-size: 11px;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
+.pay-thead-top th,
+.pay-thead-bottom th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    text-align: center;
+    font-size: 10px;
+    padding: 4px 3px;
+    line-height: 1.2;
+}
+
+.pay-table tbody tr {
+    height: 22px;
+}
+
+.pay-table tbody td {
+    background-color: #fff;
+    height: 22px;
+}
+
+.pay-total-row td {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 5px 4px;
+}
+
+/* ---- Column Widths ---- */
+.col-seq {
+    width: 28px;
+}
+
+.col-name {
+    width: 155px;
+}
+
+.col-address {
+    width: 85px;
+}
+
+.col-desig {
+    width: 60px;
+}
+
+.col-pax {
+    width: 52px;
+}
+
+.col-rate {
+    width: 42px;
+}
+
+.col-gross {
+    width: 72px;
+}
+
+.col-net {
+    width: 72px;
+}
+
+.col-seq2 {
+    width: 28px;
+}
+
+.col-sig {
+    width: 80px;
+}
+
+.col-ctax-header {
+    text-align: center;
+}
+
+.col-ctax-num {
+    width: 55px;
+}
+
+.col-ctax-date {
+    width: 48px;
+}
+
+.col-ctax-place {
+    width: 72px;
+}
+
+/* ---- Footer Certification ---- */
+.pay-footer {
+    border: 1px solid #000;
+    border-top: none;
+}
+
+.pay-cert-row {
+    display: flex;
+    min-height: 120px;
+}
+
+.pay-cert-left,
+.pay-cert-mid,
+.pay-cert-right {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.pay-cert-left {
+    border-right: 1px solid #000;
+}
+
+.pay-cert-mid {
+    border-right: 1px solid #000;
+    text-align: center;
+    justify-content: flex-end;
+}
+
+.pay-cert-title {
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.pay-cert-body {
+    font-size: 10.5px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.pay-approved-text {
+    font-size: 12px;
+    margin-bottom: 28px;
+    text-align: center;
+}
+
+.pay-sig-block {
+    margin-top: auto;
+}
+
+.pay-sig-name {
+    font-weight: bold;
+    font-size: 11px;
+    border-top: 1px solid #000;
+    padding-top: 3px;
+    text-align: center;
+}
+
+.pay-sig-label {
+    font-size: 9.5px;
+    text-align: center;
+    color: #333;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+    .report-container {
+        max-width: 100%;
+        padding: 10px;
+    }
+
+    .pay-table {
+        min-width: 750px;
+    }
+
+    .pay-cert-row {
+        flex-direction: column;
+    }
+
+    .pay-cert-left, .pay-cert-mid {
+        border-right: none;
+        border-bottom: 1px solid #000;
+    }
 }
 
 @media (max-width: 768px) {
@@ -89,71 +258,46 @@
         width: 100%;
         margin-top: 10px;
     }
-
-    #driverDtrTable {
-        font-size: 11px;
-        min-width: 550px;
-    }
-
-        #driverDtrTable th,
-        #driverDtrTable td {
-            padding: 6px;
-            white-space: nowrap;
-        }
 }
 
+/* ============================================================
+   PRINT
+   ============================================================ */
 @media print {
+    .no-print,
     .card-header,
     .btn,
-    .btn-group,
-    .badge {
+    .btn-group {
         display: none !important;
-    }
-
-    .report-container {
-        padding: 10px;
-    }
-
-    .report-title-box {
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-
-        .report-title-box h3 {
-            font-size: 18px;
-        }
-
-    #driverDtrTable {
-        font-size: 10px;
-        margin-top: 10px;
-        page-break-inside: avoid;
-    }
-
-        #driverDtrTable th,
-        #driverDtrTable td {
-            padding: 4px;
-            border: 1px solid #000;
-            color: #000 !important;
-            background-color: #fff !important;
-        }
-
-        #driverDtrTable thead th {
-            background-color: #ccc !important;
-        }
-
-    .note-text {
-        font-size: 9px;
-        margin-top: 5px;
-    }
-
-    @page {
-        size: portrait;
-        margin: 0.5cm;
     }
 
     .card {
         box-shadow: none !important;
         border: none !important;
+    }
+
+    .report-container {
+        padding: 5px;
+        max-width: 100%;
+    }
+
+    .pay-table th,
+    .pay-table td {
+        font-size: 9px;
+        padding: 2px 3px;
+    }
+
+    .pay-table tbody tr {
+        height: 16px;
+    }
+
+    .pay-footer {
+        font-size: 9px;
+    }
+
+    @page {
+        size: landscape;
+        margin: 0.5cm;
     }
 }
 
@@ -164,14 +308,5 @@
 
     #filterForm label {
         font-size: 0.9rem;
-    }
-
-    .report-title-box h3 {
-        font-size: 1.2rem;
-    }
-
-    table th, table td {
-        font-size: 0.85rem;
-        white-space: nowrap;
     }
 }

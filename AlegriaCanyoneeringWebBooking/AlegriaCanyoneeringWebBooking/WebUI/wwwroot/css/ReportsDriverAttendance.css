@@ -1,77 +1,202 @@
-﻿.report-container {
+﻿/* ============================================================
+   DRIVER ATTENDANCE — Government Form Style
+   ============================================================ */
+
+.report-container {
     background: white;
     padding: 20px;
-    max-width: 100%;
-    overflow-x: auto;
+    max-width: 800px;
+    margin: 0 auto;
     box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
 }
 
-.report-title-box {
-    border: 2px solid #000;
-    padding: 20px;
+/* ---- Government Header ---- */
+.gov-form-header {
+    margin-bottom: 4px;
+}
+
+.gov-title {
+    font-size: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.gov-subtitle {
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.gov-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+    padding: 3px 0;
+    margin-bottom: 0;
+    font-size: 12px;
+}
+
+.gov-meta-left {
+    font-weight: bold;
+    flex: 0 0 80px;
+}
+
+.gov-meta-center {
     text-align: center;
-    margin-bottom: 20px;
-    page-break-inside: avoid;
+    font-weight: bold;
+    flex: 1;
+    font-size: 13px;
+    letter-spacing: 0.5px;
 }
 
-    .report-title-box h3 {
-        margin: 0 0 5px 0;
-        font-weight: bold;
-        font-size: 24px;
-    }
+.gov-meta-right {
+    text-align: right;
+    font-size: 11px;
+    flex: 0 0 180px;
+}
 
-    .report-title-box p {
-        margin: 0;
+/* ---- Government Table ---- */
+.gov-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+    .gov-table th,
+    .gov-table td {
+        border: 1px solid #000;
+        padding: 3px 5px;
+        vertical-align: middle;
         font-size: 12px;
     }
 
-.info-grid {
-    display: table;
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-    page-break-inside: avoid;
-}
-
-/* TABLE */
-#driverAttendanceTable {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-    margin-top: 20px;
-}
-
-    #driverAttendanceTable th,
-    #driverAttendanceTable td {
-        border: 2px solid #000;
-        padding: 10px;
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    #driverAttendanceTable thead th {
-        background-color: #cff4fc;
+    .gov-table thead th {
+        background-color: #f0f0f0;
         font-weight: bold;
-        position: sticky;
-        top: 0;
+        text-align: center;
+        font-size: 11px;
+        padding: 5px 4px;
     }
 
-    #driverAttendanceTable tbody td {
+    .gov-table tbody tr {
+        height: 22px;
+    }
+
+    .gov-table tbody td {
         background-color: #fff;
+        height: 22px;
     }
 
-    #driverAttendanceTable tfoot td {
+    .gov-table tfoot td {
         background-color: #f5f5f5;
         font-weight: bold;
+        font-size: 12px;
+        padding: 5px;
     }
 
-.note-text {
-    font-size: 12px;
-    margin-top: 10px;
-    font-style: italic;
-    page-break-inside: avoid;
+/* ---- Column Widths ---- */
+.col-seq {
+    width: 36px;
+    text-align: center;
 }
 
+.col-name {
+    width: 200px;
+}
+
+.col-guest {
+    width: 70px;
+    text-align: center;
+}
+
+.col-time {
+    width: 90px;
+    text-align: center;
+}
+
+.col-route {
+    width: auto;
+}
+
+.total-label {
+    padding-right: 8px;
+}
+
+/* ---- Government Footer ---- */
+.gov-footer {
+    border: 1px solid #000;
+    border-top: none;
+    padding: 0;
+}
+
+.gov-certified-row {
+    display: flex;
+    min-height: 110px;
+}
+
+.gov-certified-left,
+.gov-certified-middle,
+.gov-certified-right {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.gov-certified-left {
+    border-right: 1px solid #000;
+}
+
+.gov-certified-middle {
+    border-right: 1px solid #000;
+    text-align: center;
+}
+
+.gov-certified-right {
+}
+
+.gov-certified-title {
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.gov-certified-body {
+    font-size: 10.5px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.gov-approved-text {
+    margin-top: 28px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.gov-sig-line {
+    font-weight: bold;
+    font-size: 11px;
+    border-top: 1px solid #000;
+    padding-top: 3px;
+    margin-top: 6px;
+    text-align: center;
+}
+
+.gov-sig-label {
+    font-size: 9.5px;
+    text-align: center;
+    color: #333;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 768px) {
     .card-header {
         flex-direction: column;
@@ -90,64 +215,64 @@
         margin-top: 10px;
     }
 
-    #driverAttendanceTable {
-        font-size: 11px;
-        min-width: 600px;
+    .report-container {
+        max-width: 100%;
+        padding: 10px;
     }
 
-        #driverAttendanceTable th,
-        #driverAttendanceTable td {
-            padding: 6px;
-            white-space: nowrap;
-        }
+    .gov-table {
+        min-width: 520px;
+    }
+
+    .gov-certified-row {
+        flex-direction: column;
+    }
+
+    .gov-certified-left,
+    .gov-certified-middle {
+        border-right: none;
+        border-bottom: 1px solid #000;
+    }
 }
 
+/* ============================================================
+   PRINT
+   ============================================================ */
 @media print {
+    .no-print,
     .card-header,
     .btn,
-    .btn-group,
-    .badge {
+    .btn-group {
         display: none !important;
-    }
-
-    .report-container {
-        padding: 10px;
-    }
-
-    .report-title-box {
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-
-        .report-title-box h3 {
-            font-size: 18px;
-        }
-
-    #driverAttendanceTable {
-        font-size: 10px;
-        margin-top: 10px;
-        page-break-inside: avoid;
-    }
-
-        #driverAttendanceTable th,
-        #driverAttendanceTable td {
-            padding: 4px;
-            border: 1px solid #000;
-        }
-
-    .note-text {
-        font-size: 9px;
-        margin-top: 5px;
-    }
-
-    @page {
-        size: portrait;
-        margin: 0.5cm;
     }
 
     .card {
         box-shadow: none !important;
         border: none !important;
+    }
+
+    .report-container {
+        padding: 5px;
+        max-width: 100%;
+    }
+
+    .gov-table th,
+    .gov-table td {
+        font-size: 10px;
+        padding: 2px 3px;
+    }
+
+    .gov-table tbody tr {
+        height: 18px;
+    }
+
+    .gov-footer {
+        font-size: 10px;
+    }
+
+    @page {
+        size: portrait;
+        margin: 0.5cm;
     }
 }
 
@@ -158,14 +283,5 @@
 
     #filterForm label {
         font-size: 0.9rem;
-    }
-
-    .report-title-box h3 {
-        font-size: 1.2rem;
-    }
-
-    table th, table td {
-        font-size: 0.85rem;
-        white-space: nowrap;
     }
 }

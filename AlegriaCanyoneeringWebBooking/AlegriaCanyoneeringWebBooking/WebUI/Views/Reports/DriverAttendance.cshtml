@@ -6,20 +6,28 @@
     var totalRecords = ViewBag.TotalRecords ?? 0;
     var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
     var dateTo = ViewBag.DateTo as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var selectedArea = ViewBag.SelectedArea as string ?? "";
+    var areas = ViewBag.Areas as List<string> ?? new List<string> { "Wonder Falls", "Kanlaob", "Kawasan Exit" };
 
     DateTime.TryParse(dateFrom, out var fromDt);
     DateTime.TryParse(dateTo, out var toDt);
+
+    string period = fromDt == toDt
+        ? fromDt.ToString("MMMM d, yyyy")
+        : $"{fromDt.ToString("MMM d")} - {toDt.ToString("MMM d, yyyy")}";
+
+    // Pad rows to at least 33
+    var rows = Model?.ToList() ?? new List<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.DriverAttendanceReportViewModel>();
+    int minRows = 33;
 }
 
-<div class="card mt-4 shadow">
-    <!-- Header -->
-    <div class="card-header bg-info text-white d-flex flex-wrap justify-content-between align-items-center">
+<div class="card mt-4 shadow no-print-card">
+    <!-- Card Header (hidden on print) -->
+    <div class="card-header bg-info text-white d-flex flex-wrap justify-content-between align-items-center no-print">
         <h5 class="mb-2 mb-md-0">
-            <i class="fas fa-car me-2"></i>Driver Attendance Report
+            <i class="bi bi-car-front me-2"></i>Driver Attendance Report
         </h5>
-
         <div class="d-flex flex-wrap align-items-center gap-2">
-            <!-- Filter Form -->
             <form method="get" asp-action="DriverAttendance" id="filterForm"
                   class="d-flex flex-wrap align-items-center gap-2">
                 <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
@@ -32,12 +40,20 @@
                     <input type="date" id="dateTo" name="dateTo" value="@dateTo"
                            class="form-control form-control-sm" required />
                 </div>
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                    <label class="fw-bold text-white">Area:</label>
+                    <select name="area" class="form-select form-select-sm" style="min-width:140px;">
+                        <option value="" selected="@(string.IsNullOrEmpty(selectedArea) ? "selected" : null)">— All Areas —</option>
+                        @foreach (var a in areas)
+                        {
+                            <option value="@a" selected="@(selectedArea == a ? "selected" : null)">@a</option>
+                        }
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
                     <i class="bi bi-search"></i> Search
                 </button>
             </form>
-
-            <!-- Print Dropdown -->
             <div class="btn-group mt-2 mt-sm-0">
                 <button type="button" class="btn btn-info btn-sm dropdown-toggle"
                         data-bs-toggle="dropdown">
@@ -59,101 +75,118 @@
         </div>
     </div>
 
-    <!-- Body -->
-    <div class="card-body report-container">
+    <!-- Government Form Body -->
+    <div class="card-body report-container" id="printArea">
 
-        <!-- Title Box -->
-        <div class="report-title-box text-center mb-4">
-            <h3 class="fw-bold">Driver Attendance Record</h3>
-            <p class="text-muted small mb-0">(Summary of driver passengers by date)</p>
+        <!-- ===== GOVERNMENT FORM HEADER ===== -->
+        <div class="gov-form-header text-center">
+            <div class="gov-title">TOURIST MOTORCYCLE DRIVER</div>
+            <div class="gov-subtitle">Project</div>
         </div>
 
-        <!-- Info Grid -->
-        <div class="info-grid mb-3"
-             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
-             data-date-to="@toDt.ToString("MMMM d, yyyy")">
-            <div class="row g-2">
-                <div class="col-6 col-md-3 fw-bold">Date From:</div>
-                <div class="col-6 col-md-3" id="displayDateFrom">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
-                <div class="col-6 col-md-3 fw-bold">Date To:</div>
-                <div class="col-6 col-md-3" id="displayDateTo">@toDt.ToString("dddd, MMMM d, yyyy")</div>
-
-                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
-                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
-                <div class="col-6 col-md-3 fw-bold">Attraction:</div>
-                <div class="col-6 col-md-3">Canyoneering Adventure</div>
-            </div>
+        <div class="gov-meta-row">
+            <span class="gov-meta-left">LGU</span>
+            <span class="gov-meta-center">MUNICIPALITY OF ALEGRIA</span>
+            <span class="gov-meta-right">PERIOD&nbsp;&nbsp;<span id="displayPeriod">@period</span></span>
         </div>
 
-        <!-- Summary Badges -->
-    @*     <div class="d-flex flex-wrap gap-3 mb-3">
-            <span class="badge bg-info fs-6 px-3 py-2">
-                <i class="fas fa-list me-1"></i>
-                Total Records: <strong>@totalRecords</strong>
-            </span>
-            <span class="badge bg-primary fs-6 px-3 py-2">
-                <i class="fas fa-users me-1"></i>
-                Total Passengers: <strong>@totalPassenger</strong>
-            </span>
-        </div> *@
-
-        <!-- Table -->
+        <!-- ===== MAIN TABLE ===== -->
         <div class="table-responsive">
-            <table id="driverAttendanceTable"
-                   class="table table-bordered table-striped table-sm text-center align-middle">
-                <thead class="table-info">
+            <table id="driverAttendanceTable" class="gov-table">
+                <thead>
                     <tr>
-                        <th style="width:60px;">Seq.</th>
-                        <th class="text-start">Driver Name</th>
-                        <th style="width:120px;">Ref ID</th>
-                        <th style="width:200px;">Date</th>
-                        <th style="width:120px;">Passengers</th>
+                        <th class="col-seq"></th>
+                        <th class="col-name">NAME</th>
+                        <th class="col-guest">GUEST</th>
+                        <th class="col-time">TIME</th>
+                        <th class="col-route">ROUTE</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @{
-                        int seq = 1;
-                        if (Model == null || !Model.Any())
+                    @if (!rows.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox me-2" style="font-size:1.4rem;"></i><br />
+                                <span class="fw-semibold">No data found</span>
+                                @if (!string.IsNullOrEmpty(selectedArea))
+                                {
+                                    <span> for <strong>@selectedArea</strong></span>
+                                }
+                                <span> in the selected date range.</span>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @for (int i = 0; i < minRows; i++)
                         {
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    No attendance records found for the selected date range.
-                                </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            foreach (var item in Model)
+                            if (i < rows.Count)
+                            {
+                                var item = rows[i];
+                                <tr>
+                                    <td class="col-seq text-center">@(i + 1)</td>
+                                    <td class="col-name">@item.DriverName</td>
+                                    <td class="col-guest text-center" data-passenger="@item.Passenger">@item.Passenger</td>
+                                    <td class="col-time text-center">@item.Time</td>
+                                    <td class="col-route">@item.Route</td>
+                                </tr>
+                            }
+                            else
                             {
                                 <tr>
-                                    <td>@seq</td>
-                                    <td class="text-start text-break fw-semibold">@item.DriverName</td>
-                                    <td class="text-muted small">@item.RefId</td>
-                                    <td>@item.Date</td>
-                                    <td><strong>@item.Passenger</strong></td>
+                                    <td class="col-seq text-center">@(i + 1)</td>
+                                    <td class="col-name"></td>
+                                    <td class="col-guest"></td>
+                                    <td class="col-time"></td>
+                                    <td class="col-route"></td>
                                 </tr>
-                                seq++;
                             }
                         }
                     }
                 </tbody>
-                <tfoot class="fw-bold table-secondary">
+                <tfoot>
                     <tr>
-                        <td colspan="4" class="text-start">TOTAL:</td>
-                        <td>@totalPassenger</td>
+                        <td colspan="2" class="text-end fw-bold total-label">TOTAL:</td>
+                        <td class="text-center fw-bold" id="grandTotal">@totalPassenger</td>
+                        <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </table>
         </div>
 
-        <p class="note-text mt-3 small text-muted">
-            <em>
-                Note: Report shows all driver attendance entries within the selected date range.
-                Passenger count reflects the number of guests handled per assignment.
-            </em>
-        </p>
-    </div>
+        <!-- ===== FOOTER CERTIFICATION ===== -->
+        <div class="gov-footer">
+            <div class="gov-certified-row">
+                <div class="gov-certified-left">
+                    <div class="gov-certified-title">CERTIFIED</div>
+                    <div class="gov-certified-body">
+                        Each person whose name appears<br />
+                        on this roll had rendered<br />
+                        services for the time stated.
+                    </div>
+                    <div class="gov-sig-line">PICHEY L. LENDIO</div>
+                    <div class="gov-sig-label">Name &amp; Signature of Timekeeper</div>
+                </div>
+                <div class="gov-certified-middle">
+                    <div class="gov-certified-body gov-approved-text">Approved &nbsp;for Payment:</div>
+                    <div class="gov-sig-line">HON. VERNA V. MAGALLON</div>
+                    <div class="gov-sig-label">Name &amp; Signature of Approving Officer</div>
+                </div>
+                <div class="gov-certified-right">
+                    <div class="gov-certified-body">
+                        Each person whose name appears on the
+                        above roll has been paid the amount
+                        stated opposite his name after identifying
+                        them.
+                    </div>
+                    <div class="gov-sig-line">JOSE WILSON C PATRIARCA</div>
+                    <div class="gov-sig-label">Name &amp; Signature of Disbursing</div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /report-container -->
 </div>
 
 @section Scripts {
@@ -161,5 +194,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <script src="~/js/ReportsDriverAttendance.js?v=1" asp-append-version="true"></script>
+    <script src="~/js/ReportsDriverAttendance.js?v=2" asp-append-version="true"></script>
 }
