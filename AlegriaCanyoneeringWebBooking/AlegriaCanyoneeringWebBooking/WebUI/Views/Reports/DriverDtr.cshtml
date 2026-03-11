@@ -119,8 +119,14 @@
                         if (!rows.Any())
                         {
                             <tr>
-                                <td colspan="12" class="text-center py-4 text-muted">
-                                    No DTR records found for the selected date range.
+                                <td colspan="13" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox me-2" style="font-size:1.4rem;"></i><br />
+                                    <span class="fw-semibold">No data found</span>
+                                    @if (!string.IsNullOrEmpty(selectedArea))
+                                    {
+                                        <span> for <strong>@selectedArea</strong></span>
+                                    }
+                                    <span> in the selected date range.</span>
                                 </td>
                             </tr>
                         }
@@ -197,6 +203,10 @@
             </div>
         </div>
 
+        <p class="system-generated-text text-end small text-muted mt-2">
+            <em>System Generated Report — Driver DTR Summary</em>
+        </p>
+
     </div><!-- /report-container -->
 </div>
 
@@ -205,5 +215,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <script src="~/js/ReportsDriverDtr.js?v=2" asp-append-version="true"></script>
+    <script src="~/js/ReportsDriverDtr.js" asp-append-version="true"></script>
 }

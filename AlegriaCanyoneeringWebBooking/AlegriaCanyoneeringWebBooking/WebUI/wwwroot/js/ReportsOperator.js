@@ -29,10 +29,8 @@
 
         const w = imgProps.width * scale;
         const h = imgProps.height * scale;
-        const x = (pageW - w) / 2;
-        const y = (pageH - h) / 2;
 
-        pdf.addImage(imgData, "JPEG", x, y, w, h);
+        pdf.addImage(imgData, "JPEG", (pageW - w) / 2, (pageH - h) / 2, w, h);
         pdf.save(`OperatorReport_${new Date().toISOString().slice(0, 10)}.pdf`);
     });
 
@@ -49,62 +47,43 @@
             return;
         }
 
-        // ✅ MULTI-METHOD DATE READING WITH FALLBACKS
+        // Read dates
         let dateFromText = "N/A";
         let dateToText = "N/A";
 
-        // Method 1: Try data attributes - but we'll skip this for full format
-        const infoGrid = document.querySelector(".info-grid");
-
-        // Method 2: Read from display elements by ID (FULL FORMAT with day of week)
         const displayFrom = document.getElementById("displayDateFrom");
         const displayTo = document.getElementById("displayDateTo");
+        if (displayFrom) dateFromText = displayFrom.innerText.trim();
+        if (displayTo) dateToText = displayTo.innerText.trim();
 
-        if (displayFrom) {
-            dateFromText = displayFrom.innerText.trim(); // Keep full: "Tuesday, October 28, 2025"
-        }
-        if (displayTo) {
-            dateToText = displayTo.innerText.trim(); // Keep full: "Tuesday, October 28, 2025"
-        }
-
-        // Method 3: Fallback - read from grid divs
-        if ((dateFromText === "N/A" || dateToText === "N/A") && infoGrid) {
-            const allDivs = Array.from(infoGrid.querySelectorAll("div"));
-
-            for (let i = 0; i < allDivs.length; i++) {
-                const text = allDivs[i].innerText.trim();
-
-                if (text === "Date From:" && i + 1 < allDivs.length && dateFromText === "N/A") {
-                    dateFromText = allDivs[i + 1].innerText.trim();
-                }
-                if (text === "Date To:" && i + 1 < allDivs.length && dateToText === "N/A") {
-                    dateToText = allDivs[i + 1].innerText.trim();
+        // Fallback: read from grid divs
+        if (dateFromText === "N/A" || dateToText === "N/A") {
+            const infoGrid = document.querySelector(".info-grid");
+            if (infoGrid) {
+                const allDivs = Array.from(infoGrid.querySelectorAll("div"));
+                for (let i = 0; i < allDivs.length; i++) {
+                    const text = allDivs[i].innerText.trim();
+                    if (text === "Date From:" && i + 1 < allDivs.length && dateFromText === "N/A")
+                        dateFromText = allDivs[i + 1].innerText.trim();
+                    if (text === "Date To:" && i + 1 < allDivs.length && dateToText === "N/A")
+                        dateToText = allDivs[i + 1].innerText.trim();
                 }
             }
         }
-
-        console.log("=== OPERATOR REPORT DATE DEBUG ===");
-        console.log("Date From:", dateFromText);
-        console.log("Date To:", dateToText);
-        console.log("==================================");
 
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet("Operator Report", {
             pageSetup: {
                 orientation: "portrait",
-                fitToPage: true,
-                fitToWidth: 1,
-                fitToHeight: 1,
+                fitToPage: true, fitToWidth: 1, fitToHeight: 1,
                 paperSize: 9,
                 margins: { left: 0.25, right: 0.25, top: 0.25, bottom: 0.25, header: 0, footer: 0 },
-                horizontalCentered: true,
-                verticalCentered: false
+                horizontalCentered: true, verticalCentered: false
             }
         });
 
-        // ---- Column widths (5 columns - WITH SEQ) ----
         ws.columns = [
-            { width: 8 },   // Seq
+            { width: 8 },  // Seq
             { width: 40 },  // Operator
             { width: 12 },  // Male
             { width: 12 },  // Female
@@ -127,175 +106,59 @@
         ws.getCell("A3").font = { size: 10 };
         ws.getCell("A3").alignment = { horizontal: "center", vertical: "middle" };
 
-        // Blank row
         ws.getRow(4).height = 5;
 
-        // ---- Title Section ----
         ws.mergeCells("A5:E5");
         ws.getCell("A5").value = "Canyoneering Adventure";
         ws.getCell("A5").font = { bold: true, size: 11 };
         ws.getCell("A5").alignment = { horizontal: "center", vertical: "middle" };
 
-        // ✅ USE FULL DYNAMIC DATES HERE
         ws.mergeCells("A6:E6");
         ws.getCell("A6").value = `${dateFromText} - ${dateToText}`;
         ws.getCell("A6").font = { bold: true, size: 10 };
         ws.getCell("A6").alignment = { horizontal: "center", vertical: "middle" };
 
-        // Blank row
         ws.getRow(7).height = 5;
 
-        // ---- Table Header (2 rows) - ROWS 8-9 ----
-        // Row 8 - First header row
-        ws.mergeCells("A8:A9");
-        ws.getCell("A8").value = "Seq.";
-        ws.getCell("A8").font = { bold: true, size: 10 };
-        ws.getCell("A8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("A8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("A8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-        ws.getCell("A9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
+        // ---- Table Header (rows 8-9) ----
+        const hBorder = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        const hFill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
 
-        ws.mergeCells("B8:B9");
-        ws.getCell("B8").value = "OPERATOR";
-        ws.getCell("B8").font = { bold: true, size: 10 };
-        ws.getCell("B8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("B8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("B8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-        ws.getCell("B9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-
-        ws.mergeCells("C8:D8");
-        ws.getCell("C8").value = "NUMBER OF GUESTS";
-        ws.getCell("C8").font = { bold: true, size: 10 };
-        ws.getCell("C8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("C8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("C8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-
-        ws.mergeCells("E8:E9");
-        ws.getCell("E8").value = "ENDING TOTAL";
-        ws.getCell("E8").font = { bold: true, size: 10 };
-        ws.getCell("E8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("E8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("E8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-        ws.getCell("E9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-
-        // Row 9 - Second header row (Male/Female)
+        ws.mergeCells("A8:A9"); ws.getCell("A8").value = "Seq.";
+        ws.mergeCells("B8:B9"); ws.getCell("B8").value = "OPERATOR";
+        ws.mergeCells("C8:D8"); ws.getCell("C8").value = "NUMBER OF GUESTS";
+        ws.mergeCells("E8:E9"); ws.getCell("E8").value = "ENDING TOTAL";
         ws.getCell("C9").value = "MALE";
-        ws.getCell("C9").font = { bold: true, size: 10 };
-        ws.getCell("C9").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("C9").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("C9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-
         ws.getCell("D9").value = "FEMALE";
-        ws.getCell("D9").font = { bold: true, size: 10 };
-        ws.getCell("D9").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("D9").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("D9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
 
-        // ---- Body Rows (start at row 10) ----
-        let currentRow = 10;
+        ["A8", "B8", "C8", "E8", "C9", "D9", "A9", "B9", "E9"].forEach(addr => {
+            const cell = ws.getCell(addr);
+            cell.font = { bold: true, size: 10 };
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+            cell.fill = hFill;
+            cell.border = hBorder;
+        });
+
+        // ---- Body Rows ----
         const tbody = table.querySelector("tbody");
         if (tbody) {
             Array.from(tbody.querySelectorAll("tr")).forEach(tr => {
                 const cells = Array.from(tr.querySelectorAll("td")).map(td => td.innerText.trim());
                 if (cells.length >= 5 && !cells[1].includes("No data")) {
                     const row = ws.addRow([
-                        Number(cells[0]) || 0,  // Seq
-                        cells[1],               // Operator
-                        Number(cells[2]) || 0,  // Male
-                        Number(cells[3]) || 0,  // Female
-                        Number(cells[4]) || 0   // Ending Total
+                        Number(cells[0]) || 0,
+                        cells[1],
+                        Number(cells[2]) || 0,
+                        Number(cells[3]) || 0,
+                        Number(cells[4]) || 0
                     ]);
-
-                    // Style body cells
                     row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
                     row.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
-                    row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
-                    row.getCell(3).numFmt = "#,##0";
-                    row.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
-                    row.getCell(4).numFmt = "#,##0";
-                    row.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
-                    row.getCell(5).numFmt = "#,##0";
+                    row.getCell(3).alignment = { horizontal: "center", vertical: "middle" }; row.getCell(3).numFmt = "#,##0";
+                    row.getCell(4).alignment = { horizontal: "center", vertical: "middle" }; row.getCell(4).numFmt = "#,##0";
+                    row.getCell(5).alignment = { horizontal: "center", vertical: "middle" }; row.getCell(5).numFmt = "#,##0";
                     row.getCell(5).font = { bold: true };
-
-                    // Borders
-                    for (let c = 1; c <= 5; c++) {
-                        row.getCell(c).border = {
-                            top: { style: "thin" },
-                            left: { style: "thin" },
-                            bottom: { style: "thin" },
-                            right: { style: "thin" }
-                        };
-                    }
-                    currentRow++;
+                    for (let c = 1; c <= 5; c++) row.getCell(c).border = hBorder;
                 }
             });
         }
@@ -305,48 +168,42 @@
         if (tfoot) {
             const tfootCells = Array.from(tfoot.querySelectorAll("td")).map(td => td.innerText.trim());
             const totalRow = ws.addRow([
-                "",  // Empty Seq column
+                "",
                 tfootCells[0] || "TOTAL:",
                 Number(tfootCells[1].replace(/[^0-9]/g, "")) || 0,
                 Number(tfootCells[2].replace(/[^0-9]/g, "")) || 0,
                 Number(tfootCells[3].replace(/[^0-9]/g, "")) || 0
             ]);
-
             totalRow.font = { bold: true, size: 10 };
             totalRow.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
             totalRow.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
-            totalRow.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
-            totalRow.getCell(3).numFmt = "#,##0";
-            totalRow.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
-            totalRow.getCell(4).numFmt = "#,##0";
-            totalRow.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
-            totalRow.getCell(5).numFmt = "#,##0";
-
-            totalRow.eachCell((cell) => {
-                cell.fill = {
-                    type: "pattern",
-                    pattern: "solid",
-                    fgColor: { argb: "FFFFFFFF" }
-                };
-                cell.border = {
-                    top: { style: "thin" },
-                    left: { style: "thin" },
-                    bottom: { style: "thin" },
-                    right: { style: "thin" }
-                };
+            totalRow.getCell(3).alignment = { horizontal: "center", vertical: "middle" }; totalRow.getCell(3).numFmt = "#,##0";
+            totalRow.getCell(4).alignment = { horizontal: "center", vertical: "middle" }; totalRow.getCell(4).numFmt = "#,##0";
+            totalRow.getCell(5).alignment = { horizontal: "center", vertical: "middle" }; totalRow.getCell(5).numFmt = "#,##0";
+            totalRow.eachCell(cell => {
+                cell.fill = hFill;
+                cell.border = hBorder;
             });
         }
 
-        // ---- Footer Note ----
+        // ---- Note row ----
         const noteRow = ws.addRow([]);
         const noteIdx = noteRow.number;
         ws.mergeCells(`A${noteIdx}:E${noteIdx}`);
-        ws.getCell(`A${noteIdx}`).value = "System Generated Report - Operator Summary";
+        ws.getCell(`A${noteIdx}`).value = "Note: Total number must be recorded. Operator entries are required. Report totals must be recorded.";
         ws.getCell(`A${noteIdx}`).font = { italic: true, size: 9 };
-        ws.getCell(`A${noteIdx}`).alignment = { horizontal: "left", vertical: "middle" };
+        ws.getCell(`A${noteIdx}`).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+
+        // ---- System Generated row ----
+        const sysRow = ws.addRow([]);
+        const sysIdx = sysRow.number;
+        ws.mergeCells(`A${sysIdx}:E${sysIdx}`);
+        ws.getCell(`A${sysIdx}`).value = "System Generated Report — Operator Visitor Summary";
+        ws.getCell(`A${sysIdx}`).font = { italic: true, size: 9, color: { argb: "FF888888" } };
+        ws.getCell(`A${sysIdx}`).alignment = { horizontal: "right", vertical: "middle" };
 
         // ---- Print settings ----
-        ws.pageSetup.printArea = `A1:E${noteIdx}`;
+        ws.pageSetup.printArea = `A1:E${sysIdx}`;
         ws.pageSetup.printTitlesRow = "8:9";
 
         // ---- Export ----

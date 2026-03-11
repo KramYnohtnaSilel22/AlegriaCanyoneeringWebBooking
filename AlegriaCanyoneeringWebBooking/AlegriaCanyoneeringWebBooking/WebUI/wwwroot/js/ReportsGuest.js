@@ -50,11 +50,9 @@
         }
 
         // Read the DISPLAYED date text from the info-grid
-        const infoGrid = document.querySelector(".info-grid");
         let dateFromText = "";
         let dateToText = "";
 
-        // ✅ NEW CODE - correctly reads from the grid layout
         const infoCells = Array.from(document.querySelectorAll(".info-grid .row .col-6, .info-grid .row .col-md-3"));
         infoCells.forEach((cell, i) => {
             const text = cell.innerText.trim();
@@ -65,7 +63,6 @@
                 dateToText = infoCells[i + 1].innerText.trim();
             }
         });
-
 
         // Read DYNAMIC header text
         const headerRows = table.querySelectorAll("thead tr");
@@ -126,20 +123,20 @@
 
         // 14 columns (A..N) - WIDER Date column
         ws.columns = [
-            { key: "A", width: 6 },   // Seq.
-            { key: "B", width: 35 },  // Date (WIDER)
-            { key: "C", width: 8 },   // This Province Male
-            { key: "D", width: 8 },   // This Province Female
-            { key: "E", width: 8 },   // This Province Total
-            { key: "F", width: 8 },   // Other Province Male
-            { key: "G", width: 8 },   // Other Province Female
-            { key: "H", width: 8 },   // Other Province Total
-            { key: "I", width: 8 },   // Foreign Male
-            { key: "J", width: 8 },   // Foreign Female
-            { key: "K", width: 8 },   // Foreign Total
-            { key: "L", width: 9 },   // Grand Total Male
-            { key: "M", width: 9 },   // Grand Total Female
-            { key: "N", width: 9 }    // Grand Total
+            { key: "A", width: 6 },
+            { key: "B", width: 35 },
+            { key: "C", width: 8 },
+            { key: "D", width: 8 },
+            { key: "E", width: 8 },
+            { key: "F", width: 8 },
+            { key: "G", width: 8 },
+            { key: "H", width: 8 },
+            { key: "I", width: 8 },
+            { key: "J", width: 8 },
+            { key: "K", width: 8 },
+            { key: "L", width: 9 },
+            { key: "M", width: 9 },
+            { key: "N", width: 9 }
         ];
 
         // ---- Top title and metadata ----
@@ -153,12 +150,12 @@
         ws.getCell("A2").font = { size: 10 };
         ws.getCell("A2").alignment = { horizontal: "center", vertical: "middle" };
 
-        // Date row - FIXED MERGING TO SHOW FULL DATES
+        // Date row
         ws.getCell("A3").value = "Date:";
         ws.getCell("A3").font = { bold: true };
         ws.getCell("A3").alignment = { horizontal: "left", vertical: "middle" };
 
-        ws.mergeCells("B3:E3"); // Wider merge for Date From
+        ws.mergeCells("B3:E3");
         ws.getCell("B3").value = meta.dateFrom;
         ws.getCell("B3").alignment = { horizontal: "left", vertical: "middle" };
 
@@ -167,7 +164,7 @@
         ws.getCell("F3").font = { bold: true };
         ws.getCell("F3").alignment = { horizontal: "left", vertical: "middle" };
 
-        ws.mergeCells("H3:N3"); // WIDER merge for Date To - extends to column N
+        ws.mergeCells("H3:N3");
         ws.getCell("H3").value = meta.dateTo;
         ws.getCell("H3").alignment = { horizontal: "left", vertical: "middle" };
 
@@ -203,19 +200,16 @@
         ws.mergeCells("L6:N8");
         ws.getCell("L6").value = "Grand Total Number of Visitors";
 
-        // Row 7
         ws.mergeCells("C7:H7");
         ws.getCell("C7").value = "Philippines";
         ws.mergeCells("I7:K8");
         ws.getCell("I7").value = "Foreign Country Residence";
 
-        // Row 8
         ws.mergeCells("C8:E8");
         ws.getCell("C8").value = "This Province";
         ws.mergeCells("F8:H8");
         ws.getCell("F8").value = "Other Province";
 
-        // Row 9 (leaf headers)
         const headers9 = ["Male", "Female", "Total", "Male", "Female", "Total", "Male", "Female", "Total", "Male", "Female", "Total"];
         headers9.forEach((label, i) => {
             ws.getCell(9, 3 + i).value = label;
@@ -228,21 +222,15 @@
             row.eachCell({ includeEmpty: true }, (cell) => {
                 cell.font = { bold: true, size: 9 };
                 cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-                cell.fill = {
-                    type: "pattern",
-                    pattern: "solid",
-                    fgColor: { argb: "FFFFFFFF" }
-                };
+                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
                 cell.border = {
-                    top: { style: "thin" },
-                    left: { style: "thin" },
-                    bottom: { style: "thin" },
-                    right: { style: "thin" }
+                    top: { style: "thin" }, left: { style: "thin" },
+                    bottom: { style: "thin" }, right: { style: "thin" }
                 };
             });
         }
 
-        // ---- Body rows from the HTML table ----
+        // ---- Body rows ----
         const bodyStartRow = 10;
         const domRows = Array.from(table.querySelectorAll("tbody tr"));
 
@@ -257,7 +245,7 @@
         const lastBodyRow = ws.lastRow.number;
         for (let r = bodyStartRow; r <= lastBodyRow; r++) {
             const row = ws.getRow(r);
-            row.height = 20; // Increased height
+            row.height = 20;
 
             for (let c = 1; c <= 14; c++) {
                 const cell = row.getCell(c);
@@ -270,32 +258,21 @@
                     cell.numFmt = "#,##0";
                 }
 
-                // Special handling for date column (column B)
                 if (c === 2) {
-                    cell.alignment = {
-                        horizontal: "center",
-                        vertical: "middle",
-                        wrapText: false,
-                        shrinkToFit: false
-                    };
+                    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: false, shrinkToFit: false };
                     cell.font = { size: 10 };
                 } else {
-                    cell.alignment = {
-                        horizontal: "center",
-                        vertical: "middle"
-                    };
+                    cell.alignment = { horizontal: "center", vertical: "middle" };
                 }
 
                 cell.border = {
-                    top: { style: "thin" },
-                    left: { style: "thin" },
-                    bottom: { style: "thin" },
-                    right: { style: "thin" }
+                    top: { style: "thin" }, left: { style: "thin" },
+                    bottom: { style: "thin" }, right: { style: "thin" }
                 };
             }
         }
 
-        // ---- Totals row from tfoot ----
+        // ---- Totals row ----
         if (tfootRow) {
             const tfootCells = Array.from(tfootRow.querySelectorAll("td")).map(td => td.innerText.trim());
             const numericCells = tfootCells.slice(1);
@@ -307,38 +284,24 @@
             ws.getCell(`A${totalIdx}`).value = footerLabel;
             ws.getCell(`A${totalIdx}`).font = { bold: true, size: 10 };
             ws.getCell(`A${totalIdx}`).alignment = { horizontal: "center", vertical: "middle" };
-            ws.getCell(`A${totalIdx}`).fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: { argb: "FFFFFFFF" }
-            };
+            ws.getCell(`A${totalIdx}`).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
             ws.getCell(`A${totalIdx}`).border = {
-                top: { style: "thin" },
-                left: { style: "thin" },
-                bottom: { style: "thin" },
-                right: { style: "thin" }
+                top: { style: "thin" }, left: { style: "thin" },
+                bottom: { style: "thin" }, right: { style: "thin" }
             };
 
             numericCells.forEach((value, index) => {
                 const colIdx = index + 3;
                 const cell = ws.getRow(totalIdx).getCell(colIdx);
-
                 const num = Number(String(value).replace(/[^0-9.-]/g, ""));
                 if (!isNaN(num)) cell.value = num;
                 cell.numFmt = "#,##0";
-
                 cell.font = { bold: true, size: 10 };
                 cell.alignment = { horizontal: "center", vertical: "middle" };
-                cell.fill = {
-                    type: "pattern",
-                    pattern: "solid",
-                    fgColor: { argb: "FFFFFFFF" }
-                };
+                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
                 cell.border = {
-                    top: { style: "thin" },
-                    left: { style: "thin" },
-                    bottom: { style: "thin" },
-                    right: { style: "thin" }
+                    top: { style: "thin" }, left: { style: "thin" },
+                    bottom: { style: "thin" }, right: { style: "thin" }
                 };
             });
         }
@@ -351,8 +314,16 @@
         ws.getCell(`A${noteIdx}`).font = { italic: true, size: 9 };
         ws.getCell(`A${noteIdx}`).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
 
+        // ---- System Generated row ----
+        const sysRow = ws.addRow([]);
+        const sysIdx = sysRow.number;
+        ws.mergeCells(`A${sysIdx}:N${sysIdx}`);
+        ws.getCell(`A${sysIdx}`).value = "System Generated Report — Guest Visitor Summary";
+        ws.getCell(`A${sysIdx}`).font = { italic: true, size: 9, color: { argb: "FF888888" } };
+        ws.getCell(`A${sysIdx}`).alignment = { horizontal: "right", vertical: "middle" };
+
         // ---- Print settings ----
-        ws.pageSetup.printArea = `A1:N${noteIdx}`;
+        ws.pageSetup.printArea = `A1:N${sysIdx}`;
         ws.pageSetup.printTitlesRow = "6:9";
 
         // ---- Export ----

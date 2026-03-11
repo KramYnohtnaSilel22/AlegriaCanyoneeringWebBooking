@@ -104,6 +104,15 @@
     page-break-inside: avoid;
 }
 
+.system-generated-text {
+    font-size: 11px;
+    font-style: italic;
+    color: #888;
+    text-align: right;
+    margin-top: 2px;
+    page-break-inside: avoid;
+}
+
 /* ============================================================
    PRINT
    ============================================================ */
@@ -181,6 +190,13 @@
         margin-top: 5px;
         margin-bottom: 0;
         page-break-inside: avoid;
+    }
+
+    .system-generated-text {
+        font-size: 9px;
+        margin-top: 2px;
+        color: #888;
+        text-align: right;
     }
 
     @page {

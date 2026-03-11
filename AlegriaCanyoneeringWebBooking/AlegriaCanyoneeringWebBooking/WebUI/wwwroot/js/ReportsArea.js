@@ -7,6 +7,17 @@
         const element = document.querySelector(".report-container");
         if (!element) { alert("Report not found."); return; }
 
+        // Read area name for filename
+        let pdfAreaText = "";
+        const infoCells = Array.from(document.querySelectorAll(".info-grid .row .col-6, .info-grid .row .col-md-3"));
+        infoCells.forEach((cell, i) => {
+            if (cell.innerText.trim() === "Area:" && infoCells[i + 1])
+                pdfAreaText = infoCells[i + 1].innerText.trim();
+        });
+        const pdfAreaSlug = (pdfAreaText && pdfAreaText !== "All Areas")
+            ? pdfAreaText.replace(/\s+/g, "_")
+            : "All_Areas";
+
         const canvas = await html2canvas(element, { scale: 2, useCORS: true });
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
@@ -21,7 +32,7 @@
         const h = imgProps.height * scale;
 
         pdf.addImage(imgData, "JPEG", (pageW - w) / 2, (pageH - h) / 2, w, h);
-        pdf.save(`AreaReport_${new Date().toISOString().slice(0, 10)}.pdf`);
+        pdf.save(`Area_${pdfAreaSlug}_${new Date().toISOString().slice(0, 10)}.pdf`);
     });
 
     // ---- EXCEL EXPORT ----
@@ -235,7 +246,15 @@
         ws.getCell(`A${noteIdx}`).font = { italic: true, size: 9 };
         ws.getCell(`A${noteIdx}`).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
 
-        ws.pageSetup.printArea = `A1:N${noteIdx}`;
+        // ---- System Generated row ----
+        const sysRow = ws.addRow([]);
+        const sysIdx = sysRow.number;
+        ws.mergeCells(`A${sysIdx}:N${sysIdx}`);
+        ws.getCell(`A${sysIdx}`).value = "System Generated Report — Area Visitor Summary";
+        ws.getCell(`A${sysIdx}`).font = { italic: true, size: 9, color: { argb: "FF888888" } };
+        ws.getCell(`A${sysIdx}`).alignment = { horizontal: "right", vertical: "middle" };
+
+        ws.pageSetup.printArea = `A1:N${sysIdx}`;
         ws.pageSetup.printTitlesRow = "6:9";
 
         // ---- Export ----
@@ -245,7 +264,10 @@
         });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `AreaReport_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        const xlsAreaSlug = (areaText && areaText !== "All Areas")
+            ? areaText.replace(/\s+/g, "_")
+            : "All_Areas";
+        a.download = `Area_${xlsAreaSlug}_${new Date().toISOString().slice(0, 10)}.xlsx`;
         a.click();
     });
 });

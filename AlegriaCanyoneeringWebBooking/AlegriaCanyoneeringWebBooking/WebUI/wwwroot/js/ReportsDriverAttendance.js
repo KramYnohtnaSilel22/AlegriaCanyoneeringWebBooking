@@ -206,6 +206,13 @@
         setCell(`C${rowIdx}`, "Name & Signature of Approving Officer", { size: 9, align: "center" });
         setCell(`E${rowIdx}`, "Name & Signature of Disbursing", { size: 9, align: "center" });
 
+        // ---- System Generated row ----
+        rowIdx += 2;
+        ws.mergeCells(`A${rowIdx}:E${rowIdx}`);
+        ws.getCell(`A${rowIdx}`).value = "System Generated Report — Driver Attendance Summary";
+        ws.getCell(`A${rowIdx}`).font = { italic: true, size: 9, color: { argb: "FF888888" } };
+        ws.getCell(`A${rowIdx}`).alignment = { horizontal: "right", vertical: "middle" };
+
         ws.pageSetup.printArea = `A1:E${rowIdx}`;
         ws.pageSetup.printTitlesRow = "6:6";
 

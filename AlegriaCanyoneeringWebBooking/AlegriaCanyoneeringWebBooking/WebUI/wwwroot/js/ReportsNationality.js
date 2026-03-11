@@ -56,10 +56,8 @@
 
         if (infoGrid) {
             const allDivs = Array.from(infoGrid.querySelectorAll("div"));
-
             for (let i = 0; i < allDivs.length; i++) {
                 const text = allDivs[i].innerText.trim();
-
                 if (text === "Date From:" && allDivs[i + 1]) {
                     dateFromText = allDivs[i + 1].innerText.trim();
                 }
@@ -68,9 +66,6 @@
                 }
             }
         }
-
-        console.log("Date From:", dateFromText); // ✅ Debug log
-        console.log("Date To:", dateToText);     // ✅ Debug log
 
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet("Nationality Report", {
@@ -86,7 +81,7 @@
             }
         });
 
-        // ---- Column widths (5 columns - WITH SEQ) ----
+        // ---- Column widths (5 columns) ----
         ws.columns = [
             { width: 8 },   // Seq
             { width: 30 },  // Nationality
@@ -120,7 +115,6 @@
         ws.getCell("A5").font = { bold: true, size: 11 };
         ws.getCell("A5").alignment = { horizontal: "center", vertical: "middle" };
 
-        // ✅ USE DYNAMIC DATES HERE
         ws.mergeCells("A6:E6");
         ws.getCell("A6").value = `${dateFromText} - ${dateToText}`;
         ws.getCell("A6").font = { bold: true, size: 10 };
@@ -129,137 +123,64 @@
         // Blank row
         ws.getRow(7).height = 5;
 
-        // ---- Table Header (2 rows) - ROWS 8-9 ----
-        // Row 8 - First header row
+        // ---- Table Header (rows 8-9) ----
         ws.mergeCells("A8:A9");
         ws.getCell("A8").value = "Seq.";
         ws.getCell("A8").font = { bold: true, size: 10 };
         ws.getCell("A8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("A8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("A8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-        ws.getCell("A9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
+        ws.getCell("A8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
+        ws.getCell("A8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        ws.getCell("A9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
 
         ws.mergeCells("B8:B9");
         ws.getCell("B8").value = "NATIONALITY";
         ws.getCell("B8").font = { bold: true, size: 10 };
         ws.getCell("B8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("B8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("B8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-        ws.getCell("B9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
+        ws.getCell("B8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
+        ws.getCell("B8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        ws.getCell("B9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
 
         ws.mergeCells("C8:D8");
         ws.getCell("C8").value = "NUMBER OF GUESTS";
         ws.getCell("C8").font = { bold: true, size: 10 };
         ws.getCell("C8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("C8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("C8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
+        ws.getCell("C8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
+        ws.getCell("C8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
 
         ws.mergeCells("E8:E9");
         ws.getCell("E8").value = "ENDING TOTAL";
         ws.getCell("E8").font = { bold: true, size: 10 };
         ws.getCell("E8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("E8").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("E8").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
-        ws.getCell("E9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
+        ws.getCell("E8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
+        ws.getCell("E8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        ws.getCell("E9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
 
-        // Row 9 - Second header row (Male/Female)
         ws.getCell("C9").value = "MALE";
         ws.getCell("C9").font = { bold: true, size: 10 };
         ws.getCell("C9").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("C9").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("C9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
+        ws.getCell("C9").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
+        ws.getCell("C9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
 
         ws.getCell("D9").value = "FEMALE";
         ws.getCell("D9").font = { bold: true, size: 10 };
         ws.getCell("D9").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("D9").fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" }
-        };
-        ws.getCell("D9").border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" }
-        };
+        ws.getCell("D9").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
+        ws.getCell("D9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
 
         // ---- Body Rows (start at row 10) ----
-        let currentRow = 10;
         const tbody = table.querySelector("tbody");
         if (tbody) {
             Array.from(tbody.querySelectorAll("tr")).forEach(tr => {
                 const cells = Array.from(tr.querySelectorAll("td")).map(td => td.innerText.trim());
                 if (cells.length >= 5 && !cells[1].includes("No data")) {
                     const row = ws.addRow([
-                        Number(cells[0]) || 0,  // Seq
-                        cells[1],               // Nationality
-                        Number(cells[2]) || 0,  // Male
-                        Number(cells[3]) || 0,  // Female
-                        Number(cells[4]) || 0   // Ending Total
+                        Number(cells[0]) || 0,
+                        cells[1],
+                        Number(cells[2]) || 0,
+                        Number(cells[3]) || 0,
+                        Number(cells[4]) || 0
                     ]);
 
-                    // Style body cells
                     row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
                     row.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
                     row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
@@ -270,16 +191,9 @@
                     row.getCell(5).numFmt = "#,##0";
                     row.getCell(5).font = { bold: true };
 
-                    // Borders
                     for (let c = 1; c <= 5; c++) {
-                        row.getCell(c).border = {
-                            top: { style: "thin" },
-                            left: { style: "thin" },
-                            bottom: { style: "thin" },
-                            right: { style: "thin" }
-                        };
+                        row.getCell(c).border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
                     }
-                    currentRow++;
                 }
             });
         }
@@ -289,7 +203,7 @@
         if (tfoot) {
             const tfootCells = Array.from(tfoot.querySelectorAll("td")).map(td => td.innerText.trim());
             const totalRow = ws.addRow([
-                "",  // Empty Seq column
+                "",
                 tfootCells[0] || "TOTAL:",
                 Number(tfootCells[1].replace(/[^0-9]/g, "")) || 0,
                 Number(tfootCells[2].replace(/[^0-9]/g, "")) || 0,
@@ -307,30 +221,29 @@
             totalRow.getCell(5).numFmt = "#,##0";
 
             totalRow.eachCell((cell) => {
-                cell.fill = {
-                    type: "pattern",
-                    pattern: "solid",
-                    fgColor: { argb: "FFFFFFFF" }
-                };
-                cell.border = {
-                    top: { style: "thin" },
-                    left: { style: "thin" },
-                    bottom: { style: "thin" },
-                    right: { style: "thin" }
-                };
+                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
+                cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
             });
         }
 
-        // ---- Footer Note ----
+        // ---- Note row ----
         const noteRow = ws.addRow([]);
         const noteIdx = noteRow.number;
         ws.mergeCells(`A${noteIdx}:E${noteIdx}`);
-        ws.getCell(`A${noteIdx}`).value = "System Generated Report";
+        ws.getCell(`A${noteIdx}`).value = "Note: Total number must be recorded. Residence entries are optional. Report totals must be recorded.";
         ws.getCell(`A${noteIdx}`).font = { italic: true, size: 9 };
-        ws.getCell(`A${noteIdx}`).alignment = { horizontal: "left", vertical: "middle" };
+        ws.getCell(`A${noteIdx}`).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+
+        // ---- System Generated row ----
+        const sysRow = ws.addRow([]);
+        const sysIdx = sysRow.number;
+        ws.mergeCells(`A${sysIdx}:E${sysIdx}`);
+        ws.getCell(`A${sysIdx}`).value = "System Generated Report — Nationality Visitor Summary";
+        ws.getCell(`A${sysIdx}`).font = { italic: true, size: 9, color: { argb: "FF888888" } };
+        ws.getCell(`A${sysIdx}`).alignment = { horizontal: "right", vertical: "middle" };
 
         // ---- Print settings ----
-        ws.pageSetup.printArea = `A1:E${noteIdx}`;
+        ws.pageSetup.printArea = `A1:E${sysIdx}`;
         ws.pageSetup.printTitlesRow = "8:9";
 
         // ---- Export ----

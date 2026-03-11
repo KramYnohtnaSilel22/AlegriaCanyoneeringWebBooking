@@ -221,6 +221,13 @@
         ws.mergeCells(`E${rowIdx}:I${rowIdx}`); sc(`E${rowIdx}`, "Municipal Mayor", { size: 9, border: false });
         ws.mergeCells(`J${rowIdx}:M${rowIdx}`); sc(`J${rowIdx}`, "Disbursing officer", { size: 9, border: false });
 
+        // ---- System Generated row ----
+        rowIdx += 2;
+        ws.mergeCells(`A${rowIdx}:M${rowIdx}`);
+        ws.getCell(`A${rowIdx}`).value = "System Generated Report — Guide DTR Summary";
+        ws.getCell(`A${rowIdx}`).font = { italic: true, size: 9, color: { argb: "FF888888" } };
+        ws.getCell(`A${rowIdx}`).alignment = { horizontal: "right", vertical: "middle" };
+
         ws.pageSetup.printArea = `A1:M${rowIdx}`;
         ws.pageSetup.printTitlesRow = "5:6";
 

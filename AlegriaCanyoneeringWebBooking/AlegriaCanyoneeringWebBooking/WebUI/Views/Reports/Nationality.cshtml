@@ -54,8 +54,8 @@
         </div>
 
         <!-- Info Section with DATA ATTRIBUTES -->
-        <div class="info-grid mb-3" 
-             data-date-from="@fromDt.ToString("MMMM d, yyyy")" 
+        <div class="info-grid mb-3"
+             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
              data-date-to="@toDt.ToString("MMMM d, yyyy")">
             <div class="row g-2">
                 <div class="col-6 col-md-3 fw-bold">Date From:</div>
@@ -124,6 +124,9 @@
         <p class="note-text mt-3 small text-muted">
             <em>Note: Total number must be recorded. Residence entries are optional. Report totals must be recorded.</em>
         </p>
+        <p class="system-generated-text text-end small text-muted mt-1">
+            <em>System Generated Report — Nationality Visitor Summary</em>
+        </p>
     </div>
 </div>
 
@@ -132,5 +135,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <script src="~/js/ReportsNationality.js?v=5" asp-append-version="true"></script>
+    <script src="~/js/ReportsNationality.js" asp-append-version="true"></script>
 }
