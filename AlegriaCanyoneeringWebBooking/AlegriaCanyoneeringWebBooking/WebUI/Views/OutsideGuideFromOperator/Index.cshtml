@@ -1,0 +1,242 @@
+﻿@{
+    ViewData["Title"] = "Outside Guide From Operator";
+}
+
+<h2 class="fw-bold mb-4 text-primary">Outside Guide From Operator</h2>
+
+<form id="__AjaxAntiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<button type="button" id="btnCreate" class="btn btn-primary mb-3">
+    <i></i> Create New
+</button>
+
+<div class="table-responsive">
+    <table id="outsideGuideTable" class="table table-bordered table-striped table-sm align-middle w-100">
+        <thead class="table-light">
+            <tr>
+                <th>Operator ID</th>
+                <th>Operator Name</th>
+                <th>Guide ID (RFID)</th>
+                <th>Guide Name</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<!-- ===== CRUD MODAL ===== -->
+<div class="modal fade" id="outsideGuideModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="outsideGuideModalLabel">
+                    <i class="bi bi-person-plus me-2"></i>Outside Guide
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalContent"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+    <style>
+        #outsideGuideModal .modal-content {
+            min-height: 300px;
+        }
+
+        #modalContent {
+            min-height: 300px;
+            background-color: #fff;
+        }
+    </style>
+
+    <script>
+        function showToast(message, type = 'success') {
+            let bg = type === 'error' ? 'bg-danger' : 'bg-success';
+            let toast = $(`
+                <div class="toast align-items-center text-white ${bg} border-0 position-fixed top-0 end-0 m-3" style="z-index:9999">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>`);
+            $('body').append(toast);
+            new bootstrap.Toast(toast[0]).show();
+            toast.on('hidden.bs.toast', function () { toast.remove(); });
+        }
+
+        $(function () {
+
+            // ── DataTable ─────────────────────────────────────────
+            var table = $('#outsideGuideTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '@Url.Action("GetOutsideGuideData", "OutsideGuideFromOperator")',
+                    type: 'POST',
+                    data: function (d) {
+                        d.__RequestVerificationToken =
+                            $('input[name="__RequestVerificationToken"]').val();
+                    },
+                    error: function (xhr) {
+                        let msg = 'Error loading data';
+                        try { const r = JSON.parse(xhr.responseText); if (r.error) msg = r.error; } catch (e) {}
+                        showToast(msg, 'error');
+                    }
+                },
+                columns: [
+                    { data: 'operatorId',   orderable: false, searchable: false },
+                    { data: 'operatorName', orderable: false, searchable: false },
+                    { data: 'guideId',      orderable: false, searchable: false },
+                    { data: 'guideName',    orderable: false, searchable: false },
+                    {
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            return `
+                                     <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    <a href="/OutsideGuideFromOperator/Edit/${data}" class="btn btn-sm btn-warning btn-edit">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.guideName}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>`;
+                        }
+                    }
+                ],
+                responsive: true,
+                language: {
+                    processing:  'Processing...',
+                    emptyTable:  'No records found',
+                    infoEmpty:   'No records found'
+                }
+            });
+
+            // ── Open Modal helper ─────────────────────────────────
+            function openModal(url, title) {
+                var existing = bootstrap.Modal.getInstance(
+                    document.getElementById('outsideGuideModal')
+                );
+                if (existing) existing.dispose();
+
+                $('#modalContent').html(`
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2 text-muted">Loading form...</p>
+                    </div>
+                `);
+
+                $.get(url, function (res) {
+                    $('#modalContent').html(res);
+                    $('#outsideGuideModalLabel').html(
+                        `<i class="bi bi-person-plus me-2"></i>${title}`
+                    );
+                    new bootstrap.Modal(
+                        document.getElementById('outsideGuideModal')
+                    ).show();
+                }).fail(function (xhr) {
+                    $('#modalContent').html(`
+                        <div class="alert alert-danger">
+                            <h5>Error Loading Form</h5>
+                            <p><strong>Status:</strong> ${xhr.status} ${xhr.statusText}</p>
+                        </div>
+                    `);
+                    showToast('Error loading form (Status: ' + xhr.status + ')', 'error');
+                });
+            }
+
+            // ── Create ────────────────────────────────────────────
+            $('#btnCreate').click(function () {
+                openModal('@Url.Action("Create", "OutsideGuideFromOperator")', 'Add New Record');
+            });
+
+            // ── Edit ──────────────────────────────────────────────
+            $('#outsideGuideTable').on('click', '.btn-edit', function (e) {
+                e.preventDefault();
+                openModal($(this).attr('href'), 'Edit Record');
+            });
+
+            // ── Delete ────────────────────────────────────────────
+            $('#outsideGuideTable').on('click', '.btn-delete', function () {
+                let id   = $(this).data('id');
+                let name = $(this).data('name');
+
+                if (confirm(`Delete "${name}"?`)) {
+                    $.post('@Url.Action("DeleteAjax", "OutsideGuideFromOperator")', {
+                        id: id,
+                        __RequestVerificationToken:
+                            $('input[name="__RequestVerificationToken"]').val()
+                    }, function (res) {
+                        if (res.success) {
+                            showToast(res.message);
+                            table.ajax.reload(null, false);
+                        } else {
+                            showToast(res.message, 'error');
+                        }
+                    });
+                }
+            });
+
+            // ── Form Submit ───────────────────────────────────────
+            $('#outsideGuideModal').on('submit', 'form', function (e) {
+                e.preventDefault();
+                let form     = $(this);
+                let formData = new FormData(form[0]);
+
+                let token = $('input[name="__RequestVerificationToken"]').val();
+                if (token) formData.set('__RequestVerificationToken', token);
+
+                let submitBtn = form.find('[type="submit"]');
+                submitBtn.prop('disabled', true)
+                         .html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+
+                $.ajax({
+                    url:         form.attr('action'),
+                    type:        'POST',
+                    data:        formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.success) {
+                            var modal = bootstrap.Modal.getInstance(
+                                document.getElementById('outsideGuideModal')
+                            );
+                            if (modal) modal.hide();
+                            table.ajax.reload(null, false);
+                            showToast(res.message);
+                        } else {
+                            let errorMessage = res.message || 'Validation errors occurred';
+                            if (res.errors && Array.isArray(res.errors)) {
+                                let errorList = res.errors.map(e => `<li>${e}</li>`).join('');
+                                form.prepend(`
+                                    <div class="alert alert-danger">
+                                        <h5>${res.message}</h5>
+                                        <ul class="mb-0">${errorList}</ul>
+                                    </div>`);
+                            } else {
+                                showToast(errorMessage, 'error');
+                            }
+                            submitBtn.prop('disabled', false)
+                                     .html('Save');
+                        }
+                    },
+                    error: function (xhr) {
+                        submitBtn.prop('disabled', false)
+                                 .html('Save');
+                        showToast('Error saving record (Status: ' + xhr.status + ')', 'error');
+                    }
+                });
+            });
+
+        });
+    </script>
+}

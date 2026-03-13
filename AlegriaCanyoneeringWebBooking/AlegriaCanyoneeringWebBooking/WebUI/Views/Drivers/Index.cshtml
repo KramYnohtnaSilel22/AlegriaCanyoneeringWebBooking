@@ -41,8 +41,9 @@
 </div>
 
 @section Scripts {
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" />
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
     <style>
         /* Ensure modal content is visible */
@@ -127,11 +128,13 @@
                         render: function (data, type, row) {
                             return `
                                 <div class="d-flex gap-2 justify-content-center">
-                                    <a href="/Drivers/Edit/${data}" class="btn btn-sm btn-warning btn-edit">Edit</a>
+                                    <a href="/Drivers/Edit/${data}" class="btn btn-sm btn-warning btn-edit"><i class="fas fa-edit"></i> Edit</a>
                                     <button class="btn btn-sm btn-danger btn-delete"
                                         data-id="${data}"
-                                        data-name="${row.fullName}">Delete</button>
+                                        data-name="${row.fullName}"> <i class="fas fa-trash"></i> Delete</button>
                                 </div>`;
+
+    
                         }
                     }
                 ],

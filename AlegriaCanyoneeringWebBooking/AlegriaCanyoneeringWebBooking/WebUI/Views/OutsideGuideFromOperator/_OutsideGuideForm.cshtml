@@ -1,0 +1,137 @@
+﻿@model AlegriaCanyoneeringWebBooking.WebUI.Models.OutsideGuideFromOperator
+@{
+    var action = ViewData["Action"]?.ToString() ?? (Model.Id > 0 ? "Edit" : "Create");
+    var formAction = action == "Edit"
+        ? $"/OutsideGuideFromOperator/Edit"
+        : "/OutsideGuideFromOperator/Create";
+}
+
+<form action="@formAction" method="post" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    <!-- Hidden fields carry resolved values on POST -->
+    <input type="hidden" id="fieldOperatorId" name="operatorId" />
+    <input type="hidden" id="fieldOperatorName" name="operatorName" />
+    <input type="hidden" id="fieldGuideId" name="guideId" />
+    <input type="hidden" id="fieldGuideName" name="guideName" />
+
+    <div class="row">
+
+        <!-- Operator -->
+        <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold">
+                Operator <span class="text-danger">*</span>
+            </label>
+            <select id="selectOperator" class="form-select" required>
+                <option value="">— Select Operator —</option>
+            </select>
+            <div class="mt-1 small text-muted" id="operatorPreview"></div>
+            <div class="invalid-feedback">Please select an operator.</div>
+        </div>
+
+        <!-- Guide -->
+        <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold">
+                Guide <span class="text-danger">*</span>
+            </label>
+            <select id="selectGuide" class="form-select" required>
+                <option value="">— Select Guide —</option>
+            </select>
+            <div class="mt-1 small text-muted" id="guidePreview"></div>
+            <div class="invalid-feedback">Please select a guide.</div>
+        </div>
+
+    </div>
+
+    <div class="text-end mt-2">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+            @(action == "Edit" ? "Update" : "Save")
+        </button>
+    </div>
+</form>
+
+<script>
+    (function () {
+        // Pre-fill values from server model (for Edit)
+        var presetOperatorId = '@Model.OperatorId';
+        var presetGuideId    = '@Model.GuideId';
+
+        var operatorsData = [];
+        var guidesData    = [];
+
+        // ── Load dropdowns ────────────────────────────────────────
+        fetch('/OutsideGuideFromOperator/GetDropdowns')
+            .then(r => r.json())
+            .then(function (data) {
+                operatorsData = data.operators;
+                guidesData    = data.guides;
+
+                var opSel = document.getElementById('selectOperator');
+                operatorsData.forEach(function (o) {
+                    var opt = new Option(o.businessName, o.id);
+                    opSel.add(opt);
+                });
+
+                var guSel = document.getElementById('selectGuide');
+                guidesData.forEach(function (g) {
+                    var opt = new Option(g.fullName, g.rfid);
+                    guSel.add(opt);
+                });
+
+                // Pre-select for Edit
+                if (presetOperatorId) {
+                    document.getElementById('selectOperator').value = presetOperatorId;
+                    resolveOperator(presetOperatorId);
+                }
+                if (presetGuideId) {
+                    document.getElementById('selectGuide').value = presetGuideId;
+                    resolveGuide(presetGuideId);
+                }
+            })
+            .catch(function () {
+                console.error('Could not load dropdowns.');
+            });
+
+        // ── Operator change ───────────────────────────────────────
+        document.getElementById('selectOperator')
+            .addEventListener('change', function () {
+                resolveOperator(this.value);
+            });
+
+        function resolveOperator(val) {
+            var op = operatorsData.find(function (o) { return o.id === val; });
+            if (op) {
+                document.getElementById('fieldOperatorId').value   = op.id;
+                document.getElementById('fieldOperatorName').value = op.businessName;
+                document.getElementById('operatorPreview').innerHTML =
+                    `<span class="badge bg-secondary">ID: ${op.id}</span>&nbsp;${op.businessName}`;
+            } else {
+                document.getElementById('fieldOperatorId').value   = '';
+                document.getElementById('fieldOperatorName').value = '';
+                document.getElementById('operatorPreview').innerHTML = '';
+            }
+        }
+
+        // ── Guide change ──────────────────────────────────────────
+        document.getElementById('selectGuide')
+            .addEventListener('change', function () {
+                resolveGuide(this.value);
+            });
+
+        function resolveGuide(val) {
+            var g = guidesData.find(function (x) { return x.rfid === val; });
+            if (g) {
+                document.getElementById('fieldGuideId').value   = g.rfid;
+                document.getElementById('fieldGuideName').value = g.fullName;
+                document.getElementById('guidePreview').innerHTML =
+                    `<span class="badge bg-secondary">RFID: ${g.rfid}</span>&nbsp;${g.fullName}`;
+            } else {
+                document.getElementById('fieldGuideId').value   = '';
+                document.getElementById('fieldGuideName').value = '';
+                document.getElementById('guidePreview').innerHTML = '';
+            }
+        }
+    })();
+</script>

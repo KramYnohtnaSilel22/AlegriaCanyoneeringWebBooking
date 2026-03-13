@@ -235,7 +235,7 @@ public class GuidesController : Controller
                 rfid = t.rfid,
                 nickname = t.nickname,
                 cNumber = t.cNumber,
-                image = t.image
+                image = NormalizeImagePath(t.image)
             }).ToList();
 
             return Json(new { draw, recordsFiltered = recordsTotal, recordsTotal, data });
@@ -300,7 +300,7 @@ public class GuidesController : Controller
             GuideId = g.GuideId,
             Rfid = g.Rfid,
             FullName = g.fullName.Trim(),
-            Image = g.Image,
+            Image = NormalizeImagePath(g.Image),
             TPosition = g.TPosition
         }).ToList());
     }
@@ -387,6 +387,19 @@ public class GuidesController : Controller
         {
             return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
         }
+    }
+
+    // =========================================================
+    // HELPER — Normalize image path (filter out local file paths)
+    // =========================================================
+    private static string? NormalizeImagePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        // Local file paths (e.g. C:\EDITED\...) are not web-accessible
+        if (path.Contains(":\\") || path.Contains(":/") && !path.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("\\\\"))
+            return null;
+        return path;
     }
 
     // =========================================================

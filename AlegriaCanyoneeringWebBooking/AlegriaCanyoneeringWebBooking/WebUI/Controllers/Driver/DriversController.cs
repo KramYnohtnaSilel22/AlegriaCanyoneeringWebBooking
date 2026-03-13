@@ -229,7 +229,19 @@ public class DriversController : Controller
                 })
                 .ToListAsync();
 
-            return Json(new { draw, recordsFiltered = recordsTotal, recordsTotal, data });
+            // Normalize image paths — filter out local file system paths
+            var normalizedData = data.Select(d => new
+            {
+                d.driverId,
+                d.fullName,
+                d.refId,
+                d.pNumber,
+                d.cNumber,
+                d.ctcDate,
+                image = NormalizeImagePath(d.image)
+            }).ToList();
+
+            return Json(new { draw, recordsFiltered = recordsTotal, recordsTotal, data = normalizedData });
         }
         catch (Exception ex)
         {
@@ -267,7 +279,7 @@ public class DriversController : Controller
             DriverId = d.DriverId,
             RefId = d.RefId,
             FullName = d.fullName.Trim(),
-            Image = d.Image,
+            Image = NormalizeImagePath(d.Image),
             DPosition = d.DPosition
         }).ToList());
     }
@@ -357,6 +369,19 @@ public class DriversController : Controller
         {
             return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
         }
+    }
+
+    // =========================================================
+    // HELPER — Normalize image path (filter out local file paths)
+    // =========================================================
+    private static string? NormalizeImagePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        // Local file paths (e.g. C:\EDITED\...) are not web-accessible
+        if (path.Contains(":\\") || path.Contains(":/") && !path.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("\\\\"))
+            return null;
+        return path;
     }
 
     // =========================================================
