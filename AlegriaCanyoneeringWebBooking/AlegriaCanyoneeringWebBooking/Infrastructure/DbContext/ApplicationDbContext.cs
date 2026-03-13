@@ -1,6 +1,7 @@
 ﻿
 using AlegriaCanyoneeringWebBooking.Domain.Models;
 using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.WebUI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -71,6 +72,9 @@ namespace AlegriaCanyoneeringWebBooking
 
         public DbSet<BatchAssignment> BatchAssignments { get; set; }
 
+        public DbSet<OutsideGuideFromOperator> OutsideGuideFromOperators { get; set; }
+
+        public DbSet<TourGuidePriority> TourGuidePriorities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -256,6 +260,9 @@ namespace AlegriaCanyoneeringWebBooking
             modelBuilder.Entity<TourGuideAttendance>().ToTable("tourguide_attendance");
             modelBuilder.Entity<TourGuideDtr>().ToTable("tourguide_dtr");
             modelBuilder.Entity<BatchAssignment>().ToTable("tbl_batch_assignments");
+
+            modelBuilder.Entity<OutsideGuideFromOperator>().ToTable("outside_guide_from_operator");
+            modelBuilder.Entity<TourGuidePriority>().ToTable("tourguide_priority");
 
         }
     }
