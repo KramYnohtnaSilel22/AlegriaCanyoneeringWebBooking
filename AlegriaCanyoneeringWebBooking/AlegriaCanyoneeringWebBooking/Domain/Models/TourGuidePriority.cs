@@ -16,7 +16,7 @@ namespace AlegriaCanyoneeringWebBooking.Domain.Models
         [Column("date")]
         public string? Date { get; set; }
 
-        [Column("NoOfGuest")]
+        [Column("no_of_guest")]
         public int NoOfGuest { get; set; }
     }
 }
