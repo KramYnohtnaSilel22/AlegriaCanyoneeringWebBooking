@@ -5,64 +5,232 @@
     var monthlyGuestCounts = ViewBag.MonthlyGuestCounts as List<int>;
     var yearLabels = ViewBag.YearLabels as List<string>;
     var yearlyGuestCounts = ViewBag.YearlyGuestCounts as List<int>;
-    var guestDates = ViewBag.GuestDates as List<string>; // Unix timestamps
-
-    // Old year data: 2018 - 2020 (must be passed from controller)
+    var guestDates = ViewBag.GuestDates as List<string>;
     var oldYearLabels = ViewBag.YearLabelsOld as List<string> ?? new List<string>();
     var oldYearlyGuestCounts = ViewBag.YearlyGuestCountsOld as List<int> ?? new List<int>();
 
-    // Reverse the new year labels and counts to ascending order
     yearLabels.Reverse();
     yearlyGuestCounts.Reverse();
 
-    // Combine old and new year data ascending from 2018 to current year
-    var combinedYearLabels = new List<string>();
-    var combinedYearlyGuestCounts = new List<int>();
-
-    combinedYearLabels.AddRange(oldYearLabels);
+    var combinedYearLabels = new List<string>(oldYearLabels);
     combinedYearLabels.AddRange(yearLabels);
 
-    combinedYearlyGuestCounts.AddRange(oldYearlyGuestCounts);
+    var combinedYearlyGuestCounts = new List<int>(oldYearlyGuestCounts);
     combinedYearlyGuestCounts.AddRange(yearlyGuestCounts);
 }
 
-<link href="~/css/Dashboard.css" rel="stylesheet" />
-
 <style>
-    /* === Skeleton Loading Styles === */
-    .skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
-        background-size: 400% 100%;
-        animation: skeleton-loading 1.4s ease infinite;
-        border-radius: 6px;
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+    .dashboard-wrap {
+        font-family: 'Outfit', sans-serif;
+        padding: 0;
     }
 
-    @@keyframes skeleton-loading {
-        0%
-
-    {
-        background-position: 100% 0;
+    /* ── Page Header ──────────────────────────────────────── */
+    .dash-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.75rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
-    100% {
-        background-position: -100% 0;
+        .dash-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+        }
+
+        .dash-header .date-badge {
+            font-size: 0.8rem;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+    /* ── Stat Cards ───────────────────────────────────────── */
+    .stat-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 1.4rem 1.5rem;
+        box-shadow: 0 2px 16px rgba(15,52,96,0.07);
+        border: 1px solid #e8edf5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        animation: slideUp 0.4s ease both;
     }
 
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 24px rgba(15,52,96,0.12);
+        }
+
+    .stat-text h6 {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin: 0 0 0.35rem;
     }
 
-    .skeleton-card {
-        height: 100px;
+    .stat-text h2 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .stat-text .stat-sub {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin-top: 0.3rem;
+    }
+
+    .stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+
+    /* ── Chart Cards ──────────────────────────────────────── */
+    .chart-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 2px 16px rgba(15,52,96,0.07);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+        animation: slideUp 0.5s ease both;
+    }
+
+    .chart-card-header {
+        padding: 1.1rem 1.4rem 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+        .chart-card-header h5 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+        }
+
+    .chart-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.4rem;
+    }
+
+    .chart-card-body {
+        padding: 1.25rem 1.4rem 1.4rem;
+    }
+
+    /* ── Responsive chart container ──────────────────────── */
+    .chart-wrap {
+        position: relative;
         width: 100%;
-        margin-bottom: 10px;
+        height: 260px;
+    }
+
+    @@media (max-width: 768px) {
+        .chart-wrap {
+            height: 200px;
+        }
+
+        .stat-card {
+            padding: 1rem 1.1rem;
+        }
+
+        .stat-text h2 {
+            font-size: 1.75rem;
+        }
+
+        .stat-icon {
+            width: 42px;
+            height: 42px;
+            font-size: 1.1rem;
+        }
+
+        .dash-header h2 {
+            font-size: 1.2rem;
+        }
+
+        .row.g-4 {
+            --bs-gutter-y: 0.75rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .chart-wrap {
+            height: 180px;
+        }
+
+        .stat-text h2 {
+            font-size: 1.5rem;
+        }
+
+        .chart-card-body {
+            padding: 0.75rem;
+        }
+    }
+
+    /* ── Skeleton ─────────────────────────────────────────── */
+    .skeleton {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e8edf5 50%, #f1f5f9 75%);
+        background-size: 400% 100%;
+        animation: shimmer 1.5s ease infinite;
+        border-radius: 12px;
+    }
+
+    @@keyframes shimmer {
+        0% {
+            background-position: 100% 0;
+        }
+
+        100% {
+            background-position: -100% 0;
+        }
+    }
+
+    .skeleton-stat {
+        height: 88px;
     }
 
     .skeleton-chart {
-        height: 250px;
-        width: 100%;
-        border-radius: 10px;
+        height: 300px;
     }
 
-    /* Fade transition for smoother switch */
+    /* ── Animations ───────────────────────────────────────── */
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
     #dashboardContent {
         opacity: 0;
         transition: opacity 0.5s ease;
@@ -73,102 +241,124 @@
         }
 </style>
 
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark">Dashboard Overview</h2>
-    </div>
+<div class="dashboard-wrap">
 
-    <!-- ✅ Skeleton Loading (shown initially) -->
+    <!-- ── Skeleton ──────────────────────────────────────── -->
     <div id="skeletonLoader">
-        <div class="row g-3 mb-5">
-            <div class="col-md-4"><div class="skeleton skeleton-card"></div></div>
-            <div class="col-md-4"><div class="skeleton skeleton-card"></div></div>
-            <div class="col-md-4"><div class="skeleton skeleton-card"></div></div>
+        <!-- Header skeleton -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="skeleton" style="width:200px;height:32px;"></div>
+            <div class="skeleton" style="width:140px;height:28px;border-radius:20px;"></div>
         </div>
-
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><div class="skeleton skeleton-stat"></div></div>
+            <div class="col-md-4"><div class="skeleton skeleton-stat"></div></div>
+            <div class="col-md-4"><div class="skeleton skeleton-stat"></div></div>
+        </div>
         <div class="row g-4">
             <div class="col-lg-6"><div class="skeleton skeleton-chart"></div></div>
             <div class="col-lg-6"><div class="skeleton skeleton-chart"></div></div>
         </div>
     </div>
 
-    <!-- ✅ Real Dashboard (hidden until data ready) -->
+    <!-- ── Real Dashboard ────────────────────────────────── -->
     <div id="dashboardContent" style="display:none;">
-        <!-- Stats Cards -->
-        <div class="row g-3 mb-5">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="card-subtitle text-muted mb-2">Guests Today</h6>
-                                <h2 class="card-title fw-bold text-primary">@ViewBag.GuestsToday</h2>
-                            </div>
-                            <div class="bg-primary bg-opacity-10 p-2 rounded">
-                                <i class="fas fa-users text-primary"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="card-subtitle text-muted mb-2">Guests This Month</h6>
-                                <h2 class="card-title fw-bold text-success">@ViewBag.GuestsThisMonth</h2>
-                            </div>
-                            <div class="bg-success bg-opacity-10 p-2 rounded">
-                                <i class="fas fa-calendar-alt text-success"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="card-subtitle text-muted mb-2">Previous Month</h6>
-                                <h2 class="card-title fw-bold text-warning">@ViewBag.GuestsPrevMonth</h2>
-                            </div>
-                            <div class="bg-warning bg-opacity-10 p-2 rounded">
-                                <i class="fas fa-chart-line text-warning"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Page Header -->
+        <div class="dash-header">
+            <h2><i class="bi bi-speedometer2 me-2" style="color:#1a6ef5;"></i>Dashboard Overview</h2>
+            <span class="date-badge">
+                <i class="bi bi-calendar3 me-1"></i>
+                <span id="liveDateBadge"></span>
+            </span>
         </div>
 
-        <!-- Charts Section -->
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white border-0 py-3">
-                        <h5 class="card-title mb-0 fw-semibold">Monthly Guest Trend</h5>
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+
+            <!-- Guests Today -->
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <h6>Guests Today</h6>
+                        <h2 style="color:#1a6ef5;">@ViewBag.GuestsToday</h2>
+                        <div class="stat-sub">as of today</div>
                     </div>
-                    <div class="card-body">
-                        <canvas id="monthlyGuestTrendChart" height="250"></canvas>
+                    <div class="stat-icon" style="background:rgba(26,110,245,0.08);">
+                        <i class="fas fa-users" style="color:#1a6ef5;"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white border-0 py-3">
-                        <h5 class="card-title mb-0 fw-semibold">Yearly Guest Trend</h5>
+            <!-- Guests This Month -->
+            <div class="col-md-4">
+                <div class="stat-card" style="animation-delay:0.1s;">
+                    <div class="stat-text">
+                        <h6>Guests This Month</h6>
+                        <h2 style="color:#16a34a;">@ViewBag.GuestsThisMonth</h2>
+                        <div class="stat-sub">current month total</div>
                     </div>
-                    <div class="card-body">
-                        <canvas id="yearlyGuestTrendChart" height="250"></canvas>
+                    <div class="stat-icon" style="background:rgba(22,163,74,0.08);">
+                        <i class="fas fa-calendar-alt" style="color:#16a34a;"></i>
                     </div>
                 </div>
             </div>
+
+            <!-- Previous Month -->
+            <div class="col-md-4">
+                <div class="stat-card" style="animation-delay:0.2s;">
+                    <div class="stat-text">
+                        <h6>Previous Month</h6>
+                        <h2 style="color:#f0a500;">@ViewBag.GuestsPrevMonth</h2>
+                        <div class="stat-sub">last month total</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(240,165,0,0.08);">
+                        <i class="fas fa-chart-line" style="color:#f0a500;"></i>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-4">
+
+            <!-- Monthly Trend -->
+            <div class="col-lg-6">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h5>
+                            <span class="chart-dot" style="background:#1a6ef5;"></span>
+                            Monthly Guest Trend
+                        </h5>
+                        <small style="color:#94a3b8;font-size:0.75rem;">Current Year</small>
+                    </div>
+                    <div class="chart-card-body">
+                        <div class="chart-wrap">
+                            <canvas id="monthlyGuestTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Yearly Trend -->
+            <div class="col-lg-6">
+                <div class="chart-card" style="animation-delay:0.1s;">
+                    <div class="chart-card-header">
+                        <h5>
+                            <span class="chart-dot" style="background:#16a34a;"></span>
+                            Yearly Guest Trend
+                        </h5>
+                        <small style="color:#94a3b8;font-size:0.75rem;">2018 — Present</small>
+                    </div>
+                    <div class="chart-card-body">
+                        <div class="chart-wrap">
+                            <canvas id="yearlyGuestTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -176,119 +366,165 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        function convertUnixToDate(unixTimestamp) {
-            var date = new Date(unixTimestamp * 1000);
-            return date.toLocaleDateString();
-        }
+        // ── Live date badge ──────────────────────────────────────
+        document.getElementById('liveDateBadge').textContent =
+            new Date().toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-        const guestDates = @Html.Raw(Json.Serialize(guestDates));
-        console.log(guestDates.map(timestamp => convertUnixToDate(timestamp)));
+        // ── Data from server ─────────────────────────────────────
+        const monthLabels              = @Html.Raw(Json.Serialize(monthLabels));
+        const monthlyGuestCounts       = @Html.Raw(Json.Serialize(monthlyGuestCounts));
+        const yearLabelsCombined       = @Html.Raw(Json.Serialize(combinedYearLabels));
+        const yearlyGuestCountsCombined = @Html.Raw(Json.Serialize(combinedYearlyGuestCounts));
 
-        const monthlyGuestCounts = @Html.Raw(Json.Serialize(monthlyGuestCounts));
-        const monthLabels = @Html.Raw(Json.Serialize(monthLabels));
+        // ── Chart defaults ───────────────────────────────────────
+        Chart.defaults.font.family = "'Outfit', 'Segoe UI', sans-serif";
+        Chart.defaults.font.size   = 12;
+        Chart.defaults.color       = '#94a3b8';
 
-        const ctxMonthly = document.getElementById('monthlyGuestTrendChart').getContext('2d');
-        const gradientMonthly = ctxMonthly.createLinearGradient(0, 0, 0, 400);
-        gradientMonthly.addColorStop(0, 'rgba(0, 123, 255, 0.8)');
-        gradientMonthly.addColorStop(1, 'rgba(0, 123, 255, 0.1)');
+        const gridColor = 'rgba(226,232,240,0.7)';
 
-        const monthChart = new Chart(ctxMonthly, {
+        const sharedOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 }
+                },
+                tooltip: {
+                    backgroundColor: '#0f3460',
+                    titleColor: '#ffffff',
+                    bodyColor: 'rgba(255,255,255,0.85)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: ctx => ` ${ctx.parsed.y} guests`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: { color: '#94a3b8' }
+                },
+                y: {
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: v => Number.isInteger(v) ? v : null
+                    },
+                    beginAtZero: true
+                }
+            }
+        };
+
+        // ── Monthly Chart ────────────────────────────────────────
+        const ctxM = document.getElementById('monthlyGuestTrendChart').getContext('2d');
+        const gradM = ctxM.createLinearGradient(0, 0, 0, 300);
+        gradM.addColorStop(0, 'rgba(26,110,245,0.25)');
+        gradM.addColorStop(1, 'rgba(26,110,245,0.01)');
+
+        new Chart(ctxM, {
             type: 'line',
             data: {
                 labels: monthLabels,
                 datasets: [{
                     label: 'Monthly Guests',
                     data: monthlyGuestCounts,
-                    borderColor: gradientMonthly,
-                    backgroundColor: gradientMonthly,
+                    borderColor: '#1a6ef5',
+                    backgroundColor: gradM,
                     fill: true,
-                    pointBackgroundColor: 'rgba(0, 123, 255, 0.7)',
+                    tension: 0.4,
+                    pointBackgroundColor: '#1a6ef5',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
                     pointRadius: 5,
-                    pointHoverRadius: 8,
-                    borderWidth: 3
+                    pointHoverRadius: 7,
+                    borderWidth: 2.5
                 }]
             },
-            options: { responsive: true }
+            options: sharedOptions
         });
 
-        const yearLabelsCombined = @Html.Raw(Json.Serialize(combinedYearLabels));
-        const yearlyGuestCountsCombined = @Html.Raw(Json.Serialize(combinedYearlyGuestCounts));
+        // ── Yearly Chart ─────────────────────────────────────────
+        const ctxY = document.getElementById('yearlyGuestTrendChart').getContext('2d');
+        const gradY = ctxY.createLinearGradient(0, 0, 0, 300);
+        gradY.addColorStop(0, 'rgba(22,163,74,0.25)');
+        gradY.addColorStop(1, 'rgba(22,163,74,0.01)');
 
-        const ctxYearly = document.getElementById('yearlyGuestTrendChart').getContext('2d');
-        const gradientYearly = ctxYearly.createLinearGradient(0, 0, 0, 400);
-        gradientYearly.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
-        gradientYearly.addColorStop(1, 'rgba(40, 167, 69, 0.1)');
-
-        const yearChart = new Chart(ctxYearly, {
+        new Chart(ctxY, {
             type: 'line',
             data: {
                 labels: yearLabelsCombined,
                 datasets: [{
                     label: 'Yearly Guests',
                     data: yearlyGuestCountsCombined,
-                    borderColor: gradientYearly,
-                    backgroundColor: gradientYearly,
+                    borderColor: '#16a34a',
+                    backgroundColor: gradY,
                     fill: true,
-                    pointBackgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    tension: 0.4,
+                    pointBackgroundColor: '#16a34a',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
                     pointRadius: 5,
-                    pointHoverRadius: 8,
-                    borderWidth: 3
+                    pointHoverRadius: 7,
+                    borderWidth: 2.5
                 }]
             },
-            options: { responsive: true }
+            options: sharedOptions
         });
 
-        // ✅ Simulate loading time, then show real dashboard
-        document.addEventListener("DOMContentLoaded", function () {
+        // ── Show dashboard after skeleton ────────────────────────
+        document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 document.getElementById('skeletonLoader').style.display = 'none';
-                const dashboard = document.getElementById('dashboardContent');
-                dashboard.style.display = 'block';
-                requestAnimationFrame(() => dashboard.classList.add('visible'));
-            }, 1000);
+                const dash = document.getElementById('dashboardContent');
+                dash.style.display = 'block';
+                requestAnimationFrame(() => dash.classList.add('visible'));
+            }, 900);
         });
 
-          // Toast function
+        // ── Toast utility ────────────────────────────────────────
         function showToast(message, type = 'success') {
-            let bgClass = 'bg-success', icon = 'bi-check-circle-fill', title = 'Success';
-            if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
-
-            const toastContainer = $('<div></div>')
-                .addClass('toast-container position-fixed top-0 end-0 p-3')
-                .css('z-index', 1080);
-
-            const toast = $('<div></div>')
-                .addClass(`toast text-white ${bgClass} border-0`)
-                .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
-
-            const toastHeader = $('<div></div>')
-                .addClass(`toast-header ${bgClass} text-white border-0`)
-                .html(`<i class="bi ${icon} me-2"></i>
-                       <strong class="me-auto">${title}</strong>
-                       <small>Now</small>
-                       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>`);
-
-            const toastBody = $('<div></div>').addClass('toast-body').text(message);
-
-            toast.append(toastHeader, toastBody);
-            toastContainer.append(toast);
-            $('body').append(toastContainer);
-
-            var bsToast = new bootstrap.Toast(toast[0]);
-            bsToast.show();
-
-            toast.on('hidden.bs.toast', () => toastContainer.remove());
+            const map = {
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
+                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Info'    }
+            };
+            const { bg, icon, title } = map[type] || map.info;
+            const id = 'toast-' + Date.now();
+            const html = `
+                <div id="${id}" class="toast border-0 text-white"
+                     style="background:${bg};border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);"
+                     role="alert" aria-atomic="true" data-bs-delay="4000">
+                    <div class="toast-header border-0 text-white" style="background:transparent;">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" style="padding-top:0;">${message}</div>
+                </div>`;
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                container.style.zIndex = '1090';
+                document.body.appendChild(container);
+            }
+            container.insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', () => el.remove());
         }
 
+        // ── Welcome toast (once per session) ─────────────────────
         $(document).ready(function () {
-            // Show welcome toast only once per login session
-            const name = '@User.Identity.Name';
+            const name = '@User.Identity?.Name';
             if (name && !sessionStorage.getItem('welcomeToastShown')) {
-                showToast(`Welcome back, ${name}!`, 'success');
+                showToast(`Welcome back, ${name}! 👋`, 'success');
                 sessionStorage.setItem('welcomeToastShown', 'true');
             }
         });
-
-
     </script>
 }

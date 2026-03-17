@@ -157,9 +157,22 @@
             </a>
         }
 
+        <!-- ── MAIN (Admin ────────────────── -->
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="section-title">Main</div>
+            <a asp-controller="Dashboard" asp-action="Index">
+                <i class="bi bi-speedometer2 me-2"></i><span>Dashboard</span>
+            </a>
+         
+        }
+
+
+
         <!-- ── MAIN (Admin / Super Admin / Operator) ─────────── -->
         @if (User.IsInRole("Admin") || User.IsInRole("Super Admin") || User.IsInRole("Operator"))
         {
+   
             <a asp-controller="Guest" asp-action="SaveGuest">
                 <i class="bi bi-person-plus-fill me-2"></i><span>Save Guest</span>
             </a>
@@ -177,6 +190,10 @@
                 <i class="bi bi-person-check-fill me-2"></i><span>Guest Check-In</span>
             </a>
         }
+
+      
+
+
 
         <!-- ── MAIN (Staff) ───────────────────────────────────── -->
         @if (User.IsInRole("Staff"))
@@ -341,7 +358,7 @@
             }
         }
 
-        <!-- ── ACCOUNT ────────────────────────────────────────── -->
+        <!-- ── ABOUT ────────────────────────────────────────── -->
         <div class="section-title">About</div>
         <a asp-controller="Home" asp-action="About">
             <i class="bi bi-info-circle-fill me-2"></i><span>About Us</span>

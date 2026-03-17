@@ -2,7 +2,6 @@
    ALEGRIA CANYONEERING — layout.css
    ============================================================ */
 
-/* ── Reset / Base ─────────────────────────────────────────── */
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -18,7 +17,6 @@ body {
     overflow-x: hidden;
 }
 
-/* ── Variables ────────────────────────────────────────────── */
 :root {
     --sidebar-width: 270px;
     --sidebar-collapsed-width: 60px;
@@ -30,9 +28,7 @@ body {
     --transition-speed: 0.3s;
 }
 
-/* ============================================================
-   HEADER
-   ============================================================ */
+/* ── Header ───────────────────────────────────────────────── */
 header {
     position: fixed;
     top: 0;
@@ -79,7 +75,6 @@ header {
     flex-shrink: 0;
 }
 
-/* Dropdown panel */
 .header-dropdown {
     min-width: 200px;
     border-radius: 10px;
@@ -101,7 +96,6 @@ header {
 
 .header-dropdown .dropdown-item {
     font-size: 0.875rem;
-    border-radius: 0;
     transition: background-color 0.15s ease;
 }
 
@@ -113,7 +107,7 @@ header {
         background-color: #fff0f0;
     }
 
-/* ── Sidebar Logout Button (styled like a nav link) ───────── */
+/* ── Sidebar Logout Button ────────────────────────────────── */
 .sidebar-logout-btn {
     display: flex;
     align-items: center;
@@ -144,6 +138,7 @@ header {
         flex-shrink: 0;
     }
 
+/* ── Logout Modal ─────────────────────────────────────────── */
 .logout-modal-icon {
     width: 64px;
     height: 64px;
@@ -182,9 +177,7 @@ header {
         outline-offset: 2px;
     }
 
-/* ============================================================
-   SIDEBAR — EXPANDED
-   ============================================================ */
+/* ── Sidebar Expanded ─────────────────────────────────────── */
 .sidebar {
     position: fixed;
     top: 0;
@@ -210,7 +203,6 @@ header {
         border-radius: 4px;
     }
 
-    /* ── Logo ─────────────────────────────────────────────────── */
     .sidebar .text-center {
         padding: 0.5rem 0 1rem;
     }
@@ -220,7 +212,7 @@ header {
             height: 70px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid rgba(255, 255, 255, 0.4);
+            border: 3px solid rgba(255,255,255,0.4);
             transition: width var(--transition-speed) ease, height var(--transition-speed) ease;
         }
 
@@ -233,19 +225,17 @@ header {
             display: block;
         }
 
-/* ── Section Titles ───────────────────────────────────────── */
 .section-title {
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255,255,255,0.55);
     padding: 0.75rem 0.5rem 0.25rem;
     white-space: nowrap;
     overflow: hidden;
 }
 
-/* ── Nav Links ────────────────────────────────────────────── */
 .sidebar a,
 .sidebar .settings-toggle {
     display: flex;
@@ -256,7 +246,7 @@ header {
     border-radius: 8px;
     margin-bottom: 2px;
     transition: background-color 0.2s ease;
-    white-space: normal; /* allow long labels to wrap */
+    white-space: normal;
     word-break: break-word;
     cursor: pointer;
 }
@@ -271,7 +261,6 @@ header {
         background-color: var(--sidebar-active-bg);
     }
 
-    /* ── Icons (expanded) ─────────────────────────────────────── */
     .sidebar a i,
     .sidebar .settings-toggle i {
         font-size: 1.05rem;
@@ -280,7 +269,6 @@ header {
         flex-shrink: 0;
     }
 
-/* ── Settings Toggle ──────────────────────────────────────── */
 .settings-toggle {
     display: flex !important;
     justify-content: space-between;
@@ -297,14 +285,13 @@ header {
         transform: rotate(180deg);
     }
 
-/* ── Submenu Links ────────────────────────────────────────── */
 #settingsSubmenu a,
 #reportsSubmenu a {
     padding: 0.4rem 0.5rem 0.4rem 1.5rem;
     font-size: 0.875rem;
     border-radius: 6px;
     margin-bottom: 1px;
-    white-space: normal; /* allow text to wrap */
+    white-space: normal;
     word-break: break-word;
     line-height: 1.4;
     overflow: visible;
@@ -315,7 +302,6 @@ header {
         background-color: var(--sidebar-hover-bg);
     }
 
-/* ── Reports nav-link override ────────────────────────────── */
 .sidebar .nav-link {
     color: var(--sidebar-text) !important;
     padding: 0.55rem 0.75rem;
@@ -335,21 +321,15 @@ header {
     word-break: break-word;
 }
 
-/* ============================================================
-   SIDEBAR — COLLAPSED
-   Heavy use of !important to beat Bootstrap's inline styles
-   and .show class specificity
-   ============================================================ */
+/* ── Sidebar Collapsed ────────────────────────────────────── */
 .sidebar.collapsed {
     width: var(--sidebar-collapsed-width);
     padding: 0.75rem 0;
-    /* Flex column so every child stretches to full 60px width */
     display: flex;
     flex-direction: column;
     align-items: stretch;
 }
 
-    /* ── Logo ─────────────────────────────────────────────────── */
     .sidebar.collapsed .text-center {
         display: flex !important;
         justify-content: center !important;
@@ -370,12 +350,10 @@ header {
             display: none !important;
         }
 
-    /* ── Section Titles — gone ────────────────────────────────── */
     .sidebar.collapsed .section-title {
         display: none !important;
     }
 
-    /* ── Dropdowns — force closed, beats Bootstrap .show class ── */
     .sidebar.collapsed .collapse,
     .sidebar.collapsed .collapse.show,
     .sidebar.collapsed #settingsSubmenu,
@@ -392,7 +370,6 @@ header {
         pointer-events: none !important;
     }
 
-    /* ── All links — centered, icon only ─────────────────────── */
     .sidebar.collapsed a,
     .sidebar.collapsed .settings-toggle,
     .sidebar.collapsed .nav-link {
@@ -407,7 +384,6 @@ header {
         white-space: nowrap !important;
     }
 
-        /* ── Icons — strip everything that causes left-shift ─────── */
         .sidebar.collapsed a i,
         .sidebar.collapsed .settings-toggle i,
         .sidebar.collapsed .nav-link i {
@@ -420,7 +396,6 @@ header {
             text-align: center;
         }
 
-        /* ── Hide text, chevron, toggle arrow ────────────────────── */
         .sidebar.collapsed a span,
         .sidebar.collapsed a .submenu-text,
         .sidebar.collapsed .settings-toggle > span,
@@ -431,7 +406,6 @@ header {
             display: none !important;
         }
 
-        /* ── Hover ────────────────────────────────────────────────── */
         .sidebar.collapsed a:hover,
         .sidebar.collapsed .settings-toggle:hover,
         .sidebar.collapsed .nav-link:hover {
@@ -442,9 +416,7 @@ header {
         width: 100%;
     }
 
-/* ============================================================
-   MAIN CONTENT
-   ============================================================ */
+/* ── Main Content ─────────────────────────────────────────── */
 .main-content {
     margin-left: var(--sidebar-width);
     margin-top: var(--header-height);
@@ -458,26 +430,22 @@ header {
     margin-left: var(--sidebar-collapsed-width);
 }
 
-/* ============================================================
-   FOOTER
-   ============================================================ */
+/* ── Footer ───────────────────────────────────────────────── */
 #siteFooter {
     border-top: 1px solid #e0e0e0;
     font-size: 0.875rem;
 }
 
-/* ============================================================
-   CARDS
-   ============================================================ */
+/* ── Cards ────────────────────────────────────────────────── */
 .card {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     border: none;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
     .card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
 
 .card-body {
@@ -494,17 +462,15 @@ header {
     font-weight: 500;
 }
 
-/* ============================================================
-   MOBILE OVERLAY BACKDROP
-   ============================================================ */
+/* ── Mobile Backdrop ──────────────────────────────────────── */
 .sidebar-backdrop {
     display: none;
     position: fixed;
-    top: var(--header-height); /* start below header, not behind it */
+    top: var(--header-height);
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0,0,0,0.45);
     z-index: 190;
     backdrop-filter: blur(1px);
 }
@@ -513,12 +479,8 @@ header {
         display: block;
     }
 
-/* ============================================================
-   RESPONSIVE — MOBILE
-   ============================================================ */
+/* ── Responsive Mobile ────────────────────────────────────── */
 @media (max-width: 768px) {
-
-    /* ── Header: full width, on top of everything ─────────────── */
     header {
         left: 0 !important;
         right: 0 !important;
@@ -526,7 +488,6 @@ header {
         z-index: 300 !important;
     }
 
-    /* ── Hamburger: big touch target ─────────────────────────── */
     .header_toggle {
         font-size: 1.6rem;
         padding: 0.4rem 0.6rem;
@@ -539,21 +500,15 @@ header {
         position: relative;
     }
 
-    /* ── Sidebar: hidden off-screen by default ────────────────── */
     .sidebar,
     .sidebar.collapsed {
-        /* Start off-screen to the LEFT */
         transform: translateX(-100%) !important;
-        /* Responsive width: max 85% of viewport */
         width: min(var(--sidebar-width), 85vw) !important;
-        /* Start BELOW the header so logo is never behind it */
         top: var(--header-height) !important;
         height: calc(100vh - var(--header-height)) !important;
         padding: 1rem 0.75rem !important;
-        /* Only transition transform, not width */
         transition: transform var(--transition-speed) ease !important;
         display: block !important;
-        /* Kill flex layout from collapsed state */
         flex-direction: unset !important;
         align-items: unset !important;
         z-index: 200;
@@ -561,15 +516,11 @@ header {
         overflow-x: hidden;
     }
 
-        /* ── Slide in when hamburger is clicked ───────────────────── */
         .sidebar.mobile-open,
         .sidebar.collapsed.mobile-open {
             transform: translateX(0) !important;
         }
 
-        /* ── FULL EXPANDED LOOK — override ALL collapsed styles ────── */
-
-        /* Logo */
         .sidebar .text-center,
         .sidebar.collapsed .text-center {
             display: block !important;
@@ -592,7 +543,6 @@ header {
                 opacity: 1 !important;
             }
 
-        /* Section titles */
         .sidebar .section-title,
         .sidebar.collapsed .section-title {
             display: block !important;
@@ -602,13 +552,9 @@ header {
             margin: 0 !important;
         }
 
-        /* Nav links — left-aligned with text */
-        .sidebar a,
-        .sidebar.collapsed a,
-        .sidebar .settings-toggle,
-        .sidebar.collapsed .settings-toggle,
-        .sidebar .nav-link,
-        .sidebar.collapsed .nav-link {
+        .sidebar a, .sidebar.collapsed a,
+        .sidebar .settings-toggle, .sidebar.collapsed .settings-toggle,
+        .sidebar .nav-link, .sidebar.collapsed .nav-link {
             display: flex !important;
             justify-content: flex-start !important;
             align-items: center !important;
@@ -620,13 +566,9 @@ header {
             overflow: visible !important;
         }
 
-            /* Icons — restore me-2 margin */
-            .sidebar a i,
-            .sidebar.collapsed a i,
-            .sidebar .settings-toggle i,
-            .sidebar.collapsed .settings-toggle i,
-            .sidebar .nav-link i,
-            .sidebar.collapsed .nav-link i {
+            .sidebar a i, .sidebar.collapsed a i,
+            .sidebar .settings-toggle i, .sidebar.collapsed .settings-toggle i,
+            .sidebar .nav-link i, .sidebar.collapsed .nav-link i {
                 margin-right: 0.5rem !important;
                 margin-left: 0 !important;
                 padding: 0 !important;
@@ -636,48 +578,34 @@ header {
                 text-align: center;
             }
 
-            /* Show ALL text spans */
-            .sidebar a span,
-            .sidebar.collapsed a span,
+            .sidebar a span, .sidebar.collapsed a span,
             .sidebar.collapsed a .submenu-text,
-            .sidebar .settings-toggle > span,
-            .sidebar.collapsed .settings-toggle > span,
-            .sidebar .nav-link span,
-            .sidebar.collapsed .nav-link span,
-            .sidebar .navbar-brand .fs-6,
-            .sidebar.collapsed .navbar-brand .fs-6 {
+            .sidebar .settings-toggle > span, .sidebar.collapsed .settings-toggle > span,
+            .sidebar .nav-link span, .sidebar.collapsed .nav-link span,
+            .sidebar .navbar-brand .fs-6, .sidebar.collapsed .navbar-brand .fs-6 {
                 display: inline !important;
                 opacity: 1 !important;
                 max-width: unset !important;
                 visibility: visible !important;
             }
 
-        /* Show chevron arrows */
-        .sidebar .toggle-icon,
-        .sidebar.collapsed .toggle-icon {
+        .sidebar .toggle-icon, .sidebar.collapsed .toggle-icon {
             display: inline !important;
             visibility: visible !important;
         }
 
-        /* Settings & Reports: chevron on the right */
-        .sidebar .settings-toggle,
-        .sidebar.collapsed .settings-toggle,
-        .sidebar .nav-link[data-bs-toggle="collapse"],
-        .sidebar.collapsed .nav-link[data-bs-toggle="collapse"] {
+        .sidebar .settings-toggle, .sidebar.collapsed .settings-toggle,
+        .sidebar .nav-link[data-bs-toggle="collapse"], .sidebar.collapsed .nav-link[data-bs-toggle="collapse"] {
             justify-content: space-between !important;
         }
 
-        /* Let Bootstrap control dropdowns on mobile */
-        .sidebar.collapsed .collapse,
-        .sidebar.collapsed #settingsSubmenu,
-        .sidebar.collapsed #reportsSubmenu,
-        .sidebar.collapsed .ms-3 {
+        .sidebar.collapsed .collapse, .sidebar.collapsed #settingsSubmenu,
+        .sidebar.collapsed #reportsSubmenu, .sidebar.collapsed .ms-3 {
             visibility: visible !important;
             pointer-events: auto !important;
             height: auto !important;
         }
 
-    /* ── Main content: full width, shift down for header ─────── */
     .main-content {
         margin-left: 0 !important;
         margin-top: var(--header-height) !important;

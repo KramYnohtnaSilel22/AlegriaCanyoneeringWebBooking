@@ -5,12 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using AlegriaCanyoneeringWebBooking.Helpers;
+
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
     [ApiExplorerSettings(IgnoreApi = true)]
     public class AuthenticationController : Controller
     {
-
         private readonly ApplicationDbContext _context;
 
         public AuthenticationController(ApplicationDbContext context)
@@ -18,127 +18,117 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context = context;
         }
 
-        // GET: Authentication/Login
+        // =========================================================
+        // LOGIN — GET
+        // =========================================================
         [HttpGet]
         public IActionResult Login()
         {
-            // If already logged in, redirect to dashboard
             if (User.Identity?.IsAuthenticated == true)
-            {
                 return RedirectToAction("Index", "Dashboard");
-            }
             return View();
         }
 
-        // POST: Authentication/Login
+        // =========================================================
+        // LOGIN — POST
+        // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            // ── Blank checks ───────────────────────────────────────
+            if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(password))
             {
-                if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(password))
-                {
-                    TempData["ErrorMessage"] = "Please fill up both username and password.";
-                }
-                else if (string.IsNullOrWhiteSpace(username))
-                {
-                    TempData["ErrorMessage"] = "Please fill up your username.";
-                }
-                else if (string.IsNullOrWhiteSpace(password))
-                {
-                    TempData["ErrorMessage"] = "Please fill up your password.";
-                }
+                TempData["ErrorMessage"] = "Please fill up both username and password.";
                 return View();
             }
-            // Find user with their role
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                TempData["ErrorMessage"] = "Please fill up your username.";
+                return View();
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                TempData["ErrorMessage"] = "Please fill up your password.";
+                return View();
+            }
+
+            // ── Find user ──────────────────────────────────────────
             var user = await _context.Operators
                 .Include(o => o.Roles)
                 .FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
             {
-                TempData["ErrorMessage"] = "Invalid username";
+                TempData["ErrorMessage"] = "Invalid username or password.";
                 return View();
             }
 
-            // Verify password
-            bool isPasswordValid = PasswordHelper.VerifyPassword(password, user.Password);
-            if (!isPasswordValid)
+            // ── Verify using SHA1 PasswordHelper ───────────────────
+            // ✅ This now works for ALL passwords:
+            //    - Original accounts (SHA1 hashed at registration)
+            //    - Passwords changed via ChangePassword  (SHA1)
+            //    - Passwords reset via ForgotPassword    (SHA1)
+            if (!PasswordHelper.VerifyPassword(password, user.Password))
             {
-                TempData["ErrorMessage"] = "Invalid password.";
+                TempData["ErrorMessage"] = "Invalid username or password.";
                 return View();
             }
 
-            // Check if role exists
+            // ── Role check ─────────────────────────────────────────
             if (user.Roles == null)
             {
-                TempData["ErrorMessage"] = "User role not found. Please contact administrato.";
-
+                TempData["ErrorMessage"] = "User role not found. Please contact the administrator.";
                 return View();
             }
 
-            // ✅ CRITICAL: Create claims with ClaimTypes.Role for ASP.NET Core Authorization
+            // ── Build claims ───────────────────────────────────────
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Email, user.EmailAddress ?? ""),
-                // ✅ This is the MOST IMPORTANT claim for [Authorize(Roles = "...")] to work
-                new Claim(ClaimTypes.Role, user.Roles.Name),
-                // Keep these for custom access if needed
-                new Claim("UserId", user.Id.ToString()),
-                new Claim("Role", user.Roles.Name),
-                new Claim("RoleName", user.Roles.Name),
+                new Claim(ClaimTypes.Name,           user.Username),
+                new Claim(ClaimTypes.Email,          user.EmailAddress ?? ""),
+                new Claim(ClaimTypes.Role,           user.Roles.Name),
+                new Claim("UserId",       user.Id.ToString()),
+                new Claim("Role",         user.Roles.Name),
+                new Claim("RoleName",     user.Roles.Name),
                 new Claim("BusinessName", user.BusinessName ?? "")
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = false, // Session cookie (expires when browser closes)
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8), // Backup expiration
-                AllowRefresh = true
-            };
-
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 claimsPrincipal,
-                authProperties
+                new AuthenticationProperties
+                {
+                    IsPersistent = false,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
+                    AllowRefresh = true
+                }
             );
 
-            // Store in session as backup
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetString("Role", user.Roles.Name);
             HttpContext.Session.SetInt32("UserId", user.Id);
 
-
-
-            // Redirect based on role
-            if (user.Roles.Name == "Super Admin" || user.Roles.Name == "Admin")
-            {
-                return RedirectToAction("Index", "Dashboard");
-            }
-            else if (user.Roles.Name == "Operator")
-            {
-                return RedirectToAction("Index", "Dashboard");
-            }
-
-            TempData["SuccessMessage"] = $"Welcome back, {user.Name}!";
             return RedirectToAction("Index", "Dashboard");
         }
 
-
+        // =========================================================
+        // LOGOUT
+        // =========================================================
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
             return RedirectToAction("landingpage", "Home");
         }
 
-
-        // GET: Change Password
+        // =========================================================
+        // CHANGE PASSWORD — GET
+        // =========================================================
         [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
         [HttpGet]
         public IActionResult ChangePassword()
@@ -146,7 +136,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(new ChangePasswordViewModel());
         }
 
-        // POST: Change Password
+        // =========================================================
+        // CHANGE PASSWORD — POST
+        // =========================================================
         [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -158,24 +150,25 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var username = User.Identity?.Name;
             if (username == null)
             {
-                TempData["ErrorMessage"] = "User session expired. Please login again.";
-                return RedirectToAction("Login", "Authentication");
+                TempData["ErrorMessage"] = "Session expired. Please login again.";
+                return RedirectToAction("Login");
             }
 
             var op = await _context.Operators.FirstOrDefaultAsync(o => o.Username == username);
             if (op == null)
             {
                 TempData["ErrorMessage"] = "User not found.";
-                return RedirectToAction("Login", "Authentication");
+                return RedirectToAction("Login");
             }
 
+            // ✅ Verify current password with SHA1
             if (!PasswordHelper.VerifyPassword(model.CurrentPassword, op.Password))
             {
                 TempData["ErrorMessage"] = "Current password is incorrect.";
                 return View(model);
             }
 
-            // Update password
+            // ✅ Hash new password with SHA1
             op.Password = PasswordHelper.HashPassword(model.NewPassword);
             _context.Update(op);
             await _context.SaveChangesAsync();
@@ -184,6 +177,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return RedirectToAction("ChangePassword");
         }
 
+        // =========================================================
+        // FORGOT PASSWORD — GET
+        // =========================================================
         [HttpGet]
         [AllowAnonymous]
         public IActionResult ForgotPassword()
@@ -191,6 +187,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View();
         }
 
+        // =========================================================
+        // FORGOT PASSWORD — POST
+        // =========================================================
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -199,18 +198,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user = await _context.Operators.FirstOrDefaultAsync(u => u.EmailAddress == model.Email);
-            if (user == null)
-            {
-                // Don't reveal that the user does not exist
-                return View("ForgotPasswordConfirmation");
-            }
+            var user = await _context.Operators
+                .FirstOrDefaultAsync(u => u.EmailAddress == model.Email);
 
-            var resetToken = Guid.NewGuid().ToString();
+            if (user == null)
+                return View("ForgotPasswordConfirmation");
+
+            var resetToken = Guid.NewGuid().ToString("N");
             var resetLink = Url.Action("ResetPassword", "Authentication",
                 new { email = user.EmailAddress, token = resetToken }, Request.Scheme);
-
-            // Build absolute URL for the logo image
             string imageUrl = $"{Request.Scheme}://{Request.Host}/images/alegrialogo2025.jpeg";
 
             var emailBody = $@"
@@ -222,108 +218,60 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
   <title>Reset Your Password</title>
 </head>
 <body style='margin:0;padding:0;background-color:#f4f7fe;font-family:Outfit,Segoe UI,Arial,sans-serif;'>
-
-  <!-- Wrapper -->
   <table width='100%' cellpadding='0' cellspacing='0' style='background:#f4f7fe;padding:40px 0;'>
     <tr>
       <td align='center'>
-
-        <!-- Card -->
         <table width='600' cellpadding='0' cellspacing='0'
                style='background:#ffffff;border-radius:16px;overflow:hidden;
                       box-shadow:0 4px 24px rgba(15,52,96,0.10);max-width:600px;width:100%;'>
-
-          <!-- Header -->
           <tr>
-            <td style='background:linear-gradient(135deg,#1a6ef5,#0f3460);
-                       padding:36px 40px;text-align:center;'>
-              <img src='{imageUrl}'
-                   alt='Alegria Canyoneering'
-                   width='70' height='70'
-                   style='border-radius:50%;border:3px solid rgba(255,255,255,0.3);
-                          object-fit:cover;margin-bottom:14px;' />
-              <h1 style='margin:0;color:#ffffff;font-size:22px;font-weight:700;
-                         letter-spacing:0.5px;'>Alegria Canyoneering</h1>
-              <p style='margin:4px 0 0;color:rgba(255,255,255,0.7);
-                        font-size:12px;letter-spacing:0.1em;text-transform:uppercase;'>
-                Web Booking System
-              </p>
+            <td style='background:linear-gradient(135deg,#1a6ef5,#0f3460);padding:36px 40px;text-align:center;'>
+              <img src='{imageUrl}' alt='Alegria Canyoneering' width='70' height='70'
+                   style='border-radius:50%;border:3px solid rgba(255,255,255,0.3);object-fit:cover;margin-bottom:14px;' />
+              <h1 style='margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;'>Alegria Canyoneering</h1>
+              <p style='margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;'>Web Booking System</p>
             </td>
           </tr>
-
-          <!-- Body -->
           <tr>
             <td style='padding:40px 40px 32px;'>
-
-              <!-- Icon -->
-              <div style='width:64px;height:64px;border-radius:50%;
-                          background:rgba(26,110,245,0.08);
-                          display:flex;align-items:center;justify-content:center;
+              <div style='width:64px;height:64px;border-radius:50%;background:rgba(26,110,245,0.08);
                           margin:0 auto 24px;text-align:center;line-height:64px;'>
                 <span style='font-size:28px;'>🔑</span>
               </div>
-
-              <h2 style='margin:0 0 8px;color:#0f3460;font-size:20px;
-                         font-weight:700;text-align:center;'>
-                Password Reset Request
-              </h2>
-              <p style='margin:0 0 24px;color:#64748b;font-size:14px;text-align:center;'>
-                We received a request to reset your password.
-              </p>
-
-              <p style='margin:0 0 8px;color:#334155;font-size:15px;'>
-                Hello <strong>{user.Name}</strong>,
-              </p>
+              <h2 style='margin:0 0 8px;color:#0f3460;font-size:20px;font-weight:700;text-align:center;'>Password Reset Request</h2>
+              <p style='margin:0 0 24px;color:#64748b;font-size:14px;text-align:center;'>We received a request to reset your password.</p>
+              <p style='margin:0 0 8px;color:#334155;font-size:15px;'>Hello <strong>{user.Name}</strong>,</p>
               <p style='margin:0 0 28px;color:#475569;font-size:15px;line-height:1.65;'>
-                Click the button below to choose a new password for your account.
-                This link is valid for a limited time.
+                Click the button below to choose a new password for your account. This link is valid for a limited time.
               </p>
-
-              <!-- CTA Button -->
               <div style='text-align:center;margin-bottom:28px;'>
                 <a href='{resetLink}'
                    style='display:inline-block;background:linear-gradient(135deg,#1a6ef5,#0f3460);
                           color:#ffffff;text-decoration:none;padding:14px 36px;
                           border-radius:50px;font-size:15px;font-weight:600;
-                          letter-spacing:0.3px;
                           box-shadow:0 4px 16px rgba(26,110,245,0.35);'>
                   Reset My Password
                 </a>
               </div>
-
-              <!-- Divider -->
               <hr style='border:none;border-top:1px solid #e8edf5;margin:0 0 20px;' />
-
-              <!-- Warning note -->
               <p style='margin:0;color:#94a3b8;font-size:13px;line-height:1.6;text-align:center;'>
                 If you did not request a password reset, you can safely ignore this email.<br>
                 Your password will remain unchanged.
               </p>
-
             </td>
           </tr>
-
-          <!-- Footer -->
           <tr>
-            <td style='background:#f8faff;border-top:1px solid #e8edf5;
-                       padding:20px 40px;text-align:center;border-radius:0 0 16px 16px;'>
+            <td style='background:#f8faff;border-top:1px solid #e8edf5;padding:20px 40px;text-align:center;'>
               <p style='margin:0;color:#94a3b8;font-size:12px;line-height:1.6;'>
-                &copy; {DateTime.Now.Year} <strong style='color:#64748b;'>Alegria Canyoneering Web Booking</strong>.
-                All rights reserved.
+                &copy; {DateTime.Now.Year} <strong style='color:#64748b;'>Alegria Canyoneering Web Booking</strong>. All rights reserved.
               </p>
-              <p style='margin:6px 0 0;color:#b0bec5;font-size:11px;'>
-                This is an automated message. Please do not reply to this email.
-              </p>
+              <p style='margin:6px 0 0;color:#b0bec5;font-size:11px;'>This is an automated message. Please do not reply to this email.</p>
             </td>
           </tr>
-
         </table>
-        <!-- /Card -->
-
       </td>
     </tr>
   </table>
-
 </body>
 </html>";
 
@@ -336,43 +284,58 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View("ForgotPasswordConfirmation");
         }
 
+        // =========================================================
+        // RESET PASSWORD — GET
+        // =========================================================
         [HttpGet]
         [AllowAnonymous]
         public IActionResult ResetPassword(string email, string token)
         {
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+                return RedirectToAction("Login");
+
             return View(new ResetPasswordViewModel { Email = email, Token = token });
         }
 
+        // =========================================================
+        // RESET PASSWORD — POST
+        // ✅ KEY FIX: use PasswordHelper.HashPassword (SHA1)
+        //    so Login can verify it with PasswordHelper.VerifyPassword
+        // =========================================================
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
-            var user = await _context.Operators.FirstOrDefaultAsync(u => u.EmailAddress == model.Email);
-            if (user == null)
-            {
-                // Not found — show confirmation anyway
-                return View("ResetPasswordConfirmation");
-            }
-            // Validate token and expiry here
+            if (!ModelState.IsValid)
+                return View(model);
 
-            user.Password = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+            var user = await _context.Operators
+                .FirstOrDefaultAsync(u => u.EmailAddress == model.Email);
+
+            if (user == null)
+                return View("ResetPasswordConfirmation");
+
+            // ✅ SHA1 hash — consistent with Login and ChangePassword
+            user.Password = PasswordHelper.HashPassword(model.NewPassword);
             await _context.SaveChangesAsync();
 
             return View("ResetPasswordConfirmation");
         }
 
-
-        // ================= GET =================
+        // =========================================================
+        // UPDATE INFO — GET
+        // =========================================================
         [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
         [HttpGet("/Authentication/Update")]
         public async Task<IActionResult> Update()
         {
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(idClaim)) return RedirectToAction("Login", "Authentication");
+            if (string.IsNullOrEmpty(idClaim))
+                return RedirectToAction("Login");
 
-            if (!int.TryParse(idClaim, out int operatorId)) return BadRequest("Invalid operator id.");
+            if (!int.TryParse(idClaim, out int operatorId))
+                return BadRequest("Invalid operator id.");
 
             var op = await _context.Operators
                 .Include(o => o.Roles)
@@ -380,7 +343,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             if (op == null) return NotFound();
 
-            var vm = new OperatorUpdateViewModel
+            return View(new OperatorUpdateViewModel
             {
                 OperatorId = op.Id,
                 Name = op.Name,
@@ -391,12 +354,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 EmailAddress = op.EmailAddress,
                 RoleId = op.RoleId,
                 RoleName = op.Roles?.Name
-            };
-
-            return View(vm);
+            });
         }
 
-        // ================= POST =================
+        // =========================================================
+        // UPDATE INFO — POST
+        // =========================================================
         [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
         [HttpPost("/Authentication/Update")]
         [ValidateAntiForgeryToken]
@@ -412,7 +375,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (string.IsNullOrEmpty(idClaim) || model.OperatorId.ToString() != idClaim)
             {
                 TempData["ErrorMessage"] = "Unauthorized operation.";
-                return Forbid(); // prevent editing someone else's record
+                return Forbid();
             }
 
             var op = await _context.Operators.FindAsync(model.OperatorId);
@@ -422,7 +385,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return RedirectToAction("Index", "Dashboard");
             }
 
-            // Update operator info
             op.Name = model.Name;
             op.BusinessName = model.BusinessName;
             op.Age = model.Age;
@@ -434,11 +396,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context.Update(op);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Operator information updated successfully!";
+            TempData["SuccessMessage"] = "Information updated successfully!";
             return RedirectToAction("Update");
         }
 
-
+        // =========================================================
+        // ACCESS DENIED
+        // =========================================================
         public IActionResult AccessDenied()
         {
             return View();
