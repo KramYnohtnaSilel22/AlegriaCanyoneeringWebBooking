@@ -318,6 +318,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
         // ================= GET =================
+        [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
         [HttpGet("/Authentication/Update")]
         public async Task<IActionResult> Update()
         {
@@ -349,6 +350,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
         // ================= POST =================
+        [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
         [HttpPost("/Authentication/Update")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Update(OperatorUpdateViewModel model)
