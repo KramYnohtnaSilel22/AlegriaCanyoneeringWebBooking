@@ -76,6 +76,8 @@ namespace AlegriaCanyoneeringWebBooking
 
         public DbSet<TourGuidePriority> TourGuidePriorities { get; set; }
 
+        public DbSet<OutsideDriverFromOperator> OutsideDriverFromOperators { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -260,9 +262,9 @@ namespace AlegriaCanyoneeringWebBooking
             modelBuilder.Entity<TourGuideAttendance>().ToTable("tourguide_attendance");
             modelBuilder.Entity<TourGuideDtr>().ToTable("tourguide_dtr");
             modelBuilder.Entity<BatchAssignment>().ToTable("tbl_batch_assignments");
-
             modelBuilder.Entity<OutsideGuideFromOperator>().ToTable("outside_guide_from_operator");
             modelBuilder.Entity<TourGuidePriority>().ToTable("tourguide_priority");
+            modelBuilder.Entity<OutsideDriverFromOperator>().ToTable("outside_driver_from_operator");
 
         }
     }

@@ -1,0 +1,137 @@
+@model AlegriaCanyoneeringWebBooking.WebUI.Models.OutsideDriverFromOperator
+@{
+    var action     = ViewData["Action"]?.ToString() ?? (Model.Id > 0 ? "Edit" : "Create");
+    var formAction = action == "Edit"
+        ? $"/OutsideDriverFromOperator/Edit"
+        : "/OutsideDriverFromOperator/Create";
+}
+
+<form action="@formAction" method="post" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    <!-- Hidden fields carry resolved values on POST -->
+    <input type="hidden" id="fieldOperatorId"   name="operatorId"   />
+    <input type="hidden" id="fieldOperatorName" name="operatorName" />
+    <input type="hidden" id="fieldDriverId"     name="driverId"     />
+    <input type="hidden" id="fieldDriverName"   name="driverName"   />
+
+    <div class="row">
+
+        <!-- Operator -->
+        <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold">
+                Operator <span class="text-danger">*</span>
+            </label>
+            <select id="selectOperator" class="form-select" required>
+                <option value="">— Select Operator —</option>
+            </select>
+            <div class="mt-1 small text-muted" id="operatorPreview"></div>
+            <div class="invalid-feedback">Please select an operator.</div>
+        </div>
+
+        <!-- Driver -->
+        <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold">
+                Driver <span class="text-danger">*</span>
+            </label>
+            <select id="selectDriver" class="form-select" required>
+                <option value="">— Select Driver —</option>
+            </select>
+            <div class="mt-1 small text-muted" id="driverPreview"></div>
+            <div class="invalid-feedback">Please select a driver.</div>
+        </div>
+
+    </div>
+
+    <div class="text-end mt-2">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+            @(action == "Edit" ? "Update" : "Save")
+        </button>
+    </div>
+</form>
+
+<script>
+    (function () {
+        // Pre-fill values from server model (for Edit)
+        var presetOperatorId = '@Model.OperatorId';
+        var presetDriverId   = '@Model.DriverId';
+
+        var operatorsData = [];
+        var driversData   = [];
+
+        // ── Load dropdowns ────────────────────────────────────────
+        fetch('/OutsideDriverFromOperator/GetDropdowns')
+            .then(r => r.json())
+            .then(function (data) {
+                operatorsData = data.operators;
+                driversData   = data.drivers;
+
+                var opSel = document.getElementById('selectOperator');
+                operatorsData.forEach(function (o) {
+                    var opt = new Option(o.businessName, o.id);
+                    opSel.add(opt);
+                });
+
+                var drSel = document.getElementById('selectDriver');
+                driversData.forEach(function (d) {
+                    var opt = new Option(d.fullName, d.refId);
+                    drSel.add(opt);
+                });
+
+                // Pre-select for Edit
+                if (presetOperatorId) {
+                    document.getElementById('selectOperator').value = presetOperatorId;
+                    resolveOperator(presetOperatorId);
+                }
+                if (presetDriverId) {
+                    document.getElementById('selectDriver').value = presetDriverId;
+                    resolveDriver(presetDriverId);
+                }
+            })
+            .catch(function () {
+                console.error('Could not load dropdowns.');
+            });
+
+        // ── Operator change ───────────────────────────────────────
+        document.getElementById('selectOperator')
+            .addEventListener('change', function () {
+                resolveOperator(this.value);
+            });
+
+        function resolveOperator(val) {
+            var op = operatorsData.find(function (o) { return o.id === val; });
+            if (op) {
+                document.getElementById('fieldOperatorId').value   = op.id;
+                document.getElementById('fieldOperatorName').value = op.businessName;
+                document.getElementById('operatorPreview').innerHTML =
+                    `<span class="badge bg-secondary">ID: ${op.id}</span>&nbsp;${op.businessName}`;
+            } else {
+                document.getElementById('fieldOperatorId').value   = '';
+                document.getElementById('fieldOperatorName').value = '';
+                document.getElementById('operatorPreview').innerHTML = '';
+            }
+        }
+
+        // ── Driver change ─────────────────────────────────────────
+        document.getElementById('selectDriver')
+            .addEventListener('change', function () {
+                resolveDriver(this.value);
+            });
+
+        function resolveDriver(val) {
+            var d = driversData.find(function (x) { return x.refId === val; });
+            if (d) {
+                document.getElementById('fieldDriverId').value   = d.refId;
+                document.getElementById('fieldDriverName').value = d.fullName;
+                document.getElementById('driverPreview').innerHTML =
+                    `<span class="badge bg-secondary">Ref ID: ${d.refId}</span>&nbsp;${d.fullName}`;
+            } else {
+                document.getElementById('fieldDriverId').value   = '';
+                document.getElementById('fieldDriverName').value = '';
+                document.getElementById('driverPreview').innerHTML = '';
+            }
+        }
+    })();
+</script>
