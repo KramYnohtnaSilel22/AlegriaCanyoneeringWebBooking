@@ -79,10 +79,33 @@
 
                         <div class="mb-3">
                             <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
-                            <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList" class="form-select"
-                                    id="OperatorInput"
-                                    disabled="@(isReadonly ? "disabled" : null)">
-                            </select>
+
+                            @if (ViewBag.OperatorLocked == true)
+                            {
+                                <select asp-for="NewGuest.OperatorId"
+                                        asp-items="ViewBag.OperatorList"
+                                        class="form-select"
+                                        id="OperatorInput"
+                                        disabled="disabled"
+                                        style="background-color:#f5f5f5;color:#555;cursor:not-allowed;">
+                                </select>
+                                <input type="hidden"
+                                       name="NewGuest.OperatorId"
+                                       id="OperatorInputHidden"
+                                       value="@Model.NewGuest.OperatorId" />
+                                <small class="text-muted mt-1 d-block">
+                                    <i class="bi bi-lock-fill me-1"></i>Assigned to your operator account
+                                </small>
+                            }
+                            else
+                            {
+                                <select asp-for="NewGuest.OperatorId"
+                                        asp-items="ViewBag.OperatorList"
+                                        class="form-select"
+                                        id="OperatorInput"
+                                        disabled="@(isReadonly ? "disabled" : null)">
+                                </select>
+                            }
                         </div>
                         <div class="mb-3">
                             <label asp-for="NewGuest.Fullname" class="form-label">Full Name</label>

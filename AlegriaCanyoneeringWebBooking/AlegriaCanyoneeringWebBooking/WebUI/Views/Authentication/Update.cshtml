@@ -1,186 +1,375 @@
 ﻿@model OperatorUpdateViewModel
-
 @{
     ViewData["Title"] = "Update Info";
 }
 
 <style>
-    /* Styles unchanged */
-    .update-user-container {
-        min-height: 100vh;
-        padding: 40px 0;
-        background: #f8f9fa;
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+    :root {
+        --blue-deep: #0f3460;
+        --blue-mid: #1a6ef5;
+        --blue-light: #4f9cf9;
+        --white: #ffffff;
+        --gray-soft: #f4f7fe;
+        --gray-text: #64748b;
+        --danger: #ef4444;
     }
 
-    .form-card {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        padding: 40px;
-        max-width: 600px;
-        margin: 0 auto;
+    .ui-wrap {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        font-family: 'Outfit', sans-serif;
     }
 
-    .form-title {
-        color: #0d6efd;
+    .ui-card {
+        background: var(--white);
+        border-radius: 20px;
+        box-shadow: 0 4px 40px rgba(15,52,96,0.10);
+        padding: 2.5rem 2.25rem;
+        width: 100%;
+        max-width: 680px;
+        animation: slideUp 0.4s ease both;
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(24px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Card header */
+    .ui-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1.5px solid #e8edf5;
+    }
+
+    .ui-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: rgba(26,110,245,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .ui-icon i {
+            font-size: 1.5rem;
+            color: var(--blue-mid);
+        }
+
+    .ui-header-text h2 {
+        font-size: 1.35rem;
         font-weight: 700;
-        margin-bottom: 30px;
-        text-align: center;
-        font-size: 2rem;
+        color: var(--blue-deep);
+        margin: 0 0 0.15rem;
     }
 
-    .form-label {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
+    .ui-header-text p {
+        font-size: 0.85rem;
+        color: var(--gray-text);
+        margin: 0;
+    }
+
+    /* Section labels */
+    .section-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--blue-mid);
+        margin-bottom: 1rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1.5px solid #e8edf5;
+    }
+
+    /* Fields */
+    .field-group {
+        margin-bottom: 1.1rem;
+    }
+
+        .field-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--blue-deep);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+    .field-wrap {
+        position: relative;
+    }
+
+    .field-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--blue-light);
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .field-wrap input,
+    .field-wrap select {
+        width: 100%;
+        padding: 0.7rem 0.75rem 0.7rem 2.6rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        appearance: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .field-wrap input:focus,
+        .field-wrap select:focus {
+            border-color: var(--blue-mid);
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.12);
+            background: var(--white);
+        }
+
+        .field-wrap input::placeholder {
+            color: #b0bec5;
+        }
+
+        /* Readonly field */
+        .field-wrap input[readonly] {
+            background: #f1f5f9;
+            color: var(--gray-text);
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+        }
+
+    /* Select chevron */
+    .select-wrap::after {
+        content: '\F282';
+        font-family: 'bootstrap-icons';
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--blue-light);
+        pointer-events: none;
+        font-size: 0.8rem;
+    }
+
+    .field-error {
+        font-size: 0.78rem;
+        color: var(--danger);
+        margin-top: 0.3rem;
         display: block;
     }
 
-    .form-control, .form-select {
-        border-radius: 8px;
-        border: 1.5px solid #dee2e6;
-        padding: 10px 14px;
-        transition: all 0.3s ease;
-    }
-
-        .form-control:focus, .form-select:focus {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
-            outline: none;
-        }
-
-    .btn {
-        border-radius: 8px;
-        padding: 10px 25px;
+    /* Save button */
+    .btn-save {
+        padding: 0.8rem 2.5rem;
+        background: linear-gradient(135deg, var(--blue-mid), var(--blue-deep));
+        color: var(--white);
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.2s ease;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+        box-shadow: 0 4px 16px rgba(26,110,245,0.35);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
     }
 
-    .btn-primary {
-        background-color: #0d6efd;
-        border: none;
-    }
-
-        .btn-primary:hover {
-            background-color: #0b5ed7;
-            transform: translateY(-2px);
+        .btn-save:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(26,110,245,0.45);
         }
 
-    .btn-secondary {
-        background-color: #6c757d;
-        border: none;
-    }
-
-        .btn-secondary:hover {
-            background-color: #5c636a;
-            transform: translateY(-2px);
+    @@media (max-width: 576px) {
+        .ui-card {
+            padding: 1.75rem 1.25rem;
         }
+
+        .btn-save {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
 
-<div class="update-user-container">
-    <div class="form-card">
-        <h2 class="form-title"><i></i>Update Info</h2>
+<div class="ui-wrap">
+    <div class="ui-card">
+
+        <!-- Header -->
+        <div class="ui-header">
+            <div class="ui-icon">
+                <i class="bi bi-person-gear"></i>
+            </div>
+            <div class="ui-header-text">
+                <h2>Update Info</h2>
+                <p>Edit your personal and account details below.</p>
+            </div>
+        </div>
+
         <form asp-action="Update" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
             <input type="hidden" asp-for="OperatorId" />
 
             <div class="row g-4">
-                <!-- Left Column -->
+
+                <!-- Left Column — Personal Info -->
                 <div class="col-md-6">
-                    <div class="mb-3">
-                        <label asp-for="Name" class="form-label">Full Name</label>
-                        <input asp-for="Name" class="form-control" placeholder="Enter full name" required />
-                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    <div class="section-label">Personal Info</div>
+
+                    <div class="field-group">
+                        <label asp-for="Name">Full Name</label>
+                        <div class="field-wrap">
+                            <i class="bi bi-person field-icon"></i>
+                            <input asp-for="Name" placeholder="Enter full name" required />
+                        </div>
+                        <span asp-validation-for="Name" class="field-error"></span>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="BusinessName" class="form-label">Business Name</label>
-                        <input asp-for="BusinessName" class="form-control" placeholder="e.g. Adventure Co." />
-                        <span asp-validation-for="BusinessName" class="text-danger small"></span>
+
+                    <div class="field-group">
+                        <label asp-for="BusinessName">Business Name</label>
+                        <div class="field-wrap">
+                            <i class="bi bi-building field-icon"></i>
+                            <input asp-for="BusinessName" placeholder="e.g. Adventure Co." />
+                        </div>
+                        <span asp-validation-for="BusinessName" class="field-error"></span>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="Age" class="form-label">Age</label>
-                        <input asp-for="Age" type="number" min="1" max="120" class="form-control" placeholder="e.g. 30" required />
-                        <span asp-validation-for="Age" class="text-danger small"></span>
+
+                    <div class="field-group">
+                        <label asp-for="Age">Age</label>
+                        <div class="field-wrap">
+                            <i class="bi bi-calendar2 field-icon"></i>
+                            <input asp-for="Age" type="number" min="1" max="120"
+                                   placeholder="e.g. 30" required />
+                        </div>
+                        <span asp-validation-for="Age" class="field-error"></span>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="Gender" class="form-label">Gender</label>
-                        <select asp-for="Gender" class="form-select" required>
-                            <option value="">-- Select Gender --</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                        <span asp-validation-for="Gender" class="text-danger small"></span>
+
+                    <div class="field-group">
+                        <label asp-for="Gender">Gender</label>
+                        <div class="field-wrap select-wrap">
+                            <i class="bi bi-gender-ambiguous field-icon"></i>
+                            <select asp-for="Gender" required>
+                                <option value="">-- Select Gender --</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="Gender" class="field-error"></span>
                     </div>
                 </div>
 
-                <!-- Right Column -->
+                <!-- Right Column — Account Info -->
                 <div class="col-md-6">
-                    <div class="mb-3">
-                        <label asp-for="Username" class="form-label">Username</label>
-                        <input asp-for="Username" class="form-control" placeholder="Enter username" required />
-                        <span asp-validation-for="Username" class="text-danger small"></span>
+                    <div class="section-label">Account Info</div>
+
+                    <div class="field-group">
+                        <label asp-for="Username">Username</label>
+                        <div class="field-wrap">
+                            <i class="bi bi-at field-icon"></i>
+                            <input asp-for="Username" placeholder="Enter username" required />
+                        </div>
+                        <span asp-validation-for="Username" class="field-error"></span>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="EmailAddress" class="form-label">Email Address</label>
-                        <input asp-for="EmailAddress" type="email" class="form-control" placeholder="user@example.com" required />
-                        <span asp-validation-for="EmailAddress" class="text-danger small"></span>
+
+                    <div class="field-group">
+                        <label asp-for="EmailAddress">Email Address</label>
+                        <div class="field-wrap">
+                            <i class="bi bi-envelope field-icon"></i>
+                            <input asp-for="EmailAddress" type="email"
+                                   placeholder="user@example.com" required />
+                        </div>
+                        <span asp-validation-for="EmailAddress" class="field-error"></span>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Role</label>
-                        <input class="form-control bg-light" value="@Model.RoleName" readonly />
+
+                    <div class="field-group">
+                        <label>Role</label>
+                        <div class="field-wrap">
+                            <i class="bi bi-shield-check field-icon"></i>
+                            <input value="@Model.RoleName" readonly />
+                        </div>
                         <input type="hidden" asp-for="RoleId" />
+                        <small class="text-muted mt-1 d-block" style="font-size:0.75rem;">
+                            <i class="bi bi-lock-fill me-1"></i>Role cannot be changed here
+                        </small>
                     </div>
                 </div>
+
             </div>
 
-            <div class="d-flex justify-content-end mt-4">
-                <button type="submit" class="btn btn-primary btn-lg px-4">
-                    <i></i> Save
+            <!-- Actions -->
+            <div class="d-flex justify-content-end mt-4 pt-2 border-top" style="border-color:#e8edf5 !important;">
+                <button type="submit" class="btn-save">
+                    <i class="bi bi-check-lg"></i> Save Changes
                 </button>
             </div>
+
         </form>
     </div>
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
-
+    <partial name="_ValidationScriptsPartial" />
     <script>
-        // ✅ Bootstrap Toast Notification
         function showToast(message, type = 'success') {
-            let bgClass = 'bg-success', icon = 'bi-check-circle-fill', title = 'Success';
-            if (type === 'error') { bgClass = 'bg-danger'; icon = 'bi-exclamation-triangle-fill'; title = 'Error'; }
-            else if (type === 'warning') { bgClass = 'bg-warning'; icon = 'bi-exclamation-circle-fill'; title = 'Warning'; }
-            else if (type === 'info') { bgClass = 'bg-info'; icon = 'bi-info-circle-fill'; title = 'Info'; }
-
-            const toastContainer = $('<div></div>')
-                .addClass('toast-container position-fixed top-0 end-0 p-3')
-                .css('z-index', 1080);
-
-            const toast = $('<div></div>').addClass(`toast text-white ${bgClass} border-0`)
-                .attr({ role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true', 'data-bs-delay': 4000 });
-
-            const toastHeader = $('<div></div>').addClass(`toast-header ${bgClass} text-white border-0`).html(`
-                <i class="bi ${icon} me-2"></i>
-                <strong class="me-auto">${title}</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            `);
-
-            const toastBody = $('<div></div>').addClass('toast-body').text(message);
-
-            toast.append(toastHeader, toastBody);
-            toastContainer.append(toast);
-            $('body').append(toastContainer);
-
-            var bsToast = new bootstrap.Toast(toast[0]);
-            bsToast.show();
-
-            toast.on('hidden.bs.toast', function () { toastContainer.remove(); });
+            const map = {
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
+                warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   title: 'Warning' },
+                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Info'    }
+            };
+            const { bg, icon, title } = map[type] || map.info;
+            const id = 'toast-' + Date.now();
+            const html = `
+                <div id="${id}" class="toast border-0 text-white"
+                     style="background:${bg};border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);"
+                     role="alert" aria-atomic="true" data-bs-delay="4000">
+                    <div class="toast-header border-0 text-white" style="background:transparent;">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" style="padding-top:0;">${message}</div>
+                </div>`;
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                container.style.zIndex = '1090';
+                document.body.appendChild(container);
+            }
+            container.insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', () => el.remove());
         }
 
         $(document).ready(function () {
-            // Show TempData messages if any
             @if (TempData["SuccessMessage"] != null)
             {
                     <text>showToast('@TempData["SuccessMessage"]', 'success');</text>
@@ -190,14 +379,11 @@
                     <text>showToast('@TempData["ErrorMessage"]', 'error');</text>
             }
 
-            const forms = document.querySelectorAll('.needs-validation');
-
-            Array.from(forms).forEach(form => {
-                form.addEventListener('submit', event => {
-                    // Check HTML5 validity
+            document.querySelectorAll('.needs-validation').forEach(form => {
+                form.addEventListener('submit', e => {
                     if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
+                        e.preventDefault();
+                        e.stopPropagation();
                         showToast('Please fill in all required fields correctly.', 'warning');
                     }
                     form.classList.add('was-validated');

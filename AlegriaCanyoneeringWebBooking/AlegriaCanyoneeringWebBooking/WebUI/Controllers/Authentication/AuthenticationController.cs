@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -207,87 +206,135 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return View("ForgotPasswordConfirmation");
             }
 
-            // Generate reset token (for demonstration — use your own mechanism if not using Identity)
             var resetToken = Guid.NewGuid().ToString();
             var resetLink = Url.Action("ResetPassword", "Authentication",
                 new { email = user.EmailAddress, token = resetToken }, Request.Scheme);
 
-            // SEND EMAIL — integrate here
-            // Build a simple but styled HTML email body
+            // Build absolute URL for the logo image
+            string imageUrl = $"{Request.Scheme}://{Request.Host}/images/alegrialogo2025.jpeg";
+
             var emailBody = $@"
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <meta charset='utf-8'>
-                  <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        background-color: #f7f7f7;
-                        margin: 0;
-                        padding: 0;
-                    }}
-                    .container {{
-                        max-width: 600px;
-                        margin: 40px auto;
-                        background: #ffffff;
-                        padding: 30px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    }}
-                    h2 {{
-                        color: #2c3e50;
-                        margin-top: 0;
-                    }}
-                    p {{
-                        font-size: 15px;
-                        color: #333333;
-                        line-height: 1.5;
-                    }}
-                    a.button {{
-                        display: inline-block;
-                        margin-top: 20px;
-                        background: #0d6efd;
-                        color: #ffffff !important;
-                        text-decoration: none;
-                        padding: 12px 20px;
-                        border-radius: 5px;
-                        font-weight: bold;
-                    }}
-                    a.button:hover {{
-                        background: #0b5ed7;
-                    }}
-                    .footer {{
-                        margin-top: 30px;
-                        font-size: 12px;
-                        color: #888888;
-                        text-align: center;
-                    }}
-                  </style>
-                </head>
-                <body>
-                  <div class='container'>
-                    <h2>Password Reset Request</h2>
-                    <p>Hello {user.Name},</p>
-                    <p>We received a request to reset your password. Click the button below to choose a new one:</p>
-                    <p><a class='button' href='{resetLink}'>Reset Password</a></p>
-                    <p>If you did not request a password reset, you can safely ignore this email.</p>
-                    <div class='footer'>
-                      © {DateTime.Now.Year} Alegria Canyoneering Web Booking.
-                    </div>
-                  </div>
-                </body>
-                </html>";
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1' />
+  <title>Reset Your Password</title>
+</head>
+<body style='margin:0;padding:0;background-color:#f4f7fe;font-family:Outfit,Segoe UI,Arial,sans-serif;'>
+
+  <!-- Wrapper -->
+  <table width='100%' cellpadding='0' cellspacing='0' style='background:#f4f7fe;padding:40px 0;'>
+    <tr>
+      <td align='center'>
+
+        <!-- Card -->
+        <table width='600' cellpadding='0' cellspacing='0'
+               style='background:#ffffff;border-radius:16px;overflow:hidden;
+                      box-shadow:0 4px 24px rgba(15,52,96,0.10);max-width:600px;width:100%;'>
+
+          <!-- Header -->
+          <tr>
+            <td style='background:linear-gradient(135deg,#1a6ef5,#0f3460);
+                       padding:36px 40px;text-align:center;'>
+              <img src='{imageUrl}'
+                   alt='Alegria Canyoneering'
+                   width='70' height='70'
+                   style='border-radius:50%;border:3px solid rgba(255,255,255,0.3);
+                          object-fit:cover;margin-bottom:14px;' />
+              <h1 style='margin:0;color:#ffffff;font-size:22px;font-weight:700;
+                         letter-spacing:0.5px;'>Alegria Canyoneering</h1>
+              <p style='margin:4px 0 0;color:rgba(255,255,255,0.7);
+                        font-size:12px;letter-spacing:0.1em;text-transform:uppercase;'>
+                Web Booking System
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style='padding:40px 40px 32px;'>
+
+              <!-- Icon -->
+              <div style='width:64px;height:64px;border-radius:50%;
+                          background:rgba(26,110,245,0.08);
+                          display:flex;align-items:center;justify-content:center;
+                          margin:0 auto 24px;text-align:center;line-height:64px;'>
+                <span style='font-size:28px;'>🔑</span>
+              </div>
+
+              <h2 style='margin:0 0 8px;color:#0f3460;font-size:20px;
+                         font-weight:700;text-align:center;'>
+                Password Reset Request
+              </h2>
+              <p style='margin:0 0 24px;color:#64748b;font-size:14px;text-align:center;'>
+                We received a request to reset your password.
+              </p>
+
+              <p style='margin:0 0 8px;color:#334155;font-size:15px;'>
+                Hello <strong>{user.Name}</strong>,
+              </p>
+              <p style='margin:0 0 28px;color:#475569;font-size:15px;line-height:1.65;'>
+                Click the button below to choose a new password for your account.
+                This link is valid for a limited time.
+              </p>
+
+              <!-- CTA Button -->
+              <div style='text-align:center;margin-bottom:28px;'>
+                <a href='{resetLink}'
+                   style='display:inline-block;background:linear-gradient(135deg,#1a6ef5,#0f3460);
+                          color:#ffffff;text-decoration:none;padding:14px 36px;
+                          border-radius:50px;font-size:15px;font-weight:600;
+                          letter-spacing:0.3px;
+                          box-shadow:0 4px 16px rgba(26,110,245,0.35);'>
+                  Reset My Password
+                </a>
+              </div>
+
+              <!-- Divider -->
+              <hr style='border:none;border-top:1px solid #e8edf5;margin:0 0 20px;' />
+
+              <!-- Warning note -->
+              <p style='margin:0;color:#94a3b8;font-size:13px;line-height:1.6;text-align:center;'>
+                If you did not request a password reset, you can safely ignore this email.<br>
+                Your password will remain unchanged.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style='background:#f8faff;border-top:1px solid #e8edf5;
+                       padding:20px 40px;text-align:center;border-radius:0 0 16px 16px;'>
+              <p style='margin:0;color:#94a3b8;font-size:12px;line-height:1.6;'>
+                &copy; {DateTime.Now.Year} <strong style='color:#64748b;'>Alegria Canyoneering Web Booking</strong>.
+                All rights reserved.
+              </p>
+              <p style='margin:6px 0 0;color:#b0bec5;font-size:11px;'>
+                This is an automated message. Please do not reply to this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>";
 
             await new EmailService().SendEmailAsync(
                 user.EmailAddress,
-                "Reset your password",
+                "Reset your password — Alegria Canyoneering",
                 emailBody
             );
 
-
             return View("ForgotPasswordConfirmation");
         }
-
 
         [HttpGet]
         [AllowAnonymous]

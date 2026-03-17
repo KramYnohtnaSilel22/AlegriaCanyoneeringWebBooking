@@ -77,10 +77,6 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-dark">Dashboard Overview</h2>
-    @*     <div class="text-end">
-            <h6 class="text-muted mb-1">Welcome back</h6>
-            <h5 class="fw-semibold text-dark">@User.Identity.Name</h5>
-        </div> *@
     </div>
 
     <!-- ✅ Skeleton Loading (shown initially) -->
@@ -285,13 +281,12 @@
         }
 
         $(document).ready(function () {
-            // Call toast for the logged-in user
+            // Show welcome toast only once per login session
             const name = '@User.Identity.Name';
-            if (name) {
+            if (name && !sessionStorage.getItem('welcomeToastShown')) {
                 showToast(`Welcome back, ${name}!`, 'success');
+                sessionStorage.setItem('welcomeToastShown', 'true');
             }
-
-           
         });
 
 

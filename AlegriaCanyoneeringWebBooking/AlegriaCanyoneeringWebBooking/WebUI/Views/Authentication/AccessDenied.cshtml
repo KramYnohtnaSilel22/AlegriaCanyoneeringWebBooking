@@ -3,82 +3,320 @@
     Layout = "Layout_Login";
 }
 
-<div class="container">
-    <div class="row justify-content-center align-items-center min-vh-100">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-lg border-0">
-                <div class="card-body text-center p-5">
-                    <!-- Icon -->
-                    <div class="mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="#dc3545" class="bi bi-shield-lock" viewBox="0 0 16 16">
-                            <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z" />
-                            <path d="M9.5 6.5a1.5 1.5 0 0 1-1 1.415l.385 1.99a.5.5 0 0 1-.491.595h-.788a.5.5 0 0 1-.49-.595l.384-1.99a1.5 1.5 0 1 1 2-1.415z" />
-                        </svg>
-                    </div>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
-                    <!-- Heading -->
-                    <h1 class="display-4 fw-bold text-danger mb-3">Access Denied</h1>
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 
-                    <!-- Message -->
-                    <p class="lead text-muted mb-4">
-                        You do not have permission to view this resource.
-                    </p>
+    :root {
+        --blue-deep: #0f3460;
+        --blue-mid: #1a6ef5;
+        --accent: #f0a500;
+        --danger: #ef4444;
+        --white: #ffffff;
+        --gray-soft: #f4f7fe;
+        --gray-text: #64748b;
+    }
 
-                    <!-- Image -->
-                    <div class="mb-4">
-                        <img src="~/images/noaccess.png"
-                             class="img-fluid rounded"
-                             style="max-height:250px; max-width:100%; object-fit:contain"
-                             alt="Access Denied" />
-                    </div>
+    html, body {
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Outfit', sans-serif;
+    }
 
-                    <!-- Additional Info -->
-                    <div class="alert alert-light border" role="alert">
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle me-2"></i>
-                            If you believe this is an error, please contact your administrator.
-                        </small>
-                    </div>
+    .denied-wrap {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 100vh;
+    }
 
-                    <!-- Action Buttons -->
-                    <div class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
-                        <a class="btn btn-danger btn-lg px-4" href="@Url.Action("Login", "Authentication")">
-                            <i class="bi bi-arrow-left me-2"></i>Back to Login
-                        </a>
-                       
-                    </div>
-                </div>
+    /* Brand panel — same as login */
+    .brand-panel {
+        background: linear-gradient(145deg, var(--blue-deep) 0%, #1a3a6e 40%, #1557b0 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            border: 60px solid rgba(255,255,255,0.04);
+            top: -100px;
+            left: -100px;
+        }
+
+        .brand-panel::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 40px solid rgba(255,255,255,0.06);
+            bottom: -80px;
+            right: -80px;
+        }
+
+    .brand-logo {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid rgba(255,255,255,0.25);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        margin-bottom: 1.5rem;
+        animation: logoFloat 4s ease-in-out infinite;
+    }
+
+    @@keyframes logoFloat {
+        0%, 100% {
+            transform: translateY(0)
+        }
+
+        50% {
+            transform: translateY(-8px)
+        }
+    }
+
+    .brand-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        color: var(--white);
+        text-align: center;
+        line-height: 1.2;
+        margin-bottom: 0.75rem;
+    }
+
+    .brand-divider {
+        width: 48px;
+        height: 3px;
+        background: var(--accent);
+        border-radius: 2px;
+        margin: 1.25rem auto;
+    }
+
+    .brand-subtitle {
+        font-size: 0.875rem;
+        color: rgba(255,255,255,0.6);
+        text-align: center;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .brand-tagline {
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.75);
+        text-align: center;
+        max-width: 260px;
+        line-height: 1.6;
+    }
+
+    /* Content panel */
+    .content-panel {
+        background: var(--gray-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        animation: slideIn 0.5s ease both;
+    }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(30px)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0)
+        }
+    }
+
+    .denied-card {
+        background: var(--white);
+        border-radius: 20px;
+        padding: 2.5rem 2.25rem;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 4px 40px rgba(15,52,96,0.10);
+        text-align: center;
+    }
+
+    /* Animated shield icon */
+    .shield-wrap {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(239,68,68,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        animation: popIn 0.5s cubic-bezier(.17,.67,.4,1.3) both;
+    }
+
+    @@keyframes popIn {
+        from {
+            transform: scale(0);
+            opacity: 0
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1
+        }
+    }
+
+    .shield-wrap i {
+        font-size: 2.25rem;
+        color: var(--danger);
+    }
+
+    .error-code {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--danger);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .denied-card h2 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--blue-deep);
+        margin-bottom: 0.5rem;
+    }
+
+    .denied-card p {
+        font-size: 0.9rem;
+        color: var(--gray-text);
+        line-height: 1.65;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Info box */
+    .info-box {
+        background: #f8faff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        color: var(--gray-text);
+        margin-bottom: 1.75rem;
+        text-align: left;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+        .info-box i {
+            color: var(--blue-mid);
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+
+    /* Image */
+    .denied-img {
+        width: 100%;
+        max-height: 160px;
+        object-fit: contain;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        opacity: 0.9;
+    }
+
+    /* Button */
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.8rem 2rem;
+        background: linear-gradient(135deg, var(--danger), #c0392b);
+        color: var(--white);
+        border: none;
+        border-radius: 50px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+        box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+    }
+
+        .btn-back:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239,68,68,0.4);
+            color: var(--white);
+        }
+
+    @@media (max-width: 768px) {
+        .denied-wrap {
+            grid-template-columns: 1fr;
+        }
+
+        .brand-panel {
+            display: none;
+        }
+
+        .content-panel {
+            background: linear-gradient(145deg, var(--blue-deep), #1557b0);
+        }
+    }
+</style>
+
+<div class="denied-wrap">
+
+    <!-- Brand Panel -->
+    <div class="brand-panel">
+        <img src="/images/alegrialogo2025.jpeg" alt="Alegria Logo" class="brand-logo" />
+        <h1 class="brand-title">Alegria<br>Canyoneering</h1>
+        <div class="brand-divider"></div>
+        <p class="brand-tagline">This area is restricted. Please contact your administrator.</p>
+        <p class="brand-subtitle" style="margin-top:1.5rem;">Web Booking System</p>
+    </div>
+
+    <!-- Content Panel -->
+    <div class="content-panel">
+        <div class="denied-card">
+
+            <div class="shield-wrap">
+                <i class="bi bi-shield-lock-fill"></i>
             </div>
 
-            <!-- Footer Text -->
-            <div class="text-center mt-4">
-                <small class="text-muted">Error Code: 403 - Forbidden</small>
+            <span class="error-code">Error 403 — Forbidden</span>
+            <h2>Access Denied</h2>
+            <p>You don't have permission to view this resource.</p>
+
+            <img src="~/images/noaccess.png"
+                 class="denied-img"
+                 alt="Access Denied" />
+
+            <div class="info-box">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>If you believe this is an error, please contact your system administrator.</span>
             </div>
+
+            <a href="@Url.Action("Login", "Authentication")" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Back to Login
+            </a>
+
         </div>
     </div>
+
 </div>
-
-<style>
-    .min-vh-100 {
-        min-height: 100vh;
-    }
-
-    .card {
-        border-radius: 15px;
-        transition: transform 0.3s ease;
-    }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-    .btn {
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-</style>

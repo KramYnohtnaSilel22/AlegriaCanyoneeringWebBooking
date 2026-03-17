@@ -39,7 +39,6 @@
                     title="Account options">
                 <i class="bi bi-person-circle header-avatar-icon"></i>
                 <div class="lh-sm text-start d-none d-sm-block">
-             
                     <div class="fw-semibold text-dark" style="font-size:0.875rem;">@User.Identity?.Name</div>
                 </div>
                 <i class="bi bi-chevron-down text-muted" style="font-size:0.65rem;"></i>
@@ -191,84 +190,102 @@
             </a>
         }
 
+     
         <!-- ── SETTINGS ───────────────────────────────────────── -->
-        @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
+@if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator"))
+{
+    <div class="section-title">Settings</div>
+
+    <a href="#settingsSubmenu"
+       class="settings-toggle text-white text-decoration-none"
+       data-bs-toggle="collapse"
+       role="button"
+       aria-expanded="false"
+       aria-controls="settingsSubmenu"
+       id="settingsToggle">
+        <span><i class="bi bi-gear-fill me-2"></i><span>Settings</span></span>
+        <i class="bi bi-chevron-down toggle-icon"></i>
+    </a>
+
+    <div class="collapse" id="settingsSubmenu">
+
+        @* ── Super Admin only ── *@
+        @if (User.IsInRole("Super Admin"))
         {
-            <div class="section-title">Settings</div>
-
-            <a href="#settingsSubmenu"
-               class="settings-toggle text-white text-decoration-none"
-               data-bs-toggle="collapse"
-               role="button"
-               aria-expanded="false"
-               aria-controls="settingsSubmenu"
-               id="settingsToggle">
-                <span><i class="bi bi-gear-fill me-2"></i><span>Settings</span></span>
-                <i class="bi bi-chevron-down toggle-icon"></i>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="OutsideDriverFromOperator" asp-action="Index">
+                <i class="bi bi-car-front-fill me-2"></i><span>Outside Driver</span>
             </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="OutsideGuideFromOperator" asp-action="Index">
+                <i class="bi bi-compass-fill me-2"></i><span>Outside Guide</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Drivers" asp-action="Arrange">
+                <i class="bi bi-sort-numeric-down me-2"></i><span>Arrange Drivers</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Guides" asp-action="Arrange">
+                <i class="bi bi-sort-numeric-down me-2"></i><span>Arrange Guides</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Drivers" asp-action="Index">
+                <i class="bi bi-layers-half me-2"></i><span>Drivers</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Guides" asp-action="Index">
+                <i class="bi bi-person-badge me-2"></i><span>Guides</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Operators" asp-action="Index">
+                <i class="bi bi-person-workspace me-2"></i><span>User</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="OperatorList" asp-action="Index">
+                <i class="bi bi-people-fill me-2"></i><span>Operators List</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Nationalities" asp-action="Index">
+                <i class="bi bi-flag-fill me-2"></i><span>Nationality</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Roles" asp-action="Index">
+                <i class="bi bi-person-badge-fill me-2"></i><span>Roles</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="GuestBriefing" asp-action="Index">
+                <i class="bi bi-people-fill me-2"></i><span>Guest Briefing</span>
+            </a>
+        }
 
-            <div class="collapse" id="settingsSubmenu">
+        @* ── Admin only ── *@
+        @if (User.IsInRole("Admin"))
+        {
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="Operators" asp-action="Index">
+                <i class="bi bi-person-workspace me-2"></i><span>User</span>
+            </a>
+        }
 
-                @if (User.IsInRole("Super Admin"))
-                {
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="OutsideDriverFromOperator" asp-action="Index">
-                        <i class="bi bi-car-front-fill me-2"></i><span>Outside Driver</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="OutsideGuideFromOperator" asp-action="Index">
-                        <i class="bi bi-compass-fill me-2"></i><span>Outside Guide</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="Drivers" asp-action="Arrange">
-                        <i class="bi bi-sort-numeric-down me-2"></i><span>Arrange Drivers</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="Guides" asp-action="Arrange">
-                        <i class="bi bi-sort-numeric-down me-2"></i><span>Arrange Guides</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="Drivers" asp-action="Index">
-                        <i class="bi bi-layers-half me-2"></i><span>Drivers</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="Guides" asp-action="Index">
-                        <i class="bi bi-person-badge me-2"></i><span>Guides</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="Operators" asp-action="Index">
-                        <i class="bi bi-person-workspace me-2"></i><span>User</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="OperatorList" asp-action="Index">
-                        <i class="bi bi-people-fill me-2"></i><span>Operators List</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="Nationalities" asp-action="Index">
-                        <i class="bi bi-flag-fill me-2"></i><span>Nationality</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="Roles" asp-action="Index">
-                        <i class="bi bi-person-badge-fill me-2"></i><span>Roles</span>
-                    </a>
-                    <a class="d-block py-1 text-white text-decoration-none"
-                       asp-controller="GuestBriefing" asp-action="Index">
-                        <i class="bi bi-people-fill me-2"></i><span>Guest Briefing</span>
-                    </a>
-                }
+        @* ── Operator only ── *@
+        @if (User.IsInRole("Operator"))
+        {
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="OutsideDriverFromOperator" asp-action="Index">
+                <i class="bi bi-car-front-fill me-2"></i><span>Outside Driver</span>
+            </a>
+            <a class="d-block py-1 text-white text-decoration-none"
+               asp-controller="OutsideGuideFromOperator" asp-action="Index">
+                <i class="bi bi-compass-fill me-2"></i><span>Outside Guide</span>
+            </a>
+        }
 
-            
-                
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a class="d-block py-1 text-white text-decoration-none"
-                           asp-controller="Operators" asp-action="Index">
-                            <i class="bi bi-person-workspace me-2"></i><span>User</span>
-                        </a>
-                    }
+
+    </div>
+
                   
                 
-            </div>
+       
 
             <!-- ── REPORTS ─────────────────────────────────────── -->
             @if (User.IsInRole("Admin") || User.IsInRole("Super Admin"))
@@ -363,8 +380,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="~/js/GuestPDF.js" asp-append-version="true"></script>
-    <script src="~/js/GuestExcel.js" asp-append-version="true"></script>
 
     <script>
         // ── DataTable ──────────────────────────────────────────────

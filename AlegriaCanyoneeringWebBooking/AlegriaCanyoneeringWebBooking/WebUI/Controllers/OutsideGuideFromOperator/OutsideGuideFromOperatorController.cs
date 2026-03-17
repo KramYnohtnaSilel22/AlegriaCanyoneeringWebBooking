@@ -1,16 +1,22 @@
 ﻿using AlegriaCanyoneeringWebBooking.WebUI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AlegriaCanyoneeringWebBooking.WebUI.Controllers
 {
+    [Authorize(Roles = "Super Admin,Operator")]
     public class OutsideGuideFromOperatorController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OutsideGuideFromOperatorController(ApplicationDbContext context)
+        public OutsideGuideFromOperatorController(
+            ApplicationDbContext context,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // =========================================================
@@ -36,7 +42,17 @@ namespace AlegriaCanyoneeringWebBooking.WebUI.Controllers
 
             try
             {
+                // ── Filter by operator if current user is NOT Super Admin ──
                 var query = _context.OutsideGuideFromOperators.AsQueryable();
+
+                if (!User.IsInRole("Super Admin"))
+                {
+                    var username = User.Identity!.Name;
+                    var loggedInOp = await _context.Operators
+                                         .FirstOrDefaultAsync(o => o.Username == username);
+                    if (loggedInOp != null)
+                        query = query.Where(x => x.OperatorId == loggedInOp.Id.ToString());
+                }
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
@@ -176,19 +192,49 @@ namespace AlegriaCanyoneeringWebBooking.WebUI.Controllers
         }
 
         // =========================================================
-        // GET DROPDOWNS — for modal selects (JSON)
+        // GET DROPDOWNS — role-aware operator list
         // =========================================================
         [HttpGet]
         public async Task<IActionResult> GetDropdowns()
         {
-            var operators = await _context.Operators
-                .OrderBy(o => o.BusinessName)
-                .Select(o => new
-                {
-                    id = o.Id.ToString(),
-                    businessName = o.BusinessName ?? o.Name ?? ""
-                })
-                .ToListAsync();
+            List<object> operators;
+
+            if (User.IsInRole("Super Admin"))
+            {
+                // Super Admin sees ALL operators
+                operators = (await _context.Operators
+                    .OrderBy(o => o.BusinessName)
+                    .Select(o => new
+                    {
+                        id = o.Id.ToString(),
+                        businessName = (o.BusinessName != null && o.BusinessName.Trim() != "")
+                                          ? o.BusinessName
+                                          : o.Name ?? ""
+                    })
+                    .ToListAsync())
+                    .Cast<object>()
+                    .ToList();
+            }
+            else
+            {
+                // Operator role — only sees their own business name
+                var username = User.Identity!.Name;
+                var loggedInOp = await _context.Operators
+                    .FirstOrDefaultAsync(o => o.Username == username);
+
+                operators = loggedInOp != null
+                    ? new List<object>
+                    {
+                        new
+                        {
+                            id           = loggedInOp.Id.ToString(),
+                            businessName = (loggedInOp.BusinessName != null && loggedInOp.BusinessName.Trim() != "")
+                                              ? loggedInOp.BusinessName
+                                              : loggedInOp.Name ?? ""
+                        }
+                    }
+                    : new List<object>();
+            }
 
             var guides = await _context.Guides
                 .OrderBy(g => g.LName)
