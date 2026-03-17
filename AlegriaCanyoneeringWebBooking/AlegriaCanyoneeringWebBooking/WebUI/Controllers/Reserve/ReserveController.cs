@@ -2178,5 +2178,414 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
             }
         }
+
+        // =========================================================
+        // GET ASSIGN OUTSIDE DRIVER MODAL
+        // ✅ FIFO from driver_priority (MAX Date per driver = last assigned)
+        // ✅ hasTrip / isAbsent / Passenger all from driver_priority today
+        // ✅ Pulls drivers from outside_driver_from_operator
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> GetAssignOutsideDriverModal(string batch)
+        {
+            try
+            {
+                var guest = await _context.Guests
+                    .Where(g => g.Batch == batch)
+                    .FirstOrDefaultAsync();
+
+                string operatorIdStr = guest?.OperatorId?.ToString()?.Trim() ?? "";
+
+                string operatorName = "";
+                if (!string.IsNullOrEmpty(operatorIdStr))
+                {
+                    if (int.TryParse(operatorIdStr, out int opIdInt))
+                    {
+                        var op = await _context.Operators.FindAsync(opIdInt);
+                        operatorName = op?.BusinessName ?? op?.Name ?? "";
+                    }
+                    else
+                    {
+                        var op = await _context.Operators
+                            .Where(o => o.Id.ToString() == operatorIdStr)
+                            .FirstOrDefaultAsync();
+                        operatorName = op?.BusinessName ?? op?.Name ?? "";
+                    }
+                }
+
+                int guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                int recommendedDrivers = GetRequiredStaffCount(guestCount);
+
+                // ── Pull ALL drivers from outside_driver_from_operator ──────
+                var outsideLinks = await _context.OutsideDriverFromOperators.ToListAsync();
+
+                if (!outsideLinks.Any())
+                {
+                    ViewBag.Batch = batch ?? "";
+                    ViewBag.GuestCount = guestCount;
+                    ViewBag.RecommendedDrivers = recommendedDrivers;
+                    ViewBag.OperatorName = operatorName;
+                    ViewBag.OperatorId = operatorIdStr;
+                    ViewBag.AvailableDrivers = new List<dynamic>();
+                    ViewBag.BusyDrivers = new List<dynamic>();
+                    return PartialView("_AssignOutsideDriverModal");
+                }
+
+                // ── Helper: DriverId string -> int for driver_priority ───────
+                int DriverIdToInt(string driverId) =>
+                    long.TryParse(driverId, out long l) && l > 0 && l <= int.MaxValue
+                        ? (int)l : 0;
+
+                // ── Fetch images from Drivers table in one query ─────────────
+                var refIdStrings = outsideLinks.Select(x => x.DriverId.Trim()).ToList();
+                var driverImages = await _context.Drivers
+                    .Where(d => refIdStrings.Contains(d.RefId))
+                    .Select(d => new { d.RefId, d.Image })
+                    .ToListAsync();
+                var imageMap = driverImages.ToDictionary(d => d.RefId.Trim(), d => d.Image ?? "");
+
+                // ── Build driver list from OutsideDriverFromOperator ─────────
+                var allDrivers = outsideLinks.Select(x => new
+                {
+                    RefId = x.DriverId.Trim(),
+                    fullName = x.DriverName,
+                    Image = imageMap.TryGetValue(x.DriverId.Trim(), out var img) ? img : ""
+                }).ToList();
+
+                var driverRefIdInts = allDrivers
+                    .Select(d => DriverIdToInt(d.RefId))
+                    .Where(k => k > 0).Distinct().ToList();
+
+                // ── All driver_priority records for these drivers ─────────────
+                var allPriorityRecords = await _context.DriverPriorities
+                    .Where(p => driverRefIdInts.Contains(p.DriverIdPrior))
+                    .ToListAsync();
+
+                // FIFO: MAX Date per driver across ALL time
+                var lastPositionMap = allPriorityRecords
+                    .GroupBy(p => p.DriverIdPrior)
+                    .ToDictionary(g => g.Key, g => g.Max(x => x.Date ?? "0"));
+
+                // ── Today's records only ─────────────────────────────────────
+                var todayPriority = allPriorityRecords
+                    .Where(p => string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToList();
+
+                var assignedTodayRefIdInts = todayPriority
+                    .Select(p => p.DriverIdPrior)
+                    .ToHashSet();
+
+                // ✅ FIXED: Passenger (not NoOfPassenger)
+                var todayPassengerMap = todayPriority
+                    .GroupBy(p => p.DriverIdPrior)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Passenger));
+
+                var absentRefIdInts = todayPriority
+                    .GroupBy(p => p.DriverIdPrior)
+                    .Where(g => g.All(x => x.Passenger == 0))
+                    .Select(g => g.Key)
+                    .ToHashSet();
+
+                // ── FIFO order: never-assigned first, then oldest ─────────────
+                var orderedDrivers = allDrivers
+                    .OrderBy(d => lastPositionMap.ContainsKey(DriverIdToInt(d.RefId)) ? 1 : 0)
+                    .ThenBy(d => lastPositionMap.TryGetValue(DriverIdToInt(d.RefId), out var pos) ? pos : "0")
+                    .ToList();
+
+                var availableDriversRaw = new List<object>();
+                for (int i = 0; i < orderedDrivers.Count; i++)
+                {
+                    var d = orderedDrivers[i];
+                    int refInt = DriverIdToInt(d.RefId);
+                    availableDriversRaw.Add(new
+                    {
+                        d.RefId,
+                        d.fullName,
+                        d.Image,
+                        hasTrip = assignedTodayRefIdInts.Contains(refInt),
+                        isAbsent = absentRefIdInts.Contains(refInt),
+                        queuePosition = i + 1,
+                        passengers = todayPassengerMap.TryGetValue(refInt, out int p) ? p : 0
+                    });
+                }
+
+                var assignedTodayList = orderedDrivers
+                    .Where(d => assignedTodayRefIdInts.Contains(DriverIdToInt(d.RefId)))
+                    .ToList();
+
+                var busyDriversRaw = new List<object>();
+                for (int i = 0; i < assignedTodayList.Count; i++)
+                {
+                    var d = assignedTodayList[i];
+                    int refInt = DriverIdToInt(d.RefId);
+                    busyDriversRaw.Add(new
+                    {
+                        d.RefId,
+                        d.fullName,
+                        d.Image,
+                        isAbsent = absentRefIdInts.Contains(refInt),
+                        queuePos = i + 1,
+                        passengers = todayPassengerMap.TryGetValue(refInt, out int p) ? p : 0
+                    });
+                }
+
+                ViewBag.Batch = batch ?? "";
+                ViewBag.GuestCount = guestCount;
+                ViewBag.RecommendedDrivers = recommendedDrivers;
+                ViewBag.OperatorName = operatorName;
+                ViewBag.OperatorId = operatorIdStr;
+                ViewBag.AvailableDrivers = availableDriversRaw.Cast<dynamic>().ToList();
+                ViewBag.BusyDrivers = busyDriversRaw.Cast<dynamic>().ToList();
+
+                return PartialView("_AssignOutsideDriverModal");
+            }
+            catch (Exception ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return Content($@"
+<div class='modal-header text-white' style='background:#0dcaf0;'>
+    <h5 class='modal-title'>Error Loading Outside Drivers</h5>
+    <button type='button' class='btn-close btn-close-white' data-bs-dismiss='modal'></button>
+</div>
+<div class='modal-body'>
+    <div class='alert alert-danger'><strong>Error:</strong> {inner}</div>
+</div>
+<div class='modal-footer'>
+    <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
+</div>", "text/html");
+            }
+        }
+
+        // =========================================================
+        // ASSIGN OUTSIDE DRIVERS — POST
+        // ✅ Only inserts into driver_priority
+        // ✅ One row per driver with distributed passenger count
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignOutsideDriver(string batch, List<string> driverRefIds)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batch) || driverRefIds == null || !driverRefIds.Any())
+                    return Json(new { success = false, message = "Batch and at least one Driver are required." });
+
+                int guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                int recommendedDrivers = GetRequiredStaffCount(guestCount);
+
+                if (driverRefIds.Count > recommendedDrivers)
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Cannot assign more than {recommendedDrivers} driver(s) for {guestCount} guest(s)."
+                    });
+
+                int driversCount = driverRefIds.Count;
+                int basePassengers = driversCount > 0 ? guestCount / driversCount : 0;
+                int remainder = driversCount > 0 ? guestCount % driversCount : 0;
+
+                var trimmedRefIds = driverRefIds.Select(r => r.Trim()).ToList();
+                var outsideLinks = await _context.OutsideDriverFromOperators
+                    .Where(x => trimmedRefIds.Contains(x.DriverId.Trim()))
+                    .ToListAsync();
+
+                var nameMap = outsideLinks.ToDictionary(x => x.DriverId.Trim(), x => x.DriverName);
+                var assignedNames = new List<string>();
+
+                for (int i = 0; i < driversCount; i++)
+                {
+                    var refIdStr = driverRefIds[i].Trim();
+
+                    if (!long.TryParse(refIdStr, out long refIdLong) || refIdLong <= 0 || refIdLong > int.MaxValue)
+                        continue;
+
+                    int refIdInt = (int)refIdLong;
+                    int assignedPax = basePassengers + (i == 0 ? remainder : 0);
+
+                    // ✅ FIXED: new DriverPriority (not new Driver), Passenger (not NoOfPassenger)
+                    _context.DriverPriorities.Add(new DriverPriority
+                    {
+                        DriverIdPrior = refIdInt,
+                        Date = UnixNow(),
+                        Passenger = assignedPax
+                    });
+
+                    assignedNames.Add(nameMap.TryGetValue(refIdStr, out var name) ? name : refIdStr);
+                }
+
+                await _context.SaveChangesAsync();
+
+                var names = string.Join("; ", assignedNames);
+                return Json(new { success = true, message = $"{driversCount} outside driver(s) assigned: {names}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+        // =========================================================
+        // EDIT OUTSIDE DRIVER ASSIGNMENT
+        // ✅ Updates latest driver_priority.Passenger for today
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditOutsideDriverAssignment(string driverRefId, int passengers)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Driver Ref ID is required." });
+
+                if (passengers < 1)
+                    return Json(new { success = false, message = "Passenger count must be at least 1." });
+
+                if (!long.TryParse(driverRefId, out long refIdLong) || refIdLong <= 0 || refIdLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid driver Ref ID." });
+
+                int refIdInt = (int)refIdLong;
+
+                var record = await _context.DriverPriorities
+                    .Where(p => p.DriverIdPrior == refIdInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .OrderByDescending(p => p.Id)
+                    .FirstOrDefaultAsync();
+
+                if (record == null)
+                    return Json(new { success = false, message = "No active assignment found for this driver today." });
+
+                // ✅ FIXED: Passenger (not NoOfPassenger)
+                record.Passenger = passengers;
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = $"Passenger count updated to {passengers}." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+        // =========================================================
+        // REMOVE OUTSIDE DRIVER ASSIGNMENT
+        // ✅ Deletes all driver_priority records for this driver today
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveOutsideDriverAssignment(string driverRefId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Driver Ref ID is required." });
+
+                if (!long.TryParse(driverRefId, out long refIdLong) || refIdLong <= 0 || refIdLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid driver Ref ID." });
+
+                int refIdInt = (int)refIdLong;
+
+                var records = await _context.DriverPriorities
+                    .Where(p => p.DriverIdPrior == refIdInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
+
+                if (records.Any())
+                    _context.DriverPriorities.RemoveRange(records);
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Driver assignment has been removed." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+        // =========================================================
+        // MARK OUTSIDE DRIVER ABSENT
+        // ✅ Zeros out today's driver_priority.Passenger
+        // ✅ Driver stays in FIFO rotation
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkOutsideDriverAbsent(string driverRefId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Driver Ref ID is required." });
+
+                if (!long.TryParse(driverRefId, out long refIdLong) || refIdLong <= 0 || refIdLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid driver Ref ID." });
+
+                int refIdInt = (int)refIdLong;
+                var todayRecords = await _context.DriverPriorities
+                    .Where(p => p.DriverIdPrior == refIdInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
+
+                if (todayRecords.Any())
+                {
+                    // ✅ FIXED: Passenger (not NoOfPassenger)
+                    foreach (var r in todayRecords)
+                        r.Passenger = 0;
+                }
+                else
+                {
+                    _context.DriverPriorities.Add(new DriverPriority
+                    {
+                        DriverIdPrior = refIdInt,
+                        Date = UnixNow(),
+                        Passenger = 0   // ✅ FIXED
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Driver marked as absent. Still in queue rotation." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+        // =========================================================
+        // CLEAR OUTSIDE DRIVER ASSIGNMENT
+        // ✅ Deletes today's driver_priority rows
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearOutsideDriverAssignment(string driverRefId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Driver Ref ID is required." });
+
+                if (!long.TryParse(driverRefId, out long refIdLong) || refIdLong <= 0 || refIdLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid driver Ref ID." });
+
+                int refIdInt = (int)refIdLong;
+
+                var records = await _context.DriverPriorities
+                    .Where(p => p.DriverIdPrior == refIdInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
+
+                if (records.Any())
+                    _context.DriverPriorities.RemoveRange(records);
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Driver is now available." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
     }
 }

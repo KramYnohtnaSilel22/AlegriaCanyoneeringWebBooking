@@ -90,10 +90,17 @@
         </div>
     </div>
 
-    <!-- ✅ Assign Outside Guide Modal -->
+    <!-- Assign Outside Guide Modal -->
     <div class="modal fade" id="assignOutsideGuideModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content" id="assignOutsideGuideModalContent"></div>
+        </div>
+    </div>
+
+    <!-- ✅ Assign Outside Driver Modal -->
+    <div class="modal fade" id="assignOutsideDriverModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" id="assignOutsideDriverModalContent"></div>
         </div>
     </div>
 
@@ -118,13 +125,13 @@
         // ================================
         function showToast(message, title = 'Notification', type = 'danger') {
             const toastTypes = {
-                success: { icon: 'bi-check-circle-fill',       bg: 'bg-success text-white' },
-                danger:  { icon: 'bi-exclamation-triangle-fill', bg: 'bg-danger text-white' },
-                warning: { icon: 'bi-exclamation-circle-fill', bg: 'bg-warning text-dark' },
-                info:    { icon: 'bi-info-circle-fill',         bg: 'bg-info text-dark' }
+                success: { icon: 'bi-check-circle-fill',        bg: 'bg-success text-white' },
+                danger:  { icon: 'bi-exclamation-triangle-fill', bg: 'bg-danger text-white'  },
+                warning: { icon: 'bi-exclamation-circle-fill',  bg: 'bg-warning text-dark'  },
+                info:    { icon: 'bi-info-circle-fill',          bg: 'bg-info text-dark'     }
             };
             const { icon, bg } = toastTypes[type] || toastTypes.info;
-            const toastId = 'toast-' + Date.now();
+            const toastId   = 'toast-' + Date.now();
             const toastHtml = `
                 <div id="${toastId}" class="toast border-0 shadow-sm ${bg}" role="alert"
                      aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
@@ -183,12 +190,13 @@
                     processing: true,
                     serverSide: true,
                     ajax: {
-                        url: '@Url.Action("GetGuestsData", "Reserve")',
+                        url:  '@Url.Action("GetGuestsData", "Reserve")',
                         type: 'POST',
                         data: function (d) {
                             d.startDate = startDate;
                             d.endDate   = endDate;
-                            d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                            d.__RequestVerificationToken =
+                                $('input[name="__RequestVerificationToken"]').val();
                         },
                         error: function (xhr) {
                             $('#tableLoader').hide();
@@ -211,7 +219,9 @@
                         { data: 'totalGuests' },
                         {
                             data: 'operatorName',
-                            render: d => d && d.trim() ? d : '<span class="text-muted">No Operator</span>'
+                            render: d => d && d.trim()
+                                ? d
+                                : '<span class="text-muted">No Operator</span>'
                         },
                         {
                             data: 'arrivalDate',
@@ -219,9 +229,13 @@
                                 if (!data) return '<span class="text-muted">N/A</span>';
                                 if (!isNaN(data)) {
                                     return new Date(parseInt(data) * 1000).toLocaleString('en-US', {
-                                        timeZone: 'Asia/Manila',
-                                        year: 'numeric', month: 'long', day: 'numeric',
-                                        hour: '2-digit', minute: '2-digit', hour12: true
+                                        timeZone:  'Asia/Manila',
+                                        year:      'numeric',
+                                        month:     'long',
+                                        day:       'numeric',
+                                        hour:      '2-digit',
+                                        minute:    '2-digit',
+                                        hour12:    true
                                     });
                                 }
                                 return data;
@@ -231,13 +245,17 @@
                             data: 'status',
                             render: function (data) {
                                 if (!data) return '';
-                                const map = { confirmed: 'success', anticipated: 'info', cancelled: 'danger' };
+                                const map = {
+                                    confirmed:   'success',
+                                    anticipated: 'info',
+                                    cancelled:   'danger'
+                                };
                                 return `<span class="badge bg-${map[data.toLowerCase()] || 'secondary'} text-uppercase">${data}</span>`;
                             }
                         },
                         {
-                            data: 'batch',
-                            orderable: false,
+                            data:       'batch',
+                            orderable:  false,
                             searchable: false,
                             render: function (data) {
                                 var actions = `<div class="d-flex flex-wrap gap-1">`;
@@ -245,21 +263,35 @@
                                 @if (User.IsInRole("Staff"))
                                 {
                                         <text>
-                                        actions += `
-                                            <button type="button" class="btn btn-sm btn-primary view-guest-details" data-batch="${data}">
-                                                <i class="fas fa-eye me-1"></i> View
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
-                                                <i class="fas fa-user-tie me-1"></i> Guide
-                                            </button>
-                                     
-                                            <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
-                                                <i class="fas fa-car me-1"></i> Driver
-                                            </button>
-                                            <button type="button" class="btn btn-sm text-white assign-outside-guide" data-batch="${data}"
-                                                  style="background:#6f42c1;border-color:#6f42c1;">
-                                                <i class="fas fa-user-tie me-1"></i> Outside Guide
-                                           </button>`;
+                                                                          <div class="btn-group">
+                                                        <button type="button" class="btn btn-sm btn-secondary dropdown-toggle"
+                                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="fas fa-user-cog me-1"></i> Assign
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li>
+                                                                <button class="dropdown-item assign-guide" data-batch="${data}">
+                                                                    <i class="fas fa-user-tie me-1 text-success"></i> Guide
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button class="dropdown-item assign-driver" data-batch="${data}">
+                                                                    <i class="fas fa-car me-1 text-info"></i> Driver
+                                                                </button>
+                                                            </li>
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <button class="dropdown-item assign-outside-guide" data-batch="${data}">
+                                                                    <i class="fas fa-user-tie me-1" style="color:#6f42c1;"></i> Outside Guide
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button class="dropdown-item assign-outside-driver" data-batch="${data}">
+                                                                    <i class="fas fa-car me-1 text-info"></i> Outside Driver
+                                                                </button>
+                                                            </li>
+                                                        </ul>
+                                                    </div>`;
                                         </text>
                                 }
                                 else
@@ -278,17 +310,36 @@
                                 @if (User.IsInRole("Super Admin"))
                                 {
                                         <text>
-                                        actions += `
-                                            <button type="button" class="btn btn-sm btn-success assign-guide" data-batch="${data}">
-                                                <i class="fas fa-user-tie me-1"></i> Guide
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-info text-white assign-driver" data-batch="${data}">
-                                                <i class="fas fa-car me-1"></i> Driver
-                                            </button>
-                                            <button type="button" class="btn btn-sm text-white assign-outside-guide" data-batch="${data}"
-                                               style="background:#6f42c1;border-color:#6f42c1;">
-                                             <i class="fas fa-user-tie me-1"></i> Outside Guide
-                                            </button>`;
+                                               actions += `
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-secondary dropdown-toggle"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fas fa-user-cog me-1"></i> Assign
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <button class="dropdown-item assign-guide" data-batch="${data}">
+                                                                <i class="fas fa-user-tie me-1 text-success"></i> Guide
+                                                            </button>
+                                                        </li>
+                                                        <li>
+                                                            <button class="dropdown-item assign-driver" data-batch="${data}">
+                                                                <i class="fas fa-car me-1 text-info"></i> Driver
+                                                            </button>
+                                                        </li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <button class="dropdown-item assign-outside-guide" data-batch="${data}">
+                                                                <i class="fas fa-user-tie me-1" style="color:#6f42c1;"></i> Outside Guide
+                                                            </button>
+                                                        </li>
+                                                        <li>
+                                                            <button class="dropdown-item assign-outside-driver" data-batch="${data}">
+                                                                <i class="fas fa-car me-1 text-info"></i> Outside Driver
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>`;
                                         </text>
                                 }
 
@@ -297,10 +348,10 @@
                             }
                         }
                     ],
-                    pageLength: 10,
-                    responsive: true,
-                    autoWidth: false,
-                    language: { emptyTable: "No guest batches found." }
+                    pageLength:  10,
+                    responsive:  true,
+                    autoWidth:   false,
+                    language:    { emptyTable: "No guest batches found." }
                 });
             });
 
@@ -308,16 +359,23 @@
             // View Guest Details
             // ================================
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
-                const batchCode       = $(this).data('batch');
-                const modalContainer  = $('#guestDetailsModalContainer');
-                modalContainer.html('<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div></div>');
+                const batchCode      = $(this).data('batch');
+                const modalContainer = $('#guestDetailsModalContainer');
+                modalContainer.html(`
+                    <div class="text-center my-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>`);
 
                 $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
                     .done(function (html) {
                         modalContainer.html(html);
-                        const modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
+                        const modal = new bootstrap.Modal(
+                            document.getElementById('guestDetailsModal')
+                        );
                         modal.show();
-                        $('#guestDetailsModal').on('hidden.bs.modal', function () { modalContainer.empty(); });
+                        $('#guestDetailsModal').on('hidden.bs.modal', function () {
+                            modalContainer.empty();
+                        });
                     })
                     .fail(function () { showToast('Failed to load guest details.'); });
             });
@@ -332,7 +390,11 @@
                     method: 'POST',
                     target: '_blank'
                 });
-                $('<input>').attr({ type: 'hidden', name: 'batchCode', value: batchCode }).appendTo(form);
+                $('<input>').attr({
+                    type:  'hidden',
+                    name:  'batchCode',
+                    value: batchCode
+                }).appendTo(form);
                 form.appendTo('body').submit().remove();
             });
 
@@ -347,7 +409,9 @@
                         <p class="mt-2 text-muted">Loading drivers...</p>
                     </div>`);
 
-                new bootstrap.Modal(document.getElementById('assignDriverModal')).show();
+                new bootstrap.Modal(
+                    document.getElementById('assignDriverModal')
+                ).show();
 
                 $.get('@Url.Action("GetAssignDriverModal", "Reserve")', { batch })
                     .done(html => $('#assignDriverModalContent').html(html))
@@ -357,7 +421,9 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="alert alert-danger"><strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}</div>
+                            <div class="alert alert-danger">
+                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -382,7 +448,9 @@
                         <p class="mt-2 text-muted">Loading guides...</p>
                     </div>`);
 
-                new bootstrap.Modal(document.getElementById('assignGuideModal')).show();
+                new bootstrap.Modal(
+                    document.getElementById('assignGuideModal')
+                ).show();
 
                 $.get('@Url.Action("GetAssignGuideModal", "Reserve")', { batch })
                     .done(html => $('#assignGuideModalContent').html(html))
@@ -392,7 +460,9 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="alert alert-danger"><strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}</div>
+                            <div class="alert alert-danger">
+                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -404,7 +474,7 @@
             });
 
             // ================================
-            // ✅ Assign Outside Guide Modal
+            // Assign Outside Guide Modal
             // ================================
             $('#batchesTableContainer').on('click', '.assign-outside-guide', function () {
                 const batch = $(this).data('batch');
@@ -414,7 +484,9 @@
                         <p class="mt-2 text-muted">Loading outside guides...</p>
                     </div>`);
 
-                new bootstrap.Modal(document.getElementById('assignOutsideGuideModal')).show();
+                new bootstrap.Modal(
+                    document.getElementById('assignOutsideGuideModal')
+                ).show();
 
                 $.get('@Url.Action("GetAssignOutsideGuideModal", "Reserve")', { batch })
                     .done(html => $('#assignOutsideGuideModalContent').html(html))
@@ -424,7 +496,9 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="alert alert-danger"><strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}</div>
+                            <div class="alert alert-danger">
+                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -432,6 +506,42 @@
             });
 
             $('#assignOutsideGuideModal').on('hidden.bs.modal', function () {
+                if (table) table.ajax.reload(null, false);
+            });
+
+            // ================================
+            // ✅ Assign Outside Driver Modal
+            // ================================
+            $('#batchesTableContainer').on('click', '.assign-outside-driver', function () {
+                const batch = $(this).data('batch');
+                $('#assignOutsideDriverModalContent').html(`
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-info" role="status"></div>
+                        <p class="mt-2 text-muted">Loading outside drivers...</p>
+                    </div>`);
+
+                new bootstrap.Modal(
+                    document.getElementById('assignOutsideDriverModal')
+                ).show();
+
+                $.get('@Url.Action("GetAssignOutsideDriverModal", "Reserve")', { batch })
+                    .done(html => $('#assignOutsideDriverModalContent').html(html))
+                    .fail(xhr  => $('#assignOutsideDriverModalContent').html(`
+                        <div class="modal-header text-white" style="background:#0dcaf0;">
+                            <h5 class="modal-title">Error Loading Outside Drivers</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>`));
+            });
+
+            $('#assignOutsideDriverModal').on('hidden.bs.modal', function () {
                 if (table) table.ajax.reload(null, false);
             });
 
