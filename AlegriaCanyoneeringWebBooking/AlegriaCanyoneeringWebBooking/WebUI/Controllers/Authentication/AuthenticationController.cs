@@ -224,14 +224,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         <table width='600' cellpadding='0' cellspacing='0'
                style='background:#ffffff;border-radius:16px;overflow:hidden;
                       box-shadow:0 4px 24px rgba(15,52,96,0.10);max-width:600px;width:100%;'>
-          <tr>
-            <td style='background:linear-gradient(135deg,#1a6ef5,#0f3460);padding:36px 40px;text-align:center;'>
-              <img src='{imageUrl}' alt='Alegria Canyoneering' width='70' height='70'
-                   style='border-radius:50%;border:3px solid rgba(255,255,255,0.3);object-fit:cover;margin-bottom:14px;' />
-              <h1 style='margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;'>Alegria Canyoneering</h1>
-              <p style='margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;'>Web Booking System</p>
-            </td>
-          </tr>
+         
           <tr>
             <td style='padding:40px 40px 32px;'>
               <div style='width:64px;height:64px;border-radius:50%;background:rgba(26,110,245,0.08);
