@@ -1,88 +1,219 @@
 ﻿@{
-    ViewData["Title"] = "Saved Batch Leaders";
+    ViewData["Title"] = "Saved Guests";
 }
-<link href="/css/SaveGuest.css" rel="stylesheet" />
 
-<h2 class="fw-bold mb-4 text-primary">
-    <i class="bi bi-bookmark-check-fill me-2"></i> Saved Guests
-</h2>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+    .sg-wrap {
+        font-family: 'Outfit', sans-serif;
+    }
+
+    /* ── Page Header ──────────────────────────────────────── */
+    .sg-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+        .sg-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    /* ── Table Card ───────────────────────────────────────── */
+    .sg-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+    }
+
+    .sg-card-body {
+        padding: 1.25rem;
+    }
+
+    /* ── DataTable overrides ──────────────────────────────── */
+    #guestsTable thead th {
+        background: #f8faff;
+        color: #0f3460;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e8edf5;
+        white-space: nowrap;
+    }
+
+    #guestsTable tbody tr {
+        transition: background 0.15s;
+    }
+
+        #guestsTable tbody tr:hover {
+            background: #f0f6ff;
+        }
+
+    #guestsTable td {
+        vertical-align: middle;
+        font-size: 0.875rem;
+        color: #334155;
+    }
+
+    /* ── Modal ────────────────────────────────────────────── */
+    .modal-header-custom {
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 1.1rem 1.5rem;
+    }
+
+        .modal-header-custom h5 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+    .modal-content {
+        border-radius: 16px;
+        border: 0;
+        box-shadow: 0 8px 40px rgba(15,52,96,0.18);
+    }
+
+    /* ── Mobile responsive table ──────────────────────────── */
+    @@media (max-width: 640px) {
+        #guestsTable thead {
+            display: none;
+        }
+
+        #guestsTable tbody tr {
+            display: block;
+            margin-bottom: 0.75rem;
+            border: 1px solid #e8edf5;
+            border-radius: 12px;
+            padding: 0.5rem 0.75rem;
+            background: #fff;
+        }
+
+        #guestsTable tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0;
+            border: none;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.83rem;
+        }
+
+            #guestsTable tbody td:last-child {
+                border-bottom: none;
+            }
+
+            #guestsTable tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #94a3b8;
+                flex-shrink: 0;
+                margin-right: 0.5rem;
+            }
+    }
+</style>
+
+<div class="sg-wrap">
+
+    <!-- Header -->
+    <div class="sg-header">
+        <h2>
+            <i class="bi bi-bookmark-check-fill" style="color:#1a6ef5;"></i>
+            Saved Guests
+        </h2>
+    </div>
+
+    <!-- Table Card -->
+    <div class="sg-card">
+        <div class="sg-card-body">
+            <div class="table-responsive">
+                <table id="guestsTable" class="table table-hover align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th>Operator</th>
+                            <th>Total Guests</th>
+                            <th>Arrival Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 <!-- Booking Details Modal -->
-<div class="modal fade" id="bookingDetailsModal" tabindex="-1" aria-labelledby="bookingDetailsLabel" aria-hidden="true">
+<div class="modal fade" id="bookingDetailsModal" tabindex="-1"
+     aria-labelledby="bookingDetailsLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="bookingDetailsLabel">
+        <div class="modal-content">
+            <div class="modal-header-custom d-flex align-items-center justify-content-between">
+                <h5 id="bookingDetailsLabel">
                     <i class="fas fa-clipboard-list me-2"></i> Booking Details
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="bookingDetailsBody">
-                <!-- Content will be loaded dynamically -->
+            <div class="modal-body p-3" id="bookingDetailsBody">
+                <!-- Loaded dynamically -->
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table id="guestsTable" class="table table-bordered table-striped">
-                <thead class="table-light">
-                    <tr>
-                        <th>Operator</th>
-                        <th>Total Guests</th>
-                        <th>Arrival Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Toast Message -->
+<!-- Server-side Toast -->
 @if (TempData["ToastMessage"] != null)
 {
     var toastType = TempData["ToastType"]?.ToString()?.ToLower() ?? "success";
-    var toastConfig = toastType switch
+    var toastCfg = toastType switch
     {
-        "success" => new { Icon = "bi-check-circle-fill", Bg = "bg-success text-white", Title = "Success" },
-        "danger" => new { Icon = "bi-exclamation-triangle-fill", Bg = "bg-danger text-white", Title = "Error" },
-        "warning" => new { Icon = "bi-exclamation-circle-fill", Bg = "bg-warning text-dark", Title = "Warning" },
-        _ => new { Icon = "bi-info-circle-fill", Bg = "bg-info text-light", Title = "Notification" }
+        "success" => ("bi-check-circle-fill", "#22c55e", "Success"),
+        "danger" => ("bi-exclamation-triangle-fill", "#ef4444", "Error"),
+        "warning" => ("bi-exclamation-circle-fill", "#f0a500", "Warning"),
+        _ => ("bi-info-circle-fill", "#1a6ef5", "Info")
     };
-
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-        <div id="toastMessage"
-             class="toast border-0 shadow-sm show @toastConfig.Bg"
-             role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-
-            <div class="toast-header @toastConfig.Bg">
-                <i class="bi @toastConfig.Icon me-2"></i>
-                <strong class="me-auto">@toastConfig.Title</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+    <div id="serverToastContainer"
+         class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;">
+        <div id="serverToast" class="toast border-0 text-white"
+             style="background:@toastCfg.Item2;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);"
+             role="alert" aria-atomic="true" data-bs-delay="4000">
+            <div class="toast-header border-0 text-white" style="background:transparent;">
+                <i class="bi @toastCfg.Item1 me-2"></i>
+                <strong class="me-auto">@toastCfg.Item3</strong>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="toast"></button>
             </div>
-
-            <div class="toast-body">
-                @TempData["ToastMessage"]
-            </div>
+            <div class="toast-body" style="padding-top:0;">@TempData["ToastMessage"]</div>
         </div>
     </div>
-
-  
 }
-
 
 @section Scripts {
     <script>
-               document.addEventListener("DOMContentLoaded", function () {
-                const toastEl = document.getElementById('toastMessage');
-                const toast = new bootstrap.Toast(toastEl);
-                toast.show();
-            });
+        // ── Show server toast ──────────────────────────────────
+        const serverToastEl = document.getElementById('serverToast');
+        if (serverToastEl) new bootstrap.Toast(serverToastEl).show();
+
+        // ── Load booking details into modal ────────────────────
         const bookingDetailsUrl = '@Url.Action("GetBookingDetails", "Guest")';
 
         function loadBookingDetails(id) {
@@ -90,21 +221,17 @@
             $body.html(`
                 <div class="text-center py-5 text-muted">
                     <div class="spinner-border text-primary mb-3" role="status"></div>
-                    Loading...
-                </div>
-            `);
+                    <div>Loading details...</div>
+                </div>`);
 
             $.get(`${bookingDetailsUrl}/${id}`)
-                .done(function (html) {
-                    $body.html(html);
-                })
-                .fail(function () {
-                    $body.html(`<div class="alert alert-danger">Failed to load booking details. Please try again.</div>`);
-                });
+                .done(html  => $body.html(html))
+                .fail(() => $body.html(
+                    `<div class="alert alert-danger m-3">Failed to load booking details. Please try again.</div>`
+                ));
         }
 
-        const isAdmin = @User.IsInRole("Admin").ToString().ToLower();
-
+        // ── DataTable ──────────────────────────────────────────
         $(document).ready(function () {
             $('#guestsTable').DataTable({
                 processing: true,
@@ -113,103 +240,85 @@
                     url: '@Url.Action("GetGuestsData", "Guest")',
                     type: 'POST',
                     dataSrc: function (json) {
-                        if (json.error) {
-                            alert(json.error);
-                            return [];
-                        }
+                        if (json.error) { console.error(json.error); return []; }
                         return json.data;
                     },
-                    error: function (xhr, error, code) {
-                        console.log("Error occurred while fetching data: ", error, xhr);
-                        alert("An error occurred while fetching the data. Please try again.");
-                    }
+                    error: (xhr, err) => console.error('DataTable fetch error:', err)
                 },
                 columns: [
                     {
                         data: 'operatorName',
-                        title: 'Operator',
-                        render: function (data) {
-                            return data || 'No Operator';
-                        }
+                        render: d => d
+                            ? `<span class="fw-semibold">${d}</span>`
+                            : `<span class="text-muted">No Operator</span>`
                     },
                     {
                         data: 'totalGuests',
-                        title: 'Total Guests'
+                        render: d => `<span class="badge" style="background:rgba(26,110,245,0.1);
+                                      color:#1a6ef5;font-size:0.8rem;padding:0.3rem 0.65rem;
+                                      border-radius:6px;">${d}</span>`
                     },
                     {
                         data: 'arrivalDate',
                         render: function (data) {
                             if (!data) return '<span class="text-muted">N/A</span>';
-
-                            let date;
-                            if (!isNaN(data)) {
-                                date = new Date(parseInt(data) * 1000);
-                            } else {
-                                date = new Date(data);
-                            }
-
+                            const date = !isNaN(data)
+                                ? new Date(parseInt(data) * 1000)
+                                : new Date(data);
                             if (isNaN(date.getTime())) return data;
-
                             return date.toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
+                                year: 'numeric', month: 'long', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit', hour12: true
                             });
                         }
                     },
                     {
                         data: 'bookingStatus',
-                        title: 'Status',
                         render: function (data) {
-                            let statusText = '';
-                            let badgeClass = '';
-
-                            switch (data) {
-                                case "anticipated":
-                                    statusText = 'Anticipated';
-                                    badgeClass = 'warning';
-                                    break;
-                                case "reserved":
-                                    statusText = 'Reserved';
-                                    badgeClass = 'success';
-                                    break;
-                                case "canceled":
-                                    statusText = 'Canceled';
-                                    badgeClass = 'danger';
-                                    break;
-                                default:
-                                    statusText = 'Unknown';
-                                    badgeClass = 'secondary';
-                                    break;
-                            }
-
-                            return `<span class="badge bg-${badgeClass}">${statusText}</span>`;
+                            const map = {
+                                anticipated: ['Anticipated', '#f0a500', 'rgba(240,165,0,0.1)'],
+                                reserved:    ['Reserved',    '#16a34a', 'rgba(22,163,74,0.1)'],
+                                canceled:    ['Canceled',    '#ef4444', 'rgba(239,68,68,0.1)']
+                            };
+                            const [label, color, bg] = map[data] || ['Unknown', '#94a3b8', '#f1f5f9'];
+                            return `<span style="background:${bg};color:${color};
+                                           font-size:0.75rem;font-weight:600;padding:0.25rem 0.6rem;
+                                           border-radius:6px;text-transform:uppercase;
+                                           letter-spacing:0.05em;">${label}</span>`;
                         }
                     },
                     {
                         data: 'id',
-                        title: 'Actions',
-                        orderable: false,
-                        searchable: false,
+                        orderable: false, searchable: false,
                         render: function (data, type, row) {
-                            return `
-                                <button type="button" class="btn btn-sm btn-primary me-1" onclick="loadBookingDetails(${data})" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
+                            let html = `
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        style="border-radius:8px;font-size:0.8rem;padding:0.3rem 0.75rem;"
+                                        onclick="loadBookingDetails(${data})"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#bookingDetailsModal">
                                     <i class="fas fa-eye me-1"></i> View
-                                </button>
-                                ${row.bookingStatus === "anticipated" ? `
-                                    <form method="post" action="/Guest/UpdateStatus" style="display:inline">
-                                        <input type="hidden" name="id" value="${data}" />
-                                        <input type="hidden" name="status" value="reserved" />
-        @if (User.IsInRole("Super Admin") || User.IsInRole("Operator"))
-    {
-                                        <button type="submit" class="btn btn-sm btn-success">    <i class="fas fa-check"></i>Submit</button>
-        }
-                                    </form>
-                                ` : ''}
-                            `;
+                                </button>`;
+
+                            @if (User.IsInRole("Super Admin") || User.IsInRole("Operator"))
+                            {
+                                    <text>
+                                    if (row.bookingStatus === 'anticipated') {
+                                        html += `
+                                            <form method="post" action="/Guest/UpdateStatus"
+                                                  style="display:inline;margin-left:4px;">
+                                                <input type="hidden" name="id"     value="${data}" />
+                                                <input type="hidden" name="status" value="reserved" />
+                                                <button type="submit" class="btn btn-sm btn-success"
+                                                        style="border-radius:8px;font-size:0.8rem;padding:0.3rem 0.75rem;">
+                                                    <i class="fas fa-check me-1"></i> Submit
+                                                </button>
+                                            </form>`;
+                                    }
+                                    </text>
+                            }
+                            return html;
                         }
                     }
                 ],
@@ -217,30 +326,21 @@
                 lengthMenu: [[10, 20, 30, 50, 100], [10, 20, 30, 50, 100]],
                 responsive: true,
                 autoWidth: false,
-                language: { emptyTable: "No guests found." },
+                language: { emptyTable: "No saved guests found." },
 
-                // Mobile responsive: add data-label attributes for each <td>
+                // Add data-label for mobile card layout
                 drawCallback: function () {
-                    const table = document.getElementById('guestsTable');
-                    if (!table) return;
-                    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+                    const headers = Array.from(
+                        document.querySelectorAll('#guestsTable thead th')
+                    ).map(th => th.innerText.trim());
 
-                    table.querySelectorAll('tbody tr').forEach(row => {
-                        row.querySelectorAll('td').forEach((cell, idx) => {
-                            if (headers[idx]) {
-                                cell.setAttribute('data-label', headers[idx]);
-                            }
+                    document.querySelectorAll('#guestsTable tbody tr').forEach(row => {
+                        row.querySelectorAll('td').forEach((cell, i) => {
+                            if (headers[i]) cell.setAttribute('data-label', headers[i]);
                         });
                     });
                 }
             });
-
-            // Toast Message Handling
-            var toastElement = document.getElementById('toastMessage');
-            if (toastElement) {
-                var toast = new bootstrap.Toast(toastElement);
-                toast.show();
-            }
         });
     </script>
 }
