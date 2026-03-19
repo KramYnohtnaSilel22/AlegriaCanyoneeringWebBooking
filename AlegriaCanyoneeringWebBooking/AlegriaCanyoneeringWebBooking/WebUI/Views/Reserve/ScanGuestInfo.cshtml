@@ -3,7 +3,7 @@
 @{
     Layout = null;
     var toastMessage = TempData["ToastMessage"] as string;
-    var toastType = TempData["ToastType"] as string; // e.g., "warning", "danger", "success"
+    var toastType = TempData["ToastType"] as string ?? "info";
 }
 
 <!DOCTYPE html>
@@ -11,116 +11,443 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Scan Guest Info</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <title>Scan Guest Info — Alegria Canyoneering</title>
     <link rel="icon" href="/images/alegrialogo2025.jpeg" type="image/png" />
-    <link href="/css/ScanGuestInfo.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --blue-deep: #0f3460;
+            --blue-mid: #1a6ef5;
+            --blue-light: #4f9cf9;
+            --accent: #f0a500;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --white: #ffffff;
+            --gray-soft: #f4f7fe;
+            --gray-text: #64748b;
+        }
+
+        html, body {
+            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            background: var(--gray-soft);
+        }
+
+        /* ── Header ────────────────────────────────────────── */
+        .scan-header {
+            background: linear-gradient(135deg, var(--blue-deep), #1557b0);
+            padding: 0.9rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(15,52,96,0.2);
+        }
+
+        .scan-header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+            .scan-header-brand img {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                border: 2px solid rgba(255,255,255,0.3);
+                object-fit: cover;
+            }
+
+            .scan-header-brand span {
+                color: #fff;
+                font-weight: 700;
+                font-size: 1rem;
+            }
+
+        .btn-exit {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 1rem;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+            .btn-exit:hover {
+                background: rgba(255,255,255,0.25);
+                color: #fff;
+            }
+
+        /* ── Main layout ───────────────────────────────────── */
+        .scan-page {
+            max-width: 520px;
+            margin: 2rem auto;
+            padding: 0 1rem 3rem;
+        }
+
+        .scan-page-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+            .scan-page-title h2 {
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: var(--blue-deep);
+                margin-bottom: 0.25rem;
+            }
+
+            .scan-page-title p {
+                font-size: 0.85rem;
+                color: var(--gray-text);
+            }
+
+        /* ── Scan form card ─────────────────────────────────── */
+        .scan-card {
+            background: var(--white);
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 3px 24px rgba(15,52,96,0.09);
+            border: 1px solid #e8edf5;
+            margin-bottom: 1.25rem;
+        }
+
+        .scan-input-wrap {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .scan-input-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(26,110,245,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--blue-mid);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .scan-input-wrap input {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            color: #1e293b;
+            background: #fafbff;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+            .scan-input-wrap input:focus {
+                border-color: var(--blue-mid);
+                box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+                background: var(--white);
+            }
+
+            .scan-input-wrap input::placeholder {
+                color: #b0bec5;
+            }
+
+        .btn-scan {
+            padding: 0.7rem 1.25rem;
+            background: linear-gradient(135deg, var(--blue-mid), var(--blue-deep));
+            color: var(--white);
+            border: none;
+            border-radius: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            white-space: nowrap;
+            box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+        }
+
+            .btn-scan:hover {
+                opacity: 0.9;
+                transform: translateY(-1px);
+            }
+
+        /* ── Guest info card ────────────────────────────────── */
+        .guest-card {
+            background: var(--white);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 3px 24px rgba(15,52,96,0.1);
+            border: 1px solid #e8edf5;
+            animation: slideUp 0.4s ease both;
+            transition: opacity 0.8s ease;
+        }
+
+            .guest-card.fade-out {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+        @@keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .guest-card-header {
+            background: linear-gradient(135deg, var(--blue-mid), var(--blue-deep));
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: var(--white);
+        }
+
+            .guest-card-header h5 {
+                font-size: 0.95rem;
+                font-weight: 700;
+                margin: 0;
+            }
+
+        .guest-card-body {
+            padding: 1.25rem;
+            display: flex;
+            gap: 1.25rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        /* Photo */
+        .guest-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 3px solid #e8edf5;
+            flex-shrink: 0;
+            box-shadow: 0 2px 12px rgba(15,52,96,0.12);
+        }
+
+        /* Info rows */
+        .guest-info-grid {
+            flex: 1;
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .guest-info-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.05rem;
+        }
+
+        .guest-info-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #94a3b8;
+        }
+
+        .guest-info-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0f3460;
+        }
+
+        /* ── Toast system ───────────────────────────────────── */
+        .scan-toast-container {
+            position: fixed;
+            top: 0.75rem;
+            right: 0.75rem;
+            z-index: 9999;
+        }
+    </style>
 </head>
+
 <body>
 
-    <!-- ✅ Header -->
-    <header>
-        <a asp-controller="Dashboard" asp-action="Index" class="exit-btn">
+    <!-- Header -->
+    <header class="scan-header">
+        <div class="scan-header-brand">
+            <img src="/images/alegrialogo2025.jpeg" alt="Logo" />
+            <span>Alegria Canyoneering</span>
+        </div>
+        <a asp-controller="Dashboard" asp-action="Index" class="btn-exit">
             <i class="bi bi-box-arrow-left"></i> Exit
         </a>
     </header>
 
-    <h2>Scan Guest Info</h2>
+    <!-- Page Content -->
+    <div class="scan-page">
 
-    <!-- ✅ QR Input -->
-    <form id="scanForm" method="get" asp-action="ScanGuestInfo">
-        <input type="text" id="qrCodeValue" name="qrCodeValue" placeholder="Scan QR" autofocus />
-        <button type="submit">Search</button>
-    </form>
-
-    <!-- ✅ Guest Info Display -->
-    @if (Model != null)
-    {
-        <div id="guestInfo" class="guest-info">
-            <h3>Guest Information</h3>
-            <p><strong>Operator:</strong> @Model.Operators</p>
-            <p><strong>Full Name:</strong> @Model.FullName</p>
-            <p><strong>Arrival Date:</strong> @(Model.ArrivalDate?.ToString("MMMM dd, yyyy 'at' h:mm tt"))</p>
-            <p><strong>Age:</strong> @Model.Age</p>
-            <p><strong>Nationality:</strong> @Model.Nationality</p>
-
-            <div style="text-align:center; margin-top:1rem;">
-                @if (!string.IsNullOrEmpty(Model.GuestImageBase64))
-                {
-                    <img src="@Model.GuestImageBase64" alt="Guest Image" width="150" style="border-radius: 8px;" />
-                }
-                else
-                {
-                    <img src="~/images/default_guest.png" alt="Default Guest Image" width="150" style="border-radius: 8px;" />
-                }
-            </div>
+        <!-- Title -->
+        <div class="scan-page-title">
+            <h2><i class="bi bi-qr-code-scan me-2" style="color:#1a6ef5;"></i>Scan Guest Info</h2>
+            <p>Scan or enter a guest QR code to retrieve booking details.</p>
         </div>
-    }
 
-    <!-- ✅ Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div id="toastMessage" class="toast border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="2000">
-            <div class="toast-header">
-                <i class="bi bi-info-circle-fill me-2"></i>
-                <strong class="me-auto" id="toastTitle">Notification</strong>
-                <small class="text-muted">Now</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body" id="toastBody"></div>
+        <!-- Scan Form -->
+        <div class="scan-card">
+            <form id="scanForm" method="get" asp-action="ScanGuestInfo">
+                <div class="scan-input-wrap">
+                    <div class="scan-input-icon">
+                        <i class="bi bi-qr-code"></i>
+                    </div>
+                    <input type="text"
+                           id="qrCodeValue"
+                           name="qrCodeValue"
+                           placeholder="Scan QR code here..."
+                           autofocus
+                           autocomplete="off" />
+                    <button type="submit" class="btn-scan">
+                        <i class="bi bi-search me-1"></i> Search
+                    </button>
+                </div>
+            </form>
         </div>
+
+        <!-- Guest Info Card -->
+        @if (Model != null)
+        {
+            <div id="guestInfo" class="guest-card">
+                <div class="guest-card-header">
+                    <i class="bi bi-person-check-fill" style="font-size:1.1rem;"></i>
+                    <h5>Guest Found</h5>
+                </div>
+                <div class="guest-card-body">
+
+                    <!-- Photo -->
+                    @if (!string.IsNullOrEmpty(Model.GuestImageBase64))
+                    {
+                        <img src="@Model.GuestImageBase64" alt="Guest Photo" class="guest-photo" />
+                    }
+                    else
+                    {
+                        <img src="~/images/default_guest.png" alt="Default Photo" class="guest-photo" />
+                    }
+
+                    <!-- Details -->
+                    <div class="guest-info-grid">
+                        <div class="guest-info-row">
+                            <span class="guest-info-label">Operator</span>
+                            <span class="guest-info-value">@(Model.Operators ?? "N/A")</span>
+                        </div>
+                        <div class="guest-info-row">
+                            <span class="guest-info-label">Full Name</span>
+                            <span class="guest-info-value">@Model.FullName</span>
+                        </div>
+                        <div class="guest-info-row">
+                            <span class="guest-info-label">Arrival Date</span>
+                            <span class="guest-info-value">
+                                @(Model.ArrivalDate?.ToString("MMMM dd, yyyy 'at' h:mm tt") ?? "N/A")
+                            </span>
+                        </div>
+                        <div class="guest-info-row">
+                            <span class="guest-info-label">Age</span>
+                            <span class="guest-info-value">@Model.Age</span>
+                        </div>
+                        <div class="guest-info-row">
+                            <span class="guest-info-label">Nationality</span>
+                            <span class="guest-info-value">@(Model.Nationality ?? "N/A")</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toast container -->
+    <div class="scan-toast-container" id="toastContainer"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // ✅ Prevent empty QR submission (client-side)
-        document.getElementById("scanForm").addEventListener("submit", function (e) {
-            const qrValue = document.getElementById("qrCodeValue").value.trim();
-            if (!qrValue) {
+        // ── Toast utility ──────────────────────────────────
+        function showToast(message, type = 'info') {
+            const map = {
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+                danger:  { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
+                warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   title: 'Warning' },
+                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Info'    }
+            };
+            const { bg, icon, title } = map[type] || map.info;
+            const id = 'st-' + Date.now();
+            const html = `
+                <div id="${id}" class="toast border-0 text-white"
+                     style="background:${bg};border-radius:12px;
+                            box-shadow:0 4px 16px rgba(0,0,0,0.15);min-width:260px;"
+                     role="alert" aria-atomic="true" data-bs-delay="3500">
+                    <div class="toast-header border-0 text-white" style="background:transparent;">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white"
+                                data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" style="padding-top:0;">${message}</div>
+                </div>`;
+            const container = document.getElementById('toastContainer');
+            container.insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', () => el.remove());
+        }
+
+        // ── Prevent empty QR submission ────────────────────
+        document.getElementById('scanForm').addEventListener('submit', function (e) {
+            const val = document.getElementById('qrCodeValue').value.trim();
+            if (!val) {
                 e.preventDefault();
-                showToast("Please scan a QR code before submitting.", "warning");
+                showToast('Please scan a QR code before searching.', 'warning');
+                document.getElementById('qrCodeValue').focus();
             }
         });
 
-        // ✅ Function to show Bootstrap toast
-        function showToast(message, type) {
-            const toastEl = document.getElementById('toastMessage');
-            const toastBody = document.getElementById('toastBody');
-            const toastTitle = document.getElementById('toastTitle');
-
-            toastBody.textContent = message;
-
-            // dynamic class for background color
-            toastEl.className = `toast text-bg-${type} border-0`;
-            toastTitle.textContent =
-                type === "danger" ? "Error" :
-                type === "warning" ? "Warning" :
-                type === "success" ? "Success" :
-                "Notification";
-
-            const toast = new bootstrap.Toast(toastEl);
-            toast.show();
-        }
-
-        // ✅ Server-triggered toast (via TempData)
+        // ── Server-side toast (TempData) ───────────────────
         @if (!string.IsNullOrEmpty(toastMessage))
         {
-            <text>
-                    window.addEventListener('DOMContentLoaded', () => {
-                        showToast('@toastMessage', '@toastType');
-                    });
-            </text>
+                <text>
+                window.addEventListener('DOMContentLoaded', () => {
+                    showToast('@toastMessage', '@toastType');
+                });
+                </text>
         }
 
-        // ✅ Fade out guest info after 5 seconds
-        window.onload = function () {
-            const guestDiv = document.getElementById('guestInfo');
-            if (guestDiv) {
-                setTimeout(() => guestDiv.classList.add('fade-out'), 5000);
+        // ── Auto fade-out guest card after 8 seconds ───────
+        window.addEventListener('load', function () {
+            const card = document.getElementById('guestInfo');
+            if (card) {
+                setTimeout(() => card.classList.add('fade-out'), 8000);
             }
-        };
+        });
     </script>
 
 </body>
