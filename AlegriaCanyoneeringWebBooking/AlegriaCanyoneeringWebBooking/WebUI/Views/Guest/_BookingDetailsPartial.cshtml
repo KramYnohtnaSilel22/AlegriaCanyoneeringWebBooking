@@ -6,177 +6,390 @@
     if (Model.Guest != null) allGuests.Add(Model.Guest);
     if (Model.GuestsInBatch != null)
         allGuests.AddRange(Model.GuestsInBatch.Where(g => g.BookingStatus != 1));
-}
 
-@Html.AntiForgeryToken()
-
-@{
     string FormatArrivalDate(string unixTimestamp)
     {
         if (string.IsNullOrEmpty(unixTimestamp)) return "N/A";
         if (long.TryParse(unixTimestamp, out var unix))
-        {
-            var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
-            return dateTime.ToString("MMMM dd, yyyy hh:mm tt");
-        }
+            return DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime().ToString("MMMM dd, yyyy hh:mm tt");
         return unixTimestamp;
     }
 }
 
-<div class="container py-5">
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold">Guest List</h5>
+@Html.AntiForgeryToken()
 
-            @if (!User.IsInRole("Admin"))
-            {
-                <a asp-controller="Guest"
-                   asp-action="NewBooking"
-                   asp-route-batch="@Model.Guest.Batch"
-                   asp-route-id="@Model.Guest.Id"
-                   class="btn btn-primary rounded-pill d-flex align-items-center gap-2">
-                    <i class="fas fa-user-plus"></i> Add Guest
-                </a>
-            }
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+    .gd-wrap {
+        font-family: 'Outfit', sans-serif;
+        padding: 0.5rem 0;
+    }
+
+    /* ── Header bar ───────────────────────────────────────── */
+    .gd-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem 0.75rem;
+        border-bottom: 1.5px solid #e8edf5;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .gd-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f3460;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .gd-count {
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(26,110,245,0.08);
+        color: #1a6ef5;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+    }
+
+    .btn-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.1rem;
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff;
+        border-radius: 50px;
+        border: none;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+        transition: opacity 0.2s, transform 0.15s;
+    }
+
+        .btn-add:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+    /* ── Table ────────────────────────────────────────────── */
+    .gd-table-wrap {
+        padding: 0.75rem 0 0;
+        overflow-x: auto;
+    }
+
+    #companionsTable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        #companionsTable thead th {
+            background: #f8faff;
+            color: #0f3460;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.7rem 1rem;
+            border-bottom: 2px solid #e8edf5;
+            white-space: nowrap;
+        }
+
+        #companionsTable tbody td {
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        #companionsTable tbody tr:hover {
+            background: #f0f6ff;
+        }
+
+        #companionsTable tbody tr.primary-row {
+            background: rgba(26,110,245,0.04);
+        }
+
+    /* Status badges */
+    .badge-primary-guest {
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.25rem 0.65rem;
+        border-radius: 20px;
+        letter-spacing: 0.03em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .badge-companion {
+        background: rgba(26,110,245,0.08);
+        color: #1a6ef5;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.25rem 0.65rem;
+        border-radius: 20px;
+    }
+
+    /* Cancel button */
+    .btn-cancel {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1.5px solid #fca5a5;
+        background: none;
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        font-size: 0.75rem;
+        margin: 0 auto;
+    }
+
+        .btn-cancel:hover {
+            background: #ef4444;
+            color: #fff;
+            border-color: #ef4444;
+        }
+
+    /* ── Cancel confirm modal ──────────────────────────────── */
+    #cancelConfirmModal .modal-content {
+        border-radius: 16px;
+        border: 0;
+    }
+
+    #cancelConfirmModal .modal-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(239,68,68,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+    }
+
+        #cancelConfirmModal .modal-icon i {
+            font-size: 1.5rem;
+            color: #ef4444;
+        }
+
+    /* ── Mobile ───────────────────────────────────────────── */
+    @@media (max-width: 576px) {
+        #companionsTable thead th:nth-child(3),
+        #companionsTable tbody td:nth-child(3) {
+            display: none;
+        }
+    }
+</style>
+
+<div class="gd-wrap">
+
+    <!-- Header -->
+    <div class="gd-header">
+        <div class="gd-title">
+            <i class="bi bi-people-fill" style="color:#1a6ef5;"></i>
+            Guest List
+            <span class="gd-count">@allGuests.Count guest@(allGuests.Count != 1 ? "s" : "")</span>
         </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table id="companionsTable" class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="text-center" style="width: 70px;">Action</th>
-                            <th>Full Name</th>
-                            <th>Age</th>
-                            <th>Gender</th>
-                            <th>Nationality</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="guestTableBody">
-                        @foreach (var guest in allGuests)
-                        {
-                            <tr data-guest-row="@guest.Id" class="@(guest.Id == Model.Guest.Id ? "table-primary" : "")">
-                                <td class="text-center">
-                                    @if (!User.IsInRole("Admin"))
-                                    {
-                                        <button type="button"
-                                                class="btn btn-outline-danger btn-sm rounded-circle cancel-btn"
-                                                data-guest-id="@guest.Id"
-                                                title="Cancel this guest">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    }
-                                </td>
-                                <td>@guest.Fullname</td>
-                                <td>@guest.Age</td>
-                                <td>@guest.Gender</td>
-                                <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
-                                <td>
-                                    <span class="badge @(guest.Id == Model.Guest.Id ? "badge-primary" : "badge-info") text-capitalize px-3 py-2 rounded-pill">
-                                        @(guest.Id == Model.Guest.Id ? "Primary ✦" : "Companion")
-                                    </span>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        @if (!User.IsInRole("Admin"))
+        {
+            <a asp-controller="Guest"
+               asp-action="NewBooking"
+               asp-route-batch="@Model.Guest.Batch"
+               asp-route-id="@Model.Guest.Id"
+               class="btn-add">
+                <i class="bi bi-person-plus-fill"></i> Add Guest
+            </a>
+        }
+    </div>
+
+    <!-- Table -->
+    <div class="gd-table-wrap">
+        <table id="companionsTable" class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width:60px;text-align:center;">Action</th>
+                    <th>Full Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Nationality</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody id="guestTableBody">
+                @foreach (var guest in allGuests)
+                {
+                    bool isPrimary = guest.Id == Model.Guest.Id;
+                    <tr data-guest-row="@guest.Id" class="@(isPrimary ? "primary-row" : "")">
+                        <td class="text-center">
+                            @if (!User.IsInRole("Admin"))
+                            {
+                                <button type="button"
+                                        class="btn-cancel cancel-btn"
+                                        data-guest-id="@guest.Id"
+                                        title="Cancel this guest">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            }
+                        </td>
+                        <td>
+                            <span class="fw-@(isPrimary ? "600" : "400")">@guest.Fullname</span>
+                        </td>
+                        <td>@guest.Age</td>
+                        <td>@guest.Gender</td>
+                        <td>@(guest.NationalityEntity?.NatName ?? "N/A")</td>
+                        <td>
+                            @if (isPrimary)
+                            {
+                                <span class="badge-primary-guest">
+                                    <i class="bi bi-star-fill" style="font-size:0.6rem;"></i> Primary
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-companion">Companion</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Cancel Confirm Modal -->
+<div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:340px;">
+        <div class="modal-content shadow">
+            <div class="modal-body text-center pt-4 pb-3 px-4">
+                <div id="cancelConfirmModal" class="modal-icon">
+                    <i class="bi bi-person-x-fill"></i>
+                </div>
+                <h6 class="fw-bold mb-1" style="color:#0f3460;">Cancel Guest?</h6>
+                <p class="text-muted mb-0" style="font-size:0.875rem;">
+                    This guest will be removed from the booking. This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> No, Keep
+                </button>
+                <button type="button" id="confirmCancelBtn"
+                        class="btn btn-danger rounded-pill px-4">
+                    <i class="bi bi-trash3 me-1"></i> Yes, Cancel
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(document).ready(function () {
 
-<style>
-    #companionsTable {
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
+        // ── DataTable ──────────────────────────────────────────
+        $('#companionsTable').DataTable({
+            responsive: true,
+            pageLength: 5,
+            lengthMenu: [5, 10, 25],
+            columnDefs: [{ orderable: false, targets: 0 }],
+            language: { searchPlaceholder: 'Search guest...', search: '' }
+        });
 
-        #companionsTable tbody tr:hover {
-            background-color: #f2f7ff;
-        }
+        // ── Cancel guest — show confirm modal ──────────────────
+        let pendingCancelId = null;
+        const cancelModal   = new bootstrap.Modal(document.getElementById('cancelConfirmModal'));
 
-        #companionsTable thead {
-            background-color: #f8f9fa;
-            font-weight: 600;
-        }
+        $(document).on('click', '.cancel-btn', function () {
+            pendingCancelId = $(this).data('guest-id');
+            cancelModal.show();
+        });
 
-    .badge-primary {
-        background-color: #0d6efd;
-        color: #fff;
-    }
+        $('#confirmCancelBtn').on('click', function () {
+            if (!pendingCancelId) return;
 
-    .badge-info {
-        background-color: #cfe2ff;
-        color: #0d6efd;
-    }
+            const $btn  = $(this);
+            const token = $('input[name="__RequestVerificationToken"]').val();
 
-    .cancel-btn:hover {
-        background-color: #dc3545;
-        color: #fff;
-        transition: 0.2s;
-        cursor: pointer;
-    }
+            $btn.prop('disabled', true).html(
+                '<span class="spinner-border spinner-border-sm me-1"></span> Cancelling...'
+            );
 
-    @@media (max-width: 576px) {
-        #companionsTable td:nth-child(3), #companionsTable th:nth-child(3)
-
-    {
-        display: none;
-    }
-
-    }
-</style>
-
-    <script>
-        $(document).ready(function () {
-            // Initialize DataTable for the companion list
-            $('#companionsTable').DataTable({
-                responsive: true,
-                pageLength: 5,
-                lengthMenu: [5, 10, 25],
-                columnDefs: [{ orderable: false, targets: 0 }],  // Disable sorting for the first column (Actions)
-                language: { searchPlaceholder: "Search guest...", search: "" }
-            });
-
-            // Handle cancel button click event
-            $('.cancel-btn').off('click').on('click', function () {
-                // Confirm the action
-                if (!confirm("Are you sure you want to cancel this guest?")) return;
-
-                // Get the guest ID and CSRF token
-                var guestId = $(this).data('guest-id');
-                var token = $('input[name="__RequestVerificationToken"]').val();
-
-                // Send AJAX request to cancel the guest
-                $.ajax({
-                    url: '/Guest/CancelGuest',
-                    type: 'POST',
-                    data: { GuestId: guestId, __RequestVerificationToken: token },
-                    success: function (result) {
-                        if (result.success) {
-                            // Remove the guest row from the table
-                            $('tr[data-guest-row="' + guestId + '"]').remove();
-
-                            // Reload the guest list partial view with updated data
-                            $('#guestTableBody').load('@Url.Action("GetUpdatedGuestList", "Guest")', function () {
-                                alert("Guest cancelled successfully.");
-                            });
-                        } else {
-                            alert(result.message || "Failed to cancel guest.");
-                        }
-                    },
-                    error: function (xhr) {
-                        // Handle any errors
-                        console.error(xhr.responseText);
-                        alert("An error occurred while cancelling the guest.");
+            $.ajax({
+                url: '/Guest/CancelGuest',
+                type: 'POST',
+                data: { GuestId: pendingCancelId, __RequestVerificationToken: token },
+                success: function (result) {
+                    cancelModal.hide();
+                    if (result.success) {
+                        $(`tr[data-guest-row="${pendingCancelId}"]`).fadeOut(300, function () {
+                            $(this).remove();
+                        });
+                        showGuestToast('Guest cancelled successfully.', 'success');
+                    } else {
+                        showGuestToast(result.message || 'Failed to cancel guest.', 'error');
                     }
-                });
+                },
+                error: function (xhr) {
+                    cancelModal.hide();
+                    console.error(xhr.responseText);
+                    showGuestToast('An error occurred. Please try again.', 'error');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html(
+                        '<i class="bi bi-trash3 me-1"></i> Yes, Cancel'
+                    );
+                    pendingCancelId = null;
+                }
             });
         });
-    </script>
+
+        // ── Toast helper ───────────────────────────────────────
+        function showGuestToast(message, type) {
+            const map = {
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   }
+            };
+            const { bg, icon, title } = map[type] || map.success;
+            const id = 'gt-' + Date.now();
+            const html = `
+                <div id="${id}" class="toast border-0 text-white"
+                     style="background:${bg};border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);"
+                     role="alert" aria-atomic="true" data-bs-delay="3500">
+                    <div class="toast-header border-0 text-white" style="background:transparent;">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" style="padding-top:0;">${message}</div>
+                </div>`;
+            let container = document.getElementById('guestToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'guestToastContainer';
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                container.style.zIndex = '1100';
+                document.body.appendChild(container);
+            }
+            container.insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', () => el.remove());
+        }
+    });
+</script>
