@@ -1,14 +1,110 @@
 ﻿@model AlegriaCanyoneeringWebBooking.Models.Nationality
 
-<form asp-action="@ViewData["Action"]" method="post" novalidate>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .natf-form * {
+        font-family: 'Outfit',sans-serif;
+    }
+
+    .natf-body {
+        padding: 1.25rem 1.25rem 0.75rem;
+    }
+
+    .natf-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0f3460;
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+        .natf-label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+    .natf-input {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        transition: border-color 0.2s,box-shadow 0.2s;
+    }
+
+        .natf-input:focus {
+            border-color: #1a6ef5;
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+            background: #fff;
+        }
+
+    .natf-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+    }
+
+    .btn-natf-cancel {
+        padding: 0.55rem 1.1rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-natf-cancel:hover {
+            background: #e2e8f0;
+        }
+
+    .btn-natf-save {
+        padding: 0.55rem 1.25rem;
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s,transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+        .btn-natf-save:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+</style>
+
+<form asp-action="Create" method="post" novalidate class="natf-form">
     @Html.AntiForgeryToken()
-    <div class="mb-3">
-        <label asp-for="NatName" class="form-label">Nationality Name <span class="text-danger">*</span></label>
-        <input asp-for="NatName" class="form-control" placeholder="Enter nationality" />
-        <span asp-validation-for="NatName" class="text-danger"></span>
+    <div class="natf-body">
+        <div class="mb-3">
+            <label class="natf-label">Nationality Name<span class="req">*</span></label>
+            <input asp-for="NatName" class="natf-input" placeholder="e.g. Filipino" />
+            <span asp-validation-for="NatName" class="text-danger small"></span>
+        </div>
     </div>
-    <div class="text-end">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+    <div class="natf-footer">
+        <button type="button" class="btn-natf-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-natf-save">
+            <i class="bi bi-save me-1"></i>Save
+        </button>
     </div>
 </form>
