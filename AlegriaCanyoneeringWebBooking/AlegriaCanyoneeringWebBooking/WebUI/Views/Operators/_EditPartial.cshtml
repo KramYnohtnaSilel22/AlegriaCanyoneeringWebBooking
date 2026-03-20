@@ -1,79 +1,209 @@
 ﻿@model AlegriaCanyoneeringWebBooking.Models.Operator
-<form asp-action="Edit" asp-route-id="@Model.Id" method="post" id="operatorForm" novalidate>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .opf-form * {
+        font-family: 'Outfit',sans-serif;
+    }
+
+    .opf-body {
+        padding: 1.4rem 1.5rem 1rem;
+    }
+
+    .opf-section {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #1a6ef5;
+        border-bottom: 1.5px solid #e8edf5;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1rem;
+        margin-top: 1.25rem;
+    }
+
+        .opf-section:first-child {
+            margin-top: 0;
+        }
+
+    .opf-field {
+        margin-bottom: 1rem;
+    }
+
+    .opf-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0f3460;
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+        .opf-label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+    .opf-input, .opf-select {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        transition: border-color 0.2s,box-shadow 0.2s;
+        appearance: none;
+    }
+
+        .opf-input:focus, .opf-select:focus {
+            border-color: #1a6ef5;
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+            background: #fff;
+        }
+
+    .opf-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0.9rem 1.5rem;
+        border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+    }
+
+    .btn-opf-cancel {
+        padding: 0.6rem 1.25rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-opf-cancel:hover {
+            background: #e2e8f0;
+        }
+
+    .btn-opf-save {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s,transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+        .btn-opf-save:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-opf-save:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+    .pw-note {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+        display: block;
+    }
+</style>
+
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post" novalidate class="opf-form">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
 
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+    <div class="opf-body">
 
-    <div class="row g-4">
-        <!-- Left Column -->
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label asp-for="Name" class="form-label">Name <span class="text-danger">*</span></label>
-                <input asp-for="Name" class="form-control" placeholder="Enter full name" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+        <!-- Personal -->
+        <div class="opf-section">Personal Info</div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="opf-field">
+                    <label class="opf-label">Full Name<span class="req">*</span></label>
+                    <input asp-for="Name" class="opf-input" placeholder="e.g. Juan Dela Cruz" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="Gender" class="form-label">Gender <span class="text-danger">*</span></label>
-                <select asp-for="Gender" class="form-select" asp-items="ViewBag.GenderList">
-                    <option value="">-- Select Gender --</option>
-                </select>
-                <span asp-validation-for="Gender" class="text-danger"></span>
+            <div class="col-md-6">
+                <div class="opf-field">
+                    <label class="opf-label">Business Name</label>
+                    <input asp-for="BusinessName" class="opf-input" placeholder="e.g. Adventure Co." />
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="BusinessName" class="form-label">Business Name</label>
-                <input asp-for="BusinessName" class="form-control" placeholder="Optional" />
-                <span asp-validation-for="BusinessName" class="text-danger"></span>
+            <div class="col-md-4">
+                <div class="opf-field">
+                    <label class="opf-label">Age<span class="req">*</span></label>
+                    <input asp-for="Age" type="number" min="1" max="120" class="opf-input" required />
+                </div>
             </div>
+            <div class="col-md-4">
+                <div class="opf-field">
+                    <label class="opf-label">Gender</label>
+                    <select asp-for="Gender" class="opf-select" asp-items="ViewBag.GenderList">
+                        <option value="">— Select —</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="opf-field">
+                    <label class="opf-label">Role<span class="req">*</span></label>
+                    <select asp-for="RoleId" class="opf-select" asp-items="@(ViewData["RoleId"] as SelectList)" required>
+                        <option value="">— Select Role —</option>
+                    </select>
+                    <span asp-validation-for="RoleId" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
 
-            <div class="mb-3">
-                <label asp-for="Age" class="form-label">Age <span class="text-danger">*</span></label>
-                <input asp-for="Age" type="number" class="form-control" placeholder="Enter age" min="18" max="100" />
-                <span asp-validation-for="Age" class="text-danger"></span>
+        <!-- Account -->
+        <div class="opf-section">Account</div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="opf-field">
+                    <label class="opf-label">Username<span class="req">*</span></label>
+                    <input asp-for="Username" class="opf-input" required />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="opf-field">
+                    <label class="opf-label">Email Address</label>
+                    <input asp-for="EmailAddress" type="email" class="opf-input" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="opf-field">
+                    <label class="opf-label">New Password</label>
+                    <input name="NewPassword" type="password" class="opf-input" placeholder="Leave blank to keep current" />
+                    <span class="pw-note"><i class="bi bi-lock me-1"></i>Leave blank to keep the current password</span>
+                </div>
             </div>
         </div>
 
-        <!-- Right Column -->
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label asp-for="Username" class="form-label">Username <span class="text-danger">*</span></label>
-                <input asp-for="Username" class="form-control" placeholder="Choose a username" />
-                <span asp-validation-for="Username" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label">New Password (leave blank to keep current) <span class="text-danger">*</span></label>
-                <input asp-for="Password" type="password" class="form-control" placeholder="Enter new password" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-
-  
-            <div class="mb-3">
-                <label asp-for="EmailAddress" class="form-label">Email Address <span class="text-danger">*</span></label>
-                <input asp-for="EmailAddress" type="email" class="form-control" placeholder="user@example.com" />
-                <span asp-validation-for="EmailAddress" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="RoleId" class="form-label">Role <span class="text-danger">*</span></label>
-                <select asp-for="RoleId" class="form-select" asp-items='(SelectList)ViewData["RoleId"]'>
-                    <option value="">-- Select Role --</option>
-                </select>
-                <span asp-validation-for="RoleId" class="text-danger"></span>
-            </div>
-        </div>
     </div>
-    <div class="mt-3 text-end">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+
+    <div class="opf-footer">
+        <button type="button" class="btn-opf-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-opf-save">
+            <i class="bi bi-pencil me-1"></i>Update
+        </button>
     </div>
 </form>
-
-@section Scripts {
-    <script>
-        // Re-initialize unobtrusive validation for dynamically loaded form
-        $.validator.unobtrusive.parse('#operatorForm');
-    </script>
-}
