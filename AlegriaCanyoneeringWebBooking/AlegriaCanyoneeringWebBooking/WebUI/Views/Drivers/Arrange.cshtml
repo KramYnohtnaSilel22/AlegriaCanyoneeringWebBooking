@@ -3,140 +3,388 @@
     ViewData["Title"] = "Arrange Driver Queue";
 }
 
-<form id="__AjaxAntiForgeryForm" style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .aq-wrap * {
+        font-family: 'Outfit', sans-serif;
+    }
 
-<!-- Header -->
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-    <div>
-        <h2 class="fw-bold text-info mb-0">
-            <i class="fas fa-sort-numeric-up me-2"></i>Driver Queue Order
-        </h2>
-        <small class="text-muted">
-            Drag rows or use ↑↓ buttons to reorder. Click <strong>Save Order</strong> to apply.
-        </small>
+    /* ── Page header ──────────────────────────────────────── */
+    .aq-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .aq-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0 0 0.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .aq-header p {
+            font-size: 0.82rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+    .aq-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-aq {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.55rem 1rem;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s, transform 0.12s;
+        border: none;
+    }
+
+        .btn-aq:hover:not(:disabled) {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+
+        .btn-aq:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+    .btn-aq-back {
+        background: #f1f5f9;
+        color: #475569;
+        text-decoration: none;
+    }
+
+    .btn-aq-auto {
+        background: rgba(22,163,74,0.1);
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+
+    .btn-aq-save {
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+    /* ── Info banner ──────────────────────────────────────── */
+    .aq-info {
+        background: rgba(26,110,245,0.05);
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        font-size: 0.82rem;
+        color: #1e40af;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+        .aq-info i {
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+    /* ── Unsaved banner ───────────────────────────────────── */
+    .aq-unsaved {
+        background: rgba(240,165,0,0.08);
+        border: 1px solid #fde68a;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        font-size: 0.82rem;
+        color: #b45309;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* ── Table card ───────────────────────────────────────── */
+    .aq-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+    }
+
+    #queueTable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        #queueTable thead th {
+            background: #f8faff;
+            color: #0f3460;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.7rem 1rem;
+            border-bottom: 2px solid #e8edf5;
+            white-space: nowrap;
+        }
+
+        #queueTable tbody td {
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+    .queue-row:last-child td {
+        border-bottom: none;
+    }
+
+    .queue-row:hover {
+        background: #f0f6ff;
+    }
+
+    /* Drag handle */
+    .drag-handle {
+        cursor: grab;
+        color: #cbd5e1;
+        font-size: 1rem;
+        padding: 0 0.5rem;
+    }
+
+        .drag-handle:hover {
+            color: #1a6ef5;
+        }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background: #dbeafe !important;
+    }
+
+    /* Queue number */
+    .q-num {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(26,110,245,0.08);
+        color: #1a6ef5;
+        font-size: 0.82rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Avatar */
+    .q-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e8edf5;
+    }
+
+    .q-avatar-ph {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: 2px solid #e8edf5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+    }
+
+    /* DPosition badge */
+    .dpos-ok {
+        background: rgba(26,110,245,0.08);
+        color: #1a6ef5;
+        border: 1px solid #bfdbfe;
+    }
+
+    .dpos-warn {
+        background: rgba(240,165,0,0.1);
+        color: #b45309;
+        border: 1px solid #fde68a;
+    }
+
+    .dpos-badge {
+        font-size: 0.68rem;
+        font-family: monospace;
+        font-weight: 700;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    /* Move buttons */
+    .btn-move {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        transition: background 0.15s, color 0.15s;
+    }
+
+        .btn-move:hover {
+            background: #dbeafe;
+            color: #1a6ef5;
+            border-color: #bfdbfe;
+        }
+
+    /* Footer */
+    .aq-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+</style>
+
+<form id="__AjaxAntiForgeryForm" style="display:none;">@Html.AntiForgeryToken()</form>
+
+<div class="aq-wrap">
+
+    <!-- Header -->
+    <div class="aq-header">
+        <div>
+            <h2>
+                <i class="bi bi-sort-numeric-up" style="color:#1a6ef5;"></i>
+                Driver Queue Order
+            </h2>
+            <p>Drag rows or use ↑↓ buttons to reorder. Click <strong>Save Order</strong> to apply.</p>
+        </div>
+        <div class="aq-actions">
+            <a href="/Drivers" class="btn-aq btn-aq-back">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+            <button id="btnAutoQueue" class="btn-aq btn-aq-auto" onclick="autoQueue()">
+                <i class="bi bi-magic"></i> Auto Queue Missing
+            </button>
+            <button id="btnSaveOrder" class="btn-aq btn-aq-save" onclick="saveOrder()">
+                <i class="bi bi-save"></i> Save Order
+            </button>
+        </div>
     </div>
-    <div class="d-flex gap-2">
-        <a href="/Drivers" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i>Back to Drivers
-        </a>
-        <button id="btnAutoQueue" class="btn btn-outline-success" onclick="autoQueue()">
-            <i class="fas fa-magic me-1"></i>Auto Queue Missing
-        </button>
-        <button id="btnSaveOrder" class="btn btn-info text-white" onclick="saveOrder()">
-            <i class="fas fa-save me-1"></i>Save Order
-        </button>
+
+    <!-- Info -->
+    <div class="aq-info">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>
+            <strong>FIFO Queue</strong> — #1 is assigned first. Each driver receives a
+            <strong>DPosition</strong> spaced <strong>10 seconds</strong> apart when saved.
+            Drivers with lower DPosition are assigned earlier. &nbsp;|&nbsp;
+            <span style="color:#16a34a;font-weight:600;">
+                <i class="bi bi-magic me-1"></i>Auto Queue Missing
+            </span>
+            assigns a Unix timestamp only to drivers who don't have one yet.
+        </div>
     </div>
-</div>
 
-<!-- Info Banner -->
-<div class="alert alert-info py-2 small mb-3">
-    <i class="fas fa-info-circle me-1"></i>
-    <strong>FIFO Queue</strong> — #1 is assigned first. Each driver receives a
-    <strong>DPosition</strong> spaced <strong>10 seconds</strong> apart when saved.
-    Drivers with lower DPosition are assigned earlier.
-    &nbsp;|&nbsp;
-    <span class="text-success fw-semibold">
-        <i class="fas fa-magic me-1"></i>Auto Queue Missing
-    </span>
-    = assigns a Unix timestamp only to drivers who don't have one yet.
-</div>
+    <!-- Unsaved changes -->
+    <div id="unsavedBanner" class="aq-unsaved" style="display:none;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        You have <strong>unsaved changes</strong>. Click <strong>Save Order</strong> to apply.
+    </div>
 
-<!-- Change indicator -->
-<div id="unsavedBanner" class="alert alert-warning py-2 small mb-3" style="display:none;">
-    <i class="fas fa-exclamation-triangle me-1"></i>
-    You have <strong>unsaved changes</strong>. Click <strong>Save Order</strong> to apply.
-</div>
-
-<!-- Queue Table -->
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-bordered table-sm align-middle mb-0" id="queueTable">
-            <thead class="table-light">
+    <!-- Queue Table -->
+    <div class="aq-card">
+        <table id="queueTable">
+            <thead>
                 <tr>
-                    <th style="width:50px;" class="text-center text-muted">
-                        <i class="fas fa-grip-vertical"></i>
-                    </th>
-                    <th style="width:60px;" class="text-center">#</th>
-                    <th style="width:60px;">Photo</th>
+                    <th style="width:44px;"></th>
+                    <th style="width:56px;text-align:center;">#</th>
+                    <th style="width:56px;">Photo</th>
                     <th>Full Name</th>
                     <th style="width:160px;">Ref ID</th>
-                    <th style="width:140px;" class="text-center">DPosition</th>
-                    <th style="width:100px;" class="text-center">Move</th>
+                    <th style="width:150px;text-align:center;">DPosition</th>
+                    <th style="width:90px;text-align:center;">Move</th>
                 </tr>
             </thead>
             <tbody id="queueBody">
                 @for (int i = 0; i < Model.Count; i++)
                 {
                     var d = Model[i];
+                    bool hasTs = d.DPosition >= 1_000_000_000;
                     <tr data-id="@d.DriverId" class="queue-row">
 
-                        <!-- Drag Handle -->
-                        <td class="text-center text-muted drag-handle" style="cursor:grab;">
-                            <i class="fas fa-grip-vertical"></i>
+                        <!-- Drag handle -->
+                        <td class="drag-handle text-center">
+                            <i class="bi bi-grip-vertical"></i>
                         </td>
 
                         <!-- Queue # -->
-                        <td class="text-center fw-bold queue-num text-info">@(i + 1)</td>
+                        <td class="text-center">
+                            <span class="q-num queue-num">@(i + 1)</span>
+                        </td>
 
                         <!-- Photo -->
                         <td>
                             @if (!string.IsNullOrEmpty(d.Image))
                             {
-                                <img src="@d.Image"
-                                     style="width:40px;height:40px;object-fit:cover;"
-                                     class="rounded-circle border" />
+                                <img src="@d.Image" class="q-avatar"
+                                     onerror="this.style.display='none'" />
                             }
                             else
                             {
-                                <div style="width:40px;height:40px;"
-                                     class="rounded-circle border bg-secondary d-flex align-items-center justify-content-center">
-                                    <i class="fas fa-car text-white" style="font-size:14px;"></i>
+                                <div class="q-avatar-ph">
+                                    <i class="bi bi-car-front"></i>
                                 </div>
                             }
                         </td>
 
                         <!-- Name -->
-                        <td class="fw-semibold">@d.FullName</td>
+                        <td style="font-weight:600;">@d.FullName</td>
 
                         <!-- Ref ID -->
-                        <td class="text-muted small">
-                            <i class="fas fa-id-card me-1"></i>@d.RefId
+                        <td style="font-size:0.82rem;color:#94a3b8;">
+                            <i class="bi bi-upc me-1"></i>@d.RefId
                         </td>
 
-                        <!-- DPosition (live preview) -->
+                        <!-- DPosition -->
                         <td class="text-center">
-                            @if (d.DPosition < 1_000_000_000)
-                            {
-                                <span class="badge bg-warning text-dark border dpos-preview"
-                                      style="font-size:10px; font-family:monospace;"
-                                      title="No Unix timestamp — click Auto Queue">
-                                    @d.DPosition
-                                    <i class="fas fa-exclamation-triangle ms-1"></i>
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-light text-dark border dpos-preview"
-                                      style="font-size:10px; font-family:monospace;">
-                                    @d.DPosition
-                                </span>
-                            }
+                            <span class="dpos-badge dpos-@(hasTs ? "ok" : "warn") dpos-preview">
+                                @d.DPosition
+                                @if (!hasTs)
+                                {
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                }
+                            </span>
                         </td>
 
-                        <!-- Move Buttons -->
+                        <!-- Move buttons -->
                         <td class="text-center">
-                            <div class="d-flex gap-1 justify-content-center">
-                                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
-                                        title="Move Up"
-                                        onclick="moveRow(this, -1)">
-                                    <i class="fas fa-chevron-up"></i>
+                            <div style="display:flex;gap:0.3rem;justify-content:center;">
+                                <button class="btn-move" title="Move Up" onclick="moveRow(this,-1)">
+                                    <i class="bi bi-chevron-up"></i>
                                 </button>
-                                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
-                                        title="Move Down"
-                                        onclick="moveRow(this, 1)">
-                                    <i class="fas fa-chevron-down"></i>
+                                <button class="btn-move" title="Move Down" onclick="moveRow(this,1)">
+                                    <i class="bi bi-chevron-down"></i>
                                 </button>
                             </div>
                         </td>
@@ -146,206 +394,128 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Footer -->
+    <div class="aq-footer">
+        <a href="/Drivers" class="btn-aq btn-aq-back">
+            <i class="bi bi-x-lg"></i> Cancel
+        </a>
+        <button id="btnSaveOrder2" class="btn-aq btn-aq-save" onclick="saveOrder()">
+            <i class="bi bi-save"></i> Save Order
+        </button>
+    </div>
+
 </div>
 
-<div class="mt-3 d-flex justify-content-end gap-2">
-    <a href="/Drivers" class="btn btn-outline-secondary">
-        <i class="fas fa-times me-1"></i>Cancel
-    </a>
-    <button id="btnSaveOrder2" class="btn btn-info text-white" onclick="saveOrder()">
-        <i class="fas fa-save me-1"></i>Save Order
-    </button>
-</div>
+<!-- Toast container -->
+<div id="aqToastContainer"
+     class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;"></div>
 
 @section Scripts {
-    @* SortableJS for drag-and-drop *@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-
     <script>
         var isDirty = false;
 
-        // ============================================================
-        // Drag-and-drop via SortableJS
-        // ============================================================
-        var sortable = Sortable.create(document.getElementById('queueBody'), {
-            handle: '.drag-handle',
-            animation: 150,
-            ghostClass: 'table-info',
-            onEnd: function () {
-                refreshNumbers();
-                markDirty();
-            }
+        // ── Drag-and-drop ──────────────────────────────────────
+        Sortable.create(document.getElementById('queueBody'), {
+            handle: '.drag-handle', animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function () { refreshNumbers(); markDirty(); }
         });
 
-        // ============================================================
-        // ↑↓ Button move
-        // ============================================================
-        function moveRow(btn, direction) {
+        // ── ↑↓ move ───────────────────────────────────────────
+        function moveRow(btn, dir) {
             var row = $(btn).closest('tr');
-            if (direction === -1) {
-                var prev = row.prev('tr');
-                if (prev.length) row.insertBefore(prev);
-            } else {
-                var next = row.next('tr');
-                if (next.length) row.insertAfter(next);
-            }
-            refreshNumbers();
-            markDirty();
+            if (dir === -1) { var prev = row.prev('tr'); if (prev.length) row.insertBefore(prev); }
+            else            { var next = row.next('tr'); if (next.length) row.insertAfter(next); }
+            refreshNumbers(); markDirty();
         }
 
-        // ============================================================
-        // Refresh #queue numbers after any reorder
-        // ============================================================
+        // ── Refresh numbers ────────────────────────────────────
         function refreshNumbers() {
             $('#queueBody tr').each(function (i) {
                 $(this).find('.queue-num').text(i + 1);
             });
         }
 
-        // ============================================================
-        // Mark unsaved changes
-        // ============================================================
-        function markDirty() {
-            isDirty = true;
-            $('#unsavedBanner').show();
-        }
+        function markDirty() { isDirty = true; $('#unsavedBanner').show(); }
 
-        // ============================================================
-        // AUTO QUEUE — assign Unix timestamp to drivers missing one
-        // ============================================================
+        // ── Auto Queue ─────────────────────────────────────────
         function autoQueue() {
-            var btn = $('#btnAutoQueue');
-            btn.prop('disabled', true)
-               .html('<span class="spinner-border spinner-border-sm me-1"></span>Checking...');
-
+            var $btn = $('#btnAutoQueue');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Checking...');
             $.ajax({
-                url: '/Drivers/AutoQueue',
-                type: 'POST',
-                headers: {
-                    'RequestVerificationToken':
-                        $('input[name="__RequestVerificationToken"]').val()
-                },
+                url: '/Drivers/AutoQueue', type: 'POST',
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
                 success: function (res) {
                     if (res.success) {
-                        showToast(res.message, 'Auto Queue', res.count > 0 ? 'success' : 'info');
-                        if (res.count > 0) {
-                            // Reload the page to show updated DPosition values
-                            setTimeout(() => location.reload(), 1200);
-                        }
-                    } else {
-                        showToast(res.message, 'Error', 'danger');
-                    }
+                        showToast(res.message, res.count > 0 ? 'success' : 'info');
+                        if (res.count > 0) setTimeout(() => location.reload(), 1200);
+                    } else showToast(res.message, 'error');
                 },
-                error: function () {
-                    showToast('Error running auto queue.', 'Error', 'danger');
-                },
-                complete: function () {
-                    btn.prop('disabled', false)
-                       .html('<i class="fas fa-magic me-1"></i>Auto Queue Missing');
-                }
+                error: () => showToast('Error running auto queue.', 'error'),
+                complete: () => $btn.prop('disabled', false).html('<i class="bi bi-magic me-1"></i>Auto Queue Missing')
             });
         }
 
-        // ============================================================
-        // Save Order — POST ordered IDs to controller
-        // ============================================================
+        // ── Save Order ─────────────────────────────────────────
         function saveOrder() {
             var ids = [];
-            $('#queueBody tr').each(function () {
-                ids.push(parseInt($(this).data('id')));
-            });
+            $('#queueBody tr').each(function () { ids.push(parseInt($(this).data('id'))); });
 
-            var btns = $('#btnSaveOrder, #btnSaveOrder2');
-            btns.prop('disabled', true)
-                .html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+            var $btns = $('#btnSaveOrder, #btnSaveOrder2');
+            $btns.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
 
             $.ajax({
-                url: '/Drivers/Arrange',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(ids),
-                headers: {
-                    'RequestVerificationToken':
-                        $('input[name="__RequestVerificationToken"]').val()
-                },
+                url: '/Drivers/Arrange', type: 'POST',
+                contentType: 'application/json', data: JSON.stringify(ids),
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
                 success: function (res) {
                     if (res.success) {
-                        isDirty = false;
-                        $('#unsavedBanner').hide();
-                        showToast(res.message, 'Success', 'success');
-                        // Refresh DPosition preview badges
+                        isDirty = false; $('#unsavedBanner').hide();
+                        showToast(res.message, 'success');
                         var base = Math.floor(Date.now() / 1000);
                         $('#queueBody tr').each(function (i) {
-                            $(this).find('.dpos-preview').text(base + (i * 10));
+                            $(this).find('.dpos-preview')
+                                   .text(base + (i * 10))
+                                   .removeClass('dpos-warn').addClass('dpos-ok');
                         });
-                    } else {
-                        showToast(res.message, 'Error', 'danger');
-                    }
+                    } else showToast(res.message, 'error');
                 },
-                error: function () {
-                    showToast('Error saving queue order.', 'Error', 'danger');
-                },
-                complete: function () {
-                    btns.prop('disabled', false)
-                        .html('<i class="fas fa-save me-1"></i>Save Order');
-                }
+                error: () => showToast('Error saving queue order.', 'error'),
+                complete: () => $btns.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Save Order')
             });
         }
 
-        // ============================================================
-        // Warn before leaving with unsaved changes
-        // ============================================================
-        window.addEventListener('beforeunload', function (e) {
-            if (isDirty) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
+        // ── Unsaved changes warning ────────────────────────────
+        window.addEventListener('beforeunload', e => { if (isDirty) { e.preventDefault(); e.returnValue = ''; } });
 
-        // ============================================================
-        // Toast helper (reuses global showToast if available,
-        //               otherwise defines a local one)
-        // ============================================================
-        if (typeof showToast === 'undefined') {
-            function showToast(message, title, type) {
-                var bg = type === 'success' ? 'bg-success'
-                       : type === 'danger'  ? 'bg-danger'
-                       : type === 'warning' ? 'bg-warning text-dark'
-                       : 'bg-info';
-                var toast = $(`
-                    <div class="toast align-items-center text-white ${bg} border-0
-                                position-fixed top-0 end-0 m-3" style="z-index:9999;">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <strong>${title}:</strong> ${message}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                                    data-bs-dismiss="toast"></button>
-                        </div>
-                    </div>`);
-                $('body').append(toast);
-                new bootstrap.Toast(toast[0], { delay: 3500 }).show();
-                toast.on('hidden.bs.toast', () => toast.remove());
-            }
+        // ── Toast ──────────────────────────────────────────────
+        function showToast(message, type = 'info') {
+            const map = {
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
+                warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   title: 'Warning' },
+                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Info'    }
+            };
+            const { bg, icon, title } = map[type] || map.info;
+            const id = 'aqt-' + Date.now();
+            const html = `
+                <div id="${id}" class="toast border-0 text-white"
+                     style="background:${bg};border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);"
+                     role="alert" aria-atomic="true" data-bs-delay="3500">
+                    <div class="toast-header border-0 text-white" style="background:transparent;">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" style="padding-top:0;">${message}</div>
+                </div>`;
+            const c = document.getElementById('aqToastContainer');
+            c.insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', () => el.remove());
         }
     </script>
-
-    <style>
-        .queue-row:hover {
-            background-color: #f0fdff;
-        }
-
-        .drag-handle:hover {
-            color: #0dcaf0 !important;
-        }
-
-        .sortable-ghost {
-            opacity: 0.4;
-            background: #cfe2ff !important;
-        }
-
-        #queueTable th, #queueTable td {
-            vertical-align: middle;
-        }
-    </style>
 }

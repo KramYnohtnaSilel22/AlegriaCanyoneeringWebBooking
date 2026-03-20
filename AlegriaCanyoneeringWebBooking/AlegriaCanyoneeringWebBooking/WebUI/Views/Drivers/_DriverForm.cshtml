@@ -4,107 +4,319 @@
     var formAction = action == "Edit" ? "/Drivers/Edit" : "/Drivers/Create";
 }
 
-<form action="@formAction" method="post" enctype="multipart/form-data" novalidate>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .df-form * {
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .df-body {
+        padding: 1.4rem 1.5rem 1rem;
+    }
+
+    /* Section label */
+    .df-section {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #1a6ef5;
+        border-bottom: 1.5px solid #e8edf5;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1rem;
+        margin-top: 1.25rem;
+    }
+
+        .df-section:first-child {
+            margin-top: 0;
+        }
+
+    /* Field */
+    .df-field {
+        margin-bottom: 1rem;
+    }
+
+    .df-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0f3460;
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+        .df-label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+    .df-input, .df-textarea {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .df-input:focus, .df-textarea:focus {
+            border-color: #1a6ef5;
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+            background: #fff;
+        }
+
+        .df-input[readonly] {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+    .df-textarea {
+        resize: vertical;
+        min-height: 72px;
+    }
+
+    /* Photo preview */
+    .photo-current {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.75rem;
+        background: #f8faff;
+        border: 1px solid #e8edf5;
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+    }
+
+        .photo-current img {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #e8edf5;
+        }
+
+    .photo-current-label {
+        font-size: 0.78rem;
+        color: #64748b;
+    }
+
+    .photo-current-path {
+        font-size: 0.68rem;
+        color: #94a3b8;
+        word-break: break-all;
+    }
+
+    .photo-preview-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.75rem;
+        background: rgba(26,110,245,0.04);
+        border: 1px dashed #bfdbfe;
+        border-radius: 10px;
+        margin-top: 0.75rem;
+    }
+
+        .photo-preview-wrap img {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+    /* Footer */
+    .df-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0.9rem 1.5rem;
+        border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+    }
+
+    .btn-df-cancel {
+        padding: 0.6rem 1.25rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-df-cancel:hover {
+            background: #e2e8f0;
+        }
+
+    .btn-df-save {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+        .btn-df-save:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-df-save:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+</style>
+
+<form action="@formAction" method="post" enctype="multipart/form-data" novalidate class="df-form">
     @Html.AntiForgeryToken()
     <input type="hidden" name="DriverId" value="@Model.DriverId" />
     <input type="hidden" name="DPosition" value="@Model.DPosition" />
     <input type="hidden" name="Image" value="@Model.Image" />
 
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Reference ID</label>
-            <input name="RefId" value="@Model.RefId" class="form-control"
-                   readonly style="background-color:#f5f5f5; color:#555;" />
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Position ID</label>
-            <input type="text" value="@Model.DPosition" class="form-control"
-                   readonly style="background-color:#f5f5f5; color:#555;" />
-            <input name="DPosition" type="hidden" value="@Model.DPosition" />
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label">First Name <span class="text-danger">*</span></label>
-            <input name="FName" value="@Model.FName" class="form-control" required />
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Middle Name</label>
-            <input name="MName" value="@Model.MName" class="form-control" placeholder="Optional" />
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Last Name <span class="text-danger">*</span></label>
-            <input name="LName" value="@Model.LName" class="form-control" required />
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Phone Number</label>
-            <input name="PNumber" value="@Model.PNumber" class="form-control" />
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Contact Number</label>
-            <input name="CNumber" value="@Model.CNumber" class="form-control" />
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label">CTC Date <span class="text-danger">*</span></label>
-            <input name="CtcDate"
-                   type="date"
-                   value="@(DateTime.TryParse(Model.CtcDate, out var d) ? d.ToString("yyyy-MM-dd") : "")"
-                   class="form-control"
-                   required />
-        </div>
-        <div class="col-md-12 mb-3">
-            <label class="form-label">Address</label>
-            <textarea name="Address" class="form-control" rows="2">@Model.Address</textarea>
-        </div>
+    <div class="df-body">
 
-        <div class="col-md-12 mb-3">
-            <label class="form-label">Driver Photo</label>
-
-            @if (!string.IsNullOrEmpty(Model?.Image))
-            {
-                <div class="mb-2 d-flex align-items-center gap-3">
-                    <!-- ✅ Direct path — string stored in DB -->
-                    <img src="@Model.Image"
-                         alt="Driver Photo"
-                         id="currentPhoto"
-                         class="rounded border"
-                         style="width:100px; height:100px; object-fit:cover;"
-                         onerror="this.style.display='none'" />
-                    <div>
-                        <small class="text-muted d-block">Current photo</small>
-                        <small class="text-secondary" style="font-size:10px;">@Model.Image</small><br />
-                        <small class="text-muted">Upload new image to replace</small>
-                    </div>
+        <!-- Identity -->
+        <div class="df-section">Identity</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">Reference ID</label>
+                    <input class="df-input" value="@Model.RefId" name="RefId" readonly />
                 </div>
-            }
-
-            <input type="file" name="PhotoFile" id="photoFileInput" class="form-control"
-                   accept="image/jpeg,image/png,image/webp,image/jpg"
-                   onchange="previewPhoto(this)" />
-
-            <div class="mt-2" id="previewContainer" style="display:none;">
-                <small class="text-muted d-block mb-1">New photo preview:</small>
-                <img id="photoPreview" src="#" alt="Preview"
-                     class="rounded border"
-                     style="width:100px; height:100px; object-fit:cover;" />
+            </div>
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">Position ID</label>
+                    <input class="df-input" value="@Model.DPosition" readonly />
+                    <input type="hidden" name="DPosition" value="@Model.DPosition" />
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="text-end mt-2">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">
+        <!-- Name -->
+        <div class="df-section">Name</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">First Name<span class="req">*</span></label>
+                    <input class="df-input" name="FName" value="@Model.FName" required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">Middle Name</label>
+                    <input class="df-input" name="MName" value="@Model.MName" placeholder="Optional" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">Last Name<span class="req">*</span></label>
+                    <input class="df-input" name="LName" value="@Model.LName" required />
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="df-section">Contact</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">Phone Number</label>
+                    <input class="df-input" name="PNumber" value="@Model.PNumber" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">Contact Number</label>
+                    <input class="df-input" name="CNumber" value="@Model.CNumber" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="df-field">
+                    <label class="df-label">CTC Date<span class="req">*</span></label>
+                    <input class="df-input" name="CtcDate" type="date"
+                           value="@(DateTime.TryParse(Model.CtcDate, out var d) ? d.ToString("yyyy-MM-dd") : "")"
+                           required />
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="df-field">
+                    <label class="df-label">Address</label>
+                    <textarea class="df-textarea" name="Address">@Model.Address</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo -->
+        <div class="df-section">Photo</div>
+
+        @if (!string.IsNullOrEmpty(Model?.Image))
+        {
+            <div class="photo-current">
+                <img src="@Model.Image" id="currentPhoto"
+                     alt="Current photo" onerror="this.style.display='none'" />
+                <div>
+                    <div class="photo-current-label">Current photo</div>
+                    <div class="photo-current-path">@Model.Image</div>
+                    <div class="photo-current-label mt-1">Upload a new image to replace</div>
+                </div>
+            </div>
+        }
+
+        <div class="df-field">
+            <label class="df-label">Upload Photo</label>
+            <input class="df-input" type="file" name="PhotoFile" id="photoFileInput"
+                   accept="image/jpeg,image/png,image/webp,image/jpg"
+                   onchange="previewDriverPhoto(this)"
+                   style="padding:0.5rem 0.9rem;cursor:pointer;" />
+        </div>
+
+        <div class="photo-preview-wrap" id="previewContainer" style="display:none;">
+            <img id="photoPreview" src="#" alt="Preview" />
+            <div>
+                <div class="photo-current-label" style="color:#1a6ef5;font-weight:600;">New photo preview</div>
+                <div class="photo-current-label">This will replace the current photo on save</div>
+            </div>
+        </div>
+
+    </div><!-- /df-body -->
+
+    <div class="df-footer">
+        <button type="button" class="btn-df-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-df-save">
+            <i class="bi bi-@(action == "Edit" ? "pencil" : "save") me-1"></i>
             @(action == "Edit" ? "Update" : "Save")
         </button>
     </div>
 </form>
 
 <script>
-    function previewPhoto(input) {
+    function previewDriverPhoto(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
             reader.onload = function (e) {
-                $('#photoPreview').attr('src', e.target.result);
-                $('#previewContainer').show();
-                $('#currentPhoto').css('opacity', '0.4');
+                document.getElementById('photoPreview').src = e.target.result;
+                document.getElementById('previewContainer').style.display = 'flex';
+                var cur = document.getElementById('currentPhoto');
+                if (cur) cur.style.opacity = '0.35';
             };
             reader.readAsDataURL(input.files[0]);
         }
