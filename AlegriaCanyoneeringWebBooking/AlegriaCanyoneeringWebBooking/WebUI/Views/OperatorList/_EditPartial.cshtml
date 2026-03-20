@@ -1,61 +1,187 @@
 ﻿@model AlegriaCanyoneeringWebBooking.Models.OperatorList
 
-<form asp-action="Edit" method="post" id="operatorForm" novalidate>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .olf-form * {
+        font-family: 'Outfit',sans-serif;
+    }
+
+    .olf-body {
+        padding: 1.4rem 1.5rem 1rem;
+    }
+
+    .olf-section {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #1a6ef5;
+        border-bottom: 1.5px solid #e8edf5;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1rem;
+        margin-top: 1.25rem;
+    }
+
+        .olf-section:first-child {
+            margin-top: 0;
+        }
+
+    .olf-field {
+        margin-bottom: 1rem;
+    }
+
+    .olf-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0f3460;
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+        .olf-label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+    .olf-input, .olf-select {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        transition: border-color 0.2s,box-shadow 0.2s;
+        appearance: none;
+    }
+
+        .olf-input:focus, .olf-select:focus {
+            border-color: #1a6ef5;
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+            background: #fff;
+        }
+
+    .olf-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0.9rem 1.5rem;
+        border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+    }
+
+    .btn-olf-cancel {
+        padding: 0.6rem 1.25rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-olf-cancel:hover {
+            background: #e2e8f0;
+        }
+
+    .btn-olf-save {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s,transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+        .btn-olf-save:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-olf-save:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+</style>
+
+<form asp-action="Edit" method="post" id="operatorForm" novalidate class="olf-form">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="OperatorId" />
-    <div class="row g-4">
-        <!-- Left Column -->
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label asp-for="OwnerName" class="form-label">Owner Name <span class="text-danger">*</span></label>
-                <input asp-for="OwnerName" class="form-control" placeholder="Enter owner's name" />
-                <span asp-validation-for="OwnerName" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Gender" class="form-label">Gender <span class="text-danger">*</span></label>
-                <select asp-for="Gender" class="form-select" required>
-                    <option value="">-- Select Gender --</option>
-                    <option value="M">M - Male</option>
-                    <option value="F">F - Female</option>
-                </select>
+    <div class="olf-body">
 
-                <span asp-validation-for="Gender" class="validation-message text-danger small"></span>
+        <div class="olf-section">Business Info</div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="olf-field">
+                    <label class="olf-label">Owner Name<span class="req">*</span></label>
+                    <input asp-for="OwnerName" class="olf-input" placeholder="e.g. Juan Dela Cruz" />
+                    <span asp-validation-for="OwnerName" class="text-danger small"></span>
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="BusinessName" class="form-label">Business Name <span class="text-danger">*</span></label>
-                <input asp-for="BusinessName" class="form-control" placeholder="e.g. Adventure Co." />
-                <span asp-validation-for="BusinessName" class="text-danger"></span>
+            <div class="col-md-6">
+                <div class="olf-field">
+                    <label class="olf-label">Gender<span class="req">*</span></label>
+                    <select asp-for="Gender" class="olf-select" required>
+                        <option value="">— Select —</option>
+                        <option value="M">M - Male</option>
+                        <option value="F">F - Female</option>
+                    </select>
+                    <span asp-validation-for="Gender" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="olf-field">
+                    <label class="olf-label">Business Name<span class="req">*</span></label>
+                    <input asp-for="BusinessName" class="olf-input" placeholder="e.g. Adventure Co." />
+                    <span asp-validation-for="BusinessName" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="olf-field">
+                    <label class="olf-label">Business Permit<span class="req">*</span></label>
+                    <input asp-for="BussPermit" class="olf-input" placeholder="Enter permit number" />
+                    <span asp-validation-for="BussPermit" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="olf-field">
+                    <label class="olf-label">Location<span class="req">*</span></label>
+                    <input asp-for="Location" class="olf-input" placeholder="Enter business location" />
+                    <span asp-validation-for="Location" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="olf-field">
+                    <label class="olf-label">Status<span class="req">*</span></label>
+                    <select asp-for="Status" class="olf-select">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                    <span asp-validation-for="Status" class="text-danger small"></span>
+                </div>
             </div>
         </div>
 
-        <!-- Right Column -->
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label asp-for="BussPermit" class="form-label">Business Permit <span class="text-danger">*</span></label>
-                <input asp-for="BussPermit" class="form-control" placeholder="Enter permit number" />
-                <span asp-validation-for="BussPermit" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Location" class="form-label">Location <span class="text-danger">*</span></label>
-                <input asp-for="Location" class="form-control" placeholder="Enter business location" />
-                <span asp-validation-for="Location" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Status" class="form-label">Status <span class="text-danger">*</span></label>
-                <select asp-for="Status" class="form-select">
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
-        </div>
     </div>
-
-    <div class="mt-3 text-end">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+    <div class="olf-footer">
+        <button type="button" class="btn-olf-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-olf-save">
+            <i class="bi bi-pencil me-1"></i>Update
+        </button>
     </div>
 </form>
