@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -16,23 +14,26 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public BatchesController(ApplicationDbContext context, ILogger<BatchesController> logger)
         {
             _context = context;
-            _logger = logger;
+            _logger  = logger;
         }
 
-        // MAIN VIEW
+        // =========================================================
+        // INDEX
+        // =========================================================
         public IActionResult Index() => View();
 
-        // ✅ DataTables endpoint
+        // =========================================================
+        // DATATABLE
+        // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GetBatches()
         {
             try
             {
-                // DataTables params
-                var draw = Request.Form["draw"].FirstOrDefault();
-                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
-                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+                var draw        = Request.Form["draw"].FirstOrDefault();
+                var start       = Convert.ToInt32(Request.Form["start"].FirstOrDefault()  ?? "0");
+                var length      = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
                 var searchValue = Request.Form["search[value]"].FirstOrDefault()?.ToLower();
 
                 var query = _context.Batches
@@ -44,11 +45,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     var pattern = $"%{searchValue}%";
                     query = query.Where(b =>
                         EF.Functions.Like(b.Operators.BusinessName!, pattern) ||
-                        EF.Functions.Like(b.ArrivalDate!, pattern)
+                        EF.Functions.Like(b.ArrivalDate!,            pattern)
                     );
                 }
 
-                var totalRecords = await _context.Batches.CountAsync();
+                var totalRecords    = await _context.Batches.CountAsync();
                 var filteredRecords = await query.CountAsync();
 
                 var data = await query
@@ -57,21 +58,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .Take(length)
                     .Select(b => new
                     {
-                        id = b.BatchId,
-                        operatorName = b.Operators.BusinessName,
-                        localGuests = b.NoOfLocalGuest,
+                        id            = b.BatchId,
+                        operatorName  = b.Operators.BusinessName,
+                        localGuests   = b.NoOfLocalGuest,
                         foreignGuests = b.NoOfForeignGuest,
-                        guides = b.NoOfTGuide,
-                        drivers = b.NoOfMDriver,
-                        totalGuests = b.TotalNoOfGuest,
-                        arrivalUnix = b.ArrivalDate // 👈 keep as raw Unix timestamp (string or long)
+                        guides        = b.NoOfTGuide,
+                        drivers       = b.NoOfMDriver,
+                        totalGuests   = b.TotalNoOfGuest,
+                        arrivalUnix   = b.ArrivalDate
                     })
                     .ToListAsync();
 
                 return Json(new
                 {
                     draw,
-                    recordsTotal = totalRecords,
+                    recordsTotal    = totalRecords,
                     recordsFiltered = filteredRecords,
                     data
                 });
@@ -79,11 +80,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading batches");
-                return Json(new { error = "Error loading batch data." });
+                return StatusCode(500, new
+                {
+                    error = ex.Message,
+                    inner = ex.InnerException?.Message,
+                    stack = ex.StackTrace
+                });
             }
         }
 
-        // ✅ AJAX Delete
+        // =========================================================
+        // DELETE — AJAX
+        // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAjax(int id)
@@ -94,15 +102,30 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (batch == null)
                     return Json(new { success = false, message = "Batch not found." });
 
+                // Check FK dependencies — add more checks here if needed
+                // e.g. bool hasBookings = await _context.Bookings.AnyAsync(b => b.BatchId == id);
+                // if (hasBookings) return Json(new { success = false, message = "Cannot delete — batch has bookings." });
+
                 _context.Batches.Remove(batch);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Batch deleted successfully." });
+                return Json(new { success = true, message = $"Batch #{id} deleted successfully." });
+            }
+            catch (DbUpdateException ex) when (
+                ex.InnerException?.Message.Contains("FOREIGN KEY")  == true ||
+                ex.InnerException?.Message.Contains("REFERENCE")    == true)
+            {
+                return Json(new { success = false, message = "Cannot delete — this batch is linked to existing records." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting batch");
-                return Json(new { success = false, message = "Error deleting batch." });
+                _logger.LogError(ex, "Error deleting batch {Id}", id);
+                return StatusCode(500, new
+                {
+                    error = ex.Message,
+                    inner = ex.InnerException?.Message,
+                    stack = ex.StackTrace
+                });
             }
         }
     }

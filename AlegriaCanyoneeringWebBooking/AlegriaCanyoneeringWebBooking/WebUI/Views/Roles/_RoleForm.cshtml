@@ -1,0 +1,138 @@
+@model AlegriaCanyoneeringWebBooking.Models.Role
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+    .rf-form * {
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .rf-body {
+        padding: 1.25rem 1.25rem 0.75rem;
+    }
+
+    .rf-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0f3460;
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+        .rf-label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+    .rf-input {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+
+        .rf-input:focus {
+            border-color: #1a6ef5;
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+            background: #fff;
+        }
+
+    .rf-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+    }
+
+    .btn-rf-cancel {
+        padding: 0.55rem 1.1rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-rf-cancel:hover {
+            background: #e2e8f0;
+        }
+
+    .btn-rf-save {
+        padding: 0.55rem 1.25rem;
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+        .btn-rf-save:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+</style>
+
+@{
+    var isEdit = ViewData["Action"]?.ToString() == "Edit";
+    var formAction = isEdit
+        ? Url.Action("Edit", "Roles", new { id = Model.RoleId })
+        : Url.Action("Create", "Roles");
+}
+
+<form action="@formAction" method="post" novalidate class="rf-form">
+    @Html.AntiForgeryToken()
+
+    @* ONLY send RoleId on Edit — never on Create *@
+    @if (isEdit)
+    {
+        <input type="hidden" name="RoleId" value="@Model.RoleId" />
+    }
+
+    <div class="rf-body">
+        <div class="mb-3">
+            <label class="rf-label">Role Name<span class="req">*</span></label>
+            <input asp-for="Name"
+                   class="rf-input"
+                   placeholder="e.g. Super Admin"
+                   autocomplete="off" />
+            <span asp-validation-for="Name" class="text-danger small d-block mt-1"></span>
+        </div>
+    </div>
+
+    <div class="rf-footer">
+        <button type="button" class="btn-rf-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-rf-save">
+            @if (isEdit)
+            {
+                <i class="bi bi-pencil me-1"></i>
+                <text>Update</text>
+            }
+            else
+            {
+                <i class="bi bi-save me-1"></i>
+                <text>Save</text>
+            }
+        </button>
+    </div>
+</form>

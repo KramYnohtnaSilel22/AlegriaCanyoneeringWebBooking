@@ -2,159 +2,332 @@
     ViewData["Title"] = "Batches";
 }
 
-<h2 class="fw-bold mb-4 text-primary">Batches</h2>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-<!-- Hidden Anti-Forgery Token -->
-<form id="__AjaxAntiForgeryForm" style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
+<style>
+    .bt-wrap * { font-family: 'Outfit', sans-serif; }
 
-<div class="table-responsive">
-    <table id="batchesTable" class="table table-bordered table-striped table-sm align-middle w-100">
-        <thead class="table-light">
-            <tr>
-                <th>Batch ID</th>
-                <th>Operator</th>
-                <th>Local Guests</th>
-                <th>Foreign Guests</th>
-                <th>Tour Guides</th>
-                <th>Drivers</th>
-                <th>Total Guests</th>
-                <th>Arrival Date</th>
-                <th class="text-center">Actions</th>
-            </tr>
-        </thead>
-    </table>
+    .bt-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .bt-header h2 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f3460;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .bt-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+    }
+
+    .bt-card-body { padding: 1.25rem; }
+
+    #batchesTable thead th {
+        background: #f8faff;
+        color: #0f3460;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e8edf5;
+        white-space: nowrap;
+        padding: 0.75rem 1rem;
+    }
+
+    #batchesTable tbody td {
+        vertical-align: middle;
+        font-size: 0.875rem;
+        color: #334155;
+        padding: 0.7rem 1rem;
+    }
+
+    #batchesTable tbody tr:hover { background: #f0f6ff; }
+
+    .btn-act {
+        padding: 0.28rem 0.65rem;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .btn-act:hover { opacity: 0.82; }
+
+    .btn-delete-act {
+        background: rgba(239,68,68,0.08);
+        color: #ef4444;
+        border: 1px solid #fca5a5;
+    }
+
+    #deleteConfirmModal .modal-content { border-radius: 16px; border: 0; }
+
+    .del-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(239,68,68,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.75rem;
+    }
+
+    .del-icon i { font-size: 1.4rem; color: #ef4444; }
+
+    .stat-badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+</style>
+
+<form id="__AjaxAntiForgeryForm" style="display:none;">@Html.AntiForgeryToken()</form>
+
+<div class="bt-wrap">
+    <div class="bt-header">
+        <h2>
+            <i class="bi bi-collection-fill" style="color:#1a6ef5;"></i> Batches
+        </h2>
+    </div>
+
+    <div class="bt-card">
+        <div class="bt-card-body">
+            <div class="table-responsive">
+                <table id="batchesTable" class="table table-hover align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th class="text-center">ID</th>
+                            <th>Operator</th>
+                            <th class="text-center">Local</th>
+                            <th class="text-center">Foreign</th>
+                            <th class="text-center">Guides</th>
+                            <th class="text-center">Drivers</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center">Arrival Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- Delete Confirm Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
+        <div class="modal-content shadow">
+            <div class="modal-body text-center pt-4 pb-3 px-4">
+                <div class="del-icon"><i class="bi bi-trash3-fill"></i></div>
+                <h6 class="fw-bold mb-1" style="color:#0f3460;">Delete Batch?</h6>
+                <p class="text-muted mb-0" style="font-size:0.875rem;">
+                    Are you sure you want to delete <strong id="deleteBatchName"></strong>?
+                    <br><span style="font-size:0.78rem;color:#ef4444;">This action cannot be undone.</span>
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cancel
+                </button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger rounded-pill px-4">
+                    <i class="bi bi-trash3 me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="btToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;"></div>
+
 @section Scripts {
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<script>
+    function showToast(message, type) {
+        type = type || 'success';
+        var map = {
+            success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+            error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
+            warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   title: 'Warning' }
+        };
+        var m  = map[type] || map.success;
+        var id = 'btt-' + Date.now();
+        var html =
+            '<div id="' + id + '" class="toast border-0 text-white" '
+            + 'style="background:' + m.bg + ';border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);" '
+            + 'role="alert" aria-atomic="true" data-bs-delay="4000">'
+            + '<div class="toast-header border-0 text-white" style="background:transparent;">'
+            + '<i class="bi ' + m.icon + ' me-2"></i>'
+            + '<strong class="me-auto">' + m.title + '</strong>'
+            + '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>'
+            + '</div>'
+            + '<div class="toast-body" style="padding-top:0;">' + message + '</div>'
+            + '</div>';
+        document.getElementById('btToastContainer').insertAdjacentHTML('beforeend', html);
+        var el = document.getElementById(id);
+        new bootstrap.Toast(el).show();
+        el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+    }
 
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    function cleanupModals() {
+        document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
 
-    <script>
-        // ✅ Toast helper
-        function showToast(message, type = 'success') {
-            const bgClass = {
-                success: 'bg-success',
-                error: 'bg-danger',
-                warning: 'bg-warning text-dark',
-                info: 'bg-info'
-            }[type] || 'bg-success';
+    function formatUnixTimestamp(unix) {
+        if (!unix) return '—';
+        var ts = parseInt(unix);
+        if (isNaN(ts)) return unix;
+        return new Date(ts * 1000).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit', hour12: true
+        });
+    }
 
-            const toast = $(`
-                <div class="toast text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                    <div class="toast-header ${bgClass} text-white border-0">
-                        <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body">${message}</div>
-                </div>
-            `);
+    $(function () {
 
-            if (!$('#toastContainer').length)
-                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;"></div>');
-
-            $('#toastContainer').append(toast);
-            new bootstrap.Toast(toast[0]).show();
+        function getToken() {
+            return $('#__AjaxAntiForgeryForm input[name="__RequestVerificationToken"]').val();
         }
 
-        // ✅ Convert Unix timestamp to readable format
-        function formatUnixTimestamp(unix) {
-            if (!unix) return '';
-            const timestamp = parseInt(unix);
-            if (isNaN(timestamp)) return unix;
-
-            const date = new Date(timestamp * 1000);
-            const options = {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            };
-            return date.toLocaleString('en-US', options); // "Nov 8, 2024, 10:00 AM"
+        function escHtml(str) {
+            return $('<div>').text(str || '').html();
         }
 
-        $(document).ready(function () {
-
-            // ✅ Initialize DataTable
-            const table = $('#batchesTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: '@Url.Action("GetBatches", "Batches")',
-                    type: 'POST',
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    dataSrc: 'data',
-                    error: function (xhr) {
-                        console.error(xhr.responseText);
-                        showToast("Failed to load batches.", "error");
+        // ── DataTable ─────────────────────────────────────────────
+        var table = $('#batchesTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '@Url.Action("GetBatches", "Batches")',
+                type: 'POST',
+                dataSrc: 'data',
+                data: function (d) { d.__RequestVerificationToken = getToken(); },
+                error: function (xhr) {
+                    console.error('DataTable error:', xhr.responseText);
+                    showToast('Failed to load batches.', 'error');
+                }
+            },
+            columns: [
+                {
+                    data: 'id',
+                    className: 'text-center',
+                    render: function (d) {
+                        return '<span class="stat-badge" style="background:#e0e7ff;color:#3730a3;">#' + d + '</span>';
                     }
                 },
-                columns: [
-                    { data: 'id', className: 'text-center' },
-                    { data: 'operatorName', defaultContent: '' },
-                    { data: 'localGuests', className: 'text-center' },
-                    { data: 'foreignGuests', className: 'text-center' },
-                    { data: 'guides', className: 'text-center' },
-                    { data: 'drivers', className: 'text-center' },
-                    { data: 'totalGuests', className: 'text-center' },
-                    {
-                        data: 'arrivalUnix',
-                        className: 'text-center',
-                        render: function (data) {
-                            return formatUnixTimestamp(data); // 👈 Converts here
-                        }
-                    },
-                    {
-                        data: 'id',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            return `
-                                <button type="button" class="btn btn-sm btn-danger delete-btn"
-                                        data-id="${data}" data-name="Batch ${data}">
-                                    <i class="fas fa-trash-alt"></i> Delete
-                                </button>`;
-                        }
+                {
+                    data: 'operatorName',
+                    defaultContent: '—',
+                    render: function (d) {
+                        return '<span class="fw-semibold">' + escHtml(d || '—') + '</span>';
                     }
-                ],
-                pageLength: 10,
-                responsive: true,
-                autoWidth: false,
-                language: {
-                    emptyTable: "No batches found",
-                    processing: "Loading..."
+                },
+                { data: 'localGuests',   className: 'text-center', defaultContent: '0' },
+                { data: 'foreignGuests', className: 'text-center', defaultContent: '0' },
+                { data: 'guides',        className: 'text-center', defaultContent: '0' },
+                { data: 'drivers',       className: 'text-center', defaultContent: '0' },
+                {
+                    data: 'totalGuests',
+                    className: 'text-center',
+                    render: function (d) {
+                        return '<span class="stat-badge" style="background:#dcfce7;color:#166534;">' + (d || 0) + '</span>';
+                    }
+                },
+                {
+                    data: 'arrivalUnix',
+                    className: 'text-center',
+                    render: function (d) { return formatUnixTimestamp(d); }
+                },
+                {
+                    data: 'id',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center',
+                    render: function (data, type, row) {
+                        return '<button class="btn-act btn-delete-act btn-delete" '
+                            + 'data-id="' + data + '" '
+                            + 'data-name="Batch #' + data + ' (' + escHtml(row.operatorName || '') + ')">'
+                            + '<i class="bi bi-trash3"></i> Delete</button>';
+                    }
                 }
-            });
+            ],
+            pageLength: 10,
+            responsive: true,
+            autoWidth: false,
+            language: { emptyTable: 'No batches found.', processing: 'Loading...' }
+        });
 
-            // ✅ Delete via AJAX
-            $('#batchesTable').on('click', '.delete-btn', function () {
-                const id = $(this).data('id');
-                const name = $(this).data('name');
+        // ── Delete — open confirm ─────────────────────────────────
+        var pendingDeleteId = null;
 
-                if (confirm(`Delete ${name}?`)) {
-                    $.post('@Url.Action("DeleteAjax", "Batches")', {
-                        id: id,
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                    }, function (res) {
-                        if (res.success) {
-                            showToast(res.message);
-                            table.ajax.reload(null, false);
-                        } else {
-                            showToast(res.message, 'error');
-                        }
-                    }).fail(() => showToast('Server error deleting batch.', 'error'));
-                }
+        $('#batchesTable').on('click', '.btn-delete', function () {
+            pendingDeleteId = $(this).data('id');
+            $('#deleteBatchName').text($(this).data('name'));
+
+            var existing = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+            if (existing) { existing.hide(); existing.dispose(); }
+            cleanupModals();
+
+            new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+        });
+
+        $('#deleteConfirmModal').on('hidden.bs.modal', function () { cleanupModals(); });
+
+        // ── Delete — confirm ──────────────────────────────────────
+        $('#confirmDeleteBtn').on('click', function () {
+            if (!pendingDeleteId) return;
+
+            var $btn        = $(this);
+            var deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+
+            $btn.prop('disabled', true)
+                .html('<span class="spinner-border spinner-border-sm me-1"></span>Deleting...');
+
+            $.ajax({
+                url: '@Url.Action("DeleteAjax", "Batches")',
+                type: 'POST',
+                data: { id: pendingDeleteId },
+                headers: { 'RequestVerificationToken': getToken() }
+            })
+            .done(function (res) {
+                if (deleteModal) deleteModal.hide();
+                cleanupModals();
+                showToast(res.message, res.success ? 'success' : 'error');
+                if (res.success) table.ajax.reload(null, false);
+            })
+            .fail(function (xhr) {
+                if (deleteModal) deleteModal.hide();
+                cleanupModals();
+                console.error('Delete error:', xhr.responseText);
+                showToast('Error deleting batch.', 'error');
+            })
+            .always(function () {
+                $btn.prop('disabled', false).html('<i class="bi bi-trash3 me-1"></i>Delete');
+                pendingDeleteId = null;
             });
         });
-    </script>
+    });
+</script>
 }

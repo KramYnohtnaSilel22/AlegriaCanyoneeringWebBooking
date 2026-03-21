@@ -2,156 +2,419 @@
     ViewData["Title"] = "Guest Briefings";
 }
 
-<h2 class="fw-bold mb-4 text-primary">Guest Briefings</h2>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-<!-- Hidden Anti-Forgery Token -->
-<form id="__AjaxAntiForgeryForm" style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
+<style>
+    .gb-wrap * {
+        font-family: 'Outfit', sans-serif;
+    }
 
-<div class="table-responsive">
-    <table id="guestBriefingsTable" class="table table-bordered table-striped table-sm align-middle w-100">
-        <thead class="table-light">
-            <tr>
-                <th>Wristband Code</th>
-                <th>Guest Name</th>
-                <th>Arrival</th>
-                <th>Departure</th>
-                <th>Date Code</th>
-                <th>Image</th>
-                <th class="text-center">Actions</th>
-            </tr>
-        </thead>
-    </table>
+    .gb-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .gb-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    .gb-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+    }
+
+    .gb-card-body {
+        padding: 1.25rem;
+    }
+
+    #guestBriefingsTable thead th {
+        background: #f8faff;
+        color: #0f3460;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e8edf5;
+        white-space: nowrap;
+        padding: 0.75rem 1rem;
+    }
+
+    #guestBriefingsTable tbody td {
+        vertical-align: middle;
+        font-size: 0.875rem;
+        color: #334155;
+        padding: 0.7rem 1rem;
+    }
+
+    #guestBriefingsTable tbody tr:hover {
+        background: #f0f6ff;
+    }
+
+    .btn-act {
+        padding: 0.28rem 0.65rem;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .btn-act:hover {
+            opacity: 0.82;
+        }
+
+    .btn-delete-act {
+        background: rgba(239,68,68,0.08);
+        color: #ef4444;
+        border: 1px solid #fca5a5;
+    }
+
+    #deleteConfirmModal .modal-content {
+        border-radius: 16px;
+        border: 0;
+    }
+
+    .del-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(239,68,68,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.75rem;
+    }
+
+        .del-icon i {
+            font-size: 1.4rem;
+            color: #ef4444;
+        }
+
+    .wrist-badge {
+        display: inline-block;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #e0e7ff;
+        color: #3730a3;
+        letter-spacing: 0.03em;
+    }
+
+    .guest-img {
+        width: 42px;
+        height: 42px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1.5px solid #e2e8f0;
+    }
+
+    .no-img {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        border: 1.5px solid #e2e8f0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+
+    .date-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        white-space: nowrap;
+    }
+
+    .datecode-badge {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+</style>
+
+<form id="__AjaxAntiForgeryForm" style="display:none;">@Html.AntiForgeryToken()</form>
+
+<div class="gb-wrap">
+    <div class="gb-header">
+        <h2>
+            <i class="bi bi-person-lines-fill" style="color:#1a6ef5;"></i> Guest Briefings
+        </h2>
+    </div>
+
+    <div class="gb-card">
+        <div class="gb-card-body">
+            <div class="table-responsive">
+                <table id="guestBriefingsTable" class="table table-hover align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th>Wristband Code</th>
+                            <th>Guest Name</th>
+                            <th class="text-center">Arrival</th>
+                            <th class="text-center">Departure</th>
+                            <th class="text-center">Date Code</th>
+                            <th class="text-center">Image</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- Delete Confirm Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:340px;">
+        <div class="modal-content shadow">
+            <div class="modal-body text-center pt-4 pb-3 px-4">
+                <div class="del-icon"><i class="bi bi-trash3-fill"></i></div>
+                <h6 class="fw-bold mb-1" style="color:#0f3460;">Delete Briefing?</h6>
+                <p class="text-muted mb-0" style="font-size:0.875rem;">
+                    Are you sure you want to delete
+                    <strong id="deleteBriefingName"></strong>?
+                    <br><span style="font-size:0.78rem;color:#ef4444;">This action cannot be undone.</span>
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cancel
+                </button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger rounded-pill px-4">
+                    <i class="bi bi-trash3 me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="gbToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;"></div>
+
 @section Scripts {
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
-    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-
     <script>
-        // 🧠 Toast notifications
-        function showToast(message, type = 'success') {
-            const bgClass = {
-                success: 'bg-success',
-                error: 'bg-danger',
-                warning: 'bg-warning text-dark',
-                info: 'bg-info'
-            }[type] || 'bg-success';
+        function showToast(message, type) {
+            type = type || 'success';
+            var map = {
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
+                warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   title: 'Warning' }
+            };
+            var m  = map[type] || map.success;
+            var id = 'gbt-' + Date.now();
+            var html =
+                '<div id="' + id + '" class="toast border-0 text-white" '
+                + 'style="background:' + m.bg + ';border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);" '
+                + 'role="alert" aria-atomic="true" data-bs-delay="4000">'
+                + '<div class="toast-header border-0 text-white" style="background:transparent;">'
+                + '<i class="bi ' + m.icon + ' me-2"></i>'
+                + '<strong class="me-auto">' + m.title + '</strong>'
+                + '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>'
+                + '</div>'
+                + '<div class="toast-body" style="padding-top:0;">' + message + '</div>'
+                + '</div>';
+            document.getElementById('gbToastContainer').insertAdjacentHTML('beforeend', html);
+            var el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+        }
 
-            const toast = $(`
-                <div class="toast text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                    <div class="toast-header ${bgClass} text-white border-0">
-                        <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body">${message}</div>
-                </div>
-            `);
-
-            if (!$('#toastContainer').length)
-                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;"></div>');
-
-            $('#toastContainer').append(toast);
-            new bootstrap.Toast(toast[0]).show();
+        function cleanupModals() {
+            document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
         }
 
         $(function () {
-            const table = $('#guestBriefingsTable').DataTable({
+
+            function getToken() {
+                return $('#__AjaxAntiForgeryForm input[name="__RequestVerificationToken"]').val();
+            }
+
+            function escHtml(str) {
+                return $('<div>').text(str || '').html();
+            }
+
+            // ── DataTable ─────────────────────────────────────────────
+            var table = $('#guestBriefingsTable').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
                     url: '@Url.Action("GetGuestBriefings", "GuestBriefing")',
                     type: 'POST',
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
                     dataSrc: function (json) {
                         if (json.error) {
-                            console.error("Server error:", json.error);
-                            showToast(json.error, "error");
+                            console.error('Server error:', json.error);
+                            showToast(json.error, 'error');
                             return [];
                         }
                         return json.data;
                     },
+                    data: function (d) { d.__RequestVerificationToken = getToken(); },
                     error: function (xhr) {
-                        console.error("AJAX error:", xhr.responseText);
-                        showToast("Failed to load data.", "error");
+                        console.error('DataTable error:', xhr.responseText);
+                        showToast('Failed to load briefings.', 'error');
                     }
                 },
-                    columns: [
-            { data: 'wristband', defaultContent: '' },
-            {
-                data: 'guestNameHuman',
-                defaultContent: '',
-                render: function(data, type, row) {
-                    if (!data) return '';
-
-                    // Format based on "type" dynamically
-                    if (data.startsWith("Guest Number ")) {
-                        return `<span class="badge bg-info">${data}</span>`;
+                columns: [
+                    // Wristband Code
+                    {
+                        data: 'wristband',
+                        defaultContent: '—',
+                        render: function (d) {
+                            return '<span class="wrist-badge">' + escHtml(d || '—') + '</span>';
+                        }
+                    },
+                    // Guest Name
+                    {
+                        data: 'guestNameHuman',
+                        defaultContent: '—',
+                        render: function (d) {
+                            if (!d) return '<span class="text-muted">—</span>';
+                            if (d.startsWith('Guest Number '))
+                                return '<span class="badge" style="background:#dbeafe;color:#1e40af;font-weight:600;border-radius:6px;padding:0.25rem 0.55rem;">' + escHtml(d) + '</span>';
+                            if (d.includes('----'))
+                                return '<span class="text-muted fst-italic">' + escHtml(d) + '</span>';
+                            return '<span class="fw-semibold">' + escHtml(d) + '</span>';
+                        }
+                    },
+                    // Arrival
+                    {
+                        data: 'arrival',
+                        className: 'text-center',
+                        defaultContent: '—',
+                        render: function (d) {
+                            return '<span class="date-text">' + escHtml(d || '—') + '</span>';
+                        }
+                    },
+                    // Departure
+                    {
+                        data: 'departure',
+                        className: 'text-center',
+                        defaultContent: '—',
+                        render: function (d) {
+                            return d
+                                ? '<span class="date-text">' + escHtml(d) + '</span>'
+                                : '<span class="text-muted">—</span>';
+                        }
+                    },
+                    // Date Code
+                    {
+                        data: 'dateCode',
+                        className: 'text-center',
+                        defaultContent: '—',
+                        render: function (d) {
+                            return d
+                                ? '<span class="datecode-badge">' + escHtml(d) + '</span>'
+                                : '<span class="text-muted">—</span>';
+                        }
+                    },
+                    // Image
+                    {
+                        data: 'image',
+                        className: 'text-center',
+                        orderable: false,
+                        searchable: false,
+                        render: function (d) {
+                            if (d) {
+                                return '<img src="data:image/png;base64,' + d + '" class="guest-img" '
+                                    + 'onerror="this.outerHTML=\'<span class=&quot;no-img&quot;><i class=&quot;bi bi-image&quot;></i></span>\'" />';
+                            }
+                            return '<span class="no-img"><i class="bi bi-image"></i></span>';
+                        }
+                    },
+                    // Actions
+                    {
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            return '<button class="btn-act btn-delete-act btn-delete" '
+                                + 'data-id="' + data + '" '
+                                + 'data-name="' + escHtml(row.wristband || String(data)) + '">'
+                                + '<i class="bi bi-trash3"></i> Delete</button>';
+                        }
                     }
-                    if (data.includes("----")) {
-                        return `<span class="text-muted">${data}</span>`;
-                    }
-
-                    // Default display
-                    return data;
-                }
-            },
-            { data: 'arrival', defaultContent: '-----' },
-            { data: 'departure', defaultContent: '-----' },
-            { data: 'dateCode', defaultContent: '' },
-            {
-                data: 'image',
-                render: data => {
-                    if (data) {
-                        return `<img src="data:image/png;base64,${data}" width="60" class="rounded border border-secondary" />`;
-                    } else {
-                        return `<img src="/images/null.png" width="60" alt="No Image" class="rounded border border-secondary" />`;
-                    }
-                }
-            },
-            {
-                data: 'id',
-                orderable: false,
-                searchable: false,
-                className: 'text-center',
-                render: function (data, type, row) {
-                    return `
-                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${data}" data-name="${row.guestNameHuman}">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>`;
-                }
-            }
-        ],
-
-                responsive: true,
+                ],
                 pageLength: 10,
+                responsive: true,
                 autoWidth: false,
-                language: {
-                    emptyTable: "No guest briefings found."
-                }
+                language: { emptyTable: 'No guest briefings found.', processing: 'Loading...' }
             });
 
-            // 🔥 Delete AJAX action
-            $('#guestBriefingsTable').on('click', '.delete-btn', function () {
-                const id = $(this).data('id');
-                const name = $(this).data('name');
-                if (confirm(`Are you sure you want to delete "${name}"?`)) {
-                    $.post('@Url.Action("DeleteAjax", "GuestBriefing")', {
-                        id: id,
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                    }, function (res) {
-                        if (res.success) {
-                            showToast(res.message, 'success');
-                            table.ajax.reload(null, false);
-                        } else {
-                            showToast(res.message || 'Failed to delete record.', 'error');
-                        }
-                    }).fail(() => showToast('Server error deleting record.', 'error'));
-                }
+            // ── Delete — open confirm ─────────────────────────────────
+            var pendingDeleteId = null;
+
+            $('#guestBriefingsTable').on('click', '.btn-delete', function () {
+                pendingDeleteId = $(this).data('id');
+                $('#deleteBriefingName').text($(this).data('name'));
+
+                var existing = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                if (existing) { existing.hide(); existing.dispose(); }
+                cleanupModals();
+
+                new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+            });
+
+            $('#deleteConfirmModal').on('hidden.bs.modal', function () { cleanupModals(); });
+
+            // ── Delete — confirm ──────────────────────────────────────
+            $('#confirmDeleteBtn').on('click', function () {
+                if (!pendingDeleteId) return;
+
+                var $btn        = $(this);
+                var deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+
+                $btn.prop('disabled', true)
+                    .html('<span class="spinner-border spinner-border-sm me-1"></span>Deleting...');
+
+                $.ajax({
+                    url: '@Url.Action("DeleteAjax", "GuestBriefing")',
+                    type: 'POST',
+                    data: { id: pendingDeleteId },
+                    headers: { 'RequestVerificationToken': getToken() }
+                })
+                .done(function (res) {
+                    if (deleteModal) deleteModal.hide();
+                    cleanupModals();
+                    showToast(res.message, res.success ? 'success' : 'error');
+                    if (res.success) table.ajax.reload(null, false);
+                })
+                .fail(function (xhr) {
+                    if (deleteModal) deleteModal.hide();
+                    cleanupModals();
+                    console.error('Delete error:', xhr.responseText);
+                    showToast('Error deleting briefing.', 'error');
+                })
+                .always(function () {
+                    $btn.prop('disabled', false).html('<i class="bi bi-trash3 me-1"></i>Delete');
+                    pendingDeleteId = null;
+                });
             });
         });
     </script>
