@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.GuideDtrReportViewModel>
 <link href="~/css/ReportsGuideDtr.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
 @{
     var totalGuests = (int)(ViewBag.TotalGuests ?? 0);
@@ -20,210 +21,588 @@
     var rows = Model?.ToList() ?? new List<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.GuideDtrReportViewModel>();
 }
 
-<div class="card mt-4 shadow">
-    <!-- Card Header — hidden on print -->
-    <div class="card-header bg-primary text-white d-flex flex-wrap justify-content-between align-items-center">
-        <h5 class="mb-2 mb-md-0">
-            <i class="bi bi-card-list me-2"></i>Tour Guide DTR Report
-        </h5>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <form method="get" asp-action="GuideDtr" id="filterForm"
-                  class="d-flex flex-wrap align-items-center gap-2">
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">From:</label>
-                    <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom"
-                           class="form-control form-control-sm" required />
-                </div>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">To:</label>
-                    <input type="date" id="dateTo" name="dateTo" value="@dateTo"
-                           class="form-control form-control-sm" required />
-                </div>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">Area:</label>
-                    <select name="area" class="form-select form-select-sm" style="min-width:140px;">
+<style>
+    .rpt-wrap * {
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .rpt-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .rpt-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    .rpt-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .rpt-card-header {
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .rpt-card-header h5 {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+    .rpt-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .rpt-filter-label {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .rpt-filter-input {
+        padding: 0.4rem 0.75rem;
+        border: 1.5px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+    }
+
+        .rpt-filter-input:focus {
+            border-color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.25);
+        }
+
+        .rpt-filter-input option {
+            color: #0f3460;
+            background: #fff;
+        }
+
+    .btn-rpt-search {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.4);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-rpt-search:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+    .btn-rpt-print {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: #fff;
+        color: #0f3460;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+        .btn-rpt-print:hover {
+            opacity: 0.88;
+        }
+
+    /* ---- Government payroll form body ---- */
+    .rpt-body {
+        padding: 1.25rem;
+        font-family: Arial, sans-serif;
+    }
+
+    .pay-top-header {
+        margin-bottom: 2px;
+    }
+
+    .pay-project-label {
+        font-size: 13px;
+        letter-spacing: 1px;
+    }
+
+    .pay-meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-top: 1px solid #000;
+        padding: 4px 0;
+        margin-bottom: 0;
+        font-size: 12px;
+    }
+
+    .pay-meta-left {
+        flex: 1;
+    }
+
+    .pay-project-name {
+        font-size: 14px;
+        margin-top: 2px;
+        letter-spacing: 0.5px;
+    }
+
+    .pay-meta-right {
+        text-align: right;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .pay-rate-badge {
+        display: inline-block;
+        margin-left: 8px;
+        font-size: 11px;
+        font-weight: normal;
+        color: #1e3a8a;
+        background: #dbeafe;
+        border: 1px solid #93c5fd;
+        padding: 1px 7px;
+        border-radius: 10px;
+        vertical-align: middle;
+    }
+
+    .pay-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+        table-layout: fixed;
+    }
+
+        .pay-table th,
+        .pay-table td {
+            border: 1px solid #000;
+            padding: 3px 4px;
+            vertical-align: middle;
+            font-size: 11px;
+            overflow: hidden;
+            word-break: break-word;
+        }
+
+    .pay-thead-top th,
+    .pay-thead-bottom th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+        text-align: center;
+        font-size: 10px;
+        padding: 4px 3px;
+        line-height: 1.2;
+    }
+
+    .pay-table tbody tr {
+        height: 22px;
+    }
+
+    .pay-table tbody td {
+        background-color: #fff;
+        height: 22px;
+    }
+
+    .pay-total-row td {
+        background-color: #f0f0f0;
+        font-weight: bold;
+        font-size: 12px;
+        padding: 5px 4px;
+    }
+
+    .col-seq {
+        width: 28px;
+    }
+
+    .col-name {
+        width: 155px;
+    }
+
+    .col-address {
+        width: 85px;
+    }
+
+    .col-desig {
+        width: 60px;
+    }
+
+    .col-pax {
+        width: 52px;
+    }
+
+    .col-rate {
+        width: 42px;
+    }
+
+    .col-gross {
+        width: 72px;
+    }
+
+    .col-net {
+        width: 72px;
+    }
+
+    .col-seq2 {
+        width: 28px;
+    }
+
+    .col-sig {
+        width: 80px;
+    }
+
+    .col-ctax-num {
+        width: 55px;
+    }
+
+    .col-ctax-date {
+        width: 48px;
+    }
+
+    .col-ctax-place {
+        width: 72px;
+    }
+
+    .pay-footer {
+        border: 1px solid #000;
+        border-top: none;
+    }
+
+    .pay-cert-row {
+        display: flex;
+        min-height: 120px;
+    }
+
+    .pay-cert-left,
+    .pay-cert-mid,
+    .pay-cert-right {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 11px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .pay-cert-left {
+        border-right: 1px solid #000;
+    }
+
+    .pay-cert-mid {
+        border-right: 1px solid #000;
+        text-align: center;
+        justify-content: flex-end;
+    }
+
+    .pay-cert-title {
+        font-weight: bold;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .pay-cert-body {
+        font-size: 10.5px;
+        line-height: 1.5;
+        margin-bottom: 10px;
+    }
+
+    .pay-approved-text {
+        font-size: 12px;
+        margin-bottom: 28px;
+        text-align: center;
+    }
+
+    .pay-sig-block {
+        margin-top: auto;
+    }
+
+    .pay-sig-name {
+        font-weight: bold;
+        font-size: 11px;
+        border-top: 1px solid #000;
+        padding-top: 3px;
+        text-align: center;
+    }
+
+    .pay-sig-label {
+        font-size: 9.5px;
+        text-align: center;
+        color: #333;
+    }
+
+    .rpt-sysgen {
+        font-size: 0.72rem;
+        color: #cbd5e1;
+        font-style: italic;
+        text-align: right;
+        margin-top: 0.5rem;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: #94a3b8;
+    }
+
+        .empty-state i {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+        .empty-state span {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+</style>
+
+<div class="rpt-wrap">
+
+    <div class="rpt-header">
+        <h2>
+            <i class="bi bi-person-hiking" style="color:#1a6ef5;"></i> Tour Guide DTR Report
+        </h2>
+    </div>
+
+    <div class="rpt-card">
+
+        <!-- Blue Gradient Card Header -->
+        <div class="rpt-card-header">
+            <h5><i class="bi bi-file-earmark-text"></i> Tour Guide Daily Time Record</h5>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <form method="get" asp-action="GuideDtr" id="filterForm" class="rpt-filter-row">
+                    <span class="rpt-filter-label">From</span>
+                    <input type="date" name="dateFrom" value="@dateFrom"
+                           class="rpt-filter-input" required />
+
+                    <span class="rpt-filter-label">To</span>
+                    <input type="date" name="dateTo" value="@dateTo"
+                           class="rpt-filter-input" required />
+
+                    <span class="rpt-filter-label">Area</span>
+                    <select name="area" class="rpt-filter-input" style="min-width:140px;">
                         <option value="" selected="@(string.IsNullOrEmpty(selectedArea) ? "selected" : null)">— All Areas —</option>
                         @foreach (var a in areas)
                         {
                             <option value="@a" selected="@(selectedArea == a ? "selected" : null)">@a</option>
                         }
                     </select>
-                </div>
-                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
-                    <i class="bi bi-search"></i> Search
-                </button>
-            </form>
-            <div class="btn-group mt-2 mt-sm-0">
-                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
-                        data-bs-toggle="dropdown">
-                    <i class="bi bi-printer"></i> Print
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a class="dropdown-item" href="#" id="btnDownloadPDF">
-                            <i class="bi bi-file-earmark-pdf"></i> Print as PDF
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#" id="btnDownloadExcel">
-                            <i class="bi bi-file-earmark-excel"></i> Print as Excel
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
 
-    <!-- Payroll Form Body -->
-    <div class="card-body report-container" id="printArea">
+                    <button type="submit" class="btn-rpt-search">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
 
-        <!-- ===== GOVERNMENT PAYROLL HEADER ===== -->
-        <div class="pay-top-header text-center">
-            <div class="pay-project-label">Project</div>
-        </div>
-
-        <div class="pay-meta-row">
-            <div class="pay-meta-left">
-                <div>LGU : &nbsp;<strong>MUNICIPALITY OF ALEGRIA</strong></div>
-                <div class="pay-project-name">
-                    <strong id="displayArea">@areaDisplay</strong>
-                    @if (!string.IsNullOrEmpty(rateLabel))
-                    {
-                        <span class="pay-rate-badge">@rateLabel</span>
-                    }
+                <div class="dropdown">
+                    <button class="btn-rpt-print dropdown-toggle"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-printer"></i> Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0"
+                        style="border-radius:12px;">
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadPDF"
+                               style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Download PDF
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadExcel"
+                               style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-excel text-success me-2"></i> Download Excel
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-            <div class="pay-meta-right">
-                Period: <strong id="displayPeriod">@period</strong>
-            </div>
         </div>
 
-        <!-- ===== PAYROLL TABLE ===== -->
-        <div class="table-responsive">
-            <table id="guideDtrTable" class="pay-table">
-                <thead>
-                    <tr class="pay-thead-top">
-                        <th rowspan="2" class="col-seq">&nbsp;</th>
-                        <th rowspan="2" class="col-name">Name</th>
-                        <th rowspan="2" class="col-address">Address</th>
-                        <th rowspan="2" class="col-desig">Designation</th>
-                        <th rowspan="2" class="col-pax">Number<br />of<br />Jumps</th>
-                        <th rowspan="2" class="col-rate">Rate<br />per<br />Jump</th>
-                        <th rowspan="2" class="col-gross">Gross<br />Salary</th>
-                        <th rowspan="2" class="col-net">NET PAY</th>
-                        <th rowspan="2" class="col-seq2">&nbsp;</th>
-                        <th rowspan="2" class="col-sig">Signature or<br />Thumbmark</th>
-                        <th colspan="3" class="col-ctax-header">COMMUNITY TAX</th>
-                    </tr>
-                    <tr class="pay-thead-bottom">
-                        <th class="col-ctax-num">Number</th>
-                        <th class="col-ctax-date">Date</th>
-                        <th class="col-ctax-place">Place of<br />Issue</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
-                        int seq = 1;
-                        if (!rows.Any())
+        <!-- Payroll Form Body -->
+        <div class="rpt-body report-container" id="printArea">
+
+            <div class="pay-top-header text-center">
+                <div class="pay-project-label">Project</div>
+            </div>
+
+            <div class="pay-meta-row">
+                <div class="pay-meta-left">
+                    <div>LGU : &nbsp;<strong>MUNICIPALITY OF ALEGRIA</strong></div>
+                    <div class="pay-project-name">
+                        <strong id="displayArea">@areaDisplay</strong>
+                        @if (!string.IsNullOrEmpty(rateLabel))
                         {
-                            <tr>
-                                <td colspan="13" class="text-center py-5 text-muted">
-                                    <i class="bi bi-inbox me-2" style="font-size:1.4rem;"></i><br />
-                                    <span class="fw-semibold">No data found</span>
-                                    @if (!string.IsNullOrEmpty(selectedArea))
-                                    {
-                                        <span> for <strong>@selectedArea</strong></span>
-                                    }
-                                    <span> in the selected date range.</span>
-                                </td>
-                            </tr>
+                            <span class="pay-rate-badge">@rateLabel</span>
                         }
-                        else
-                        {
-                            foreach (var item in rows)
+                    </div>
+                </div>
+                <div class="pay-meta-right">
+                    Period: <strong id="displayPeriod">@period</strong>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="guideDtrTable" class="pay-table">
+                    <thead>
+                        <tr class="pay-thead-top">
+                            <th rowspan="2" class="col-seq">&nbsp;</th>
+                            <th rowspan="2" class="col-name">Name</th>
+                            <th rowspan="2" class="col-address">Address</th>
+                            <th rowspan="2" class="col-desig">Designation</th>
+                            <th rowspan="2" class="col-pax">Number<br />of<br />Jumps</th>
+                            <th rowspan="2" class="col-rate">Rate<br />per<br />Jump</th>
+                            <th rowspan="2" class="col-gross">Gross<br />Salary</th>
+                            <th rowspan="2" class="col-net">NET PAY</th>
+                            <th rowspan="2" class="col-seq2">&nbsp;</th>
+                            <th rowspan="2" class="col-sig">Signature or<br />Thumbmark</th>
+                            <th colspan="3" class="col-ctax-header">COMMUNITY TAX</th>
+                        </tr>
+                        <tr class="pay-thead-bottom">
+                            <th class="col-ctax-num">Number</th>
+                            <th class="col-ctax-date">Date</th>
+                            <th class="col-ctax-place">Place of<br />Issue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int seq = 1;
+                            if (!rows.Any())
                             {
                                 <tr>
-                                    <td class="col-seq text-center">@seq</td>
-                                    <td class="col-name">@item.GuideName</td>
-                                    <td class="col-address">@item.Address</td>
-                                    <td class="col-desig text-center">@item.Designation</td>
-                                    <td class="col-pax text-center" data-pax="@item.TripCount">@item.TripCount</td>
-                                    <td class="col-rate text-center" data-rate="@item.RatePerJump">
-                                        @(item.RatePerJump > 0 ? item.RatePerJump.ToString() : "-")
+                                    <td colspan="13">
+                                        <div class="empty-state">
+                                            <i class="bi bi-person-hiking"></i>
+                                            <span>
+                                                No data found
+                                                @if (!string.IsNullOrEmpty(selectedArea))
+                                                {
+                                                    <text> for <strong>@selectedArea</strong></text>
+                                                }
+                                                in the selected date range.
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td class="col-gross text-end" data-gross="@item.GrossSalary.ToString("F2")">
-                                        @(item.GrossSalary > 0 ? item.GrossSalary.ToString("N2") : "-")
-                                    </td>
-                                    <td class="col-net text-end" data-net="@item.NetPay.ToString("F2")">
-                                        @(item.NetPay > 0 ? item.NetPay.ToString("N2") : "-")
-                                    </td>
-                                    <td class="col-seq2 text-center">@seq</td>
-                                    <td class="col-sig"></td>
-                                    <td class="col-ctax-num"></td>
-                                    <td class="col-ctax-date"></td>
-                                    <td class="col-ctax-place text-center">@item.PlaceOfIssue</td>
                                 </tr>
-                                seq++;
+                            }
+                            else
+                            {
+                                foreach (var item in rows)
+                                {
+                                    <tr>
+                                        <td class="col-seq text-center">@seq</td>
+                                        <td class="col-name">@item.GuideName</td>
+                                        <td class="col-address">@item.Address</td>
+                                        <td class="col-desig text-center">@item.Designation</td>
+                                        <td class="col-pax text-center" data-pax="@item.TripCount">@item.TripCount</td>
+                                        <td class="col-rate text-center" data-rate="@item.RatePerJump">
+                                            @(item.RatePerJump > 0 ? item.RatePerJump.ToString() : "-")
+                                        </td>
+                                        <td class="col-gross text-end" data-gross="@item.GrossSalary.ToString("F2")">
+                                            @(item.GrossSalary > 0 ? item.GrossSalary.ToString("N2") : "-")
+                                        </td>
+                                        <td class="col-net text-end" data-net="@item.NetPay.ToString("F2")">
+                                            @(item.NetPay > 0 ? item.NetPay.ToString("N2") : "-")
+                                        </td>
+                                        <td class="col-seq2 text-center">@seq</td>
+                                        <td class="col-sig"></td>
+                                        <td class="col-ctax-num"></td>
+                                        <td class="col-ctax-date"></td>
+                                        <td class="col-ctax-place text-center">@item.PlaceOfIssue</td>
+                                    </tr>
+                                    seq++;
+                                }
                             }
                         }
-                    }
-                </tbody>
-                <tfoot>
-                    <tr class="pay-total-row">
-                        <td colspan="4"></td>
-                        <td class="text-center fw-bold" id="grandTotalJumps">@totalTrips</td>
-                        <td></td>
-                        <td class="text-end fw-bold" id="grandTotalGross">@totalGross.ToString("N2")</td>
-                        <td class="text-end fw-bold" id="grandTotalNet">@totalNetPay.ToString("N2")</td>
-                        <td colspan="5"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+                    </tbody>
+                    <tfoot>
+                        <tr class="pay-total-row">
+                            <td colspan="4"></td>
+                            <td class="text-center fw-bold" id="grandTotalJumps">@totalTrips</td>
+                            <td></td>
+                            <td class="text-end fw-bold" id="grandTotalGross">@totalGross.ToString("N2")</td>
+                            <td class="text-end fw-bold" id="grandTotalNet">@totalNetPay.ToString("N2")</td>
+                            <td colspan="5"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
-    
-
-        <!-- ===== FOOTER CERTIFICATION ===== -->
-        <div class="pay-footer">
-            <div class="pay-cert-row">
-                <div class="pay-cert-left">
-                    <div class="pay-cert-title">CERTIFIED:</div>
-                    <div class="pay-cert-body">
-                        Each person whose name appears on this<br />
-                        roll had rendered services for the time stated.
+            <div class="pay-footer">
+                <div class="pay-cert-row">
+                    <div class="pay-cert-left">
+                        <div class="pay-cert-title">CERTIFIED:</div>
+                        <div class="pay-cert-body">
+                            Each person whose name appears on this<br />
+                            roll had rendered services for the time stated.
+                        </div>
+                        <div class="pay-sig-block">
+                            <div class="pay-sig-name">DESMOND KENNITH A. PLATERO</div>
+                            <div class="pay-sig-label">Municipal Tourism Officer - Designate</div>
+                        </div>
                     </div>
-                    <div class="pay-sig-block">
-                        <div class="pay-sig-name">DESMOND KENNITH A. PLATERO</div>
-                        <div class="pay-sig-label">Municipal Tourism Officer - Designate</div>
+                    <div class="pay-cert-mid">
+                        <div class="pay-approved-text">Approved for Payment:</div>
+                        <div class="pay-sig-block">
+                            <div class="pay-sig-name">GILBERTO F. MAGALLON, M.D.</div>
+                            <div class="pay-sig-label">Municipal Mayor</div>
+                        </div>
                     </div>
-                </div>
-                <div class="pay-cert-mid">
-                    <div class="pay-approved-text">Approved for Payment:</div>
-                    <div class="pay-sig-block">
-                        <div class="pay-sig-name">GILBERTO F. MAGALLON, M.D.</div>
-                        <div class="pay-sig-label">Municipal Mayor</div>
-                    </div>
-                </div>
-                <div class="pay-cert-right">
-                    <div class="pay-cert-title">CERTIFIED:</div>
-                    <div class="pay-cert-body">
-                        Each person whose name appears on the above
-                        roll has been paid the amount stated opposite his
-                        name after identifying them.
-                    </div>
-                    <div class="pay-sig-block">
-                        <div class="pay-sig-name">C/O REGISTER PAYROLL</div>
-                        <div class="pay-sig-label">Disbursing officer</div>
+                    <div class="pay-cert-right">
+                        <div class="pay-cert-title">CERTIFIED:</div>
+                        <div class="pay-cert-body">
+                            Each person whose name appears on the above
+                            roll has been paid the amount stated opposite his
+                            name after identifying them.
+                        </div>
+                        <div class="pay-sig-block">
+                            <div class="pay-sig-name">C/O REGISTER PAYROLL</div>
+                            <div class="pay-sig-label">Disbursing officer</div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <p class="rpt-sysgen">System Generated Report — Guide DTR Summary</p>
+
         </div>
-
-        <p class="system-generated-text text-end small text-muted mt-2">
-            <em>System Generated Report — Guide DTR Summary</em>
-        </p>
-
-    </div><!-- /report-container -->
+    </div>
 </div>
 
 @section Scripts {

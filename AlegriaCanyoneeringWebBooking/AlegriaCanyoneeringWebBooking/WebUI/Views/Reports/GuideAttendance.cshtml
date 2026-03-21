@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<AlegriaCanyoneeringWebBooking.WebUI.ViewModel.GuideAttendanceReportViewModel>
 <link href="~/css/ReportsGuideAttendance.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
 @{
     var totalGuests = ViewBag.TotalGuests ?? 0;
@@ -17,165 +18,499 @@
     int minRows = 31;
 }
 
-<div class="card mt-4 shadow">
-    <!-- Card Header — hidden on print -->
-    <div class="card-header bg-primary text-white d-flex flex-wrap justify-content-between align-items-center">
-        <h5 class="mb-2 mb-md-0">
-            <i class="bi bi-person-hiking me-2"></i>Guide Attendance Report
-        </h5>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <form method="get" asp-action="GuideAttendance" id="filterForm"
-                  class="d-flex flex-wrap align-items-center gap-2">
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">From:</label>
-                    <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom"
-                           class="form-control form-control-sm" required />
-                </div>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">To:</label>
-                    <input type="date" id="dateTo" name="dateTo" value="@dateTo"
-                           class="form-control form-control-sm" required />
-                </div>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">Area:</label>
-                    <select name="area" class="form-select form-select-sm" style="min-width:140px;">
+<style>
+    .rpt-wrap * {
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .rpt-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .rpt-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    .rpt-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .rpt-card-header {
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .rpt-card-header h5 {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+    .rpt-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .rpt-filter-label {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .rpt-filter-input {
+        padding: 0.4rem 0.75rem;
+        border: 1.5px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+    }
+
+        .rpt-filter-input:focus {
+            border-color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.25);
+        }
+
+        .rpt-filter-input option {
+            color: #0f3460;
+            background: #fff;
+        }
+
+    .btn-rpt-search {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.4);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-rpt-search:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+    .btn-rpt-print {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: #fff;
+        color: #0f3460;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+        .btn-rpt-print:hover {
+            opacity: 0.88;
+        }
+
+    /* ---- Government form body ---- */
+    .rpt-body {
+        padding: 1.5rem;
+        font-family: Arial, sans-serif;
+    }
+
+    .gov-form-header {
+        text-align: center;
+        margin-bottom: 4px;
+    }
+
+    .gov-title {
+        font-size: 15px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .gov-subtitle {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .gov-meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 2px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 3px 0;
+        margin-bottom: 0;
+        font-size: 12px;
+    }
+
+    .gov-meta-left {
+        font-weight: bold;
+        flex: 0 0 50px;
+    }
+
+    .gov-meta-center {
+        text-align: center;
+        font-weight: bold;
+        flex: 1;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+    }
+
+    .gov-meta-right {
+        text-align: right;
+        font-size: 11px;
+        flex: 0 0 160px;
+    }
+
+    .gov-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+    }
+
+        .gov-table th,
+        .gov-table td {
+            border: 1px solid #000;
+            padding: 3px 5px;
+            vertical-align: middle;
+            font-size: 12px;
+        }
+
+        .gov-table thead th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+            font-size: 11px;
+            padding: 5px 4px;
+        }
+
+        .gov-table tbody tr {
+            height: 22px;
+        }
+
+        .gov-table tbody td {
+            background-color: #fff;
+            height: 22px;
+        }
+
+    .col-seq {
+        width: 34px;
+        text-align: center;
+    }
+
+    .col-name {
+        width: 200px;
+    }
+
+    .col-datetime {
+        width: 140px;
+        text-align: center;
+    }
+
+    .col-route {
+        width: auto;
+    }
+
+    .gov-footer {
+        border: 1px solid #000;
+        border-top: 2px solid #000;
+        padding: 0;
+    }
+
+    .gov-certified-row {
+        display: flex;
+        min-height: 110px;
+    }
+
+    .gov-certified-left,
+    .gov-certified-middle,
+    .gov-certified-right {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 11px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .gov-certified-left {
+        border-right: 1px solid #000;
+    }
+
+    .gov-certified-middle {
+        border-right: 1px solid #000;
+        text-align: center;
+    }
+
+    .gov-certified-title {
+        font-weight: bold;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .gov-certified-body {
+        font-size: 10.5px;
+        line-height: 1.4;
+        margin-bottom: 12px;
+    }
+
+    .gov-approved-text {
+        margin-top: 28px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .gov-sig-line {
+        font-weight: bold;
+        font-size: 11px;
+        border-top: 1px solid #000;
+        padding-top: 3px;
+        margin-top: 6px;
+        text-align: center;
+    }
+
+    .gov-sig-label {
+        font-size: 9.5px;
+        text-align: center;
+        color: #333;
+    }
+
+    .rpt-sysgen {
+        font-size: 0.72rem;
+        color: #cbd5e1;
+        font-style: italic;
+        text-align: right;
+        margin-top: 0.5rem;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: #94a3b8;
+    }
+
+        .empty-state i {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+        .empty-state span {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+</style>
+
+<div class="rpt-wrap">
+
+    <!-- Page Header -->
+    <div class="rpt-header">
+        <h2>
+            <i class="bi bi-person-hiking" style="color:#1a6ef5;"></i> Guide Attendance Report
+        </h2>
+    </div>
+
+    <div class="rpt-card">
+
+        <!-- Gradient Card Header -->
+        <div class="rpt-card-header">
+            <h5><i class="bi bi-clipboard2-check"></i> Tourist Tour Guide Report</h5>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <form method="get" asp-action="GuideAttendance" id="filterForm" class="rpt-filter-row">
+                    <span class="rpt-filter-label">From</span>
+                    <input type="date" name="dateFrom" value="@dateFrom"
+                           class="rpt-filter-input" required />
+
+                    <span class="rpt-filter-label">To</span>
+                    <input type="date" name="dateTo" value="@dateTo"
+                           class="rpt-filter-input" required />
+
+                    <span class="rpt-filter-label">Area</span>
+                    <select name="area" class="rpt-filter-input" style="min-width:140px;">
                         <option value="" selected="@(string.IsNullOrEmpty(selectedArea) ? "selected" : null)">— All Areas —</option>
                         @foreach (var a in areas)
                         {
                             <option value="@a" selected="@(selectedArea == a ? "selected" : null)">@a</option>
                         }
                     </select>
+
+                    <button type="submit" class="btn-rpt-search">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
+
+                <div class="dropdown">
+                    <button class="btn-rpt-print dropdown-toggle"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-printer"></i> Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0"
+                        style="border-radius:12px;">
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadPDF"
+                               style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Download PDF
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadExcel"
+                               style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-excel text-success me-2"></i> Download Excel
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
-                    <i class="bi bi-search"></i> Search
-                </button>
-            </form>
-            <div class="btn-group mt-2 mt-sm-0">
-                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
-                        data-bs-toggle="dropdown">
-                    <i class="bi bi-printer"></i> Print
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a class="dropdown-item" href="#" id="btnDownloadPDF">
-                            <i class="bi bi-file-earmark-pdf"></i> Print as PDF
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#" id="btnDownloadExcel">
-                            <i class="bi bi-file-earmark-excel"></i> Print as Excel
-                        </a>
-                    </li>
-                </ul>
             </div>
         </div>
-    </div>
 
-    <!-- Government Form Body -->
-    <div class="card-body report-container" id="printArea">
+        <!-- Government Form Body -->
+        <div class="rpt-body report-container" id="printArea">
 
-        <!-- ===== GOVERNMENT FORM HEADER ===== -->
-        <div class="gov-form-header text-center">
-            <div class="gov-title">TOURIST TOUR GUIDE</div>
-            <div class="gov-subtitle">Project</div>
-        </div>
+            <!-- Government Form Header -->
+            <div class="gov-form-header text-center">
+                <div class="gov-title">TOURIST TOUR GUIDE</div>
+                <div class="gov-subtitle">Project</div>
+            </div>
 
-        <div class="gov-meta-row">
-            <span class="gov-meta-left">LGU</span>
-            <span class="gov-meta-center">MUNICIPALITY OF ALEGRIA</span>
-            <span class="gov-meta-right">PERIOD&nbsp;&nbsp;<span id="displayPeriod">@period</span></span>
-        </div>
+            <div class="gov-meta-row">
+                <span class="gov-meta-left">LGU</span>
+                <span class="gov-meta-center">MUNICIPALITY OF ALEGRIA</span>
+                <span class="gov-meta-right">PERIOD&nbsp;&nbsp;<span id="displayPeriod">@period</span></span>
+            </div>
 
-        <!-- ===== MAIN TABLE ===== -->
-        <div class="table-responsive">
-            <table id="guideAttendanceTable" class="gov-table">
-                <thead>
-                    <tr>
-                        <th class="col-seq"></th>
-                        <th class="col-name">NAME</th>
-                        <th class="col-datetime">DATE &amp; TIME</th>
-                        <th class="col-route">ROUTE</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!rows.Any())
-                    {
+            <!-- Main Table -->
+            <div class="table-responsive">
+                <table id="guideAttendanceTable" class="gov-table">
+                    <thead>
                         <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox me-2" style="font-size:1.4rem;"></i><br />
-                                <span class="fw-semibold">No data found</span>
-                                @if (!string.IsNullOrEmpty(selectedArea))
-                                {
-                                    <span> for <strong>@selectedArea</strong></span>
-                                }
-                                <span> in the selected date range.</span>
-                            </td>
+                            <th class="col-seq"></th>
+                            <th class="col-name">NAME</th>
+                            <th class="col-datetime">DATE &amp; TIME</th>
+                            <th class="col-route">ROUTE</th>
                         </tr>
-                    }
-                    else
-                    {
-                        @for (int i = 0; i < minRows; i++)
+                    </thead>
+                    <tbody>
+                        @if (!rows.Any())
                         {
-                            if (i < rows.Count)
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <i class="bi bi-person-hiking"></i>
+                                        <span>
+                                            No data found
+                                            @if (!string.IsNullOrEmpty(selectedArea))
+                                            {
+                                                <text> for <strong>@selectedArea</strong></text>
+                                            }
+                                            in the selected date range.
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @for (int i = 0; i < minRows; i++)
                             {
-                                var item = rows[i];
-                                <tr>
-                                    <td class="col-seq text-center">@(i + 1)</td>
-                                    <td class="col-name">@item.GuideName</td>
-                                    <td class="col-datetime text-center">@item.Date @item.Time</td>
-                                    <td class="col-route">@item.Route</td>
-                                </tr>
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td class="col-seq text-center">@(i + 1)</td>
-                                    <td class="col-name"></td>
-                                    <td class="col-datetime"></td>
-                                    <td class="col-route"></td>
-                                </tr>
+                                if (i < rows.Count)
+                                {
+                                    var item = rows[i];
+                                    <tr>
+                                        <td class="col-seq text-center">@(i + 1)</td>
+                                        <td class="col-name">@item.GuideName</td>
+                                        <td class="col-datetime text-center">@item.Date @item.Time</td>
+                                        <td class="col-route">@item.Route</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td class="col-seq text-center">@(i + 1)</td>
+                                        <td class="col-name"></td>
+                                        <td class="col-datetime"></td>
+                                        <td class="col-route"></td>
+                                    </tr>
+                                }
                             }
                         }
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- ===== FOOTER CERTIFICATION ===== -->
-        <div class="gov-footer">
-            <div class="gov-certified-row">
-                <div class="gov-certified-left">
-                    <div class="gov-certified-title">CERTIFIED</div>
-                    <div class="gov-certified-body">
-                        Each person whose name appears on this roll<br />
-                        had rendered services for the time stated.
+            <!-- Footer Certification -->
+            <div class="gov-footer">
+                <div class="gov-certified-row">
+                    <div class="gov-certified-left">
+                        <div class="gov-certified-title">CERTIFIED</div>
+                        <div class="gov-certified-body">
+                            Each person whose name appears on this roll<br />
+                            had rendered services for the time stated.
+                        </div>
+                        <div class="gov-sig-line">PICHEY L. LENDIO</div>
+                        <div class="gov-sig-label">Name &amp; Signature of Timekeeper</div>
                     </div>
-                    <div class="gov-sig-line">PICHEY L. LENDIO</div>
-                    <div class="gov-sig-label">Name &amp; Signature of Timekeeper</div>
-                </div>
-                <div class="gov-certified-middle">
-                    <div class="gov-certified-body gov-approved-text">Approved &nbsp;for Payment:</div>
-                    <div class="gov-sig-line">HON. VERNA V. MAGALLON</div>
-                    <div class="gov-sig-label">Name &amp; Signature of Approving Officer</div>
-                </div>
-                <div class="gov-certified-right">
-                    <div class="gov-certified-body">
-                        Each person whose name appears on the
-                        above roll has been paid the amount
-                        stated opposite his name after identifying
-                        them.
+                    <div class="gov-certified-middle">
+                        <div class="gov-certified-body gov-approved-text">Approved &nbsp;for Payment:</div>
+                        <div class="gov-sig-line">HON. VERNA V. MAGALLON</div>
+                        <div class="gov-sig-label">Name &amp; Signature of Approving Officer</div>
                     </div>
-                    <div class="gov-sig-line">JOSE WILSON C PATRIARCA</div>
-                    <div class="gov-sig-label">Name &amp; Signature of Disbursing</div>
+                    <div class="gov-certified-right">
+                        <div class="gov-certified-body">
+                            Each person whose name appears on the
+                            above roll has been paid the amount
+                            stated opposite his name after identifying
+                            them.
+                        </div>
+                        <div class="gov-sig-line">JOSE WILSON C PATRIARCA</div>
+                        <div class="gov-sig-label">Name &amp; Signature of Disbursing</div>
+                    </div>
                 </div>
             </div>
+
+            <p class="rpt-sysgen">System Generated Report — Guide Attendance Summary</p>
+
         </div>
-
-        <p class="system-generated-text text-end small text-muted mt-2">
-            <em>System Generated Report — Guide Attendance Summary</em>
-        </p>
-
-    </div><!-- /report-container -->
+    </div>
 </div>
 
 @section Scripts {

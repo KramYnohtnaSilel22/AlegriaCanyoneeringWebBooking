@@ -252,3 +252,112 @@
         font-size: 1.2rem;
     }
 }
+/* ============================================================
+   PRINT — keep this, everything else moved to inline styles
+   ============================================================ */
+@media print {
+    .rpt-card-header,
+    .rpt-header,
+    .btn, .btn-group, .dropdown {
+        display: none !important;
+    }
+
+    .rpt-card {
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .rpt-body {
+        padding: 10px;
+    }
+
+    .rpt-title-box {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+        .rpt-title-box h3 {
+            font-size: 16px;
+        }
+
+    #tourismReportTable {
+        font-size: 9px;
+    }
+
+        #tourismReportTable th,
+        #tourismReportTable td {
+            padding: 3px;
+            border: 1px solid #000;
+        }
+
+    .seq-badge {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+        line-height: 18px;
+    }
+
+    .total-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+
+    .rpt-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+    }
+
+    .rpt-info-item {
+        padding: 4px 6px;
+    }
+
+    .rpt-info-label {
+        font-size: 7px;
+    }
+
+    .rpt-info-value {
+        font-size: 9px;
+    }
+
+    .rpt-note, .rpt-sysgen {
+        font-size: 8px;
+    }
+
+    @page {
+        size: landscape;
+        margin: 0.5cm;
+    }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+    .rpt-filter-row {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .rpt-filter-input {
+        width: 100%;
+    }
+
+    .rpt-info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #tourismReportTable th,
+    #tourismReportTable td {
+        white-space: nowrap;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .rpt-info-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -325,3 +325,99 @@
         font-size: 0.9rem;
     }
 }
+@media print {
+    .rpt-card-header,
+    .rpt-header,
+    .btn, .btn-group, .dropdown {
+        display: none !important;
+    }
+
+    .rpt-card {
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    .rpt-body {
+        padding: 5px;
+        max-width: 100%;
+    }
+
+    .pay-table th,
+    .pay-table td {
+        font-size: 9px;
+        padding: 2px 3px;
+    }
+
+    .pay-table tbody tr {
+        height: 16px;
+    }
+
+    .pay-footer {
+        font-size: 9px;
+    }
+
+    .pay-sig-name {
+        font-size: 9px;
+    }
+
+    .pay-sig-label {
+        font-size: 8px;
+    }
+
+    .pay-rate-badge {
+        display: none;
+    }
+
+    .rpt-sysgen {
+        font-size: 8px;
+    }
+
+    @page {
+        size: landscape;
+        margin: 0.5cm;
+    }
+}
+
+@media (max-width: 900px) {
+    .rpt-body {
+        padding: 0.75rem;
+    }
+
+    .pay-table {
+        min-width: 750px;
+    }
+
+    .pay-cert-row {
+        flex-direction: column;
+    }
+
+    .pay-cert-left,
+    .pay-cert-mid {
+        border-right: none;
+        border-bottom: 1px solid #000;
+    }
+}
+
+@media (max-width: 768px) {
+    .rpt-filter-row {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .rpt-filter-input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .pay-meta-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .pay-meta-right {
+        text-align: left;
+    }
+}

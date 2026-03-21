@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<TourismReportViewModel>
 <link href="~/css/ReportsNationality.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
 @{
     var totalMale = ViewBag.TotalMale ?? 0;
@@ -12,121 +13,458 @@
     DateTime.TryParse(dateTo, out var toDt);
 }
 
-<div class="card mt-4 shadow">
-    <!-- Header -->
-    <div class="card-header bg-primary text-white d-flex flex-wrap justify-content-between align-items-center">
-        <h5 class="mb-2 mb-md-0">Nationality Visitor Report</h5>
+<style>
+    .rpt-wrap * {
+        font-family: 'Outfit', sans-serif;
+    }
 
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <!-- Filter Form -->
-            <form method="get" asp-action="Nationality" id="filterForm" class="d-flex flex-wrap align-items-center gap-2">
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">From:</label>
-                    <input type="date" id="dateFrom" name="dateFrom" value="@dateFrom" class="form-control form-control-sm" required />
-                </div>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="fw-bold text-white">To:</label>
-                    <input type="date" id="dateTo" name="dateTo" value="@dateTo" class="form-control form-control-sm" required />
-                </div>
-                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
-                    <i class="bi bi-search"></i> Search
-                </button>
-            </form>
+    .rpt-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
 
-            <!-- Print Dropdown -->
-            <div class="btn-group mt-2 mt-sm-0">
-                <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                    <i class="bi bi-printer"></i> Print
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#" id="btnDownloadPDF"><i class="bi bi-file-earmark-pdf"></i> Print as PDF</a></li>
-                    <li><a class="dropdown-item" href="#" id="btnDownloadExcel"><i class="bi bi-file-earmark-excel"></i> Print as Excel</a></li>
-                </ul>
-            </div>
-        </div>
+        .rpt-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    .rpt-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .rpt-card-header {
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .rpt-card-header h5 {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+    .rpt-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .rpt-filter-label {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .rpt-filter-input {
+        padding: 0.4rem 0.75rem;
+        border: 1.5px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+    }
+
+        .rpt-filter-input:focus {
+            border-color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.25);
+        }
+
+    .btn-rpt-search {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.4);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-rpt-search:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+    .btn-rpt-print {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: #fff;
+        color: #0f3460;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+        .btn-rpt-print:hover {
+            opacity: 0.88;
+        }
+
+    .rpt-body {
+        padding: 1.5rem;
+    }
+
+    .rpt-title-box {
+        text-align: center;
+        border: 2px solid #e8edf5;
+        border-radius: 12px;
+        padding: 1.25rem 1rem;
+        margin-bottom: 1.25rem;
+        background: #f8faff;
+    }
+
+        .rpt-title-box h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0 0 0.25rem;
+        }
+
+        .rpt-title-box p {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+    .rpt-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.6rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .rpt-info-item {
+        background: #f8faff;
+        border: 1px solid #e8edf5;
+        border-radius: 10px;
+        padding: 0.55rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .rpt-info-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #94a3b8;
+    }
+
+    .rpt-info-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #0f3460;
+    }
+
+    #nationalityReportTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Outfit', sans-serif;
+    }
+
+        #nationalityReportTable thead th {
+            background: #f8faff;
+            color: #0f3460;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border: 1px solid #e8edf5;
+            padding: 0.65rem 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        #nationalityReportTable tbody td {
+            font-size: 0.85rem;
+            color: #334155;
+            border: 1px solid #e8edf5;
+            padding: 0.6rem 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+            #nationalityReportTable tbody td:nth-child(2) {
+                text-align: left;
+                font-weight: 600;
+            }
+
+        #nationalityReportTable tbody tr:hover {
+            background: #f0f6ff;
+        }
+
+        #nationalityReportTable tfoot td {
+            background: #f0f6ff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #0f3460;
+            border: 1px solid #e8edf5;
+            padding: 0.65rem 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+            #nationalityReportTable tfoot td:nth-child(1) {
+                text-align: left;
+            }
+
+    .seq-badge {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 24px;
+        text-align: center;
+    }
+
+    .total-badge {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .nationality-flag {
+        font-size: 1rem;
+        margin-right: 0.35rem;
+    }
+
+    .rpt-note {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        font-style: italic;
+        margin-top: 1rem;
+    }
+
+    .rpt-sysgen {
+        font-size: 0.72rem;
+        color: #cbd5e1;
+        font-style: italic;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #94a3b8;
+    }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state span {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+</style>
+
+<div class="rpt-wrap">
+
+    <div class="rpt-header">
+        <h2>
+            <i class="bi bi-globe2" style="color:#1a6ef5;"></i> Nationality Visitor Report
+        </h2>
     </div>
 
-    <!-- Body -->
-    <div class="card-body report-container">
-        <div class="report-title-box text-center mb-4">
-            <h3 class="fw-bold">Nationality Visitor Record</h3>
-            <p class="text-muted small mb-0">(Summary of visitors by nationality)</p>
-        </div>
+    <div class="rpt-card">
 
-        <!-- Info Section with DATA ATTRIBUTES -->
-        <div class="info-grid mb-3"
-             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
-             data-date-to="@toDt.ToString("MMMM d, yyyy")">
-            <div class="row g-2">
-                <div class="col-6 col-md-3 fw-bold">Date From:</div>
-                <div class="col-6 col-md-3" id="displayDateFrom">@fromDt.ToString("dddd, MMMM d, yyyy")</div>
-                <div class="col-6 col-md-3 fw-bold">Date To:</div>
-                <div class="col-6 col-md-3" id="displayDateTo">@toDt.ToString("dddd, MMMM d, yyyy")</div>
+        <!-- Gradient Header -->
+        <div class="rpt-card-header">
+            <h5><i class="bi bi-flag"></i> Nationality Visitor Record</h5>
 
-                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
-                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
-                <div class="col-6 col-md-3 fw-bold">Attraction:</div>
-                <div class="col-6 col-md-3">Canyoneering Adventure</div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <form method="get" asp-action="Nationality" id="filterForm" class="rpt-filter-row">
+                    <span class="rpt-filter-label">From</span>
+                    <input type="date" name="dateFrom" value="@dateFrom"
+                           class="rpt-filter-input" required />
+
+                    <span class="rpt-filter-label">To</span>
+                    <input type="date" name="dateTo" value="@dateTo"
+                           class="rpt-filter-input" required />
+
+                    <button type="submit" class="btn-rpt-search">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
+
+                <div class="dropdown">
+                    <button class="btn-rpt-print dropdown-toggle"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-printer"></i> Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0"
+                        style="border-radius:12px;">
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadPDF"
+                               style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Download PDF
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadExcel"
+                               style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-excel text-success me-2"></i> Download Excel
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
 
-        <!-- Responsive Table -->
-        <div class="table-responsive">
-            <table id="nationalityReportTable" class="table table-bordered table-striped table-sm text-center align-middle">
-                <thead class="table-primary">
-                    <tr>
-                        <th rowspan="2">Seq.</th>
-                        <th rowspan="2">NATIONALITY</th>
-                        <th colspan="2">NUMBER OF GUESTS</th>
-                        <th rowspan="2">ENDING TOTAL</th>
-                    </tr>
-                    <tr>
-                        <th>MALE</th>
-                        <th>FEMALE</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
-                        int seq = 1;
-                        if (Model == null || !Model.Any())
-                        {
-                            <tr>
-                                <td colspan="5" class="text-center py-4">No data available for the selected date range</td>
-                            </tr>
-                        }
-                        else
-                        {
-                            foreach (var item in Model)
+        <!-- Body -->
+        <div class="rpt-body report-container"
+             data-date-from="@fromDt.ToString("MMMM d, yyyy")"
+             data-date-to="@toDt.ToString("MMMM d, yyyy")">
+
+            <div class="rpt-title-box">
+                <h3>Nationality Visitor Record</h3>
+                <p>(Summary of visitors by nationality)</p>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="rpt-info-grid mb-3">
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Date From</span>
+                    <span class="rpt-info-value" id="displayDateFrom">
+                        @fromDt.ToString("dddd, MMMM d, yyyy")
+                    </span>
+                </div>
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Date To</span>
+                    <span class="rpt-info-value" id="displayDateTo">
+                        @toDt.ToString("dddd, MMMM d, yyyy")
+                    </span>
+                </div>
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Municipality</span>
+                    <span class="rpt-info-value">ALEGRIA, CEBU</span>
+                </div>
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Attraction</span>
+                    <span class="rpt-info-value">Canyoneering Adventure</span>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table id="nationalityReportTable" class="table table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width:60px;">Seq.</th>
+                            <th rowspan="2" style="text-align:left;">Nationality</th>
+                            <th colspan="2">Number of Guests</th>
+                            <th rowspan="2">Ending Total</th>
+                        </tr>
+                        <tr>
+                            <th>Male</th>
+                            <th>Female</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @{
+                            int seq = 1;
+                            if (Model == null || !Model.Any())
                             {
                                 <tr>
-                                    <td>@seq</td>
-                                    <td class="text-start text-break">@item.Label</td>
-                                    <td>@item.OtherProvinceMale</td>
-                                    <td>@item.OtherProvinceFemale</td>
-                                    <td><strong>@(item.OtherProvinceMale + item.OtherProvinceFemale)</strong></td>
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <i class="bi bi-globe"></i>
+                                            <span>No data available for the selected date range.</span>
+                                        </div>
+                                    </td>
                                 </tr>
-                                seq++;
+                            }
+                            else
+                            {
+                                foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td><span class="seq-badge">@seq</span></td>
+                                        <td style="text-align:left;">
+                                            <span class="nationality-flag">🌐</span>
+                                            <span class="fw-semibold">@item.Label</span>
+                                        </td>
+                                        <td>@item.OtherProvinceMale</td>
+                                        <td>@item.OtherProvinceFemale</td>
+                                        <td>
+                                            <span class="total-badge">
+                                                @(item.OtherProvinceMale + item.OtherProvinceFemale)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    seq++;
+                                }
                             }
                         }
-                    }
-                </tbody>
-                <tfoot class="fw-bold table-secondary">
-                    <tr>
-                        <td colspan="2" class="text-start">TOTAL:</td>
-                        <td>@totalMale</td>
-                        <td>@totalFemale</td>
-                        <td>@totalEnding</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+                    </tbody>
 
-        <p class="note-text mt-3 small text-muted">
-            <em>Note: Total number must be recorded. Residence entries are optional. Report totals must be recorded.</em>
-        </p>
-        <p class="system-generated-text text-end small text-muted mt-1">
-            <em>System Generated Report — Nationality Visitor Summary</em>
-        </p>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2">TOTAL:</td>
+                            <td>@totalMale</td>
+                            <td>@totalFemale</td>
+                            <td><span class="total-badge">@totalEnding</span></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <p class="rpt-note">
+                Note: Total number must be recorded. Residence entries are optional. Report totals must be recorded.
+            </p>
+            <p class="rpt-sysgen">System Generated Report — Nationality Visitor Summary</p>
+        </div>
     </div>
 </div>
 

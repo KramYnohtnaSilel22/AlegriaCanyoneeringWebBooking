@@ -190,3 +190,122 @@
         white-space: nowrap;
     }
 }
+@media print {
+    .rpt-card-header,
+    .rpt-header,
+    .btn, .btn-group, .dropdown {
+        display: none !important;
+    }
+
+    .rpt-card {
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .rpt-body {
+        padding: 10px;
+    }
+
+    .rpt-title-box {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+        .rpt-title-box h3 {
+            font-size: 16px;
+        }
+
+    .rpt-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+    }
+
+    .rpt-info-item {
+        padding: 4px 6px;
+    }
+
+    .rpt-info-label {
+        font-size: 7px;
+    }
+
+    .rpt-info-value {
+        font-size: 9px;
+    }
+
+    #operatorReportTable {
+        font-size: 9px;
+    }
+
+        #operatorReportTable th,
+        #operatorReportTable td {
+            padding: 3px;
+            border: 1px solid #000;
+        }
+
+        #operatorReportTable thead {
+            display: table-header-group;
+        }
+
+        #operatorReportTable tfoot {
+            display: table-footer-group;
+        }
+
+        #operatorReportTable tbody tr {
+            page-break-inside: avoid;
+        }
+
+    .seq-badge {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+        line-height: 18px;
+    }
+
+    .total-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+
+    .operator-icon {
+        display: none;
+    }
+
+    .rpt-note, .rpt-sysgen {
+        font-size: 8px;
+    }
+
+    @page {
+        size: portrait;
+        margin: 0.5cm;
+    }
+}
+
+@media (max-width: 768px) {
+    .rpt-filter-row {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .rpt-filter-input {
+        width: 100%;
+    }
+
+    .rpt-info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #operatorReportTable th,
+    #operatorReportTable td {
+        white-space: nowrap;
+        font-size: 0.78rem;
+        padding: 0.3rem 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .rpt-info-grid {
+        grid-template-columns: 1fr;
+    }
+}

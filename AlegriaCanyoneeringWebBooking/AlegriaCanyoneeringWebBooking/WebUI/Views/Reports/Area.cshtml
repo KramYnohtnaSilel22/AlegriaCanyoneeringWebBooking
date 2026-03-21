@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<TourismReportViewModel>
 <link href="~/css/ReportsArea.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
 @{
     var dateFrom = ViewBag.DateFrom as string ?? DateTime.Today.ToString("yyyy-MM-dd");
@@ -19,207 +20,517 @@
     var grandTotal = grandTotalMale + grandTotalFemale;
 }
 
-<div class="card mt-4 shadow">
-    <div class="card-header bg-primary text-white d-flex flex-wrap justify-content-between align-items-center">
-        <h5 class="mb-2 mb-md-0">Guest Visitor Report</h5>
+<style>
+    .rpt-wrap * {
+        font-family: 'Outfit', sans-serif;
+    }
 
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <!-- Filter Form -->
-            <form method="get" asp-action="Area" id="filterForm"
-                  class="d-flex flex-wrap align-items-center gap-2">
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="text-white fw-bold">From:</label>
-                    <input type="date" name="dateFrom" id="dateFrom" value="@ViewBag.DateFrom"
-                           class="form-control form-control-sm" required />
-                </div>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="text-white fw-bold">To:</label>
-                    <input type="date" name="dateTo" id="dateTo" value="@ViewBag.DateTo"
-                           class="form-control form-control-sm" required />
-                </div>
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                    <label class="text-white fw-bold">Area:</label>
-                    <select name="area" class="form-select form-select-sm" style="min-width:140px;">
+    .rpt-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .rpt-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    .rpt-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .rpt-card-header {
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .rpt-card-header h5 {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+    .rpt-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .rpt-filter-label {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .rpt-filter-input {
+        padding: 0.4rem 0.75rem;
+        border: 1.5px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+    }
+
+        .rpt-filter-input:focus {
+            border-color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.25);
+        }
+
+        .rpt-filter-input option {
+            color: #0f3460;
+            background: #fff;
+        }
+
+    .btn-rpt-search {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.4);
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-rpt-search:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+    .btn-rpt-print {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 1rem;
+        background: #fff;
+        color: #0f3460;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+        .btn-rpt-print:hover {
+            opacity: 0.88;
+        }
+
+    .rpt-body {
+        padding: 1.5rem;
+    }
+
+    .rpt-title-box {
+        text-align: center;
+        border: 2px solid #e8edf5;
+        border-radius: 12px;
+        padding: 1.25rem 1rem;
+        margin-bottom: 1.25rem;
+        background: #f8faff;
+    }
+
+        .rpt-title-box h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0 0 0.25rem;
+        }
+
+        .rpt-title-box p {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+    .rpt-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.6rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .rpt-info-item {
+        background: #f8faff;
+        border: 1px solid #e8edf5;
+        border-radius: 10px;
+        padding: 0.55rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .rpt-info-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #94a3b8;
+    }
+
+    .rpt-info-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #0f3460;
+    }
+
+    #tourismReportTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Outfit', sans-serif;
+    }
+
+        #tourismReportTable thead th {
+            background: #f8faff;
+            color: #0f3460;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border: 1px solid #e8edf5;
+            padding: 0.6rem 0.5rem;
+            text-align: center;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        #tourismReportTable tbody td {
+            font-size: 0.82rem;
+            color: #334155;
+            border: 1px solid #e8edf5;
+            padding: 0.55rem 0.5rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #tourismReportTable tbody tr:hover {
+            background: #f0f6ff;
+        }
+
+        #tourismReportTable tbody tr td:nth-child(2) {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        #tourismReportTable tfoot td {
+            background: #f0f6ff;
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: #0f3460;
+            border: 1px solid #e8edf5;
+            padding: 0.6rem 0.5rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+    .seq-badge {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 24px;
+        text-align: center;
+    }
+
+    .total-badge {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .rpt-note {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        font-style: italic;
+        margin-top: 1rem;
+    }
+
+    .rpt-sysgen {
+        font-size: 0.72rem;
+        color: #cbd5e1;
+        font-style: italic;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #94a3b8;
+    }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state span {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+</style>
+
+<div class="rpt-wrap">
+
+    <!-- Page Header -->
+    <div class="rpt-header">
+        <h2>
+            <i class="bi bi-bar-chart-fill" style="color:#1a6ef5;"></i> Guest Visitor Report
+        </h2>
+    </div>
+
+    <!-- Main Card -->
+    <div class="rpt-card">
+
+        <!-- Gradient Header with Filters -->
+        <div class="rpt-card-header">
+            <h5><i class="bi bi-clipboard-data"></i> Tourism Attraction Visitor Record</h5>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <!-- Filter Form -->
+                <form method="get" asp-action="Area" id="filterForm" class="rpt-filter-row">
+                    <span class="rpt-filter-label">From</span>
+                    <input type="date" name="dateFrom" value="@ViewBag.DateFrom"
+                           class="rpt-filter-input" required />
+
+                    <span class="rpt-filter-label">To</span>
+                    <input type="date" name="dateTo" value="@ViewBag.DateTo"
+                           class="rpt-filter-input" required />
+
+                    <span class="rpt-filter-label">Area</span>
+                    <select name="area" class="rpt-filter-input" style="min-width:140px;">
                         <option value="" selected="@(string.IsNullOrEmpty(selectedArea) ? "selected" : null)">— All Areas —</option>
                         @foreach (var a in areas)
                         {
                             <option value="@a" selected="@(selectedArea == a ? "selected" : null)">@a</option>
                         }
                     </select>
-                </div>
-                <button type="submit" class="btn btn-light btn-sm mt-2 mt-sm-0">
-                    <i class="bi bi-search"></i> Search
-                </button>
-            </form>
 
-            <!-- Print Dropdown -->
-            <div class="btn-group mt-2 mt-sm-0">
-                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-printer"></i> Print
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a class="dropdown-item" href="#" id="btnDownloadPDF">
-                            <i class="bi bi-file-earmark-pdf"></i> Print as PDF
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#" id="btnDownloadExcel">
-                            <i class="bi bi-file-earmark-excel"></i> Print as Excel
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
+                    <button type="submit" class="btn-rpt-search">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
 
-    <div class="card-body report-container">
-        <div class="report-title-box text-center mb-4">
-            <h3 class="fw-bold">Tourism Attraction Visitor Record</h3>
-            @if (!string.IsNullOrEmpty(selectedArea))
-            {
-                <div class="mt-1">
-                    <span class="badge bg-primary fs-6 px-3">@selectedArea</span>
-                </div>
-            }
-            <p class="text-muted small mb-0">(This recording form can be used instead of just counting the visitors)</p>
-        </div>
-
-        <!-- Info Section -->
-        <div class="info-grid mb-3">
-            <div class="row g-2">
-                <div class="col-6 col-md-3 fw-bold">Date From:</div>
-                <div class="col-6 col-md-3">
-                    @(DateTime.TryParse(dateFrom, out var from) ? from.ToString("dddd, MMMM d, yyyy") : "N/A")
-                </div>
-                <div class="col-6 col-md-3 fw-bold">Date To:</div>
-                <div class="col-6 col-md-3">
-                    @(DateTime.TryParse(dateTo, out var to) ? to.ToString("dddd, MMMM d, yyyy") : "N/A")
-                </div>
-
-                <div class="col-6 col-md-3 fw-bold">Municipality:</div>
-                <div class="col-6 col-md-3">ALEGRIA, CEBU</div>
-                <div class="col-6 col-md-3 fw-bold">Area:</div>
-                <div class="col-6 col-md-3">
-                    @(string.IsNullOrEmpty(selectedArea) ? "All Areas" : selectedArea)
+                <!-- Print Dropdown -->
+                <div class="dropdown">
+                    <button class="btn-rpt-print dropdown-toggle"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-printer"></i> Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius:12px;">
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadPDF" style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Download PDF
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btnDownloadExcel" style="font-family:'Outfit',sans-serif;font-size:0.875rem;">
+                                <i class="bi bi-file-earmark-excel text-success me-2"></i> Download Excel
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
 
-        <!-- Table -->
-        <div class="table-responsive">
-            <table id="tourismReportTable"
-                   class="table table-bordered table-striped table-sm text-center align-middle">
-                <thead class="table-primary">
-                    <tr>
-                        <th rowspan="4">Seq.</th>
-                        <th rowspan="4">
-                            @if (ViewBag.GroupByMonth == true)
+        <!-- Report Body -->
+        <div class="rpt-body report-container">
+
+            <!-- Title Box -->
+            <div class="rpt-title-box">
+                <h3>Tourism Attraction Visitor Record</h3>
+                @if (!string.IsNullOrEmpty(selectedArea))
+                {
+                    <span class="badge mt-1" style="background:#dbeafe;color:#1e40af;font-family:'Outfit',sans-serif;font-size:0.8rem;padding:0.3rem 0.75rem;border-radius:999px;">
+                        @selectedArea
+                    </span>
+                }
+                <p class="mt-1">(This recording form can be used instead of just counting the visitors)</p>
+            </div>
+
+            <!-- Info Grid -->
+            <div class="rpt-info-grid mb-3">
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Date From</span>
+                    <span class="rpt-info-value">
+                        @(DateTime.TryParse(dateFrom, out var from) ? from.ToString("dddd, MMMM d, yyyy") : "N/A")
+                    </span>
+                </div>
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Date To</span>
+                    <span class="rpt-info-value">
+                        @(DateTime.TryParse(dateTo, out var to) ? to.ToString("dddd, MMMM d, yyyy") : "N/A")
+                    </span>
+                </div>
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Municipality</span>
+                    <span class="rpt-info-value">ALEGRIA, CEBU</span>
+                </div>
+                <div class="rpt-info-item">
+                    <span class="rpt-info-label">Area</span>
+                    <span class="rpt-info-value">
+                        @(string.IsNullOrEmpty(selectedArea) ? "All Areas" : selectedArea)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table id="tourismReportTable" class="table table-bordered text-center align-middle">
+                    <thead>
+                        <tr>
+                            <th rowspan="4">Seq.</th>
+                            <th rowspan="4">
+                                @if (ViewBag.GroupByMonth == true)
+                                {
+                                    <text>Month</text>
+                                }
+                                else
+                                {
+                                    <text>Date<br />Week Day<br />(Mon–Sun)</text>
+                                }
+                            </th>
+                            <th colspan="9">★ Place of Residences</th>
+                            <th colspan="3" rowspan="2">Grand Total<br />Visitors</th>
+                        </tr>
+                        <tr>
+                            <th colspan="6">Philippines</th>
+                            <th colspan="3" rowspan="2">Foreign<br />Country</th>
+                        </tr>
+                        <tr>
+                            <th colspan="3">This Province</th>
+                            <th colspan="3">Other Province</th>
+                        </tr>
+                        <tr>
+                            <th>M</th>
+                            <th>F</th>
+                            <th>Total</th>
+                            <th>M</th>
+                            <th>F</th>
+                            <th>Total</th>
+                            <th>M</th>
+                            <th>F</th>
+                            <th>Total</th>
+                            <th>M</th>
+                            <th>F</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @{
+                            int seq = 1;
+                            if (Model == null || !Model.Any())
                             {
-                                <text>Month</text>
+                                <tr>
+                                    <td colspan="14">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <span>
+                                                No data found
+                                                @if (!string.IsNullOrEmpty(selectedArea))
+                                                {
+                                                    <text> for <strong>@selectedArea</strong></text>
+                                                }
+                                                in the selected date range.
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
                             }
                             else
                             {
-                                <text>Date<br />Week Day<br />(Mon-Sun)</text>
-                            }
-                        </th>
-                        <th colspan="9">*** Place of Residences</th>
-                        <th colspan="3" rowspan="2">Grand Total Number of Visitors</th>
-                    </tr>
-                    <tr>
-                        <th colspan="6">Philippines</th>
-                        <th colspan="3" rowspan="2">Foreign Country Residence</th>
-                    </tr>
-                    <tr>
-                        <th colspan="3">This Province</th>
-                        <th colspan="3">Other Province</th>
-                    </tr>
-                    <tr>
-                        <th>Male</th>
-                        <th>Female</th>
-                        <th>Total</th>
-                        <th>Male</th>
-                        <th>Female</th>
-                        <th>Total</th>
-                        <th>Male</th>
-                        <th>Female</th>
-                        <th>Total</th>
-                        <th>Male</th>
-                        <th>Female</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @{
-                        int seq = 1;
-                        if (Model == null || !Model.Any())
-                        {
-                            <tr>
-                                <td colspan="14" class="text-center py-5 text-muted">
-                                    <i class="bi bi-inbox me-2" style="font-size:1.4rem;"></i><br />
-                                    <span class="fw-semibold">No data found</span>
-                                    @if (!string.IsNullOrEmpty(selectedArea))
-                                    {
-                                        <span> for <strong>@selectedArea</strong></span>
-                                    }
-                                    <span> in the selected date range.</span>
-                                </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            foreach (var item in Model)
-                            {
-                                <tr>
-                                    <td>@seq</td>
-                                    <td>@item.Label</td>
-                                    <td>@item.ThisProvinceMale</td>
-                                    <td>@item.ThisProvinceFemale</td>
-                                    <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
-                                    <td>@item.OtherProvinceMale</td>
-                                    <td>@item.OtherProvinceFemale</td>
-                                    <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
-                                    <td>@item.ForeignMale</td>
-                                    <td>@item.ForeignFemale</td>
-                                    <td>@(item.ForeignMale + item.ForeignFemale)</td>
-                                    <td>@item.TotalMale</td>
-                                    <td>@item.TotalFemale</td>
-                                    <td>@item.GrandTotal</td>
-                                </tr>
-                                seq++;
+                                foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td><span class="seq-badge">@seq</span></td>
+                                        <td style="text-align:center;font-weight:600;">@item.Label</td>
+                                        <td>@item.ThisProvinceMale</td>
+                                        <td>@item.ThisProvinceFemale</td>
+                                        <td>@(item.ThisProvinceMale + item.ThisProvinceFemale)</td>
+                                        <td>@item.OtherProvinceMale</td>
+                                        <td>@item.OtherProvinceFemale</td>
+                                        <td>@(item.OtherProvinceMale + item.OtherProvinceFemale)</td>
+                                        <td>@item.ForeignMale</td>
+                                        <td>@item.ForeignFemale</td>
+                                        <td>@(item.ForeignMale + item.ForeignFemale)</td>
+                                        <td>@item.TotalMale</td>
+                                        <td>@item.TotalFemale</td>
+                                        <td><span class="total-badge">@item.GrandTotal</span></td>
+                                    </tr>
+                                    seq++;
+                                }
                             }
                         }
-                    }
-                </tbody>
+                    </tbody>
 
-                <tfoot class="fw-bold table-secondary">
-                    <tr>
-                        <td colspan="2">@(ViewBag.GroupByMonth == true ? "Period Total" : "Monthly Total")</td>
-                        <td>@totalThisProvinceMale</td>
-                        <td>@totalThisProvinceFemale</td>
-                        <td>@(totalThisProvinceMale + totalThisProvinceFemale)</td>
-                        <td>@totalOtherProvinceMale</td>
-                        <td>@totalOtherProvinceFemale</td>
-                        <td>@(totalOtherProvinceMale + totalOtherProvinceFemale)</td>
-                        <td>@totalForeignMale</td>
-                        <td>@totalForeignFemale</td>
-                        <td>@(totalForeignMale + totalForeignFemale)</td>
-                        <td>@grandTotalMale</td>
-                        <td>@grandTotalFemale</td>
-                        <td>@grandTotal</td>
-                    </tr>
-                </tfoot>
-            </table>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2">@(ViewBag.GroupByMonth == true ? "Period Total" : "Monthly Total")</td>
+                            <td>@totalThisProvinceMale</td>
+                            <td>@totalThisProvinceFemale</td>
+                            <td>@(totalThisProvinceMale + totalThisProvinceFemale)</td>
+                            <td>@totalOtherProvinceMale</td>
+                            <td>@totalOtherProvinceFemale</td>
+                            <td>@(totalOtherProvinceMale + totalOtherProvinceFemale)</td>
+                            <td>@totalForeignMale</td>
+                            <td>@totalForeignFemale</td>
+                            <td>@(totalForeignMale + totalForeignFemale)</td>
+                            <td>@grandTotalMale</td>
+                            <td>@grandTotalFemale</td>
+                            <td><span class="total-badge">@grandTotal</span></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <p class="rpt-note">
+                Note: Total number must be recorded. Residence entries are optional.
+                @(ViewBag.GroupByMonth == true ? "Period" : "Monthly") totals must be recorded.
+            </p>
+            <p class="rpt-sysgen">System Generated Report — Area Visitor Summary</p>
         </div>
-
-        <p class="note-text mt-3 small text-muted">
-            <em>Note: Total number must be recorded. Residence entries are optional. @(ViewBag.GroupByMonth == true ? "Period" : "Monthly") totals must be recorded.</em>
-        </p>
-        <p class="system-generated-text text-end small text-muted mt-1">
-            <em>System Generated Report — Area Visitor Summary</em>
-        </p>
     </div>
 </div>
 
