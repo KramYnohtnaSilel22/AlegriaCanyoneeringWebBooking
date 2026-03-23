@@ -29,10 +29,8 @@
 
         const w = imgProps.width * scale;
         const h = imgProps.height * scale;
-        const x = (pageW - w) / 2;
-        const y = (pageH - h) / 2;
 
-        pdf.addImage(imgData, "JPEG", x, y, w, h);
+        pdf.addImage(imgData, "JPEG", (pageW - w) / 2, (pageH - h) / 2, w, h);
         pdf.save(`NationalityReport_${new Date().toISOString().slice(0, 10)}.pdf`);
     });
 
@@ -49,22 +47,18 @@
             return;
         }
 
-        // ✅ READ FORMATTED DATES FROM THE INFO-GRID
-        const infoGrid = document.querySelector(".info-grid");
-        let dateFromText = "N/A";
-        let dateToText = "N/A";
+        // ✅ FIXED: Read from IDs first, fallback to .rpt-info-item with toUpperCase()
+        let dateFromText = document.getElementById("displayDateFrom")?.innerText?.trim() || "N/A";
+        let dateToText = document.getElementById("displayDateTo")?.innerText?.trim() || "N/A";
 
-        if (infoGrid) {
-            const allDivs = Array.from(infoGrid.querySelectorAll("div"));
-            for (let i = 0; i < allDivs.length; i++) {
-                const text = allDivs[i].innerText.trim();
-                if (text === "Date From:" && allDivs[i + 1]) {
-                    dateFromText = allDivs[i + 1].innerText.trim();
-                }
-                if (text === "Date To:" && allDivs[i + 1]) {
-                    dateToText = allDivs[i + 1].innerText.trim();
-                }
-            }
+        if (dateFromText === "N/A" || dateToText === "N/A") {
+            const infoItems = Array.from(document.querySelectorAll(".rpt-info-item"));
+            infoItems.forEach(item => {
+                const label = item.querySelector(".rpt-info-label")?.innerText?.trim().toUpperCase();
+                const value = item.querySelector(".rpt-info-value")?.innerText?.trim();
+                if (label === "DATE FROM") dateFromText = value || "N/A";
+                if (label === "DATE TO") dateToText = value || "N/A";
+            });
         }
 
         const wb = new ExcelJS.Workbook();
@@ -124,48 +118,23 @@
         ws.getRow(7).height = 5;
 
         // ---- Table Header (rows 8-9) ----
-        ws.mergeCells("A8:A9");
-        ws.getCell("A8").value = "Seq.";
-        ws.getCell("A8").font = { bold: true, size: 10 };
-        ws.getCell("A8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("A8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-        ws.getCell("A8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-        ws.getCell("A9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        const hBorder = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        const hFill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
 
-        ws.mergeCells("B8:B9");
-        ws.getCell("B8").value = "NATIONALITY";
-        ws.getCell("B8").font = { bold: true, size: 10 };
-        ws.getCell("B8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("B8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-        ws.getCell("B8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-        ws.getCell("B9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-
-        ws.mergeCells("C8:D8");
-        ws.getCell("C8").value = "NUMBER OF GUESTS";
-        ws.getCell("C8").font = { bold: true, size: 10 };
-        ws.getCell("C8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("C8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-        ws.getCell("C8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-
-        ws.mergeCells("E8:E9");
-        ws.getCell("E8").value = "ENDING TOTAL";
-        ws.getCell("E8").font = { bold: true, size: 10 };
-        ws.getCell("E8").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("E8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-        ws.getCell("E8").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-        ws.getCell("E9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-
+        ws.mergeCells("A8:A9"); ws.getCell("A8").value = "Seq.";
+        ws.mergeCells("B8:B9"); ws.getCell("B8").value = "NATIONALITY";
+        ws.mergeCells("C8:D8"); ws.getCell("C8").value = "NUMBER OF GUESTS";
+        ws.mergeCells("E8:E9"); ws.getCell("E8").value = "ENDING TOTAL";
         ws.getCell("C9").value = "MALE";
-        ws.getCell("C9").font = { bold: true, size: 10 };
-        ws.getCell("C9").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("C9").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-        ws.getCell("C9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-
         ws.getCell("D9").value = "FEMALE";
-        ws.getCell("D9").font = { bold: true, size: 10 };
-        ws.getCell("D9").alignment = { horizontal: "center", vertical: "middle" };
-        ws.getCell("D9").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-        ws.getCell("D9").border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+
+        ["A8", "B8", "C8", "E8", "C9", "D9", "A9", "B9", "E9"].forEach(addr => {
+            const cell = ws.getCell(addr);
+            cell.font = { bold: true, size: 10 };
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+            cell.fill = hFill;
+            cell.border = hBorder;
+        });
 
         // ---- Body Rows (start at row 10) ----
         const tbody = table.querySelector("tbody");
@@ -192,7 +161,7 @@
                     row.getCell(5).font = { bold: true };
 
                     for (let c = 1; c <= 5; c++) {
-                        row.getCell(c).border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+                        row.getCell(c).border = hBorder;
                     }
                 }
             });
@@ -220,9 +189,9 @@
             totalRow.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
             totalRow.getCell(5).numFmt = "#,##0";
 
-            totalRow.eachCell((cell) => {
-                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-                cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+            totalRow.eachCell(cell => {
+                cell.fill = hFill;
+                cell.border = hBorder;
             });
         }
 

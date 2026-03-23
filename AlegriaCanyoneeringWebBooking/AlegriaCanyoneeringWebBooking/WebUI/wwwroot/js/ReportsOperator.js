@@ -47,28 +47,19 @@
             return;
         }
 
-        // Read dates
-        let dateFromText = "N/A";
-        let dateToText = "N/A";
+        // ✅ FIXED: Primary — read from known element IDs
+        let dateFromText = document.getElementById("displayDateFrom")?.innerText?.trim() || "N/A";
+        let dateToText = document.getElementById("displayDateTo")?.innerText?.trim() || "N/A";
 
-        const displayFrom = document.getElementById("displayDateFrom");
-        const displayTo = document.getElementById("displayDateTo");
-        if (displayFrom) dateFromText = displayFrom.innerText.trim();
-        if (displayTo) dateToText = displayTo.innerText.trim();
-
-        // Fallback: read from grid divs
+        // ✅ FIXED: Fallback — use .rpt-info-item with toUpperCase() to handle CSS text-transform
         if (dateFromText === "N/A" || dateToText === "N/A") {
-            const infoGrid = document.querySelector(".info-grid");
-            if (infoGrid) {
-                const allDivs = Array.from(infoGrid.querySelectorAll("div"));
-                for (let i = 0; i < allDivs.length; i++) {
-                    const text = allDivs[i].innerText.trim();
-                    if (text === "Date From:" && i + 1 < allDivs.length && dateFromText === "N/A")
-                        dateFromText = allDivs[i + 1].innerText.trim();
-                    if (text === "Date To:" && i + 1 < allDivs.length && dateToText === "N/A")
-                        dateToText = allDivs[i + 1].innerText.trim();
-                }
-            }
+            const infoItems = Array.from(document.querySelectorAll(".rpt-info-item"));
+            infoItems.forEach(item => {
+                const label = item.querySelector(".rpt-info-label")?.innerText?.trim().toUpperCase();
+                const value = item.querySelector(".rpt-info-value")?.innerText?.trim();
+                if (label === "DATE FROM") dateFromText = value || "N/A";
+                if (label === "DATE TO") dateToText = value || "N/A";
+            });
         }
 
         const wb = new ExcelJS.Workbook();
@@ -83,7 +74,7 @@
         });
 
         ws.columns = [
-            { width: 8 },  // Seq
+            { width: 8 },   // Seq
             { width: 40 },  // Operator
             { width: 12 },  // Male
             { width: 12 },  // Female

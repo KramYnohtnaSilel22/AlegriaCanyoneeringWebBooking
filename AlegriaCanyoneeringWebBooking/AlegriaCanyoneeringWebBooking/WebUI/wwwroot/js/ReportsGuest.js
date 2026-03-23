@@ -49,19 +49,16 @@
             return;
         }
 
-        // Read the DISPLAYED date text from the info-grid
-        let dateFromText = "";
-        let dateToText = "";
+        // ✅ FIXED: Read date values from correct .rpt-info-item elements
+        const infoItems = Array.from(document.querySelectorAll(".rpt-info-item"));
+        let dateFromText = "N/A";
+        let dateToText = "N/A";
 
-        const infoCells = Array.from(document.querySelectorAll(".info-grid .row .col-6, .info-grid .row .col-md-3"));
-        infoCells.forEach((cell, i) => {
-            const text = cell.innerText.trim();
-            if (text === "Date From:" && infoCells[i + 1]) {
-                dateFromText = infoCells[i + 1].innerText.trim();
-            }
-            if (text === "Date To:" && infoCells[i + 1]) {
-                dateToText = infoCells[i + 1].innerText.trim();
-            }
+        infoItems.forEach(item => {
+            const label = item.querySelector(".rpt-info-label")?.innerText?.trim().toUpperCase();
+            const value = item.querySelector(".rpt-info-value")?.innerText?.trim();
+            if (label === "DATE FROM") dateFromText = value || "N/A";
+            if (label === "DATE TO") dateToText = value || "N/A";
         });
 
         // Read DYNAMIC header text
@@ -85,7 +82,7 @@
         }
 
         // Read DYNAMIC note text
-        const noteElement = document.querySelector(".note-text em");
+        const noteElement = document.querySelector(".rpt-note");
         let noteText = "Note: Total number must be recorded. Residence entries are optional. Monthly totals must be recorded.";
         if (noteElement) {
             noteText = noteElement.innerText.trim();
@@ -94,8 +91,8 @@
         const meta = {
             title: "Tourism Attraction Visitor Record",
             subtitle: "(This recording form can be used instead of just counting the visitors)",
-            dateFrom: dateFromText || "N/A",
-            dateTo: dateToText || "N/A",
+            dateFrom: dateFromText,
+            dateTo: dateToText,
             municipality: "ALEGRIA, CEBU",
             spotName: "Canyoneering Adventure"
         };
@@ -121,7 +118,7 @@
             }
         });
 
-        // 14 columns (A..N) - WIDER Date column
+        // 14 columns (A..N)
         ws.columns = [
             { key: "A", width: 6 },
             { key: "B", width: 35 },
@@ -151,7 +148,7 @@
         ws.getCell("A2").alignment = { horizontal: "center", vertical: "middle" };
 
         // Date row
-        ws.getCell("A3").value = "Date:";
+        ws.getCell("A3").value = "Date From:";
         ws.getCell("A3").font = { bold: true };
         ws.getCell("A3").alignment = { horizontal: "left", vertical: "middle" };
 
@@ -193,20 +190,25 @@
         // ---- Multi-row table header (rows 6-9) ----
         ws.mergeCells("A6:A9");
         ws.getCell("A6").value = "Seq.";
+
         ws.mergeCells("B6:B9");
         ws.getCell("B6").value = dateColumnHeader;
+
         ws.mergeCells("C6:K6");
-        ws.getCell("C6").value = "*** Place of Residences";
+        ws.getCell("C6").value = "★ Place of Residences";
+
         ws.mergeCells("L6:N8");
         ws.getCell("L6").value = "Grand Total Number of Visitors";
 
         ws.mergeCells("C7:H7");
         ws.getCell("C7").value = "Philippines";
+
         ws.mergeCells("I7:K8");
         ws.getCell("I7").value = "Foreign Country Residence";
 
         ws.mergeCells("C8:E8");
         ws.getCell("C8").value = "This Province";
+
         ws.mergeCells("F8:H8");
         ws.getCell("F8").value = "Other Province";
 
@@ -215,7 +217,7 @@
             ws.getCell(9, 3 + i).value = label;
         });
 
-        // Style header rows
+        // Style header rows 6-9
         for (let r = 6; r <= 9; r++) {
             const row = ws.getRow(r);
             row.height = 18;
@@ -336,5 +338,4 @@
         a.download = `GuestReport_${new Date().toISOString().slice(0, 10)}.xlsx`;
         a.click();
     });
-
 });

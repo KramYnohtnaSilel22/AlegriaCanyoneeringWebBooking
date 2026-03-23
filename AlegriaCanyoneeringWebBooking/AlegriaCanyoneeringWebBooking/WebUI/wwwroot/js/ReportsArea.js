@@ -1,5 +1,4 @@
 ﻿$(document).ready(function () {
-
     // ---- PDF EXPORT ----
     $("#btnDownloadPDF").on("click", async function () {
         if (!window.jspdf) { alert("jsPDF failed to load."); return; }
@@ -7,13 +6,15 @@
         const element = document.querySelector(".report-container");
         if (!element) { alert("Report not found."); return; }
 
-        // Read area name for filename
-        let pdfAreaText = "";
-        const infoCells = Array.from(document.querySelectorAll(".info-grid .row .col-6, .info-grid .row .col-md-3"));
-        infoCells.forEach((cell, i) => {
-            if (cell.innerText.trim() === "Area:" && infoCells[i + 1])
-                pdfAreaText = infoCells[i + 1].innerText.trim();
+        // ✅ FIXED: Read area name from .rpt-info-item
+        let pdfAreaText = "All Areas";
+        const infoItems = Array.from(document.querySelectorAll(".rpt-info-item"));
+        infoItems.forEach(item => {
+            const label = item.querySelector(".rpt-info-label")?.innerText?.trim().toUpperCase();
+            const value = item.querySelector(".rpt-info-value")?.innerText?.trim();
+            if (label === "AREA") pdfAreaText = value || "All Areas";
         });
+
         const pdfAreaSlug = (pdfAreaText && pdfAreaText !== "All Areas")
             ? pdfAreaText.replace(/\s+/g, "_")
             : "All_Areas";
@@ -42,20 +43,21 @@
         const table = document.getElementById("tourismReportTable");
         if (!table) { alert("Table not found."); return; }
 
-        // Read displayed info grid values
-        let dateFromText = "";
-        let dateToText = "";
-        let areaText = "";
+        // ✅ FIXED: Use .rpt-info-item with toUpperCase() to handle CSS text-transform: uppercase
+        let dateFromText = "N/A";
+        let dateToText = "N/A";
+        let areaText = "All Areas";
 
-        const infoCells = Array.from(document.querySelectorAll(".info-grid .row .col-6, .info-grid .row .col-md-3"));
-        infoCells.forEach((cell, i) => {
-            const text = cell.innerText.trim();
-            if (text === "Date From:" && infoCells[i + 1]) dateFromText = infoCells[i + 1].innerText.trim();
-            if (text === "Date To:" && infoCells[i + 1]) dateToText = infoCells[i + 1].innerText.trim();
-            if (text === "Area:" && infoCells[i + 1]) areaText = infoCells[i + 1].innerText.trim();
+        const infoItems = Array.from(document.querySelectorAll(".rpt-info-item"));
+        infoItems.forEach(item => {
+            const label = item.querySelector(".rpt-info-label")?.innerText?.trim().toUpperCase();
+            const value = item.querySelector(".rpt-info-value")?.innerText?.trim();
+            if (label === "DATE FROM") dateFromText = value || "N/A";
+            if (label === "DATE TO") dateToText = value || "N/A";
+            if (label === "AREA") areaText = value || "All Areas";
         });
 
-        // Read dynamic header/footer/note text
+        // Read dynamic header text
         const headerRows = table.querySelectorAll("thead tr");
         let dateColumnHeader = "Date\nWeek Day\n(Mon-Sun)";
         if (headerRows.length > 0) {
@@ -63,6 +65,7 @@
             if (headerCells.length > 1) dateColumnHeader = headerCells[1].innerText.trim();
         }
 
+        // Read dynamic footer label
         const tfootRow = table.querySelector("tfoot tr");
         let footerLabel = "Monthly Total";
         if (tfootRow) {
@@ -70,17 +73,18 @@
             if (firstCell) footerLabel = firstCell.innerText.trim();
         }
 
-        const noteElement = document.querySelector(".note-text em");
+        // Read dynamic note text
+        const noteElement = document.querySelector(".rpt-note");
         let noteText = "Note: Total number must be recorded. Residence entries are optional.";
         if (noteElement) noteText = noteElement.innerText.trim();
 
         const meta = {
             title: "Tourism Attraction Visitor Record",
             subtitle: "(This recording form can be used instead of just counting the visitors)",
-            dateFrom: dateFromText || "N/A",
-            dateTo: dateToText || "N/A",
+            dateFrom: dateFromText,
+            dateTo: dateToText,
             municipality: "ALEGRIA, CEBU",
-            area: areaText || "All Areas"
+            area: areaText
         };
 
         const wb = new ExcelJS.Workbook();
@@ -97,20 +101,20 @@
 
         // 14 columns A..N
         ws.columns = [
-            { key: "A", width: 6 },  // Seq.
-            { key: "B", width: 35 },  // Date
-            { key: "C", width: 8 },  // This Province Male
-            { key: "D", width: 8 },  // This Province Female
-            { key: "E", width: 8 },  // This Province Total
-            { key: "F", width: 8 },  // Other Province Male
-            { key: "G", width: 8 },  // Other Province Female
-            { key: "H", width: 8 },  // Other Province Total
-            { key: "I", width: 8 },  // Foreign Male
-            { key: "J", width: 8 },  // Foreign Female
-            { key: "K", width: 8 },  // Foreign Total
-            { key: "L", width: 9 },  // Grand Total Male
-            { key: "M", width: 9 },  // Grand Total Female
-            { key: "N", width: 9 }   // Grand Total
+            { key: "A", width: 6 },
+            { key: "B", width: 35 },
+            { key: "C", width: 8 },
+            { key: "D", width: 8 },
+            { key: "E", width: 8 },
+            { key: "F", width: 8 },
+            { key: "G", width: 8 },
+            { key: "H", width: 8 },
+            { key: "I", width: 8 },
+            { key: "J", width: 8 },
+            { key: "K", width: 8 },
+            { key: "L", width: 9 },
+            { key: "M", width: 9 },
+            { key: "N", width: 9 }
         ];
 
         // ---- Metadata rows ----
@@ -125,7 +129,7 @@
         ws.getCell("A2").alignment = { horizontal: "center", vertical: "middle" };
 
         // Row 3 — dates
-        ws.getCell("A3").value = "Date:";
+        ws.getCell("A3").value = "Date From:";
         ws.getCell("A3").font = { bold: true };
         ws.getCell("A3").alignment = { horizontal: "left", vertical: "middle" };
         ws.mergeCells("B3:E3");
@@ -160,7 +164,7 @@
         // ---- Multi-row table header (rows 6–9) ----
         ws.mergeCells("A6:A9"); ws.getCell("A6").value = "Seq.";
         ws.mergeCells("B6:B9"); ws.getCell("B6").value = dateColumnHeader;
-        ws.mergeCells("C6:K6"); ws.getCell("C6").value = "*** Place of Residences";
+        ws.mergeCells("C6:K6"); ws.getCell("C6").value = "★ Place of Residences";
         ws.mergeCells("L6:N8"); ws.getCell("L6").value = "Grand Total Number of Visitors";
 
         ws.mergeCells("C7:H7"); ws.getCell("C7").value = "Philippines";
@@ -203,11 +207,7 @@
                     const num = Number(String(cell.value).replace(/[^0-9.-]/g, ""));
                     if (!isNaN(num)) { cell.value = num; cell.numFmt = "#,##0"; }
                 }
-                cell.alignment = {
-                    horizontal: c === 2 ? "center" : "center",
-                    vertical: "middle",
-                    wrapText: c === 2
-                };
+                cell.alignment = { horizontal: "center", vertical: "middle", wrapText: c === 2 };
                 if (c === 2) cell.font = { size: 10 };
                 cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
             }
