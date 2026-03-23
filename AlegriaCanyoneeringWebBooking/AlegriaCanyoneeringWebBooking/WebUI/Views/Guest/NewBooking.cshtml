@@ -1,410 +1,543 @@
 ﻿@model GuestListViewModel
 @using System.Text.Json
 @{
-    ViewData["Title"] = "Guest Management";
+    ViewData["Title"] = "New Booking";
     var batchDetails = ViewBag.BatchDetails ?? new { };
     var serializedBatch = JsonSerializer.Serialize(batchDetails);
     bool isReadonly = ViewBag.IsReadonly ?? false;
     bool operatorLocked = ViewBag.OperatorLocked ?? false;
 }
 
-<!-- Feedback Modal -->
-<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="feedbackModalLabel">Notification</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="modalMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
-            </div>
-        </div>
-    </div>
-</div>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-<!-- Loading Overlay -->
-<div class="overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="success-message" id="successMessage"></div>
-</div>
+<style>
+    .nb-wrap * {
+        font-family: 'Outfit', sans-serif;
+    }
 
-<!-- Toast (server-side) -->
+    /* ── Page header ──────────────────────────────── */
+    .nb-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+        .nb-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f3460;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    /* Guest counter pill */
+    .nb-counter {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 1rem;
+        background: rgba(26,110,245,0.08);
+        border: 1px solid #bfdbfe;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1a6ef5;
+    }
+
+        .nb-counter span {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+    /* ── Card ─────────────────────────────────────── */
+    .nb-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5;
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+    }
+
+    .nb-card-header {
+        padding: 0.9rem 1.5rem;
+        border-bottom: 1.5px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .nb-card-header h5 {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #1a6ef5;
+            margin: 0;
+        }
+
+    .nb-card-body {
+        padding: 1.25rem 1.5rem;
+    }
+
+    /* ── Field ────────────────────────────────────── */
+    .nb-field {
+        margin-bottom: 1rem;
+    }
+
+    .nb-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0f3460;
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+        .nb-label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+    .nb-input, .nb-select, .nb-textarea {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        transition: border-color 0.2s,box-shadow 0.2s;
+        appearance: none;
+        box-sizing: border-box;
+    }
+
+        .nb-input:focus, .nb-select:focus, .nb-textarea:focus {
+            border-color: #1a6ef5;
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+            background: #fff;
+        }
+
+        .nb-input[readonly], .nb-select[disabled], .nb-input[disabled] {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+    .nb-lock-note {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    /* ── Footer buttons ───────────────────────────── */
+    .nb-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+        flex-wrap: wrap;
+    }
+
+    .btn-nb-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.6rem 1.25rem;
+        background: linear-gradient(135deg,#1a6ef5,#0f3460);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s,transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+        .btn-nb-add:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+    .btn-nb-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.6rem 1.4rem;
+        background: linear-gradient(135deg,#22c55e,#15803d);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit',sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s,transform 0.15s;
+        box-shadow: 0 3px 12px rgba(34,197,94,0.3);
+    }
+
+        .btn-nb-save:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-nb-save:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+</style>
+
+<!-- Server-side toast -->
 @if (TempData["ToastMessage"] != null)
 {
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;">
-        <div id="guestToast"
-             class="toast text-white bg-success border-0"
-             role="alert" aria-live="assertive" aria-atomic="true"
-             data-bs-delay="4000">
-            <div class="toast-header bg-success text-white border-0">
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;">
+        <div id="guestToast" class="toast border-0 text-white"
+             style="background:#22c55e;border-radius:12px;"
+             role="alert" data-bs-delay="4000">
+            <div class="toast-header border-0 text-white" style="background:transparent;">
                 <i class="bi bi-check-circle-fill me-2"></i>
                 <strong class="me-auto">Success</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close btn-close-white"
-                        data-bs-dismiss="toast" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
             </div>
             <div class="toast-body">@TempData["ToastMessage"]</div>
         </div>
     </div>
 }
 
-<div class="card shadow-lg rounded-4 border-0">
-    <div class="card-body p-4">
-        <h4 class="text-primary mb-4 fw-semibold border-bottom pb-2 d-flex align-items-center">
-            <i class="bi bi-person-plus-fill me-2"></i> Add New Guest
-        </h4>
+<div id="nbToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;"></div>
 
-        <!-- Total Guests Counter -->
-        <div class="mb-3">
-            <h5 class="text-primary">
-                <i class="fas fa-users me-2"></i>
-                Total Guests: <span id="totalGuestsCount">0</span>
-            </h5>
+<div class="nb-wrap">
+
+    <!-- Header -->
+    <div class="nb-header">
+        <h2>
+            <i class="bi bi-person-plus-fill" style="color:#1a6ef5;"></i>
+            New Booking
+        </h2>
+        <div class="nb-counter">
+            <i class="bi bi-people-fill"></i>
+            Total Guests: <span id="totalGuestsCount">0</span>
         </div>
+    </div>
 
-        <!-- Main Form -->
-        <form asp-action="NewBooking" method="post" id="guestForm"
-              enctype="multipart/form-data" class="needs-validation" novalidate>
-            @Html.AntiForgeryToken()
-            <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
-            <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
-            <input type="hidden" id="MainGuestId" name="id" value="@ViewBag.MainGuestId" />
+    <form asp-action="NewBooking" method="post" id="guestForm" enctype="multipart/form-data" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="BatchGuestsJson" name="BatchGuestsJson" value="@Model.BatchGuestsJson" />
+        <input type="hidden" id="CurrentBatch" name="batch" value="@ViewBag.CurrentBatch" readonly />
+        <input type="hidden" id="MainGuestId" name="id" value="@ViewBag.MainGuestId" />
 
-            <div class="row">
+        <!-- Guest Info card -->
+        <div class="nb-card">
+            <div class="nb-card-header">
+                <i class="bi bi-person-vcard" style="color:#1a6ef5;"></i>
+                <h5>Guest Info</h5>
+            </div>
+            <div class="nb-card-body">
+                <div class="row g-3">
 
-                <!-- ── Guest Info ─────────────────────────────────── -->
-                <div class="col-md-6">
-                    <fieldset>
-                        <legend>Guest Info</legend>
-
-                        <!-- OPERATOR DROPDOWN ─────────────────────── -->
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.OperatorId" class="form-label">Operator</label>
-
+                    <!-- Operator -->
+                    <div class="col-md-6">
+                        <div class="nb-field">
+                            <label class="nb-label">Operator</label>
                             @if (operatorLocked)
                             {
-                                @* Operator role: read-only, grayed out, not clickable *@
-                                <select asp-for="NewGuest.OperatorId"
-                                        asp-items="ViewBag.OperatorList"
-                                        class="form-select"
-                                        id="OperatorInput"
-                                        disabled="disabled"
-                                        style="background-color:#f5f5f5;color:#555;cursor:not-allowed;">
-                                </select>
-                                @* Hidden input so value still submits when disabled *@
-                                <input type="hidden"
-                                       name="NewGuest.OperatorId"
-                                       id="OperatorInputHidden"
+                                <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList"
+                                        class="nb-select" id="OperatorInput" disabled="disabled"></select>
+                                <input type="hidden" name="NewGuest.OperatorId" id="OperatorInputHidden"
                                        value="@Model.NewGuest.OperatorId" />
-                                <small class="text-muted mt-1 d-block">
-                                    <i class="bi bi-lock-fill me-1"></i>Assigned to your operator account
-                                </small>
+                                <div class="nb-lock-note"><i class="bi bi-lock-fill"></i>Assigned to your operator account</div>
                             }
                             else
                             {
-                                @* Admin / Super Admin: full editable dropdown *@
-                                <select asp-for="NewGuest.OperatorId"
-                                        asp-items="ViewBag.OperatorList"
-                                        class="form-select"
-                                        id="OperatorInput"
-                                        disabled="@(isReadonly ? "disabled" : null)">
-                                </select>
+                                <select asp-for="NewGuest.OperatorId" asp-items="ViewBag.OperatorList"
+                                        class="nb-select" id="OperatorInput"
+                                        disabled="@(isReadonly ? "disabled" : null)"></select>
                             }
                         </div>
-                        <!-- END OPERATOR DROPDOWN ─────────────────── -->
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Fullname" class="form-label">Full Name</label>
-                            <input asp-for="NewGuest.Fullname"
-                                   class="form-control"
-                                   placeholder="e.g., Juan Dela Cruz"
-                                   oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')" />
+                    <!-- Full Name -->
+                    <div class="col-md-6">
+                        <div class="nb-field">
+                            <label class="nb-label">Full Name<span class="req">*</span></label>
+                            <input asp-for="NewGuest.Fullname" class="nb-input"
+                                   placeholder="e.g. Juan Dela Cruz"
+                                   oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" />
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Age" class="form-label">Age</label>
-                            <input asp-for="NewGuest.Age"
-                                   type="number"
-                                   class="form-control"
-                                   placeholder="e.g., 25"
-                                   pattern="\d*"
-                                   inputmode="numeric" />
+                    <!-- Age -->
+                    <div class="col-md-3">
+                        <div class="nb-field">
+                            <label class="nb-label">Age<span class="req">*</span></label>
+                            <input asp-for="NewGuest.Age" type="number" class="nb-input"
+                                   placeholder="e.g. 25" inputmode="numeric" />
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Gender" class="form-label">Gender</label>
-                            <select asp-for="NewGuest.Gender" class="form-select">
+                    <!-- Gender -->
+                    <div class="col-md-3">
+                        <div class="nb-field">
+                            <label class="nb-label">Gender<span class="req">*</span></label>
+                            <select asp-for="NewGuest.Gender" class="nb-select">
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.ContactNumber" class="form-label">Mobile Number</label>
-                            <input asp-for="NewGuest.ContactNumber"
-                                   type="tel"
-                                   class="form-control"
-                                   placeholder="e.g., 09171234567"
-                                   pattern="\d{11}"
-                                   maxlength="11"
-                                   inputmode="numeric"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
-                            <span asp-validation-for="NewGuest.ContactNumber" class="text-danger"></span>
+                    <!-- Contact -->
+                    <div class="col-md-6">
+                        <div class="nb-field">
+                            <label class="nb-label">Mobile Number</label>
+                            <input asp-for="NewGuest.ContactNumber" type="tel" class="nb-input"
+                                   placeholder="e.g. 09171234567"
+                                   maxlength="11" inputmode="numeric"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+                            <span asp-validation-for="NewGuest.ContactNumber" class="text-danger small"></span>
                         </div>
+                    </div>
 
-                    </fieldset>
                 </div>
+            </div>
+        </div>
 
-                <!-- ── Nationality & Booking ───────────────────────── -->
-                <div class="col-md-6">
-                    <fieldset>
-                        <legend>Nationality &amp; Booking</legend>
+        <!-- Nationality & Booking card -->
+        <div class="nb-card">
+            <div class="nb-card-header">
+                <i class="bi bi-globe2" style="color:#1a6ef5;"></i>
+                <h5>Nationality &amp; Booking</h5>
+            </div>
+            <div class="nb-card-body">
+                <div class="row g-3">
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.NationalityType" class="form-label">Nationality Type</label>
-                            <select asp-for="NewGuest.NationalityType" class="form-select" id="NationalityType">
+                    <!-- Nationality Type -->
+                    <div class="col-md-4">
+                        <div class="nb-field">
+                            <label class="nb-label">Nationality Type<span class="req">*</span></label>
+                            <select asp-for="NewGuest.NationalityType" class="nb-select" id="NationalityType">
                                 <option value="Local">Local</option>
                                 <option value="Foreign">Foreign</option>
                             </select>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.NationalityId" class="form-label">Nationality</label>
-                            <select asp-for="NewGuest.NationalityId" class="form-select" id="NationalityId"></select>
-                            <span asp-validation-for="NewGuest.NationalityId" class="text-danger"></span>
+                    <!-- Nationality -->
+                    <div class="col-md-4">
+                        <div class="nb-field">
+                            <label class="nb-label">Nationality<span class="req">*</span></label>
+                            <select asp-for="NewGuest.NationalityId" class="nb-select" id="NationalityId"></select>
+                            <span asp-validation-for="NewGuest.NationalityId" class="text-danger small"></span>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.ArrivalDate" class="form-label">Arrival Date</label>
-                            <input type="datetime-local"
-                                   name="NewGuest.ArrivalDate"
-                                   class="form-control"
-                                   id="ArrivalDateInput"
-                                   value="@Model.Html5ArrivalDate"
-                                   readonly="@(isReadonly ? "readonly" : null)" />
-                            <span asp-validation-for="NewGuest.ArrivalDate" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="NewGuest.Area" class="form-label">Tour Area</label>
-                            <select asp-for="NewGuest.Area" class="form-select" id="TourAreaInput"
+                    <!-- Tour Area -->
+                    <div class="col-md-4">
+                        <div class="nb-field">
+                            <label class="nb-label">Tour Area<span class="req">*</span></label>
+                            <select asp-for="NewGuest.Area" class="nb-select" id="TourAreaInput"
                                     disabled="@(isReadonly ? "disabled" : null)">
                                 <option value="Wonder Falls">Wonder Falls</option>
                                 <option value="Kanlaob">Kanlaob</option>
                                 <option value="Kawasan Exit">Kawasan Exit</option>
                             </select>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label for="photoInput" class="form-label fw-semibold text-secondary">
-                                Upload Guest Photo
-                            </label>
-                            <input type="file"
-                                   name="Photo"
-                                   id="photoInput"
-                                   class="form-control"
+                    <!-- Arrival Date -->
+                    <div class="col-md-6">
+                        <div class="nb-field">
+                            <label class="nb-label">Arrival Date<span class="req">*</span></label>
+                            <input type="datetime-local" name="NewGuest.ArrivalDate"
+                                   class="nb-input" id="ArrivalDateInput"
+                                   value="@Model.Html5ArrivalDate"
+                                   readonly="@(isReadonly ? "readonly" : null)" />
+                            <span asp-validation-for="NewGuest.ArrivalDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Photo -->
+                    <div class="col-md-6">
+                        <div class="nb-field">
+                            <label class="nb-label">Guest Photo</label>
+                            <input type="file" name="Photo" id="photoInput" class="nb-input"
                                    accept="image/jpeg,image/png,image/webp,image/jpg"
-                                   capture="environment"
-                                   onchange="validateImage(this)" />
+                                   capture="environment" onchange="validateImage(this)"
+                                   style="padding:0.5rem 0.9rem;cursor:pointer;" />
                             <div id="fileError" class="text-danger small mt-1"></div>
                         </div>
+                    </div>
 
-                    </fieldset>
                 </div>
-
             </div>
+        </div>
 
-            <!-- Action Buttons -->
-            <div class="d-flex justify-content-between mt-4">
-                <button id="addGuestBtn" type="button" class="btn btn-primary">
-                    <i class="bi bi-person-plus me-1"></i> Add Guest
-                </button>
-                <button type="submit" id="saveBtn" class="btn btn-success" disabled>
-                    <i class="bi bi-save me-1"></i> Save All Guests
-                </button>
-            </div>
+        <!-- Footer actions -->
+        <div class="nb-footer">
+            <button id="addGuestBtn" type="button" class="btn-nb-add">
+                <i class="bi bi-person-plus"></i> Add Guest
+            </button>
+            <button type="submit" id="saveBtn" class="btn-nb-save" disabled>
+                <i class="bi bi-save"></i> Save All Guests
+            </button>
+        </div>
 
-        </form>
-    </div>
+    </form>
 </div>
 
 @section Scripts {
     <script>
         function validateImage(input) {
-            const file = input.files[0];
-            const errorDiv = document.getElementById("fileError");
-            errorDiv.textContent = "";
+            var file = input.files[0];
+            var err  = document.getElementById('fileError');
+            err.textContent = '';
             if (!file) return;
-            const maxSizeMB = 1;
-            const maxSizeBytes = maxSizeMB * 1024 * 1024;
-            if (file.size > maxSizeBytes) {
-                errorDiv.textContent = `The selected image is too large. Maximum allowed size is ${maxSizeMB}MB.`;
-                input.value = "";
+            if (file.size > 1 * 1024 * 1024) {
+                err.textContent = 'Image too large. Max 1 MB.';
+                input.value = '';
             }
         }
 
+        function showToast(message, type) {
+            type = type || 'success';
+            var map = {
+                success: { bg:'#22c55e', icon:'bi-check-circle-fill',        title:'Success' },
+                error:   { bg:'#ef4444', icon:'bi-exclamation-triangle-fill', title:'Error'   },
+                warning: { bg:'#f0a500', icon:'bi-exclamation-circle-fill',   title:'Warning' }
+            };
+            var m = map[type] || map.success;
+            var id = 'nbt-' + Date.now();
+            var html = '<div id="' + id + '" class="toast border-0 text-white" style="background:' + m.bg + ';border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);" role="alert" aria-atomic="true" data-bs-delay="4000">'
+                + '<div class="toast-header border-0 text-white" style="background:transparent;">'
+                + '<i class="bi ' + m.icon + ' me-2"></i><strong class="me-auto">' + m.title + '</strong>'
+                + '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button></div>'
+                + '<div class="toast-body" style="padding-top:0;">' + message + '</div></div>';
+            var c = document.getElementById('nbToastContainer');
+            c.insertAdjacentHTML('beforeend', html);
+            var el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', function() { el.remove(); });
+        }
+
         $(function () {
-            const $type             = $('#NationalityType');
-            const $list             = $('#NationalityId');
-            const $operatorInput    = $('#OperatorInput');
-            const $operatorHidden   = $('#OperatorInputHidden');
-            const $tourAreaInput    = $('#TourAreaInput');
-            const $arrivalDateInput = $('#ArrivalDateInput');
-            const $batchGuestsJson  = $('#BatchGuestsJson');
-            const $saveBtn          = $('#saveBtn');
-            const $totalGuestsCount = $('#totalGuestsCount');
-            const $currentBatch     = $('#CurrentBatch');
+            var $type             = $('#NationalityType');
+            var $list             = $('#NationalityId');
+            var $operatorInput    = $('#OperatorInput');
+            var $operatorHidden   = $('#OperatorInputHidden');
+            var $tourAreaInput    = $('#TourAreaInput');
+            var $arrivalDateInput = $('#ArrivalDateInput');
+            var $batchGuestsJson  = $('#BatchGuestsJson');
+            var $saveBtn          = $('#saveBtn');
+            var $totalCount       = $('#totalGuestsCount');
+            var $currentBatch     = $('#CurrentBatch');
 
-            const getNationalitiesUrl = '@Url.Action("GetNationalities", "Guest")';
-            const isReadonly          = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
-            const operatorLocked      = '@((ViewBag.OperatorLocked ?? false).ToString().ToLower())' === 'true';
+            var getNatUrl       = '@Url.Action("GetNationalities", "Guest")';
+            var isReadonly      = '@((ViewBag.IsReadonly ?? false).ToString().ToLower())' === 'true';
+            var operatorLocked  = '@((ViewBag.OperatorLocked ?? false).ToString().ToLower())' === 'true';
 
-            // ── Show server-side toast on load ─────────────────────
-            const $serverToast = document.getElementById('guestToast');
-            if ($serverToast) new bootstrap.Toast($serverToast).show();
+            // Server toast
+            var $st = document.getElementById('guestToast');
+            if ($st) new bootstrap.Toast($st).show();
 
-            // ── Nationality dropdown ────────────────────────────────
-            function updateNationalityIdOptions(choice) {
+            // Nationality options
+            function updateNatOptions(choice) {
                 $list.empty();
-                const savedId = localStorage.getItem('selectedNationalityId');
-
+                var savedId = localStorage.getItem('selectedNationalityId');
                 if (choice === 'Local') {
                     $list.append(new Option('Within Cebu Province',  '1'));
                     $list.append(new Option('Outside Cebu Province', '2'));
                     if (savedId === '1' || savedId === '2') $list.val(savedId);
-
                 } else if (choice === 'Foreign') {
                     $list.append(new Option('Loading...', ''));
-                    $.getJSON(getNationalitiesUrl)
-                        .done(function (data) {
-                            $list.empty();
-                            data.forEach(item => $list.append(new Option(item.natName, item.id)));
-                            setTimeout(() => { if (savedId) $list.val(savedId); }, 50);
-                        })
-                        .fail(() => $list.empty().append(new Option('Error loading', '')));
+                    $.getJSON(getNatUrl).done(function(data) {
+                        $list.empty();
+                        data.forEach(function(item) { $list.append(new Option(item.natName, item.id)); });
+                        setTimeout(function() { if (savedId) $list.val(savedId); }, 50);
+                    }).fail(function() { $list.empty().append(new Option('Error loading', '')); });
                 } else {
                     $list.append(new Option('-- Select --', ''));
                 }
             }
 
-            // ── Lock Operator & Tour Area (Arrival Date stays open) ─
             function lockInputs() {
-                $operatorInput.prop('disabled', true)
-                              .css({ 'background-color': '#f5f5f5', color: '#888' });
-                $tourAreaInput.prop('disabled', true)
-                              .css({ 'background-color': '#f5f5f5', color: '#888' });
-                $currentBatch.prop('readonly', true)
-                             .css({ 'background-color': '#f5f5f5', color: '#888' });
-                // Always keep arrival date editable
-                $arrivalDateInput.prop('readonly', false).css({ 'background-color': '', color: '' });
+                $operatorInput.prop('disabled', true);
+                $tourAreaInput.prop('disabled', true);
+                $currentBatch.prop('readonly', true);
+                $arrivalDateInput.prop('readonly', false);
             }
 
-            // ── Sync hidden input when operator select changes ──────
-            // (only needed when NOT locked — locked already has hidden input set server-side)
-            $operatorInput.on('change', function () {
-                if ($operatorHidden.length) $operatorHidden.val($(this).val());
-            });
-
-            // ── Guest count display ─────────────────────────────────
-            function updateTotalGuestsDisplay(batch) {
-                $totalGuestsCount.text(batch.length);
+            function updateCount(batch) {
+                $totalCount.text(batch.length);
                 $saveBtn.prop('disabled', batch.length < 1);
             }
 
-            // ── Prefill form from last guest ────────────────────────
-            function prefillLastGuest(guest) {
-                // Operator
-                if (!operatorLocked) {
-                    $('[name="NewGuest.OperatorId"]').val(guest.OperatorId);
-                }
-                // Clear personal fields
+            function prefillLast(guest) {
+                if (!operatorLocked) $('[name="NewGuest.OperatorId"]').val(guest.OperatorId);
                 $('[name="NewGuest.Fullname"]').val('');
                 $('[name="NewGuest.Age"]').val('');
                 $('[name="NewGuest.ContactNumber"]').val('');
-                // Keep shared fields
                 $('[name="NewGuest.Gender"]').val(guest.Gender);
                 $('[name="NewGuest.NationalityType"]').val(guest.NationalityType).trigger('change');
-                setTimeout(() => $('[name="NewGuest.NationalityId"]').val(guest.NationalityId), 300);
+                setTimeout(function() { $('[name="NewGuest.NationalityId"]').val(guest.NationalityId); }, 300);
                 $('[name="NewGuest.Area"]').val(guest.Area);
-                // Only set arrival date if currently empty
                 if (!$arrivalDateInput.val() && guest.ArrivalDate) {
-                    const dt = new Date(guest.ArrivalDate);
-                    if (!isNaN(dt.getTime()))
-                        $arrivalDateInput.val(dt.toLocaleString('sv-SE').slice(0, 16));
+                    var dt = new Date(guest.ArrivalDate);
+                    if (!isNaN(dt.getTime())) $arrivalDateInput.val(dt.toLocaleString('sv-SE').slice(0, 16));
                 }
             }
 
-            // ── Toast helper (client-side) ──────────────────────────
-            function showToast(message) {
-                const container = $('<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;"></div>');
-                const toast = $(`
-                    <div class="toast text-white bg-success border-0"
-                         role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                        <div class="toast-header bg-success text-white border-0">
-                            <i class="bi bi-check-circle-fill me-2"></i>
-                            <strong class="me-auto">Success</strong>
-                            <small>Now</small>
-                            <button type="button" class="btn-close btn-close-white"
-                                    data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                        <div class="toast-body">${message}</div>
-                    </div>`);
-                container.append(toast);
-                $('body').append(container);
-                new bootstrap.Toast(toast[0]).show();
-                toast.on('hidden.bs.toast', () => container.remove());
-            }
-
-            // ── Init ────────────────────────────────────────────────
-            const savedType = localStorage.getItem('selectedNationalityType') || $type.val();
+            // Init
+            var savedType = localStorage.getItem('selectedNationalityType') || $type.val();
             $type.val(savedType);
-            updateNationalityIdOptions(savedType);
-
+            updateNatOptions(savedType);
             if (isReadonly) lockInputs();
 
-            let guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
+            var guestsBatch = JSON.parse(localStorage.getItem('guestsBatch')) || [];
+            if (guestsBatch.length > 0) { lockInputs(); updateCount(guestsBatch); prefillLast(guestsBatch[guestsBatch.length - 1]); }
+            else updateCount(guestsBatch);
 
-            if (guestsBatch.length > 0) {
-                lockInputs();
-                updateTotalGuestsDisplay(guestsBatch);
-                prefillLastGuest(guestsBatch[guestsBatch.length - 1]);
-            } else {
-                updateTotalGuestsDisplay(guestsBatch);
-            }
-
-            // ── Nationality type change ─────────────────────────────
-            $type.on('change', function () {
-                const t = $(this).val();
+            $type.on('change', function() {
+                var t = $(this).val();
                 localStorage.setItem('selectedNationalityType', t);
                 localStorage.removeItem('selectedNationalityId');
-                updateNationalityIdOptions(t);
+                updateNatOptions(t);
             });
 
-            $list.on('change', function () {
-                localStorage.setItem('selectedNationalityId', $(this).val());
+            $list.on('change', function() { localStorage.setItem('selectedNationalityId', $(this).val()); });
+
+            $arrivalDateInput.on('change', function() {
+                if ($(this).val()) localStorage.setItem('initialArrivalDate', new Date($(this).val()).toISOString());
             });
 
-            // ── Arrival date change ─────────────────────────────────
-            $arrivalDateInput.on('change', function () {
-                const val = $(this).val();
-                if (val) localStorage.setItem('initialArrivalDate', new Date(val).toISOString());
+            $operatorInput.on('change', function() {
+                if ($operatorHidden.length) $operatorHidden.val($(this).val());
             });
 
-            // ── Add Guest ───────────────────────────────────────────
-            $('#addGuestBtn').on('click', function () {
-                const arrivalVal = $arrivalDateInput.val();
-
-                // Get operator ID — prefer hidden input if locked
-                const opId = operatorLocked
+            // Add Guest
+            $('#addGuestBtn').on('click', function() {
+                var arrivalVal = $arrivalDateInput.val();
+                var opId = operatorLocked
                     ? parseInt($operatorHidden.val()) || null
                     : parseInt($operatorInput.val())  || null;
 
-                const guest = {
+                var guest = {
                     OperatorId:      opId,
                     Fullname:        $('[name="NewGuest.Fullname"]').val().trim(),
                     Age:             $('[name="NewGuest.Age"]').val(),
@@ -418,7 +551,7 @@
 
                 if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
                     !guest.NationalityType || !guest.NationalityId || !guest.ArrivalDate || !guest.Area) {
-                    alert('Please fill in all required fields.');
+                    showToast('Please fill in all required fields.', 'warning');
                     return;
                 }
 
@@ -427,23 +560,20 @@
                 localStorage.setItem('selectedNationalityType', guest.NationalityType);
                 localStorage.setItem('selectedNationalityId', guest.NationalityId.toString());
 
-                updateTotalGuestsDisplay(guestsBatch);
+                updateCount(guestsBatch);
                 lockInputs();
-                prefillLastGuest(guest);
-                showToast(`Guest "${guest.Fullname}" added successfully!`);
+                prefillLast(guest);
+                showToast('"' + guest.Fullname + '" added successfully!', 'success');
             });
 
-            // ── Form Submit ─────────────────────────────────────────
-            $('#guestForm').on('submit', function () {
+            // Save
+            $('#guestForm').on('submit', function() {
                 $batchGuestsJson.val(JSON.stringify(guestsBatch));
                 localStorage.removeItem('guestsBatch');
                 localStorage.removeItem('selectedNationalityType');
                 localStorage.removeItem('selectedNationalityId');
                 localStorage.removeItem('initialArrivalDate');
             });
-
-            // Hide loading overlay
-            $('#loadingOverlay').fadeOut(300);
         });
     </script>
 }
