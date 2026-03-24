@@ -530,41 +530,45 @@
                 if ($operatorHidden.length) $operatorHidden.val($(this).val());
             });
 
-            // Add Guest
-            $('#addGuestBtn').on('click', function() {
-                var arrivalVal = $arrivalDateInput.val();
-                var opId = operatorLocked
-                    ? parseInt($operatorHidden.val()) || null
-                    : parseInt($operatorInput.val())  || null;
+                   $('#addGuestBtn').on('click', function () {
+            var arrivalVal = $arrivalDateInput.val();
 
-                var guest = {
-                    OperatorId:      opId,
-                    Fullname:        $('[name="NewGuest.Fullname"]').val().trim(),
-                    Age:             $('[name="NewGuest.Age"]').val(),
-                    Gender:          $('[name="NewGuest.Gender"]').val(),
-                    ContactNumber:   $('[name="NewGuest.ContactNumber"]').val().trim(),
-                    NationalityType: $('[name="NewGuest.NationalityType"]').val(),
-                    NationalityId:   parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
-                    Area:            $('[name="NewGuest.Area"]').val(),
-                    ArrivalDate:     arrivalVal ? new Date(arrivalVal).toISOString() : null
-                };
+           
+            var opId = null;
+            if (operatorLocked) {
+                opId = parseInt($operatorHidden.val()) || parseInt($operatorInput.val()) || null;
+            } else {
+                opId = parseInt($operatorInput.val()) || null;
+            }
 
-                if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
-                    !guest.NationalityType || !guest.NationalityId || !guest.ArrivalDate || !guest.Area) {
-                    showToast('Please fill in all required fields.', 'warning');
-                    return;
-                }
+            var guest = {
+                OperatorId:      opId,
+                Fullname:        $('[name="NewGuest.Fullname"]').val().trim(),
+                Age:             $('[name="NewGuest.Age"]').val(),
+                Gender:          $('[name="NewGuest.Gender"]').val(),
+                ContactNumber:   $('[name="NewGuest.ContactNumber"]').val().trim() || "0", 
+                NationalityType: $('[name="NewGuest.NationalityType"]').val(),
+                NationalityId:   parseInt($('[name="NewGuest.NationalityId"]').val()) || null,
+                Area:            $('[name="NewGuest.Area"]').val(),
+                ArrivalDate:     arrivalVal ? new Date(arrivalVal).toISOString() : null
+            };
 
-                guestsBatch.push(guest);
-                localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
-                localStorage.setItem('selectedNationalityType', guest.NationalityType);
-                localStorage.setItem('selectedNationalityId', guest.NationalityId.toString());
+            if (!guest.Fullname || !guest.OperatorId || !guest.Age || !guest.Gender ||
+                !guest.NationalityType || !guest.NationalityId || !guest.ArrivalDate || !guest.Area) {
+                showToast('Please fill in all required fields.', 'warning');
+                return;
+            }
 
-                updateCount(guestsBatch);
-                lockInputs();
-                prefillLast(guest);
-                showToast('"' + guest.Fullname + '" added successfully!', 'success');
-            });
+            guestsBatch.push(guest);
+            localStorage.setItem('guestsBatch', JSON.stringify(guestsBatch));
+            localStorage.setItem('selectedNationalityType', guest.NationalityType);
+            localStorage.setItem('selectedNationalityId', guest.NationalityId.toString());
+
+            updateCount(guestsBatch);
+            lockInputs();
+            prefillLast(guest);
+            showToast('"' + guest.Fullname + '" added successfully!', 'success');
+        });
 
             // Save
             $('#guestForm').on('submit', function() {
