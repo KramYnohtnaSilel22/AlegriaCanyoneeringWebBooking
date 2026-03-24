@@ -243,6 +243,7 @@
         padding: 0.35rem 0;
         animation: dropFade 0.15s ease;
     }
+
     @@keyframes dropFade {
         from {
             opacity: 0;
@@ -426,30 +427,39 @@
 
 @section Scripts {
     <script>
+        // ✅ FIXED: Default type changed from 'danger' to 'success'
+        // Previously ALL toasts without explicit type showed red "Error"
+        // Now success messages show green, only real errors show red
         function showToast(message, type) {
-            type = type || 'danger';
+            type = type || 'success'; // ✅ was 'danger'
             var map = {
                 success: { bg:'#22c55e', icon:'bi-check-circle-fill',        title:'Success'      },
                 danger:  { bg:'#ef4444', icon:'bi-exclamation-triangle-fill', title:'Error'        },
                 warning: { bg:'#f0a500', icon:'bi-exclamation-circle-fill',   title:'Warning'      },
                 info:    { bg:'#1a6ef5', icon:'bi-info-circle-fill',          title:'Notification' }
             };
-            var m = map[type] || map.danger;
+            var m = map[type] || map.success;
             var id = 'bgt-' + Date.now();
-            var html = '<div id="' + id + '" class="toast border-0 text-white" style="background:' + m.bg + ';border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);" role="alert" aria-atomic="true" data-bs-delay="4000">'
+            var html = '<div id="' + id + '" class="toast border-0 text-white"'
+                + ' style="background:' + m.bg + ';border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);"'
+                + ' role="alert" aria-atomic="true" data-bs-delay="4000">'
                 + '<div class="toast-header border-0 text-white" style="background:transparent;">'
-                + '<i class="bi ' + m.icon + ' me-2"></i><strong class="me-auto">' + m.title + '</strong>'
-                + '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button></div>'
-                + '<div class="toast-body" style="padding-top:0;">' + message + '</div></div>';
+                + '<i class="bi ' + m.icon + ' me-2"></i>'
+                + '<strong class="me-auto">' + m.title + '</strong>'
+                + '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>'
+                + '</div>'
+                + '<div class="toast-body" style="padding-top:0;">' + message + '</div>'
+                + '</div>';
             var c = document.getElementById('bgToastContainer');
             c.insertAdjacentHTML('beforeend', html);
             var el = document.getElementById(id);
             new bootstrap.Toast(el).show();
-            el.addEventListener('hidden.bs.toast', function() { el.remove(); });
+            el.addEventListener('hidden.bs.toast', function () { el.remove(); });
         }
 
         // Guest of the Day
-        document.getElementById('btnViewGuestOfDay') && document.getElementById('btnViewGuestOfDay').addEventListener('click', function() {
+        document.getElementById('btnViewGuestOfDay') &&
+        document.getElementById('btnViewGuestOfDay').addEventListener('click', function () {
             var today = new Date().toISOString().split('T')[0];
             document.getElementById('startDate').value = today;
             document.getElementById('endDate').value   = today;
@@ -460,11 +470,11 @@
             var table = null;
 
             // Close assign dropdowns on outside click
-            $(document).on('click', function(e) {
+            $(document).on('click', function (e) {
                 if (!$(e.target).closest('.assign-dropdown').length)
                     $('.assign-dropdown').removeClass('open');
             });
-            $(document).on('click', '.assign-dropdown > .btn-act', function(e) {
+            $(document).on('click', '.assign-dropdown > .btn-act', function (e) {
                 e.stopPropagation();
                 var $d = $(this).closest('.assign-dropdown');
                 $('.assign-dropdown').not($d).removeClass('open');
@@ -486,8 +496,8 @@
                 if (!data) return '<span class="text-muted">N/A</span>';
                 if (!isNaN(data)) {
                     return new Date(parseInt(data) * 1000).toLocaleString('en-US', {
-                        timeZone:'Asia/Manila', year:'numeric', month:'long',
-                        day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true
+                        timeZone: 'Asia/Manila', year: 'numeric', month: 'long',
+                        day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
                     });
                 }
                 return data;
@@ -514,11 +524,14 @@
             var isSuperAdmin = @(User.IsInRole("Super Admin") ? "true" : "false");
             var showAssign   = isStaff || isSuperAdmin;
 
-            $('#filterForm').on('submit', function(e) {
+            $('#filterForm').on('submit', function (e) {
                 e.preventDefault();
                 var startDate = $('#startDate').val();
                 var endDate   = $('#endDate').val();
-                if (!startDate || !endDate) { showToast('Please select both start and end dates.', 'warning'); return; }
+                if (!startDate || !endDate) {
+                    showToast('Please select both start and end dates.', 'warning');
+                    return;
+                }
 
                 $('#tableLoader').show();
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
@@ -532,15 +545,21 @@
                 }
 
                 table = $('#batchesTable').DataTable({
-                    processing: true, serverSide: true,
+                    processing: true,
+                    serverSide: true,
                     ajax: {
-                        url:  '@Url.Action("GetGuestsData", "Reserve")', type: 'POST',
-                        data: function(d) {
-                            d.startDate = startDate; d.endDate = endDate;
+                        url:  '@Url.Action("GetGuestsData", "Reserve")',
+                        type: 'POST',
+                        data: function (d) {
+                            d.startDate = startDate;
+                            d.endDate   = endDate;
                             d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
                         },
-                        error: function() { $('#tableLoader').hide(); showToast('Error loading data.'); },
-                        dataSrc: function(json) {
+                        error: function () {
+                            $('#tableLoader').hide();
+                            showToast('Error loading data.', 'danger'); // ✅ explicit danger
+                        },
+                        dataSrc: function (json) {
                             $('#tableLoader').hide();
                             $('#batchesTableContainer').show();
                             if (json.data && json.data.length > 0) {
@@ -552,14 +571,31 @@
                         }
                     },
                     columns: [
-                        { data: 'batch', render: function(d) { return '<span class="fw-semibold">' + d + '</span>'; } },
-                        { data: 'totalGuests' },
-                        { data: 'operatorName', render: function(d) { return d && d.trim() ? d : '<span class="text-muted">No Operator</span>'; } },
-                        { data: 'arrivalDate', render: function(d) { return formatDate(d); } },
-                        { data: 'status', render: function(d) { return d ? '<span class="status-badge ' + statusClass(d) + '">' + d + '</span>' : ''; } },
                         {
-                            data: 'batch', orderable: false, searchable: false, className: 'text-center',
-                            render: function(data) {
+                            data: 'batch',
+                            render: function (d) { return '<span class="fw-semibold">' + d + '</span>'; }
+                        },
+                        { data: 'totalGuests' },
+                        {
+                            data: 'operatorName',
+                            render: function (d) { return d && d.trim() ? d : '<span class="text-muted">No Operator</span>'; }
+                        },
+                        {
+                            data: 'arrivalDate',
+                            render: function (d) { return formatDate(d); }
+                        },
+                        {
+                            data: 'status',
+                            render: function (d) {
+                                return d ? '<span class="status-badge ' + statusClass(d) + '">' + d + '</span>' : '';
+                            }
+                        },
+                        {
+                            data: 'batch',
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center',
+                            render: function (data) {
                                 return '<div class="d-flex gap-1 justify-content-center align-items-center">'
                                     + '<button class="btn-act btn-view view-guest-details" data-batch="' + data + '"><i class="bi bi-eye"></i> View</button>'
                                     + '<button class="btn-act btn-print print-batch-details" data-batch="' + data + '"><i class="bi bi-printer"></i> Print</button>'
@@ -568,64 +604,80 @@
                             }
                         }
                     ],
-                    pageLength: 10, responsive: true, autoWidth: false,
+                    pageLength: 10,
+                    responsive: true,
+                    autoWidth: false,
                     language: { emptyTable: 'No guest batches found.' }
                 });
             });
 
             // View Guest Details
-            $('#batchesTableContainer').on('click', '.view-guest-details', function() {
+            $('#batchesTableContainer').on('click', '.view-guest-details', function () {
                 var batchCode = $(this).data('batch');
                 var $mc = $('#guestDetailsModalContainer');
                 $mc.html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>');
                 $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
-                    .done(function(html) {
+                    .done(function (html) {
                         $mc.html(html);
                         var modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
                         modal.show();
-                        $('#guestDetailsModal').on('hidden.bs.modal', function() { $mc.empty(); });
+                        $('#guestDetailsModal').on('hidden.bs.modal', function () { $mc.empty(); });
                     })
-                    .fail(function() { showToast('Failed to load guest details.'); });
+                    .fail(function () {
+                        showToast('Failed to load guest details.', 'danger'); // ✅ explicit danger
+                    });
             });
 
             // Print
-            $('#batchesTableContainer').on('click', '.print-batch-details', function() {
+            $('#batchesTableContainer').on('click', '.print-batch-details', function () {
                 var batchCode = $(this).data('batch');
-                var form = $('<form>', { action: '@Url.Action("PrintBatchGuests", "Reserve")', method: 'POST', target: '_blank' });
-                $('<input>').attr({ type:'hidden', name:'batchCode', value:batchCode }).appendTo(form);
+                var form = $('<form>', {
+                    action: '@Url.Action("PrintBatchGuests", "Reserve")',
+                    method: 'POST',
+                    target: '_blank'
+                });
+                $('<input>').attr({ type: 'hidden', name: 'batchCode', value: batchCode }).appendTo(form);
                 form.appendTo('body').submit().remove();
             });
 
             function loadModal(contentId, url, params, batch) {
-                $('#' + contentId).html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted" style="font-size:0.875rem;">Loading...</p></div>');
+                $('#' + contentId).html(
+                    '<div class="text-center p-4">'
+                    + '<div class="spinner-border text-primary" role="status"></div>'
+                    + '<p class="mt-2 text-muted" style="font-size:0.875rem;">Loading...</p>'
+                    + '</div>'
+                );
                 $.get(url, { batch: batch })
-                    .done(function(html) { $('#' + contentId).html(html); })
-                    .fail(function(xhr) {
+                    .done(function (html) {
+                        $('#' + contentId).html(html);
+                    })
+                    .fail(function (xhr) {
                         $('#' + contentId).html(
                             '<div class="p-3"><div class="alert alert-danger mb-0">'
-                            + '<strong>HTTP ' + xhr.status + ':</strong> ' + xhr.statusText + '</div></div>'
+                            + '<strong>HTTP ' + xhr.status + ':</strong> ' + xhr.statusText
+                            + '</div></div>'
                         );
                     });
             }
 
-            $('#batchesTableContainer').on('click', '.assign-driver', function() {
+            $('#batchesTableContainer').on('click', '.assign-driver', function () {
                 new bootstrap.Modal(document.getElementById('assignDriverModal')).show();
                 loadModal('assignDriverModalContent', '@Url.Action("GetAssignDriverModal", "Reserve")', {}, $(this).data('batch'));
             });
-            $('#batchesTableContainer').on('click', '.assign-guide', function() {
+            $('#batchesTableContainer').on('click', '.assign-guide', function () {
                 new bootstrap.Modal(document.getElementById('assignGuideModal')).show();
                 loadModal('assignGuideModalContent', '@Url.Action("GetAssignGuideModal", "Reserve")', {}, $(this).data('batch'));
             });
-            $('#batchesTableContainer').on('click', '.assign-outside-guide', function() {
+            $('#batchesTableContainer').on('click', '.assign-outside-guide', function () {
                 new bootstrap.Modal(document.getElementById('assignOutsideGuideModal')).show();
                 loadModal('assignOutsideGuideModalContent', '@Url.Action("GetAssignOutsideGuideModal", "Reserve")', {}, $(this).data('batch'));
             });
-            $('#batchesTableContainer').on('click', '.assign-outside-driver', function() {
+            $('#batchesTableContainer').on('click', '.assign-outside-driver', function () {
                 new bootstrap.Modal(document.getElementById('assignOutsideDriverModal')).show();
                 loadModal('assignOutsideDriverModalContent', '@Url.Action("GetAssignOutsideDriverModal", "Reserve")', {}, $(this).data('batch'));
             });
 
-            var reload = function() { table && table.ajax.reload(null, false); };
+            var reload = function () { table && table.ajax.reload(null, false); };
             $('#assignDriverModal, #assignGuideModal, #assignOutsideGuideModal, #assignOutsideDriverModal')
                 .on('hidden.bs.modal', reload);
         });
