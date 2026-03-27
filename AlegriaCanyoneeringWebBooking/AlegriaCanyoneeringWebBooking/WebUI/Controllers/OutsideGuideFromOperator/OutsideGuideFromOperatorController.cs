@@ -1,254 +1,328 @@
-﻿using AlegriaCanyoneeringWebBooking.WebUI.Models;
+using AlegriaCanyoneeringWebBooking;
+using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.WebUI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
-namespace AlegriaCanyoneeringWebBooking.WebUI.Controllers
+[Route("OutsideGuideFromOperator")]
+[Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
+public class OutsideGuideFromOperatorController : Controller
 {
-    [Authorize(Roles = "Super Admin,Operator")]
-    public class OutsideGuideFromOperatorController : Controller
+    private readonly ApplicationDbContext _context;
+
+    public OutsideGuideFromOperatorController(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        _context = context;
+    }
 
-        public OutsideGuideFromOperatorController(
-            ApplicationDbContext context,
-            IHttpContextAccessor httpContextAccessor)
-        {
-            _context = context;
-            _httpContextAccessor = httpContextAccessor;
-        }
+    // =========================================================
+    // HELPERS
+    // =========================================================
 
-        // =========================================================
-        // INDEX
-        // =========================================================
-        [HttpGet]
-        public IActionResult Index()
-        {
-            return View();
-        }
+    private bool IsSuperAdmin => User.IsInRole("Super Admin");
+    private bool IsOperator => User.IsInRole("Operator");
 
-        // =========================================================
-        // GET DATA — DataTables server-side
-        // =========================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GetOutsideGuideData()
+    private async Task<Operator?> GetCurrentOperatorAsync()
+    {
+        var username = User.Identity?.Name
+                    ?? User.FindFirstValue(ClaimTypes.Name);
+        if (string.IsNullOrWhiteSpace(username)) return null;
+        return await _context.Operators.FirstOrDefaultAsync(o => o.Username == username);
+    }
+
+    // =========================================================
+    // INDEX
+    // =========================================================
+    [HttpGet("")]
+    [HttpGet("Index")]
+    public IActionResult Index() => View();
+
+    // =========================================================
+    // DATATABLE — server-side
+    // =========================================================
+    [HttpPost("GetOutsideGuideData")]
+    public async Task<IActionResult> GetOutsideGuideData()
+    {
+        try
         {
             var draw = Request.Form["draw"].FirstOrDefault();
-            var start = int.TryParse(Request.Form["start"].FirstOrDefault(), out var s) ? s : 0;
-            var length = int.TryParse(Request.Form["length"].FirstOrDefault(), out var l) ? l : 10;
-            var search = Request.Form["search[value]"].FirstOrDefault()?.ToLower() ?? "";
+            var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+            var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+            var searchValue = Request.Form["search[value]"].FirstOrDefault();
 
-            try
+            var query = _context.OutsideGuideFromOperators.AsQueryable();
+
+            // ── Operators see only their own records ──────────────────────────
+            if (IsOperator && !IsSuperAdmin)
             {
-                // ── Filter by operator if current user is NOT Super Admin ──
-                var query = _context.OutsideGuideFromOperators.AsQueryable();
+                var op = await GetCurrentOperatorAsync();
+                if (op == null)
+                    return Json(new { draw, recordsFiltered = 0, recordsTotal = 0, data = new List<object>() });
 
-                if (!User.IsInRole("Super Admin"))
-                {
-                    var username = User.Identity!.Name;
-                    var loggedInOp = await _context.Operators
-                                         .FirstOrDefaultAsync(o => o.Username == username);
-                    if (loggedInOp != null)
-                        query = query.Where(x => x.OperatorId == loggedInOp.Id.ToString());
-                }
-
-                if (!string.IsNullOrWhiteSpace(search))
-                {
-                    query = query.Where(x =>
-                        x.OperatorId.ToLower().Contains(search) ||
-                        x.OperatorName.ToLower().Contains(search) ||
-                        x.GuideId.ToLower().Contains(search) ||
-                        x.GuideName.ToLower().Contains(search));
-                }
-
-                var totalRecords = await _context.OutsideGuideFromOperators.CountAsync();
-                var filteredCount = await query.CountAsync();
-
-                var records = await query
-                    .OrderBy(x => x.OperatorName)
-                    .ThenBy(x => x.GuideName)
-                    .Skip(start)
-                    .Take(length)
-                    .Select(x => new
-                    {
-                        id = x.Id,
-                        operatorId = x.OperatorId,
-                        operatorName = x.OperatorName,
-                        guideId = x.GuideId,
-                        guideName = x.GuideName
-                    })
-                    .ToListAsync();
-
-                return Json(new
-                {
-                    draw = draw,
-                    recordsTotal = totalRecords,
-                    recordsFiltered = filteredCount,
-                    data = records
-                });
+                query = query.Where(r => r.OperatorId == op.Id.ToString());
             }
-            catch (Exception ex)
+
+            // ── recordsTotal = count BEFORE search filter ─────────────────────
+            var recordsTotal = await query.CountAsync();
+
+            // ── Apply search ──────────────────────────────────────────────────
+            if (!string.IsNullOrEmpty(searchValue))
             {
-                return Json(new { error = ex.Message });
+                query = query.Where(r =>
+                    r.OperatorName.Contains(searchValue) ||
+                    r.OutsideGuideName.Contains(searchValue) ||
+                    r.OutsideGuideId.Contains(searchValue));
             }
+
+            // ── recordsFiltered = count AFTER search filter ───────────────────
+            var recordsFiltered = await query.CountAsync();
+
+            var data = await query
+                .OrderBy(r => r.Id)
+                .Skip(start)
+                .Take(length)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.OperatorId,
+                    r.OperatorName,
+                    guideId = r.OutsideGuideId,
+                    guideName = r.OutsideGuideName
+                })
+                .ToListAsync();
+
+            return Json(new { draw, recordsFiltered, recordsTotal, data });
         }
-
-        // =========================================================
-        // CREATE — GET (partial form for modal)
-        // =========================================================
-        [HttpGet]
-        public IActionResult Create()
+        catch (Exception ex)
         {
-            return PartialView("_OutsideGuideForm", new OutsideGuideFromOperator());
-        }
-
-        // =========================================================
-        // CREATE — POST
-        // =========================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            string operatorId, string operatorName,
-            string guideId, string guideName)
-        {
-            if (string.IsNullOrWhiteSpace(operatorId) || string.IsNullOrWhiteSpace(guideId))
-                return Json(new { success = false, message = "Please select both an operator and a guide." });
-
-            bool exists = await _context.OutsideGuideFromOperators
-                .AnyAsync(x => x.OperatorId == operatorId && x.GuideId == guideId);
-            if (exists)
-                return Json(new { success = false, message = "This guide is already assigned to that operator." });
-
-            _context.OutsideGuideFromOperators.Add(new OutsideGuideFromOperator
+            return Json(new
             {
-                OperatorId = operatorId,
-                OperatorName = operatorName,
-                GuideId = guideId,
-                GuideName = guideName
+                draw = Request.Form["draw"].FirstOrDefault(),
+                recordsFiltered = 0,
+                recordsTotal = 0,
+                data = new List<object>(),
+                error = ex.Message
             });
-
-            await _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Record added successfully." });
         }
+    }
 
-        // =========================================================
-        // EDIT — GET (partial form for modal)
-        // =========================================================
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
-        {
-            var record = await _context.OutsideGuideFromOperators.FindAsync(id);
-            if (record == null) return NotFound();
-            return PartialView("_OutsideGuideForm", record);
-        }
-
-        // =========================================================
-        // EDIT — POST
-        // =========================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            int id,
-            string operatorId, string operatorName,
-            string guideId, string guideName)
-        {
-            if (string.IsNullOrWhiteSpace(operatorId) || string.IsNullOrWhiteSpace(guideId))
-                return Json(new { success = false, message = "Please select both an operator and a guide." });
-
-            var existing = await _context.OutsideGuideFromOperators.FindAsync(id);
-            if (existing == null)
-                return Json(new { success = false, message = "Record not found." });
-
-            bool duplicate = await _context.OutsideGuideFromOperators
-                .AnyAsync(x => x.OperatorId == operatorId && x.GuideId == guideId && x.Id != id);
-            if (duplicate)
-                return Json(new { success = false, message = "This guide is already assigned to that operator." });
-
-            existing.OperatorId = operatorId;
-            existing.OperatorName = operatorName;
-            existing.GuideId = guideId;
-            existing.GuideName = guideName;
-
-            await _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Record updated successfully." });
-        }
-
-        // =========================================================
-        // DELETE — AJAX POST
-        // =========================================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAjax(int id)
-        {
-            var record = await _context.OutsideGuideFromOperators.FindAsync(id);
-            if (record == null)
-                return Json(new { success = false, message = "Record not found." });
-
-            _context.OutsideGuideFromOperators.Remove(record);
-            await _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Record deleted successfully." });
-        }
-
-        // =========================================================
-        // GET DROPDOWNS — role-aware operator list
-        // =========================================================
-        [HttpGet]
-        public async Task<IActionResult> GetDropdowns()
+    // =========================================================
+    // GET DROPDOWNS — operators + outside guides for the form
+    // =========================================================
+    [HttpGet("GetDropdowns")]
+    public async Task<IActionResult> GetDropdowns()
+    {
+        try
         {
             List<object> operators;
 
-            if (User.IsInRole("Super Admin"))
+            if (IsOperator && !IsSuperAdmin)
             {
-                // Super Admin sees ALL operators
+                var op = await GetCurrentOperatorAsync();
+                operators = op == null
+                    ? new List<object>()
+                    : new List<object>
+                    {
+                        new
+                        {
+                            id           = op.Id.ToString(),
+                            businessName = op.BusinessName ?? op.Name ?? ""
+                        }
+                    };
+            }
+            else
+            {
                 operators = (await _context.Operators
-                    .OrderBy(o => o.BusinessName)
+                    .OrderBy(o => o.BusinessName ?? o.Name)
                     .Select(o => new
                     {
                         id = o.Id.ToString(),
-                        businessName = (o.BusinessName != null && o.BusinessName.Trim() != "")
-                                          ? o.BusinessName
-                                          : o.Name ?? ""
+                        businessName = o.BusinessName ?? o.Name ?? ""
                     })
                     .ToListAsync())
                     .Cast<object>()
                     .ToList();
             }
-            else
-            {
-                // Operator role — only sees their own business name
-                var username = User.Identity!.Name;
-                var loggedInOp = await _context.Operators
-                    .FirstOrDefaultAsync(o => o.Username == username);
 
-                operators = loggedInOp != null
-                    ? new List<object>
-                    {
-                        new
-                        {
-                            id           = loggedInOp.Id.ToString(),
-                            businessName = (loggedInOp.BusinessName != null && loggedInOp.BusinessName.Trim() != "")
-                                              ? loggedInOp.BusinessName
-                                              : loggedInOp.Name ?? ""
-                        }
-                    }
-                    : new List<object>();
-            }
-
-            var guides = await _context.Guides
-                .OrderBy(g => g.LName)
+            var guides = await _context.OutsideGuides
+                .OrderBy(g => g.FName)
                 .Select(g => new
                 {
-                    rfid = g.Rfid,
-                    fullName = (g.LName.ToUpper() + ", " + g.FName.ToUpper()
-                               + (g.MName != null && g.MName.Trim() != ""
-                                   ? " " + g.MName.ToUpper()
-                                   : "")).Trim()
+                    rfid = g.Rfid ?? "",
+                    fullName = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? ""))
+                               .Replace("  ", " ").Trim()
                 })
                 .ToListAsync();
 
             return Json(new { operators, guides });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { error = ex.Message });
+        }
+    }
+
+    // =========================================================
+    // CREATE GET
+    // =========================================================
+    [HttpGet("Create")]
+    public IActionResult Create()
+    {
+        ViewData["Action"] = "Create";
+        return PartialView("_OutsideGuideFromOperatorForm", new OutsideGuideFromOperator());
+    }
+
+    // =========================================================
+    // CREATE POST
+    // =========================================================
+    [HttpPost("Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(OutsideGuideFromOperator model)
+    {
+        model.OutsideGuideId = Request.Form["guideId"].FirstOrDefault() ?? model.OutsideGuideId;
+        model.OutsideGuideName = Request.Form["guideName"].FirstOrDefault() ?? model.OutsideGuideName;
+        model.OperatorId = Request.Form["operatorId"].FirstOrDefault() ?? model.OperatorId;
+        model.OperatorName = Request.Form["operatorName"].FirstOrDefault() ?? model.OperatorName;
+
+        if (IsOperator && !IsSuperAdmin)
+        {
+            var op = await GetCurrentOperatorAsync();
+            if (op == null)
+                return Json(new { success = false, message = "Operator account not found." });
+            model.OperatorId = op.Id.ToString();
+            model.OperatorName = op.BusinessName ?? op.Name ?? "";
+        }
+
+        if (string.IsNullOrWhiteSpace(model.OperatorId) || string.IsNullOrWhiteSpace(model.OutsideGuideId))
+            return Json(new { success = false, message = "Please select both an Operator and a Guide." });
+
+        try
+        {
+            bool exists = await _context.OutsideGuideFromOperators.AnyAsync(r =>
+                r.OperatorId == model.OperatorId &&
+                r.OutsideGuideId == model.OutsideGuideId);
+
+            if (exists)
+                return Json(new { success = false, message = "This guide is already assigned to that operator." });
+
+            _context.Add(model);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Record created successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
+
+    // =========================================================
+    // EDIT GET
+    // =========================================================
+    [HttpGet("Edit/{id}")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var record = await _context.OutsideGuideFromOperators.FindAsync(id);
+        if (record == null) return NotFound();
+
+        if (IsOperator && !IsSuperAdmin)
+        {
+            var op = await GetCurrentOperatorAsync();
+            if (op == null || record.OperatorId != op.Id.ToString())
+                return Forbid();
+        }
+
+        ViewData["Action"] = "Edit";
+        return PartialView("_OutsideGuideFromOperatorForm", record);
+    }
+
+    // =========================================================
+    // EDIT POST
+    // =========================================================
+    [HttpPost("Edit")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(OutsideGuideFromOperator model)
+    {
+        model.OutsideGuideId = Request.Form["guideId"].FirstOrDefault() ?? model.OutsideGuideId;
+        model.OutsideGuideName = Request.Form["guideName"].FirstOrDefault() ?? model.OutsideGuideName;
+        model.OperatorId = Request.Form["operatorId"].FirstOrDefault() ?? model.OperatorId;
+        model.OperatorName = Request.Form["operatorName"].FirstOrDefault() ?? model.OperatorName;
+
+        if (string.IsNullOrWhiteSpace(model.OperatorId) || string.IsNullOrWhiteSpace(model.OutsideGuideId))
+            return Json(new { success = false, message = "Please select both an Operator and a Guide." });
+
+        if (IsOperator && !IsSuperAdmin)
+        {
+            var op = await GetCurrentOperatorAsync();
+            if (op == null)
+                return Json(new { success = false, message = "Operator account not found." });
+
+            var existing = await _context.OutsideGuideFromOperators
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == model.Id);
+
+            if (existing == null || existing.OperatorId != op.Id.ToString())
+                return Json(new { success = false, message = "Access denied." });
+
+            model.OperatorId = op.Id.ToString();
+            model.OperatorName = op.BusinessName ?? op.Name ?? "";
+        }
+
+        try
+        {
+            bool duplicate = await _context.OutsideGuideFromOperators.AnyAsync(r =>
+                r.Id != model.Id &&
+                r.OperatorId == model.OperatorId &&
+                r.OutsideGuideId == model.OutsideGuideId);
+
+            if (duplicate)
+                return Json(new { success = false, message = "This guide is already assigned to that operator." });
+
+            _context.Update(model);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Record updated successfully." });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Json(new { success = false, message = "Concurrency error. Please try again." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+    [HttpPost("DeleteAjax")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAjax(int id)
+    {
+        try
+        {
+            var record = await _context.OutsideGuideFromOperators.FindAsync(id);
+            if (record == null)
+                return Json(new { success = false, message = "Record not found." });
+
+            if (IsOperator && !IsSuperAdmin)
+            {
+                var op = await GetCurrentOperatorAsync();
+                if (op == null || record.OperatorId != op.Id.ToString())
+                    return Json(new { success = false, message = "Access denied." });
+            }
+
+            _context.OutsideGuideFromOperators.Remove(record);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Record deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
         }
     }
 }

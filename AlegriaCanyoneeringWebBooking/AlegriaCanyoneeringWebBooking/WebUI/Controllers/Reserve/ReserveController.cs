@@ -1826,7 +1826,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         ? (int)l : 0;
 
                 // ── Fetch images from Guides table in one query ──────────────
-                var rfidStrings = outsideLinks.Select(x => x.GuideId.Trim()).ToList();
+                var rfidStrings = outsideLinks.Select(x => x.OutsideGuideId.Trim()).ToList();
                 var guideImages = await _context.Guides
                     .Where(g => rfidStrings.Contains(g.Rfid))
                     .Select(g => new { g.Rfid, g.Image })
@@ -1836,9 +1836,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 // ── Build guide list from OutsideGuideFromOperator ──────────
                 var allGuides = outsideLinks.Select(x => new
                 {
-                    Rfid = x.GuideId.Trim(),
-                    fullName = x.GuideName,
-                    Image = imageMap.TryGetValue(x.GuideId.Trim(), out var img) ? img : ""
+                    Rfid = x.OutsideGuideId.Trim(),
+                    fullName = x.OutsideGuideName,
+                    Image = imageMap.TryGetValue(x.OutsideGuideId.Trim(), out var img) ? img : ""
                 }).ToList();
 
                 var guideRfidInts = allGuides
@@ -1976,10 +1976,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 // ── Fetch guide names from outside_guide_from_operator ───────
                 var trimmedRfids = guideRfids.Select(r => r.Trim()).ToList();
                 var outsideLinks = await _context.OutsideGuideFromOperators
-                    .Where(x => trimmedRfids.Contains(x.GuideId.Trim()))
+                    .Where(x => trimmedRfids.Contains(x.OutsideGuideId.Trim()))
                     .ToListAsync();
 
-                var nameMap = outsideLinks.ToDictionary(x => x.GuideId.Trim(), x => x.GuideName);
+                var nameMap = outsideLinks.ToDictionary(x => x.OutsideGuideId.Trim(), x => x.OutsideGuideName);
                 var assignedNames = new List<string>();
 
                 for (int i = 0; i < guidesCount; i++)

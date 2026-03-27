@@ -1,5 +1,6 @@
 using AlegriaCanyoneeringWebBooking;
 using AlegriaCanyoneeringWebBooking.Models;
+using AlegriaCanyoneeringWebBooking.WebUI.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -53,9 +54,9 @@ public class OutsideGuidesController : Controller
     {
         try
         {
-            var draw        = Request.Form["draw"].FirstOrDefault();
-            var start       = Convert.ToInt32(Request.Form["start"].FirstOrDefault()  ?? "0");
-            var length      = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
+            var draw = Request.Form["draw"].FirstOrDefault();
+            var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
+            var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
             var searchValue = Request.Form["search[value]"].FirstOrDefault();
 
             var query = _context.OutsideGuides.Include(g => g.Operators).AsQueryable();
@@ -73,9 +74,9 @@ public class OutsideGuidesController : Controller
             if (!string.IsNullOrEmpty(searchValue))
             {
                 query = query.Where(g =>
-                    (g.FName    != null && g.FName.Contains(searchValue))    ||
-                    (g.LName    != null && g.LName.Contains(searchValue))    ||
-                    (g.Rfid     != null && g.Rfid.Contains(searchValue))     ||
+                    (g.FName != null && g.FName.Contains(searchValue)) ||
+                    (g.LName != null && g.LName.Contains(searchValue)) ||
+                    (g.Rfid != null && g.Rfid.Contains(searchValue)) ||
                     (g.Nickname != null && g.Nickname.Contains(searchValue)));
             }
 
@@ -88,26 +89,26 @@ public class OutsideGuidesController : Controller
                 .Select(g => new
                 {
                     outsideGuideId = g.OutsideGuideId,
-                    fName          = g.FName          ?? "",
-                    mName          = g.MName          ?? "",
-                    lName          = g.LName          ?? "",
-                    rfid           = g.Rfid           ?? "",
-                    nickname       = g.Nickname       ?? "----",
-                    cNumber        = g.CNumber        ?? "----",
-                    image          = g.Image          ?? "",
-                    operatorName   = g.Operators != null ? g.Operators.BusinessName ?? g.Operators.Name : "—"
+                    fName = g.FName ?? "",
+                    mName = g.MName ?? "",
+                    lName = g.LName ?? "",
+                    rfid = g.Rfid ?? "",
+                    nickname = g.Nickname ?? "----",
+                    cNumber = g.CNumber ?? "----",
+                    image = g.Image ?? "",
+                    operatorName = g.Operators != null ? g.Operators.BusinessName ?? g.Operators.Name : "—"
                 })
                 .ToListAsync();
 
             var data = rawData.Select(g => new
             {
                 g.outsideGuideId,
-                fullName     = $"{g.fName} {g.mName} {g.lName}".Replace("  ", " ").Trim(),
+                fullName = $"{g.fName} {g.mName} {g.lName}".Replace("  ", " ").Trim(),
                 g.rfid,
                 g.nickname,
                 g.cNumber,
                 g.operatorName,
-                image        = NormalizeImagePath(g.image)
+                image = NormalizeImagePath(g.image)
             }).ToList();
 
             return Json(new { draw, recordsFiltered = recordsTotal, recordsTotal, data });
@@ -116,11 +117,11 @@ public class OutsideGuidesController : Controller
         {
             return Json(new
             {
-                draw            = Request.Form["draw"].FirstOrDefault(),
+                draw = Request.Form["draw"].FirstOrDefault(),
                 recordsFiltered = 0,
-                recordsTotal    = 0,
-                data            = new List<object>(),
-                error           = ex.Message
+                recordsTotal = 0,
+                data = new List<object>(),
+                error = ex.Message
             });
         }
     }
@@ -151,7 +152,7 @@ public class OutsideGuidesController : Controller
             operatorId = op.Id;
         }
 
-        ViewData["Action"]     = "Create";
+        ViewData["Action"] = "Create";
         ViewData["IsSuperAdmin"] = IsSuperAdmin;
 
         if (IsSuperAdmin)
@@ -159,8 +160,8 @@ public class OutsideGuidesController : Controller
 
         return PartialView("_OutsideGuideForm", new OutsideGuide
         {
-            Rfid       = nextRfid.ToString(),
-            TPosition  = nextTPosition,
+            Rfid = nextRfid.ToString(),
+            TPosition = nextTPosition,
             OperatorId = operatorId
         });
     }
@@ -214,9 +215,9 @@ public class OutsideGuidesController : Controller
             while (await _context.OutsideGuides.AnyAsync(g => g.TPosition == model.TPosition))
                 model.TPosition++;
 
-            model.MName    = string.IsNullOrWhiteSpace(model.MName)    ? "" : model.MName;
+            model.MName = string.IsNullOrWhiteSpace(model.MName) ? "" : model.MName;
             model.Nickname = string.IsNullOrWhiteSpace(model.Nickname) ? "" : model.Nickname;
-            model.Image    = await SavePhotoToWwwRoot(PhotoFile, "outsideguides");
+            model.Image = await SavePhotoToWwwRoot(PhotoFile, "outsideguides");
 
             _context.Add(model);
             await _context.SaveChangesAsync();
@@ -249,7 +250,7 @@ public class OutsideGuidesController : Controller
                 if (op == null || guide.OperatorId != op.Id) return Forbid();
             }
 
-            ViewData["Action"]      = "Edit";
+            ViewData["Action"] = "Edit";
             ViewData["IsSuperAdmin"] = IsSuperAdmin;
 
             if (IsSuperAdmin)
@@ -302,7 +303,7 @@ public class OutsideGuidesController : Controller
 
         try
         {
-            model.MName    = string.IsNullOrWhiteSpace(model.MName)    ? "" : model.MName;
+            model.MName = string.IsNullOrWhiteSpace(model.MName) ? "" : model.MName;
             model.Nickname = string.IsNullOrWhiteSpace(model.Nickname) ? "" : model.Nickname;
 
             var newPath = await SavePhotoToWwwRoot(PhotoFile, "outsideguides");
@@ -375,10 +376,10 @@ public class OutsideGuidesController : Controller
             .Select(g => new OutsideGuideQueueItem
             {
                 OutsideGuideId = g.OutsideGuideId,
-                Rfid           = g.Rfid,
-                FullName       = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? "")).Trim(),
-                Image          = g.Image,
-                TPosition      = g.TPosition
+                Rfid = g.Rfid,
+                FullName = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? "")).Trim(),
+                Image = g.Image,
+                TPosition = g.TPosition
             })
             .ToListAsync();
 
@@ -407,8 +408,8 @@ public class OutsideGuidesController : Controller
                 query = query.Where(g => g.OperatorId == op.Id);
             }
 
-            var guides      = await query.ToListAsync();
-            int baseTs      = guides.Min(g => g.TPosition);
+            var guides = await query.ToListAsync();
+            int baseTs = guides.Min(g => g.TPosition);
 
             for (int i = 0; i < guideIds.Count; i++)
             {
@@ -521,12 +522,3 @@ public class OutsideGuidesController : Controller
     }
 }
 
-// ── ViewModel ─────────────────────────────────────────────────────────────────
-public class OutsideGuideQueueItem
-{
-    public int     OutsideGuideId { get; set; }
-    public string? Rfid           { get; set; }
-    public string  FullName       { get; set; } = "";
-    public string? Image          { get; set; }
-    public int     TPosition      { get; set; }
-}

@@ -1,0 +1,263 @@
+@model AlegriaCanyoneeringWebBooking.WebUI.Models.OutsideGuideFromOperator
+@{
+    var action     = ViewData["Action"]?.ToString() ?? (Model.Id > 0 ? "Edit" : "Create");
+    var formAction = action == "Edit"
+        ? "/OutsideGuideFromOperator/Edit"
+        : "/OutsideGuideFromOperator/Create";
+    var isEdit = action == "Edit";
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .ogf-form * { font-family: 'Outfit', sans-serif; }
+
+    .ogf-field { margin-bottom: 1.1rem; }
+
+    .ogf-label {
+        font-size: 0.78rem; font-weight: 700;
+        letter-spacing: 0.05em; text-transform: uppercase;
+        color: #0f3460; display: block; margin-bottom: 0.4rem;
+    }
+    .ogf-label .req { color: #ef4444; margin-left: 2px; }
+
+    .field-wrap { position: relative; }
+
+    .field-icon {
+        position: absolute; left: 12px; top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8; font-size: 0.85rem; pointer-events: none;
+    }
+
+    .ogf-select {
+        width: 100%; padding: 0.7rem 2.4rem 0.7rem 2.4rem;
+        border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.9rem;
+        color: #1e293b; background: #fafbff; outline: none;
+        appearance: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .ogf-select:focus {
+        border-color: #1a6ef5;
+        box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+        background: #fff;
+    }
+    .ogf-select:disabled {
+        background: #f1f5f9; color: #64748b; cursor: not-allowed;
+    }
+
+    .select-wrap::after {
+        content: '\F282'; font-family: 'bootstrap-icons';
+        position: absolute; right: 12px; top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8; pointer-events: none; font-size: 0.8rem;
+    }
+
+    .preview-chip {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: rgba(26,110,245,0.06); border: 1px solid #bfdbfe;
+        border-radius: 8px; padding: 0.25rem 0.65rem;
+        font-size: 0.75rem; color: #1e40af;
+        margin-top: 0.4rem; animation: fadeIn 0.2s ease;
+    }
+    .preview-chip .chip-id {
+        background: rgba(26,110,245,0.12); color: #1a6ef5;
+        padding: 0.05rem 0.45rem; border-radius: 6px;
+        font-weight: 700; font-size: 0.68rem;
+    }
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ogf-footer {
+        display: flex; justify-content: flex-end; gap: 0.5rem;
+        padding-top: 0.75rem; border-top: 1.5px solid #f1f5f9; margin-top: 0.5rem;
+    }
+    .btn-ogf-cancel {
+        padding: 0.6rem 1.25rem; background: #f1f5f9; color: #475569;
+        border: none; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.875rem;
+        font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-ogf-cancel:hover { background: #e2e8f0; }
+
+    .btn-ogf-save {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff; border: none; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.875rem;
+        font-weight: 600; cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+    .btn-ogf-save:hover    { opacity: 0.9; transform: translateY(-1px); }
+    .btn-ogf-save:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+
+    .loading-spinner {
+        display: flex; align-items: center; gap: 0.5rem;
+        font-size: 0.85rem; color: #94a3b8; padding: 0.5rem 0;
+    }
+    .load-error { font-size: 0.85rem; color: #ef4444; padding: 0.4rem 0; }
+</style>
+
+<form action="@formAction" method="post" novalidate class="ogf-form">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" name="id"              value="@Model.Id"              />
+    <input type="hidden" id="fieldOperatorId"   name="operatorId"   value="@Model.OperatorId"       />
+    <input type="hidden" id="fieldOperatorName" name="operatorName" value="@Model.OperatorName"     />
+    <input type="hidden" id="fieldGuideId"      name="guideId"      value="@Model.OutsideGuideId"   />
+    <input type="hidden" id="fieldGuideName"    name="guideName"    value="@Model.OutsideGuideName" />
+
+    <!-- ── Operator ──────────────────────────────────────────────────────── -->
+    <div class="ogf-field">
+        <label class="ogf-label">
+            <i class="bi bi-person-workspace me-1"></i>Operator<span class="req">*</span>
+        </label>
+        <div id="operatorLoading" class="loading-spinner">
+            <span class="spinner-border spinner-border-sm text-primary"></span> Loading operators…
+        </div>
+        <div class="field-wrap select-wrap" id="operatorSelectWrap" style="display:none;">
+            <i class="bi bi-buildings field-icon"></i>
+            <select id="selectOperator" class="ogf-select" required>
+                <option value="">-- Select Operator --</option>
+            </select>
+        </div>
+        <div id="operatorPreview"></div>
+    </div>
+
+    <!-- ── Outside Guide ─────────────────────────────────────────────────── -->
+    <div class="ogf-field">
+        <label class="ogf-label">
+            <i class="bi bi-person-badge me-1"></i>Outside Guide<span class="req">*</span>
+        </label>
+        <div id="guideLoading" class="loading-spinner">
+            <span class="spinner-border spinner-border-sm text-primary"></span> Loading guides…
+        </div>
+        <div class="field-wrap select-wrap" id="guideSelectWrap" style="display:none;">
+            <i class="bi bi-compass field-icon"></i>
+            <select id="selectGuide" class="ogf-select" required>
+                <option value="">-- Select Guide --</option>
+            </select>
+        </div>
+        <div id="guidePreview"></div>
+    </div>
+
+    <!-- ── Footer ────────────────────────────────────────────────────────── -->
+    <div class="ogf-footer">
+        <button type="button" class="btn-ogf-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-ogf-save" id="btnOgfSave">
+            @if (isEdit)
+            {
+                <i class="bi bi-pencil me-1"></i>
+                <text>Update</text>
+            }
+            else
+            {
+                <i class="bi bi-save me-1"></i>
+                <text>Save</text>
+            }
+        </button>
+    </div>
+</form>
+
+<script>
+(function () {
+    'use strict';
+
+    var presetOperatorId = '@Html.Raw(Model.OperatorId   ?? "")';
+    var presetGuideId    = '@Html.Raw(Model.OutsideGuideId ?? "")';
+    var operatorsData    = [];
+    var guidesData       = [];
+
+    // ── Chip renderer ─────────────────────────────────────────────────────
+    function renderChip(containerId, label, value) {
+        var el = document.getElementById(containerId);
+        if (!value) { el.innerHTML = ''; return; }
+        el.innerHTML =
+            '<div class="preview-chip">' +
+                '<span class="chip-id">' + label + '</span>' +
+                '<span>' + value + '</span>' +
+            '</div>';
+    }
+
+    // ── Show select, hide spinner ─────────────────────────────────────────
+    function showSelect(wrapperId, loadingId) {
+        document.getElementById(wrapperId).style.display = 'block';
+        document.getElementById(loadingId).style.display = 'none';
+    }
+
+    function showError(loadingId, msg) {
+        var el = document.getElementById(loadingId);
+        el.className = 'load-error';
+        el.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + msg;
+    }
+
+    // ── Populate both dropdowns ───────────────────────────────────────────
+    fetch('/OutsideGuideFromOperator/GetDropdowns')
+        .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function (data) {
+            if (data.error) throw new Error(data.error);
+
+            operatorsData = data.operators || [];
+            guidesData    = data.guides    || [];
+
+            // Operators dropdown
+            var opSel = document.getElementById('selectOperator');
+            operatorsData.forEach(function (o) {
+                opSel.add(new Option(o.businessName, o.id));
+            });
+            showSelect('operatorSelectWrap', 'operatorLoading');
+
+            // Guides dropdown
+            var guSel = document.getElementById('selectGuide');
+            guidesData.forEach(function (g) {
+                guSel.add(new Option(g.fullName, g.rfid));
+            });
+            showSelect('guideSelectWrap', 'guideLoading');
+
+            // Restore pre-selected values (Edit mode)
+            if (presetOperatorId) {
+                opSel.value = presetOperatorId;
+                resolveOperator(presetOperatorId);
+            }
+            if (presetGuideId) {
+                guSel.value = presetGuideId;
+                resolveGuide(presetGuideId);
+            }
+        })
+        .catch(function (err) {
+            showError('operatorLoading', 'Failed to load operators.');
+            showError('guideLoading',    'Failed to load guides.');
+            console.error('GetDropdowns error:', err);
+        });
+
+    // ── Operator change ───────────────────────────────────────────────────
+    document.getElementById('selectOperator').addEventListener('change', function () {
+        resolveOperator(this.value);
+    });
+
+    function resolveOperator(val) {
+        var op = operatorsData.find(function (o) { return o.id === val; });
+        document.getElementById('fieldOperatorId').value   = op ? op.id           : '';
+        document.getElementById('fieldOperatorName').value = op ? op.businessName : '';
+        renderChip('operatorPreview', 'ID: ' + (op ? op.id : ''), op ? op.businessName : '');
+    }
+
+    // ── Guide change ──────────────────────────────────────────────────────
+    document.getElementById('selectGuide').addEventListener('change', function () {
+        resolveGuide(this.value);
+    });
+
+    function resolveGuide(val) {
+        var g = guidesData.find(function (x) { return x.rfid === val; });
+        document.getElementById('fieldGuideId').value   = g ? g.rfid     : '';
+        document.getElementById('fieldGuideName').value = g ? g.fullName : '';
+        renderChip('guidePreview', 'RFID: ' + (g ? g.rfid : ''), g ? g.fullName : '');
+    }
+})();
+</script>
