@@ -51,7 +51,12 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [StringLength(255)]
         public string? Image { get; set; }
 
+        // Foreign key property
 
+        [Column("operatorid")]
+        public int? OperatorId { get; set; }
+
+        public Operator? Operators { get; set; }
 
     }
 }
