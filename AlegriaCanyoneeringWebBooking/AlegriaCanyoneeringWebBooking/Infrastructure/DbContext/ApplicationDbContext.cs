@@ -202,7 +202,7 @@ namespace AlegriaCanyoneeringWebBooking
 
                 // ====== Relationships ======
 
-                entity.HasOne(g => g.OperatorList)
+                entity.HasOne(g => g.Operators)
                     .WithMany(o => o.Guests)
                     .HasForeignKey(g => g.OperatorId)
                     .HasConstraintName("FK_Guest_Operator")

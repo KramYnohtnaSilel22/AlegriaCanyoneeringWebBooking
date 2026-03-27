@@ -141,7 +141,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             var guest = await _context.Guests
                 .Include(g => g.NationalityEntity)
-                .Include(g => g.OperatorList) // optional if you use operator in partial
+                .Include(g => g.Operators) // optional if you use operator in partial
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
@@ -222,7 +222,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // ── Rest of the action unchanged below ──────────────────
 
             var anticipatedGuests = await _context.Guests
-                .Include(g => g.OperatorList)
+                .Include(g => g.Operators)
                 .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated)
                 .ToListAsync();
 
@@ -237,7 +237,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         return new Guest
                         {
                             OperatorId = grp.Key,
-                            OperatorList = first.OperatorList,
+                            Operators = first.Operators,
                             RFID = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
                             ArrivalDate = first.ArrivalDate,
                             Date = first.Date,
@@ -445,7 +445,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             var anticipatedGuestsQuery = _context.Guests
-                .Include(g => g.OperatorList)
+                .Include(g => g.Operators)
                 .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated
                             && g.BookingStatus != 0); // <-- exclude confirmed
 
@@ -465,7 +465,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     return new Guest
                     {
                         OperatorId = grp.Key,
-                        OperatorList = first.OperatorList,
+                        Operators = first.Operators,
                         RFID = grp.Count(x => x.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus

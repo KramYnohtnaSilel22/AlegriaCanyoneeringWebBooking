@@ -22,7 +22,8 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public string? Age { get; set; }
 
 
-
+        // ✅
+        [Column("batchcode")]
         [Display(Name = "Batch")]
         [StringLength(100)]
         public string? Batch { get; set; }
@@ -87,11 +88,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [RegularExpression(@"^\d{11}$", ErrorMessage = "Contact number must contain only numbers")]
         [Display(Name = "Mobile Number")]
         public string? ContactNumber { get; set; }
-
-
-        [Column("Id")]
-        public int? id { get; set; }
-        public OperatorList? OperatorList { get; set; }
 
         // Foreign key property
 

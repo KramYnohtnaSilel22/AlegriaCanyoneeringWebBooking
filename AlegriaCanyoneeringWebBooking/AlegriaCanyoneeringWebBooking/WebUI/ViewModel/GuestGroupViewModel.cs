@@ -8,7 +8,7 @@ namespace AlegriaCanyoneeringWebBooking
     {
         public int Id { get; set; } // The real guest ID (first guest in batch)
         public int? OperatorId { get; set; }
-        public OperatorList OperatorList { get; set; }
+        public Operator Operator { get; set; }
         public int ActiveGuestCount { get; set; }
         public string ArrivalDate { get; set; }
         public string Date { get; set; }
