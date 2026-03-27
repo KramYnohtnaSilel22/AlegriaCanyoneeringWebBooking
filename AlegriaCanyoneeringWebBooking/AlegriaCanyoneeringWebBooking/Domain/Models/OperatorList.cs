@@ -40,9 +40,6 @@ namespace AlegriaCanyoneeringWebBooking.Models
         // NotMapped property
         [NotMapped]
         public bool IsActive => Status == 1;
-
-        // Navigation property for related Guests
-
-        public ICollection<Guest> Guests { get; set; } = new List<Guest>();
+        
     }
 }

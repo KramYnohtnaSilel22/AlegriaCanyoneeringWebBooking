@@ -60,11 +60,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             var guests = rawGuests.Select(g => new
             {
-                g.id,
+                g.OperatorId,
                 FullName = g.Fullname ?? "Unknown Guest",
                 ArrivalDate = ParseUnixTimestamp(g.ArrivalDate),
                 WristbandCode = g.RFIDCode,
-                QRBase64 = GenerateQRCodeBase64(g.id.ToString()),
+                QRBase64 = GenerateQRCodeBase64(g.Operators?.Id.ToString() ?? "0"),
                 Operators = g.Operators?.BusinessName ?? "No Operators"
             }).ToList();
 
@@ -98,7 +98,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var guest = _context.Guests
                 .Include(g => g.Operators)
                 .Include(g => g.NationalityEntity)
-                .FirstOrDefault(g => g.id == guestId);
+                .FirstOrDefault(g => g.OperatorId == guestId);
 
             if (guest == null)
             {
@@ -661,7 +661,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         OperatorId = first.OperatorId,
 
                         // ✅ Inject BusinessName using a stubbed OperatorList object
-                        OperatorList = new OperatorList
+                        Operators = new Operator
                         {
                             BusinessName = businessName
                         },
@@ -784,7 +784,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             {
                 var guest = await _context.Guests
                     .Include(g => g.NationalityEntity)
-                    .Include(g => g.OperatorList)
+                    .Include(g => g.Operators)
                     .FirstOrDefaultAsync(g => g.Id == id);
 
                 if (guest == null)
