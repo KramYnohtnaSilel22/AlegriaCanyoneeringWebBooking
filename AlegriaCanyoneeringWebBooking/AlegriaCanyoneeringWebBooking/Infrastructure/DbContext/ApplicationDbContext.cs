@@ -78,6 +78,8 @@ namespace AlegriaCanyoneeringWebBooking
 
         public DbSet<OutsideDriverFromOperator> OutsideDriverFromOperators { get; set; }
 
+        public DbSet<OutsideGuide> OutsideGuides { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -265,7 +267,7 @@ namespace AlegriaCanyoneeringWebBooking
             modelBuilder.Entity<OutsideGuideFromOperator>().ToTable("outside_guide_from_operator");
             modelBuilder.Entity<TourGuidePriority>().ToTable("tourguide_priority");
             modelBuilder.Entity<OutsideDriverFromOperator>().ToTable("outside_driver_from_operator");
-
+            modelBuilder.Entity<OutsideGuide>().ToTable("outside_tourguide_details");
         }
     }
 }

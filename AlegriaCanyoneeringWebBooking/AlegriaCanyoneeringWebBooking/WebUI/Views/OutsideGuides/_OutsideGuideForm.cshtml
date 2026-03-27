@@ -1,0 +1,258 @@
+@model AlegriaCanyoneeringWebBooking.Models.OutsideGuide
+@{
+    var action      = ViewData["Action"]?.ToString() ?? "Create";
+    var formAction  = action == "Edit" ? "/OutsideGuides/Edit" : "/OutsideGuides/Create";
+    var isSuperAdmin = (bool)(ViewData["IsSuperAdmin"] ?? false);
+    var operators   = ViewData["Operators"] as List<AlegriaCanyoneeringWebBooking.Models.Operator>
+                      ?? new List<AlegriaCanyoneeringWebBooking.Models.Operator>();
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .ogf-form * { font-family: 'Outfit', sans-serif; }
+
+    .ogf-body { padding: 1.4rem 1.5rem 1rem; }
+
+    .ogf-section {
+        font-size: 0.7rem; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: #1a6ef5;
+        border-bottom: 1.5px solid #e8edf5;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1rem; margin-top: 1.25rem;
+    }
+    .ogf-section:first-child { margin-top: 0; }
+
+    .ogf-field { margin-bottom: 1rem; }
+
+    .ogf-label {
+        font-size: 0.75rem; font-weight: 700;
+        letter-spacing: 0.05em; text-transform: uppercase;
+        color: #0f3460; display: block; margin-bottom: 0.35rem;
+    }
+    .ogf-label .req { color: #ef4444; margin-left: 2px; }
+
+    .ogf-input, .ogf-textarea, .ogf-select {
+        width: 100%; padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.9rem;
+        color: #1e293b; background: #fafbff; outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .ogf-input:focus, .ogf-textarea:focus, .ogf-select:focus {
+        border-color: #1a6ef5;
+        box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+        background: #fff;
+    }
+    .ogf-input[readonly] {
+        background: #f1f5f9; color: #94a3b8; cursor: not-allowed;
+    }
+    .ogf-textarea { resize: vertical; min-height: 72px; }
+
+    .photo-current {
+        display: flex; align-items: center; gap: 0.85rem;
+        padding: 0.75rem; background: #f8faff;
+        border: 1px solid #e8edf5; border-radius: 10px; margin-bottom: 0.75rem;
+    }
+    .photo-current img {
+        width: 64px; height: 64px; border-radius: 10px;
+        object-fit: cover; border: 2px solid #bfdbfe;
+    }
+    .photo-label { font-size: 0.78rem; color: #64748b; }
+    .photo-path  { font-size: 0.68rem; color: #94a3b8; word-break: break-all; }
+
+    .photo-preview-wrap {
+        display: flex; align-items: center; gap: 0.85rem;
+        padding: 0.75rem;
+        background: rgba(26,110,245,0.04);
+        border: 1px dashed #bfdbfe; border-radius: 10px; margin-top: 0.75rem;
+    }
+    .photo-preview-wrap img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; }
+
+    .ogf-footer {
+        display: flex; justify-content: flex-end; gap: 0.5rem;
+        padding: 0.9rem 1.5rem; border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+    }
+    .btn-ogf-cancel {
+        padding: 0.6rem 1.25rem; background: #f1f5f9; color: #475569;
+        border: none; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.875rem;
+        font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-ogf-cancel:hover { background: #e2e8f0; }
+
+    .btn-ogf-save {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff; border: none; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.875rem;
+        font-weight: 600; cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+    .btn-ogf-save:hover  { opacity: 0.9; transform: translateY(-1px); }
+    .btn-ogf-save:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+</style>
+
+<form action="@formAction" method="post" enctype="multipart/form-data" novalidate class="ogf-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="OutsideGuideId" value="@Model.OutsideGuideId" />
+    <input type="hidden" name="TPosition"      value="@Model.TPosition"      />
+    <input type="hidden" name="Image"          value="@Model.Image"          />
+
+    @* Operators can't change OperatorId — it's locked server-side; Super Admin gets a dropdown *@
+    @if (!isSuperAdmin)
+    {
+        <input type="hidden" name="OperatorId" value="@Model.OperatorId" />
+    }
+
+    <div class="ogf-body">
+
+        <!-- Identity -->
+        <div class="ogf-section">Identity</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="ogf-field">
+                    <label class="ogf-label">RFID / Reference</label>
+                    <input class="ogf-input" name="Rfid" value="@Model.Rfid" readonly />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="ogf-field">
+                    <label class="ogf-label">Position ID</label>
+                    <input class="ogf-input" value="@Model.TPosition" readonly />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="ogf-field">
+                    <label class="ogf-label">Nickname</label>
+                    <input class="ogf-input" name="Nickname" value="@Model.Nickname" placeholder="Optional" />
+                </div>
+            </div>
+        </div>
+
+        @if (isSuperAdmin)
+        {
+            <!-- Operator (Super Admin only) -->
+            <div class="ogf-section">Operator Assignment</div>
+            <div class="ogf-field">
+                <label class="ogf-label">Assign to Operator<span class="req">*</span></label>
+                <select class="ogf-select" name="OperatorId" required>
+                    <option value="">— Select Operator —</option>
+                    @foreach (var op in operators)
+                    {
+                        if (Model.OperatorId == op.Id)
+                        {
+                            <option value="@op.Id" selected="selected">@(op.BusinessName ?? op.Name) (@op.Username)</option>
+                        }
+                        else
+                        {
+                            <option value="@op.Id">@(op.BusinessName ?? op.Name) (@op.Username)</option>
+                        }
+                    }
+                </select>
+            </div>
+        }
+
+        <!-- Name -->
+        <div class="ogf-section">Name</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="ogf-field">
+                    <label class="ogf-label">First Name<span class="req">*</span></label>
+                    <input class="ogf-input" name="FName" value="@Model.FName" required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="ogf-field">
+                    <label class="ogf-label">Middle Name</label>
+                    <input class="ogf-input" name="MName" value="@Model.MName" placeholder="Optional" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="ogf-field">
+                    <label class="ogf-label">Last Name<span class="req">*</span></label>
+                    <input class="ogf-input" name="LName" value="@Model.LName" required />
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="ogf-section">Contact</div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="ogf-field">
+                    <label class="ogf-label">Contact Number<span class="req">*</span></label>
+                    <input class="ogf-input" name="CNumber" value="@Model.CNumber"
+                           inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"
+                           required />
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="ogf-field">
+                    <label class="ogf-label">Address<span class="req">*</span></label>
+                    <textarea class="ogf-textarea" name="Address" required>@Model.Address</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo -->
+        <div class="ogf-section">Photo</div>
+
+        @if (!string.IsNullOrEmpty(Model?.Image))
+        {
+            <div class="photo-current">
+                <img src="@Model.Image" id="ogCurrentPhoto" alt="Current photo"
+                     onerror="this.style.display='none'" />
+                <div>
+                    <div class="photo-label">Current photo</div>
+                    <div class="photo-path">@Model.Image</div>
+                    <div class="photo-label mt-1">Upload a new image to replace</div>
+                </div>
+            </div>
+        }
+
+        <div class="ogf-field">
+            <label class="ogf-label">Upload Photo</label>
+            <input class="ogf-input" type="file" name="PhotoFile" id="ogPhotoFileInput"
+                   accept="image/jpeg,image/png,image/webp,image/jpg"
+                   onchange="previewOgPhoto(this)"
+                   style="padding:0.5rem 0.9rem; cursor:pointer;" />
+        </div>
+
+        <div class="photo-preview-wrap" id="ogPreviewContainer" style="display:none;">
+            <img id="ogPhotoPreview" src="#" alt="Preview" />
+            <div>
+                <div class="photo-label" style="color:#1a6ef5; font-weight:600;">New photo preview</div>
+                <div class="photo-label">This will replace the current photo on save</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="ogf-footer">
+        <button type="button" class="btn-ogf-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-ogf-save">
+            <i class="bi bi-@(action == "Edit" ? "pencil" : "save") me-1"></i>
+            @(action == "Edit" ? "Update" : "Save")
+        </button>
+    </div>
+</form>
+
+<script>
+    function previewOgPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('ogPhotoPreview').src = e.target.result;
+                document.getElementById('ogPreviewContainer').style.display = 'flex';
+                const cur = document.getElementById('ogCurrentPhoto');
+                if (cur) cur.style.opacity = '0.35';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>

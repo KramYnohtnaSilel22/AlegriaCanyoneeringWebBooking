@@ -229,14 +229,22 @@
         @* ── Super Admin only ── *@
         @if (User.IsInRole("Super Admin"))
         {
-            <a class="d-block py-1 text-white text-decoration-none"
+          @*   <a class="d-block py-1 text-white text-decoration-none"
                asp-controller="OutsideDriverFromOperator" asp-action="Index">
                 <i class="bi bi-car-front-fill me-2"></i><span>Outside Driver</span>
-            </a>
+            </a> *@
+
             <a class="d-block py-1 text-white text-decoration-none"
-               asp-controller="OutsideGuideFromOperator" asp-action="Index">
-                <i class="bi bi-compass-fill me-2"></i><span>Outside Guide</span>
+                  asp-controller="OutsideGuides" asp-action="Index">
+                <i class="bi bi-clipboard-check-fill me-2"></i><span>Assign Guide From Operator</span>
+           </a>
+
+            <a class="d-block py-1 text-white text-decoration-none"
+                   asp-controller="OutsideGuideFromOperator" asp-action="Index">
+               <i class="bi bi-compass-fill me-2"></i><span>Outside Guide</span>
             </a>
+
+
             <a class="d-block py-1 text-white text-decoration-none"
                asp-controller="Drivers" asp-action="Arrange">
                 <i class="bi bi-sort-numeric-down me-2"></i><span>Arrange Drivers</span>
@@ -292,10 +300,17 @@
         @* ── Operator only ── *@
         @if (User.IsInRole("Operator"))
         {
-            <a class="d-block py-1 text-white text-decoration-none"
+          @*   <a class="d-block py-1 text-white text-decoration-none"
                asp-controller="OutsideDriverFromOperator" asp-action="Index">
                 <i class="bi bi-car-front-fill me-2"></i><span>Outside Driver</span>
+            </a> *@
+
+            <a class="d-block py-1 text-white text-decoration-none"
+                  asp-controller="OutsideGuides" asp-action="Index">
+                <i class="bi bi-clipboard-check-fill me-2"></i><span>Assign Guide From Operator</span>
             </a>
+
+
             <a class="d-block py-1 text-white text-decoration-none"
                asp-controller="OutsideGuideFromOperator" asp-action="Index">
                 <i class="bi bi-compass-fill me-2"></i><span>Outside Guide</span>

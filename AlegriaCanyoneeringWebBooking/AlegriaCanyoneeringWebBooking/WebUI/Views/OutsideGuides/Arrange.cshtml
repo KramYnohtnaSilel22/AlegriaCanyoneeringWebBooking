@@ -1,0 +1,255 @@
+@model List<OutsideGuideQueueItem>
+@{
+    ViewData["Title"] = "Outside Guide Queue";
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .oq-wrap * { font-family: 'Outfit', sans-serif; }
+
+    .oq-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;
+    }
+    .oq-header h2 {
+        font-size: 1.35rem; font-weight: 700; color: #0f3460;
+        margin: 0; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-save-queue {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.6rem 1.25rem;
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff; border: none; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.875rem;
+        font-weight: 600; cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+    .btn-save-queue:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-save-queue:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-autoqueue {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.6rem 1.1rem;
+        background: #eff6ff; color: #1a6ef5;
+        border: 1.5px solid #bfdbfe; border-radius: 10px;
+        font-family: 'Outfit', sans-serif; font-size: 0.875rem;
+        font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-autoqueue:hover { background: #dcfce7; }
+
+    .oq-card {
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 2px 20px rgba(15,52,96,0.08);
+        border: 1px solid #e8edf5; padding: 1.25rem;
+    }
+
+    .oq-hint {
+        font-size: 0.8rem; color: #94a3b8;
+        margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem;
+    }
+
+    .guide-row {
+        display: flex; align-items: center; gap: 1rem;
+        padding: 0.85rem 1rem;
+        background: #fff;
+        border: 1.5px solid #e8edf5; border-radius: 12px;
+        margin-bottom: 0.6rem;
+        cursor: grab; user-select: none;
+        transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .guide-row:active { cursor: grabbing; }
+    .guide-row.sortable-ghost {
+        opacity: 0.4; background: #eff6ff; border-color: #1a6ef5;
+    }
+    .guide-row.sortable-chosen {
+        box-shadow: 0 4px 20px rgba(26,110,245,0.18);
+        border-color: #1a6ef5;
+    }
+
+    .drag-handle { color: #cbd5e1; font-size: 1.1rem; cursor: grab; }
+    .queue-badge {
+        min-width: 28px; height: 28px; border-radius: 50%;
+        background: rgba(26,110,245,0.1); color: #1a6ef5;
+        font-size: 0.75rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .guide-avatar {
+        width: 42px; height: 42px; border-radius: 50%;
+        object-fit: cover; border: 2px solid #bfdbfe; flex-shrink: 0;
+    }
+    .guide-avatar-ph {
+        width: 42px; height: 42px; border-radius: 50%;
+        background: #eff6ff; border: 2px solid #bfdbfe;
+        display: flex; align-items: center; justify-content: center;
+        color: #1a6ef5; font-size: 1rem; flex-shrink: 0;
+    }
+    .guide-name { font-weight: 600; color: #0f3460; font-size: 0.9rem; }
+    .guide-rfid { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+
+    #saveStatus {
+        font-size: 0.8rem; color: #94a3b8;
+        display: none; align-items: center; gap: 0.35rem;
+    }
+</style>
+
+<form id="__AjaxAntiForgeryForm" style="display:none;">@Html.AntiForgeryToken()</form>
+
+<div class="oq-wrap">
+    <div class="oq-header">
+        <h2>
+            <i class="bi bi-sort-numeric-down" style="color:#1a6ef5;"></i>
+            Outside Guide Queue
+        </h2>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span id="saveStatus">
+                <span class="spinner-border spinner-border-sm text-primary"></span> Saving...
+            </span>
+            <button type="button" id="btnAutoQueue" class="btn-autoqueue">
+                <i class="bi bi-magic"></i> Auto-Assign Queue
+            </button>
+            <button type="button" id="btnSaveQueue" class="btn-save-queue">
+                <i class="bi bi-floppy2"></i> Save Order
+            </button>
+        </div>
+    </div>
+
+    <div class="oq-card">
+        <div class="oq-hint">
+            <i class="bi bi-info-circle"></i>
+            Drag and drop guides to set the queue order, then click <strong>Save Order</strong>.
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-person-x" style="font-size:2rem;"></i>
+                <div class="mt-2">No outside guides found.</div>
+            </div>
+        }
+        else
+        {
+            <div id="sortableList">
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    var guide = Model[i];
+                    <div class="guide-row" data-id="@guide.OutsideGuideId">
+                        <i class="bi bi-grip-vertical drag-handle"></i>
+                        <div class="queue-badge">@(i + 1)</div>
+                        @if (!string.IsNullOrEmpty(guide.Image))
+                        {
+                            <img src="@guide.Image" class="guide-avatar"
+                                 onerror="this.replaceWith(document.querySelector('.guide-avatar-ph').cloneNode(true))" />
+                        }
+                        else
+                        {
+                            <div class="guide-avatar-ph"><i class="bi bi-person-fill"></i></div>
+                        }
+                        <div>
+                            <div class="guide-name">@guide.FullName</div>
+                            <div class="guide-rfid">RFID: @guide.Rfid</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div id="ogToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;"></div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@@latest/Sortable.min.js"></script>
+    <script>
+        function showToast(message, type = 'success') {
+            const map = {
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
+                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
+                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Info'    }
+            };
+            const { bg, icon, title } = map[type] || map.info;
+            const id   = 'oqt-' + Date.now();
+            const html = `
+                <div id="${id}" class="toast border-0 text-white"
+                     style="background:${bg};border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);"
+                     role="alert" aria-atomic="true" data-bs-delay="4000">
+                    <div class="toast-header border-0 text-white" style="background:transparent;">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" style="padding-top:0;">${message}</div>
+                </div>`;
+            const c = document.getElementById('ogToastContainer');
+            c.insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id);
+            new bootstrap.Toast(el).show();
+            el.addEventListener('hidden.bs.toast', () => el.remove());
+        }
+
+        // ── Sortable ─────────────────────────────────────────────────────────────
+        const list = document.getElementById('sortableList');
+        if (list) {
+            Sortable.create(list, {
+                animation: 180,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                handle: '.drag-handle',
+                onEnd: () => updateBadges()
+            });
+        }
+
+        function updateBadges() {
+            document.querySelectorAll('#sortableList .guide-row').forEach((row, i) => {
+                row.querySelector('.queue-badge').textContent = i + 1;
+            });
+        }
+
+        function getOrderedIds() {
+            return [...document.querySelectorAll('#sortableList .guide-row')]
+                .map(r => parseInt(r.dataset.id));
+        }
+
+        // ── Save Order ───────────────────────────────────────────────────────────
+        document.getElementById('btnSaveQueue')?.addEventListener('click', function () {
+            const ids   = getOrderedIds();
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const $btn  = $(this);
+            const $stat = $('#saveStatus');
+
+            $btn.prop('disabled', true);
+            $stat.css('display', 'inline-flex');
+
+            $.ajax({
+                url: '@Url.Action("Arrange", "OutsideGuides")', type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(ids),
+                headers: { 'RequestVerificationToken': token },
+                success: res => {
+                    if (res.success) showToast(res.message, 'success');
+                    else showToast(res.message, 'error');
+                },
+                error: () => showToast('Error saving order.', 'error'),
+                complete: () => { $btn.prop('disabled', false); $stat.hide(); }
+            });
+        });
+
+        // ── Auto Queue ───────────────────────────────────────────────────────────
+        document.getElementById('btnAutoQueue')?.addEventListener('click', function () {
+            if (!confirm('Auto-assign queue timestamps to guides missing one?\n\nGuides that already have a valid timestamp will not be changed.')) return;
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const $btn  = $(this);
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Running...');
+
+            $.post('@Url.Action("AutoQueue", "OutsideGuides")', {
+                __RequestVerificationToken: token
+            }, res => {
+                showToast(res.message, res.success ? 'success' : 'error');
+                if (res.success && res.count > 0) setTimeout(() => location.reload(), 1200);
+            }).fail(() => showToast('Auto-queue failed.', 'error'))
+              .always(() => $btn.prop('disabled', false).html('<i class="bi bi-magic"></i> Auto-Assign Queue'));
+        });
+    </script>
+}
