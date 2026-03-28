@@ -279,7 +279,7 @@
                             <label class="nb-label">Full Name<span class="req">*</span></label>
                             <input asp-for="NewGuest.Fullname" class="nb-input"
                                    placeholder="e.g. Juan Dela Cruz"
-                                   oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')" />
+                                   oninput="this.value=this.value.replace(/[^A-Za-zÑñ\s]/g,'')"/>
                         </div>
                     </div>
 

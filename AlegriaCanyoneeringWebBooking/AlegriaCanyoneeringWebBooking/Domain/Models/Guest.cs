@@ -12,7 +12,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         [StringLength(1000, ErrorMessage = "Full name cannot exceed 1000 characters")]
         [Display(Name = "Full Name")]
-        [RegularExpression(@"^[A-Za-z\s]+$", ErrorMessage = "Full name can only contain letters and spaces")]
+        [RegularExpression(@"^[A-Za-zÑñ\s]+$", ErrorMessage = "Full name can only contain letters, Ñ/ñ, and spaces")]
         public string? Fullname { get; set; }
 
 
