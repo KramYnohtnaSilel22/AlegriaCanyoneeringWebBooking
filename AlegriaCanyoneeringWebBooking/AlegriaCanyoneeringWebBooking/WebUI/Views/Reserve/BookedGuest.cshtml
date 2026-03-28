@@ -569,9 +569,11 @@
                             orderable: false,
                             searchable: false,
                             className: 'text-center',
-                            render: function (data) {
+                            render: function (data, type, row) {
+                                var operatorId = row && row.operatorId != null ? row.operatorId : '';
+
                                 return '<div class="d-flex gap-1 justify-content-center align-items-center">'
-                                    + '<button class="btn-act btn-view view-guest-details" data-batch="' + data + '"><i class="bi bi-eye"></i> View</button>'
+                                    + '<button class="btn-act btn-view view-guest-details" data-batch="' + data + '" data-operator-id="' + operatorId + '"><i class="bi bi-eye"></i> View</button>'
                                     + '<button class="btn-act btn-print print-batch-details" data-batch="' + data + '"><i class="bi bi-printer"></i> Print</button>'
                                     + buildAssign(data, showAssign)
                                     + '</div>';
@@ -683,10 +685,18 @@
             // ─────────────────────────────────────────────────────────
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
                 var batchCode = $(this).data('batch');
+                var operatorId = $(this).data('operator-id');
+                var startDate = $('#startDate').val();
+                var endDate = $('#endDate').val();
                 var $mc = $('#guestDetailsModalContainer');
                 $mc.html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>');
 
-                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode: batchCode })
+                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', {
+                    batchCode: batchCode,
+                    operatorId: operatorId || null,
+                    startDate: startDate,
+                    endDate: endDate
+                })
                     .done(function (html) {
                         $mc.html(html);
                         var modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));

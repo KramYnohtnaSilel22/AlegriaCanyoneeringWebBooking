@@ -22,11 +22,18 @@
     }
 
     /* ── Modal shell ──────────────────────────────────────── */
+    .gb-modal .modal-dialog {
+        max-width: min(1100px, 96vw);
+        margin: 1rem auto;
+        height: calc(100vh - 2rem);
+    }
+
     .gb-modal .modal-content {
         border-radius: 16px;
         border: 0;
         box-shadow: 0 8px 40px rgba(15,52,96,0.18);
         overflow: hidden;
+        max-height: 100%;
     }
 
     /* ── Header ───────────────────────────────────────────── */
@@ -69,6 +76,23 @@
     .gb-modal-body {
         padding: 1.25rem;
         background: #fff;
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: calc(100vh - 180px);
+        scroll-behavior: smooth;
+    }
+
+    .gb-modal-body::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .gb-modal-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+
+    .gb-modal-body::-webkit-scrollbar-track {
+        background: #f8fafc;
     }
 
     /* ── Staff cards ──────────────────────────────────────── */
@@ -238,6 +262,18 @@
             display: block;
             margin-bottom: 0.5rem;
         }
+
+    @@media (max-width: 768px) {
+        .gb-modal .modal-dialog {
+            height: calc(100vh - 1rem);
+            margin: 0.5rem auto;
+        }
+
+        .gb-modal-body {
+            max-height: calc(100vh - 160px);
+            padding: 1rem;
+        }
+    }
 </style>
 
 <!-- Modal -->

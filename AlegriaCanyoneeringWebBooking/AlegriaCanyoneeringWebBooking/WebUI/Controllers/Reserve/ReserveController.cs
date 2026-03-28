@@ -712,6 +712,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     return new
                     {
                         batch = g.Key.Batch,
+                        operatorId = g.Select(x => x.Guest.OperatorId).FirstOrDefault(),
                         operatorName = g.Key.OperatorName,
                         totalGuests = g.Count(),
                         arrivalDate = arrivalDateStr,
@@ -874,14 +875,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         //   - ViewBag.AssignedDrivers : drivers assigned to this batch today
         // ─────────────────────────────────────────────────────────────────────────
         [HttpGet]
-        public async Task<IActionResult> GetGuestsByBatch(string batchCode)
+        public async Task<IActionResult> GetGuestsByBatch(string batchCode, int? operatorId, string? startDate, string? endDate)
         {
             const string guestDetailsViewName = "ViewGuestDetails";
 
             if (string.IsNullOrWhiteSpace(batchCode))
                 return BadRequest("Batch code is required.");
 
-            // ── 1. Load all guests for this batch ──────────────────────────
+            // ── 1. Load guests for this batch, then apply the same filters used by the grid ──
             var guests = await _context.Guests
                 .AsNoTracking()
                 .Include(g => g.NationalityEntity)
@@ -889,6 +890,33 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Where(g => g.Batch == batchCode)
                 .OrderBy(g => g.Id)          // primary guest first (lowest Id)
                 .ToListAsync();
+
+            if (operatorId.HasValue)
+                guests = guests.Where(g => g.OperatorId == operatorId.Value).ToList();
+
+            var hasStartDate = DateTime.TryParse(startDate, out var parsedStartDate);
+            var hasEndDate = DateTime.TryParse(endDate, out var parsedEndDate);
+
+            if (hasStartDate || hasEndDate)
+            {
+                guests = guests
+                    .Where(g =>
+                    {
+                        var guestDate = ParseGuestDate(g.Date);
+                        if (!guestDate.HasValue)
+                            return false;
+
+                        if (hasStartDate && guestDate.Value.Date < parsedStartDate.Date)
+                            return false;
+
+                        if (hasEndDate && guestDate.Value.Date > parsedEndDate.Date)
+                            return false;
+
+                        return true;
+                    })
+                    .OrderBy(g => g.Id)
+                    .ToList();
+            }
 
             if (!guests.Any())
                 return PartialView(guestDetailsViewName,
