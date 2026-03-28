@@ -2,7 +2,6 @@
 <link href="/css/GuestDetails.css" rel="stylesheet" />
 
 @{
-    // Helper function to format ArrivalDate
     string FormatArrivalDate(string unixTimestamp)
     {
         if (string.IsNullOrEmpty(unixTimestamp))
@@ -10,9 +9,8 @@
 
         if (long.TryParse(unixTimestamp, out var unix))
         {
-            // Convert Unix timestamp to local time
             var dateTime = DateTimeOffset.FromUnixTimeSeconds(unix).ToLocalTime();
-            return dateTime.ToString("MMMM dd, yyyy hh:mm tt"); // human-readable format
+            return dateTime.ToString("MMMM dd, yyyy hh:mm tt");
         }
 
         return unixTimestamp;
@@ -23,8 +21,8 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="guestDetailsModalLabel">
-                    🧾 Guests of the Day - @DateTime.Today.ToString("MMMM dd, yyyy")
+                <h5 class="modal-title fw-bold" id="guestOfTheDayModalLabel">
+                    🧾 Guests of the Day — @DateTime.Today.ToString("MMMM dd, yyyy")
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -34,9 +32,6 @@
                     Total Guests: <strong class="text-dark">@Model.TotalCount</strong>
                 </span>
                 <div>
-               @*      <button class="btn btn-danger btn-sm" onclick="downloadGuestDetailsPdf()">
-                        <i class="fas fa-file-pdf"></i> Download PDF
-                    </button> *@
                     <button class="btn btn-success btn-sm ms-2" onclick="downloadGuestDetailsExcel()">
                         <i class="fas fa-file-excel"></i> Download Excel
                     </button>
@@ -57,15 +52,20 @@
                         var primaryGuestVM = batchGroup.First();
                         var companionsVM = batchGroup.Skip(1).ToList();
 
-                        <div class="card border mb-4" data-batch="@batchGroup.Key" data-operator="@primaryGuestVM.OperatorName">
+                        <div class="card border mb-4"
+                             data-batch="@batchGroup.Key"
+                             data-operator="@primaryGuestVM.OperatorName">
+
                             <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2 px-3">
                                 <div>
-                                    <strong>Batch:</strong> <span class="text-muted">@batchGroup.Key</span>
+                                    <strong>Batch:</strong>
+                                    <span class="text-muted">@batchGroup.Key</span>
                                     <small class="ms-3">
-                                        (Operator: @(string.IsNullOrWhiteSpace(primaryGuestVM.OperatorName) ? "No Operator" : primaryGuestVM.OperatorName))
+                                        (Operator: @(string.IsNullOrWhiteSpace(primaryGuestVM.OperatorName)
+                                                                                                ? "No Operator"
+                                                                                                : primaryGuestVM.OperatorName))
                                     </small>
                                 </div>
-                           
                             </div>
 
                             <div class="card-body px-3 py-3">
@@ -104,7 +104,6 @@
                                         <table class="table table-sm table-hover">
                                             <thead>
                                                 <tr class="table-light">
-                                             
                                                     <th>Full Name</th>
                                                     <th>Age</th>
                                                     <th>Contact</th>
@@ -139,25 +138,26 @@
                 <nav aria-label="Guest pagination">
                     <ul class="pagination justify-content-center">
                         <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
-                            <a class="page-link" href="javascript:void(0)" onclick="loadGuestPage(@(Model.CurrentPage - 1))">Previous</a>
+                            <a class="page-link" href="javascript:void(0)"
+                               onclick="loadGuestPage(@(Model.CurrentPage - 1))">Previous</a>
                         </li>
                         @for (var i = 1; i <= Model.TotalPages; i++)
                         {
                             <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
-                                <a class="page-link" href="javascript:void(0)" onclick="loadGuestPage(@i)">@i</a>
+                                <a class="page-link" href="javascript:void(0)"
+                                   onclick="loadGuestPage(@i)">@i</a>
                             </li>
                         }
                         <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
-                            <a class="page-link" href="javascript:void(0)" onclick="loadGuestPage(@(Model.CurrentPage + 1))">Next</a>
+                            <a class="page-link" href="javascript:void(0)"
+                               onclick="loadGuestPage(@(Model.CurrentPage + 1))">Next</a>
                         </li>
                     </ul>
                 </nav>
-
             </div>
         </div>
     </div>
 </div>
-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -165,119 +165,117 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="~/js/GuestPDF.js" asp-append-version="true" defer></script>
 
-
 <script>
-           function downloadGuestDetailsExcel() {
-        const wb = XLSX.utils.book_new();
+    // ─────────────────────────────────────────────────────────────────
+    // EXCEL EXPORT
+    // ─────────────────────────────────────────────────────────────────
+    function downloadGuestDetailsExcel() {
+    const wb   = XLSX.utils.book_new();
+    const date = new Date().toLocaleDateString();
 
-        const date = new Date().toLocaleDateString();
-        const title = [`Guests of the Day - ${date}`];
+    const rows = [
+    [`Guests of the Day - ${date}`],
+    [],
+    ["Batch", "Operator", "Full Name", "Age", "Contact", "Gender", "Nationality", "Area", "Arrival Date"]
+    ];
 
-        const headers = [
-            "Batch", "Operator", "Full Name", "Age", "Contact", "Gender", "Nationality", "Area", "Arrival Date"
-        ];
-        const rows = [title, [], headers];
-
-        const cards = document.querySelectorAll("#guestDetailsContent .card");
-        if (!cards.length) {
-            alert("No data available to export.");
-            return;
-        }
-
-        cards.forEach(card => {
-            const headerEl = card.querySelector(".card-header");
-            let batch = "";
-            let operator = "";
-            if (headerEl) {
-                const bm = headerEl.innerText.match(/Batch:\s*(\S+)/i);
-                if (bm) batch = bm[1];
-                const om = headerEl.innerText.match(/\(Operator:\s*(.+?)\)/i);
-                if (om) operator = om[1];
-            }
-
-            const tables = card.querySelectorAll("table");
-
-            // Primary
-            if (tables.length >= 1) {
-                const primaryTable = tables[0];
-                const prTr = primaryTable.querySelector("tbody tr");
-                if (prTr) {
-                    const cols = prTr.querySelectorAll("td");
-                    const row = [
-                        batch,
-                        operator,
-                        (cols[0]?.innerText || "").trim(),
-                        (cols[1]?.innerText || "").trim(),
-                        (cols[2]?.innerText || "").trim(),
-                        (cols[3]?.innerText || "").trim(),
-                        (cols[4]?.innerText || "").trim(),
-                        (cols[5]?.innerText || "").trim(),
-                        (cols[6]?.innerText || "").trim()
-                    ];
-                    rows.push(row);
-                }
-            }
-
-            // Companion
-            if (tables.length >= 2) {
-                const compTable = tables[1];
-                compTable.querySelectorAll("tbody tr").forEach(tr => {
-                    const cols = tr.querySelectorAll("td");
-                    console.log("Companion cols raw:", Array.from(cols).map(td => td.innerText));
-                    const companionRow = [
-                        "", // Batch blank
-                        "", // Operator blank
-                        (cols[0]?.innerText || "").trim(),
-                        (cols[1]?.innerText || "").trim(),
-                        (cols[2]?.innerText || "").trim(),
-                        (cols[3]?.innerText || "").trim(),
-                        (cols[4]?.innerText || "").trim(),
-                        "", // Area blank
-                        ""  // Arrival blank
-                    ];
-                    console.log("Companion Excel row:", companionRow);
-                    rows.push(companionRow);
-                });
-            }
-        });
-
-        // Pad rows
-        rows.forEach(row => {
-            while (row.length < 9) row.push("");
-        });
-
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        ws['!cols'] = [
-            { wch: 10 }, { wch: 20 }, { wch: 25 },
-            { wch: 5 }, { wch: 15 }, { wch: 8 },
-            { wch: 20 }, { wch: 15 }, { wch: 20 }
-        ];
-
-        XLSX.utils.book_append_sheet(wb, ws, "Guests of the Day");
-        XLSX.writeFile(wb, "DailyGuestReport.xlsx");
+    const cards = document.querySelectorAll("#guestDetailsContent .card");
+    if (!cards.length) {
+    alert("No data available to export.");
+    return;
     }
 
+    cards.forEach(card => {
+    const headerEl = card.querySelector(".card-header");
+    let batch = "", operator = "";
 
-    let currentPage = @Model.CurrentPage;
-    const pageSize = @Model.PageSize;
-
-    function loadGuestPage(pageNumber) {
-        const batchFilter = $('#batchSearchInput').val();
-
-        $.get('@Url.Action("GetGuestOfTheDay", "Reserve")', {
-            pageNumber: pageNumber,
-            pageSize: pageSize,
-            batchFilter: batchFilter
-        }, function (data) {
-            $('#guestDetailsModal .modal-content').html(data);
-        });
+    if (headerEl) {
+    const bm = headerEl.innerText.match(/Batch:\s*(\S+)/i);
+    if (bm) batch = bm[1];
+    const om = headerEl.innerText.match(/\(Operator:\s*(.+?)\)/i);
+    if (om) operator = om[1];
     }
 
+    const tables = card.querySelectorAll("table");
+
+    // Primary guest row
+    if (tables.length >= 1) {
+    const prTr = tables[0].querySelector("tbody tr");
+    if (prTr) {
+    const cols = prTr.querySelectorAll("td");
+    rows.push([
+    batch,
+    operator,
+    (cols[0]?.innerText || "").trim(),
+    (cols[1]?.innerText || "").trim(),
+    (cols[2]?.innerText || "").trim(),
+    (cols[3]?.innerText || "").trim(),
+    (cols[4]?.innerText || "").trim(),
+    (cols[5]?.innerText || "").trim(),
+    (cols[6]?.innerText || "").trim()
+    ]);
+    }
+    }
+
+    // Companion rows
+    if (tables.length >= 2) {
+    tables[1].querySelectorAll("tbody tr").forEach(tr => {
+    const cols = tr.querySelectorAll("td");
+    rows.push([
+    "", "",
+    (cols[0]?.innerText || "").trim(),
+    (cols[1]?.innerText || "").trim(),
+    (cols[2]?.innerText || "").trim(),
+    (cols[3]?.innerText || "").trim(),
+    (cols[4]?.innerText || "").trim(),
+    "", ""
+    ]);
+    });
+    }
+    });
+
+    // Ensure every row has exactly 9 columns
+    rows.forEach(row => { while (row.length < 9) row.push(""); });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [
+    { wch: 10 }, { wch: 20 }, { wch: 25 },
+    { wch: 5  }, { wch: 15 }, { wch: 8  },
+    { wch: 20 }, { wch: 15 }, { wch: 20 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Guests of the Day");
+    XLSX.writeFile(wb, "DailyGuestReport.xlsx");
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // PAGINATION
+    // ─────────────────────────────────────────────────────────────────
+    function loadGuestPage(page) {
+    $.get('/Reserve/GetGuestOfTheDay', { pageNumber: page, pageSize: 50 })
+    .done(function (html) {
+    $('#guestOfDayModalContainer').html(html);
+    var modalEl = document.getElementById('guestOfTheDayModal');
+    if (modalEl) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+    })
+    .fail(function () {
+    alert('Failed to load guest page.');
+    });
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // BATCH SEARCH (client-side filter within modal)
+    // ─────────────────────────────────────────────────────────────────
     $(document).ready(function () {
-        loadGuestPage(1);
-
-        $('#batchSearchInput').on('keyup', function () {
-            loadGuestPage(1);
-        });
+    $('#batchSearchInput').on('keyup', function () {
+    var term = $(this).val().toLowerCase();
+    $('#guestDetailsContent .card').each(function () {
+    var batch    = ($(this).data('batch') || '').toString().toLowerCase();
+    var operator = ($(this).data('operator') || '').toString().toLowerCase();
+    $(this).toggle(batch.includes(term) || operator.includes(term));
+    });
+    });
     });
 </script>

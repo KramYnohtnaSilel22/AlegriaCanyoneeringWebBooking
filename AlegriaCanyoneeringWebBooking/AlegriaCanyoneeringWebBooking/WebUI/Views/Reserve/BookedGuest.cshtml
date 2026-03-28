@@ -134,6 +134,7 @@
         box-shadow: 0 2px 20px rgba(15,52,96,0.08);
         border: 1px solid #e8edf5;
         overflow: hidden;
+        transition: box-shadow 0.4s ease;
     }
 
     .bg-card-body {
@@ -172,7 +173,8 @@
         text-transform: uppercase;
     }
 
-    .status-confirmed {
+    .status-confirmed,
+    .status-completed {
         background: rgba(22,163,74,0.1);
         color: #16a34a;
     }
@@ -185,6 +187,11 @@
     .status-cancelled {
         background: rgba(239,68,68,0.08);
         color: #ef4444;
+    }
+
+    .status-reserved {
+        background: rgba(245,158,11,0.10);
+        color: #d97706;
     }
 
     /* Action buttons */
@@ -325,6 +332,17 @@
             background: linear-gradient(135deg,#7c3aed,#4c1d95);
         }
 
+    /* GOTD highlight pulse */
+    @@keyframes gotdPulse {
+        0%   { box-shadow: 0 0 0 0   rgba(240,165,0,0.50); }
+        50%  { box-shadow: 0 0 0 8px rgba(240,165,0,0.15); }
+        100% { box-shadow: 0 2px 20px rgba(15,52,96,0.08); }
+    }
+
+    .gotd-highlight {
+        animation: gotdPulse 0.9s ease forwards;
+    }
+
     @@media (max-width:768px) {
         .bg-filter {
             position: static !important;
@@ -347,7 +365,7 @@
         </h2>
         @if (User.IsInRole("Super Admin") || User.IsInRole("Admin") || User.IsInRole("Operator") || User.IsInRole("Staff"))
         {
-            <button id="btnViewGuestOfDay" class="btn-gotd">
+            <button id="btnViewGuestOfDay" type="button" class="btn-gotd">
                 <i class="bi bi-calendar-check-fill"></i>
                 <span class="d-none d-sm-inline">Guest of the Day</span>
                 <span class="d-sm-none">Today</span>
@@ -400,7 +418,7 @@
 
 <!-- Modals -->
 <div id="guestDetailsModalContainer"></div>
-
+<div id="guestOfDayModalContainer"></div>
 <div class="modal fade" id="assignDriverModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content rounded-4 overflow-hidden border-0 shadow" id="assignDriverModalContent"></div>
@@ -417,22 +435,21 @@
     </div>
 </div>
 
-
 <!-- Toast container -->
 <div id="bgToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1090;"></div>
 
 @section Scripts {
     <script>
-        // ✅ FIXED: Default type changed from 'danger' to 'success'
-        // Previously ALL toasts without explicit type showed red "Error"
-        // Now success messages show green, only real errors show red
+        // ─────────────────────────────────────────────────────────────
+        // TOAST HELPER
+        // ─────────────────────────────────────────────────────────────
         function showToast(message, type) {
-            type = type || 'success'; // ✅ was 'danger'
+            type = type || 'success';
             var map = {
-                success: { bg:'#22c55e', icon:'bi-check-circle-fill',        title:'Success'      },
-                danger:  { bg:'#ef4444', icon:'bi-exclamation-triangle-fill', title:'Error'        },
-                warning: { bg:'#f0a500', icon:'bi-exclamation-circle-fill',   title:'Warning'      },
-                info:    { bg:'#1a6ef5', icon:'bi-info-circle-fill',          title:'Notification' }
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success'      },
+                danger:  { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'        },
+                warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   title: 'Warning'      },
+                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Notification' }
             };
             var m = map[type] || map.success;
             var id = 'bgt-' + Date.now();
@@ -453,83 +470,31 @@
             el.addEventListener('hidden.bs.toast', function () { el.remove(); });
         }
 
-        // Guest of the Day
-        document.getElementById('btnViewGuestOfDay') &&
-        document.getElementById('btnViewGuestOfDay').addEventListener('click', function () {
-            var today = new Date().toISOString().split('T')[0];
-            document.getElementById('startDate').value = today;
-            document.getElementById('endDate').value   = today;
-            document.getElementById('filterForm').dispatchEvent(new Event('submit'));
-        });
-
         $(function () {
             var table = null;
 
-            // Close assign dropdowns on outside click
-            $(document).on('click', function (e) {
-                if (!$(e.target).closest('.assign-dropdown').length)
-                    $('.assign-dropdown').removeClass('open');
-            });
-            $(document).on('click', '.assign-dropdown > .btn-act', function (e) {
-                e.stopPropagation();
-                var $d = $(this).closest('.assign-dropdown');
-                $('.assign-dropdown').not($d).removeClass('open');
-                $d.toggleClass('open');
-            });
-
-            // Status class helper
-            function statusClass(s) {
-                if (!s) return '';
-                var l = s.toLowerCase();
-                if (l === 'confirmed')   return 'status-confirmed';
-                if (l === 'anticipated') return 'status-anticipated';
-                if (l === 'cancelled')   return 'status-cancelled';
-                return '';
+            // ─────────────────────────────────────────────────────────
+            // DATE HELPER — returns "YYYY-MM-DD" in the browser's
+            // local timezone (avoids UTC-offset date-shift issues)
+            // ─────────────────────────────────────────────────────────
+            function getTodayLocalIso() {
+                var now = new Date();
+                var local = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+                return local.toISOString().split('T')[0];
             }
 
-            // Format date
-            function formatDate(data) {
-                if (!data) return '<span class="text-muted">N/A</span>';
-                if (!isNaN(data)) {
-                    return new Date(parseInt(data) * 1000).toLocaleString('en-US', {
-                        timeZone: 'Asia/Manila', year: 'numeric', month: 'long',
-                        day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-                    });
-                }
-                return data;
-            }
-
-            // Build assign dropdown
-            function buildAssign(batch, showAssign) {
-                if (!showAssign) return '';
-                return '<div class="assign-dropdown">'
-                    + '<button class="btn-act btn-assign">'
-                    + '<i class="bi bi-person-gear"></i> Assign <i class="bi bi-chevron-down" style="font-size:0.6rem;"></i>'
-                    + '</button>'
-                    + '<div class="assign-menu">'
-                    + '<button class="assign-item assign-guide" data-batch="' + batch + '"><i class="bi bi-compass text-success"></i> Guide</button>'
-                    + '<button class="assign-item assign-driver" data-batch="' + batch + '"><i class="bi bi-car-front" style="color:#1a6ef5;"></i> Driver</button>'
-                    + '<div class="assign-divider"></div>'
-                    + '<button class="assign-item assign-outside-guide" data-batch="' + batch + '"><i class="bi bi-compass" style="color:#7c3aed;"></i> Outside Guide</button>'
-                    + '<button class="assign-item assign-outside-driver" data-batch="' + batch + '"><i class="bi bi-car-front text-warning"></i> Outside Driver</button>'
-                    + '</div></div>';
-            }
-
-            // Determine role
-            var isStaff      = @(User.IsInRole("Staff") ? "true" : "false");
-            var isSuperAdmin = @(User.IsInRole("Super Admin") ? "true" : "false");
-            var showAssign   = isStaff || isSuperAdmin;
-
-            $('#filterForm').on('submit', function (e) {
-                e.preventDefault();
-                var startDate = $('#startDate').val();
-                var endDate   = $('#endDate').val();
+            // ─────────────────────────────────────────────────────────
+            // LOAD BATCHES TABLE
+            // ─────────────────────────────────────────────────────────
+            function loadBatchesTable(startDate, endDate) {
                 if (!startDate || !endDate) {
                     showToast('Please select both start and end dates.', 'warning');
                     return;
                 }
 
                 $('#tableLoader').show();
+                $('#batchesTableContainer').show();
+
                 if ($.fn.DataTable.isDataTable('#batchesTable')) {
                     table.destroy();
                     $('#batchesTable').empty().append(
@@ -544,46 +509,59 @@
                     processing: true,
                     serverSide: true,
                     ajax: {
-                        url:  '@Url.Action("GetGuestsData", "Reserve")',
+                        url: '@Url.Action("GetGuestsData", "Reserve")',
                         type: 'POST',
                         data: function (d) {
                             d.startDate = startDate;
                             d.endDate   = endDate;
                             d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
                         },
-                        error: function () {
+                        error: function (xhr) {
                             $('#tableLoader').hide();
-                            showToast('Error loading data.', 'danger'); // ✅ explicit danger
+                            showToast('Error loading data.', 'danger');
+                            console.error(xhr.responseText || xhr.statusText);
                         },
                         dataSrc: function (json) {
                             $('#tableLoader').hide();
                             $('#batchesTableContainer').show();
+
                             if (json.data && json.data.length > 0) {
                                 $('#emptyState').hide();
                             } else {
                                 $('#emptyState').show();
                             }
-                            return json.data;
+
+                            return json.data || [];
                         }
                     },
                     columns: [
                         {
                             data: 'batch',
-                            render: function (d) { return '<span class="fw-semibold">' + d + '</span>'; }
+                            render: function (d) {
+                                return '<span class="fw-semibold">' + (d || '') + '</span>';
+                            }
                         },
                         { data: 'totalGuests' },
                         {
                             data: 'operatorName',
-                            render: function (d) { return d && d.trim() ? d : '<span class="text-muted">No Operator</span>'; }
+                            render: function (d) {
+                                return d && d.trim()
+                                    ? d
+                                    : '<span class="text-muted">No Operator</span>';
+                            }
                         },
                         {
                             data: 'arrivalDate',
-                            render: function (d) { return formatDate(d); }
+                            render: function (d) {
+                                return d || '<span class="text-muted">N/A</span>';
+                            }
                         },
                         {
                             data: 'status',
                             render: function (d) {
-                                return d ? '<span class="status-badge ' + statusClass(d) + '">' + d + '</span>' : '';
+                                return d
+                                    ? '<span class="status-badge ' + statusClass(d) + '">' + d + '</span>'
+                                    : '';
                             }
                         },
                         {
@@ -605,14 +583,110 @@
                     autoWidth: false,
                     language: { emptyTable: 'No guest batches found.' }
                 });
+            }
+
+            // ─────────────────────────────────────────────────────────
+            // ASSIGN DROPDOWN — close on outside click
+            // ─────────────────────────────────────────────────────────
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.assign-dropdown').length)
+                    $('.assign-dropdown').removeClass('open');
             });
 
-            // View Guest Details
+            $(document).on('click', '.assign-dropdown > .btn-act', function (e) {
+                e.stopPropagation();
+                var $d = $(this).closest('.assign-dropdown');
+                $('.assign-dropdown').not($d).removeClass('open');
+                $d.toggleClass('open');
+            });
+
+            // ─────────────────────────────────────────────────────────
+            // HELPERS
+            // ─────────────────────────────────────────────────────────
+            function statusClass(s) {
+                if (!s) return '';
+                var l = s.toLowerCase();
+                if (l === 'confirmed' || l === 'completed') return 'status-completed';
+                if (l === 'anticipated') return 'status-anticipated';
+                if (l === 'reserved')   return 'status-reserved';
+                if (l === 'cancelled' || l === 'canceled') return 'status-cancelled';
+                return '';
+            }
+
+            function buildAssign(batch, showAssignFlag) {
+                if (!showAssignFlag) return '';
+                return '<div class="assign-dropdown">'
+                    + '<button class="btn-act btn-assign">'
+                    + '<i class="bi bi-person-gear"></i> Assign <i class="bi bi-chevron-down" style="font-size:0.6rem;"></i>'
+                    + '</button>'
+                    + '<div class="assign-menu">'
+                    + '<button class="assign-item assign-guide" data-batch="' + batch + '"><i class="bi bi-compass text-success"></i> Guide</button>'
+                    + '<button class="assign-item assign-driver" data-batch="' + batch + '"><i class="bi bi-car-front" style="color:#1a6ef5;"></i> Driver</button>'
+                    + '<div class="assign-divider"></div>'
+                    + '<button class="assign-item assign-outside-guide" data-batch="' + batch + '"><i class="bi bi-compass" style="color:#7c3aed;"></i> Outside Guide</button>'
+                    + '</div></div>';
+            }
+
+            var isStaff     = @(User.IsInRole("Staff")       ? "true" : "false");
+            var isSuperAdmin = @(User.IsInRole("Super Admin") ? "true" : "false");
+            var showAssign  = isStaff || isSuperAdmin;
+
+            // ─────────────────────────────────────────────────────────
+            // FILTER FORM SUBMIT
+            // ─────────────────────────────────────────────────────────
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                loadBatchesTable($('#startDate').val(), $('#endDate').val());
+            });
+
+            // ─────────────────────────────────────────────────────────
+            // ✅ GUEST OF THE DAY BUTTON
+            // — Sets today's date in the filter and loads the table.
+            //   No more modal; goes straight to the DataTable.
+            // ─────────────────────────────────────────────────────────
+            var btnGotd = document.getElementById('btnViewGuestOfDay');
+            if (btnGotd) {
+                btnGotd.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    var today = getTodayLocalIso();
+
+                    // 1. Fill both date pickers with today
+                    $('#startDate').val(today);
+                    $('#endDate').val(today);
+
+                    // 2. Load the DataTable for today
+                    loadBatchesTable(today, today);
+
+                    // 3. Scroll the table card into view smoothly
+                    var tableEl = document.getElementById('batchesTableContainer');
+                    if (tableEl) {
+                        setTimeout(function () {
+                            tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 150);
+                    }
+
+                    // 4. Pulse-highlight the card so the user notices it loaded
+                    var $card = $('#batchesTableContainer');
+                    $card.addClass('gotd-highlight');
+                    setTimeout(function () {
+                        $card.removeClass('gotd-highlight');
+                    }, 950);
+
+                    // 5. Friendly toast confirmation
+                    showToast('<i class="bi bi-calendar-check-fill me-1"></i> Showing guests for today — ' + today, 'info');
+                });
+            }
+
+            // ─────────────────────────────────────────────────────────
+            // VIEW GUEST DETAILS (batch row click)
+            // ─────────────────────────────────────────────────────────
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
                 var batchCode = $(this).data('batch');
                 var $mc = $('#guestDetailsModalContainer');
                 $mc.html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>');
-                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode })
+
+                $.get('@Url.Action("GetGuestsByBatch", "Reserve")', { batchCode: batchCode })
                     .done(function (html) {
                         $mc.html(html);
                         var modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
@@ -620,11 +694,13 @@
                         $('#guestDetailsModal').on('hidden.bs.modal', function () { $mc.empty(); });
                     })
                     .fail(function () {
-                        showToast('Failed to load guest details.', 'danger'); // ✅ explicit danger
+                        showToast('Failed to load guest details.', 'danger');
                     });
             });
 
-            // Print
+            // ─────────────────────────────────────────────────────────
+            // PRINT BATCH
+            // ─────────────────────────────────────────────────────────
             $('#batchesTableContainer').on('click', '.print-batch-details', function () {
                 var batchCode = $(this).data('batch');
                 var form = $('<form>', {
@@ -636,13 +712,17 @@
                 form.appendTo('body').submit().remove();
             });
 
-            function loadModal(contentId, url, params, batch) {
+            // ─────────────────────────────────────────────────────────
+            // MODAL LOADER HELPER
+            // ─────────────────────────────────────────────────────────
+            function loadModal(contentId, url, batch) {
                 $('#' + contentId).html(
                     '<div class="text-center p-4">'
                     + '<div class="spinner-border text-primary" role="status"></div>'
                     + '<p class="mt-2 text-muted" style="font-size:0.875rem;">Loading...</p>'
                     + '</div>'
                 );
+
                 $.get(url, { batch: batch })
                     .done(function (html) {
                         $('#' + contentId).html(html);
@@ -656,19 +736,33 @@
                     });
             }
 
+            // ─────────────────────────────────────────────────────────
+            // ASSIGN MODALS
+            // ─────────────────────────────────────────────────────────
             $('#batchesTableContainer').on('click', '.assign-driver', function () {
                 new bootstrap.Modal(document.getElementById('assignDriverModal')).show();
-                loadModal('assignDriverModalContent', '@Url.Action("GetAssignDriverModal", "Reserve")', {}, $(this).data('batch'));
+                loadModal('assignDriverModalContent', '@Url.Action("GetAssignDriverModal", "Reserve")', $(this).data('batch'));
             });
+
             $('#batchesTableContainer').on('click', '.assign-guide', function () {
                 new bootstrap.Modal(document.getElementById('assignGuideModal')).show();
-                loadModal('assignGuideModalContent', '@Url.Action("GetAssignGuideModal", "Reserve")', {}, $(this).data('batch'));
+                loadModal('assignGuideModalContent', '@Url.Action("GetAssignGuideModal", "Reserve")', $(this).data('batch'));
             });
+
             $('#batchesTableContainer').on('click', '.assign-outside-guide', function () {
                 new bootstrap.Modal(document.getElementById('assignOutsideGuideModal')).show();
-                loadModal('assignOutsideGuideModalContent', '@Url.Action("GetAssignOutsideGuideModal", "Reserve")', {}, $(this).data('batch'));
+                loadModal('assignOutsideGuideModalContent', '@Url.Action("GetAssignOutsideGuideModal", "Reserve")', $(this).data('batch'));
             });
-      ;
+
+            // ─────────────────────────────────────────────────────────
+            // AUTO-LOAD if query-string dates are present
+            // ─────────────────────────────────────────────────────────
+            var initialStartDate = $('#startDate').val();
+            var initialEndDate   = $('#endDate').val();
+
+            if (initialStartDate && initialEndDate) {
+                loadBatchesTable(initialStartDate, initialEndDate);
+            }
         });
     </script>
 }

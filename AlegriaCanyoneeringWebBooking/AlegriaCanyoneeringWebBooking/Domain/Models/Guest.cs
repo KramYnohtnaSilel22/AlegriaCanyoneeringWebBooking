@@ -79,6 +79,15 @@ namespace AlegriaCanyoneeringWebBooking.Models
             confirmed = 0     // 'confirmed' instead of 'Confirmed'
         }
 
+        // ← ADD THIS
+        public static class Status
+        {
+            public const int Confirmed = 0;
+            public const int Canceled = 1;
+            public const int Reserved = 2;
+            public const int Anticipated = 3;
+        }
+
 
         [Column("Area")]
         public string? Area { get; set; }
