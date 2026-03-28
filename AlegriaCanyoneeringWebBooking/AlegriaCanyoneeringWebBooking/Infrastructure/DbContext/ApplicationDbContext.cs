@@ -1,7 +1,5 @@
-﻿
-using AlegriaCanyoneeringWebBooking.Domain.Models;
+﻿using AlegriaCanyoneeringWebBooking.Domain.Models;
 using AlegriaCanyoneeringWebBooking.Models;
-using AlegriaCanyoneeringWebBooking.WebUI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -72,11 +70,7 @@ namespace AlegriaCanyoneeringWebBooking
 
         public DbSet<BatchAssignment> BatchAssignments { get; set; }
 
-        public DbSet<OutsideGuideFromOperator> OutsideGuideFromOperators { get; set; }
-
         public DbSet<TourGuidePriority> TourGuidePriorities { get; set; }
-
-        public DbSet<OutsideDriverFromOperator> OutsideDriverFromOperators { get; set; }
 
         public DbSet<OutsideGuide> OutsideGuides { get; set; }
 
@@ -250,8 +244,7 @@ namespace AlegriaCanyoneeringWebBooking
             modelBuilder.Entity<Batch>().ToTable("tblbatch");
 
 
-            // Removed Driver entity configuration
-            // modelBuilder.Entity<Driver>().ToTable("driver_details");
+   
          
             modelBuilder.Entity<Role>().ToTable("role");
             modelBuilder.Entity<Operator>().ToTable("tbl_operator_mobile");
@@ -264,10 +257,10 @@ namespace AlegriaCanyoneeringWebBooking
             modelBuilder.Entity<TourGuideAttendance>().ToTable("tourguide_attendance");
             modelBuilder.Entity<TourGuideDtr>().ToTable("tourguide_dtr");
             modelBuilder.Entity<BatchAssignment>().ToTable("tbl_batch_assignments");
-            modelBuilder.Entity<OutsideGuideFromOperator>().ToTable("outside_guide_from_operator");
             modelBuilder.Entity<TourGuidePriority>().ToTable("tourguide_priority");
-            modelBuilder.Entity<OutsideDriverFromOperator>().ToTable("outside_driver_from_operator");
             modelBuilder.Entity<OutsideGuide>().ToTable("outside_tourguide_details");
+
+      
         }
     }
 }
