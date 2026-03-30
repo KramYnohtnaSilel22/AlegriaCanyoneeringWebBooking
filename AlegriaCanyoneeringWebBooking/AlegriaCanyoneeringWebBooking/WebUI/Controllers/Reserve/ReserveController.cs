@@ -729,6 +729,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 draw,
                 recordsTotal = grouped.Count,
                 recordsFiltered = grouped.Count,
+                totalGuestsCount = materialised.Count,
                 data = paged
             });
         }

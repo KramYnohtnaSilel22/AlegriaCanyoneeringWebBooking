@@ -127,6 +127,25 @@
             transform: translateY(-1px);
         }
 
+    .bg-guest-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(26,110,245,0.08);
+        border: 1px solid #bfdbfe;
+        color: #1a6ef5;
+        font-size: 0.82rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+        .bg-guest-count strong {
+            color: #0f3460;
+            font-size: 0.9rem;
+        }
+
     /* ── Table card ───────────────────────────────────────── */
     .bg-card {
         background: #fff;
@@ -384,6 +403,11 @@
             <button type="submit" class="btn-search">
                 <i class="bi bi-search"></i> Search
             </button>
+            <div class="bg-guest-count" id="guestCountBadge">
+                <i class="bi bi-people-fill"></i>
+                <span id="guestCountLabel">Total Guests</span>
+                <strong id="guestCountValue">0</strong>
+            </div>
         </div>
     </form>
 
@@ -473,6 +497,16 @@
         $(function () {
             var table = null;
 
+            function updateGuestCount(count, startDate, endDate) {
+                var today = getTodayLocalIso();
+                var label = (startDate === today && endDate === today)
+                    ? 'Guests Today'
+                    : 'Total Guests';
+
+                $('#guestCountLabel').text(label);
+                $('#guestCountValue').text(count || 0);
+            }
+
             // ─────────────────────────────────────────────────────────
             // DATE HELPER — returns "YYYY-MM-DD" in the browser's
             // local timezone (avoids UTC-offset date-shift issues)
@@ -518,12 +552,14 @@
                         },
                         error: function (xhr) {
                             $('#tableLoader').hide();
+                            updateGuestCount(0, startDate, endDate);
                             showToast('Error loading data.', 'danger');
                             console.error(xhr.responseText || xhr.statusText);
                         },
                         dataSrc: function (json) {
                             $('#tableLoader').hide();
                             $('#batchesTableContainer').show();
+                            updateGuestCount(json.totalGuestsCount || 0, startDate, endDate);
 
                             if (json.data && json.data.length > 0) {
                                 $('#emptyState').hide();
