@@ -13,7 +13,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Required]
         [Column("rfid")]
         [StringLength(200)]
-        public string Rfid { get; set; }
+        public string Rfid { get; set; } = string.Empty;
 
         [Required]
         [Column("tposition")]
@@ -22,7 +22,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Required]
         [Column("fname")]
         [StringLength(100)]
-        public string FName { get; set; }
+        public string FName { get; set; } = string.Empty;
 
         [Column("mname")]
         [StringLength(100)]
@@ -31,17 +31,17 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Required]
         [Column("lname")]
         [StringLength(100)]
-        public string LName { get; set; }
+        public string LName { get; set; } = string.Empty;
 
         [Required]
         [Column("cnumber")]
         [StringLength(20)]
-        public string CNumber { get; set; }
+        public string CNumber { get; set; } = string.Empty;
 
         [Required]
         [Column("address")]
         [StringLength(255)]
-        public string Address { get; set; }
+        public string Address { get; set; } = string.Empty;
 
         [Column("nickname")]
         [StringLength(100)]
@@ -51,12 +51,24 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [StringLength(255)]
         public string? Image { get; set; }
 
-        // Foreign key property
-
         [Column("operatorid")]
         public int? OperatorId { get; set; }
 
-        public Operator? Operators { get; set; }
+        // ── Navigation ────────────────────────────────────────────────
+        [ForeignKey(nameof(OperatorId))]
+        public Operator? Operator { get; set; }
 
+        // ── Computed — never hits the DB ──────────────────────────────
+        [NotMapped]
+        public string FullName =>
+            string.IsNullOrWhiteSpace(MName)
+                ? $"{FName} {LName}".Trim()
+                : $"{FName} {MName} {LName}".Trim();
+
+        [NotMapped]
+        public string DisplayName =>
+            !string.IsNullOrWhiteSpace(Nickname)
+                ? $"{FullName} ({Nickname})"
+                : FullName;
     }
 }

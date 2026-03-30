@@ -59,7 +59,7 @@ public class OutsideGuidesController : Controller
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
             var searchValue = Request.Form["search[value]"].FirstOrDefault();
 
-            var query = _context.OutsideGuides.Include(g => g.Operators).AsQueryable();
+            var query = _context.OutsideGuides.Include(g => g.Operator).AsQueryable();
 
             // ── Operators see ONLY their own guides ──────────────────────────────────
             if (!IsSuperAdmin)
@@ -96,7 +96,7 @@ public class OutsideGuidesController : Controller
                     nickname = g.Nickname ?? "----",
                     cNumber = g.CNumber ?? "----",
                     image = g.Image ?? "",
-                    operatorName = g.Operators != null ? g.Operators.BusinessName ?? g.Operators.Name : "—"
+                    operatorName = g.Operator != null ? g.Operator.BusinessName ?? g.Operator.Name : "—"
                 })
                 .ToListAsync();
 

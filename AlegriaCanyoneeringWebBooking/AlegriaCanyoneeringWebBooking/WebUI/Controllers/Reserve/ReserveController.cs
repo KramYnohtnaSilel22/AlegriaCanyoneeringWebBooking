@@ -7,7 +7,7 @@ using Microsoft.Azure.Amqp.Framing;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using System.Globalization;
-using System.Security.Claims;
+using System.Security.Claims;   
 using System.Text;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
@@ -687,33 +687,33 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var materialised = filtered.ToList();
 
             var grouped = materialised
-                .GroupBy(x => new
-                {
-                    Batch = x.Guest.Batch ?? "",
-                    OperatorName = x.Guest.Operators?.BusinessName ?? "No Operator"
-                })
+                // ── FIX: group by Batch only — not by OperatorName.
+                // Grouping by both caused guests in the same batch with
+                // different/null operators to split into separate rows,
+                // making totalGuests show only a subset (e.g. 2 instead of 58).
+                .GroupBy(x => x.Guest.Batch ?? "")
                 .Select(g =>
                 {
-                    // ── FIX 1: arrivalDate as a plain string ───────────────
-                    // Returning a raw DateTime? object causes a JSON serialisation
-                    // error and the "Error loading data" toast.
-                    // Always format it as a string before sending to DataTables.
+                    var firstGuest = g.First().Guest;
+
                     var minDate = g.Min(x => x.ParsedDate);
                     var arrivalDateStr = minDate.HasValue
                         ? minDate.Value.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture)
                         : "N/A";
 
-                    // ── FIX 2: status via safe helper ──────────────────────
-                    // Enum.GetName throws when BookingStatus is a plain int type.
-                    // ResolveStatusLabel uses Convert.ToInt32 which handles both.
-                    var firstGuest = g.First().Guest;
                     var statusLabel = ResolveStatusLabel(firstGuest.BookingStatus);
+
+                    // Pick the first non-null operator name in the batch
+                    var opName = g
+                        .Select(x => x.Guest.Operators?.BusinessName)
+                        .FirstOrDefault(n => !string.IsNullOrEmpty(n))
+                        ?? "No Operator";
 
                     return new
                     {
-                        batch = g.Key.Batch,
+                        batch = g.Key,
                         operatorId = g.Select(x => x.Guest.OperatorId).FirstOrDefault(),
-                        operatorName = g.Key.OperatorName,
+                        operatorName = opName,
                         totalGuests = g.Count(),
                         arrivalDate = arrivalDateStr,
                         status = statusLabel
@@ -994,12 +994,429 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         
 
         // =========================================================
+        // SHARED HELPER — guest count filtered by date range
+        // Used by assign modals to match the table's filtered count.
+        // Falls back to full batch count when no dates are supplied.
+        // =========================================================
+        private async Task<int> GetFilteredGuestCount(string batch, string? startDate, string? endDate)
+        {
+            bool hasStart = DateTime.TryParse(startDate, out var sd);
+            bool hasEnd   = DateTime.TryParse(endDate,   out var ed);
+
+            if (!hasStart && !hasEnd)
+                return await _context.Guests.CountAsync(g => g.Batch == batch);
+
+            var dates = await _context.Guests
+                .Where(g => g.Batch == batch && !string.IsNullOrEmpty(g.Date))
+                .Select(g => g.Date)
+                .ToListAsync();
+
+            var count = dates
+                .Select(ParseGuestDate)
+                .Where(d => d.HasValue
+                    && (!hasStart || d!.Value.Date >= sd.Date)
+                    && (!hasEnd   || d!.Value.Date <= ed.Date))
+                .Count();
+
+            // Fallback: if date filter yields 0, return the full batch count
+            return count > 0
+                ? count
+                : await _context.Guests.CountAsync(g => g.Batch == batch);
+        }
+
+
+        // =========================================================
+        // GET ASSIGN DRIVER MODAL
+        // ✅ FIFO ordered by Driver.DPosition
+        // ✅ hasTrip / isAbsent / passengers from DriverAttendance + DriverDtr today
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> GetAssignDriverModal(string batch, string? startDate = null, string? endDate = null)
+        {
+            try
+            {
+                var allDrivers = await _context.Drivers
+                    .OrderBy(d => d.DPosition)
+                    .Select(d => new
+                    {
+                        d.DriverId,
+                        d.RefId,
+                        fullName = ((d.FName ?? "") + " " + (d.MName ?? "") + " " + (d.LName ?? "")).Trim(),
+                        d.Image,
+                        d.DPosition
+                    })
+                    .ToListAsync();
+
+                // Today's attendance — unix timestamp range
+                var attendanceToday = await _context.DriverAttendances
+                    .Where(a => string.Compare(a.Date, UnixTodayStart()) >= 0
+                             && string.Compare(a.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
+
+                // FIFO: last attendance Id per driver (DriverId = RefId string)
+                var lastAssignmentMap = attendanceToday
+                    .Where(a => !string.IsNullOrEmpty(a.DriverId))
+                    .GroupBy(a => a.DriverId)
+                    .ToDictionary(g => g.Key, g => g.Max(x => x.Id));
+
+                // Passenger totals from DriverDtr today
+                var driverDtrToday = await _context.DriverDtrs
+                    .Where(d => !string.IsNullOrEmpty(d.Date)
+                             && string.Compare(d.Date, UnixTodayStart()) >= 0
+                             && string.Compare(d.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
+
+                // Map: Rfid (int) → passenger total
+                var driverPassengerMap = driverDtrToday
+                    .GroupBy(d => d.Rfid)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0));
+
+                var driversWithDtrRfidSet = driverDtrToday.Select(d => d.Rfid).ToHashSet();
+                var absentDriverRefIds = new HashSet<string>();
+
+                foreach (var d in allDrivers.Where(x => lastAssignmentMap.ContainsKey(x.RefId)))
+                {
+                    if (int.TryParse(d.RefId, out int refInt)
+                        && driversWithDtrRfidSet.Contains(refInt)
+                        && driverPassengerMap.ContainsKey(refInt)
+                        && driverPassengerMap[refInt] == 0)
+                    {
+                        absentDriverRefIds.Add(d.RefId);
+                    }
+                }
+
+                // FIFO order: never-assigned first → then by DPosition
+                var orderedDrivers = allDrivers
+                    .OrderBy(d => lastAssignmentMap.ContainsKey(d.RefId) ? 1 : 0)
+                    .ThenBy(d => d.DPosition)
+                    .ToList();
+
+                var availableDriversRaw = new List<object>();
+                for (int i = 0; i < orderedDrivers.Count; i++)
+                {
+                    var d = orderedDrivers[i];
+                    int.TryParse(d.RefId, out int refInt);
+                    availableDriversRaw.Add(new
+                    {
+                        d.DriverId,
+                        d.RefId,
+                        d.fullName,
+                        Image = d.Image ?? "",
+                        hasTrip = lastAssignmentMap.ContainsKey(d.RefId),
+                        isAbsent = absentDriverRefIds.Contains(d.RefId),
+                        queuePosition = i + 1,
+                        passengers = refInt > 0 && driverPassengerMap.ContainsKey(refInt)
+                                        ? driverPassengerMap[refInt] : 0,
+                        dPosition = d.DPosition
+                    });
+                }
+
+                var assignedTodayList = orderedDrivers
+                    .Where(d => lastAssignmentMap.ContainsKey(d.RefId))
+                    .ToList();
+
+                var busyDriversRaw = new List<object>();
+                for (int i = 0; i < assignedTodayList.Count; i++)
+                {
+                    var d = assignedTodayList[i];
+                    int.TryParse(d.RefId, out int refInt2);
+                    busyDriversRaw.Add(new
+                    {
+                        d.DriverId,
+                        d.RefId,
+                        d.fullName,
+                        Image = d.Image ?? "",
+                        isAbsent = absentDriverRefIds.Contains(d.RefId),
+                        queuePos = i + 1,
+                        passengers = refInt2 > 0 && driverPassengerMap.ContainsKey(refInt2)
+                                        ? driverPassengerMap[refInt2] : 0,
+                        dPosition = d.DPosition
+                    });
+                }
+
+                var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
+                int recommendedDrivers = GetRequiredStaffCount(guestCount);
+
+                ViewBag.Batch = batch ?? "";
+                ViewBag.GuestCount = guestCount;
+                ViewBag.RecommendedDrivers = recommendedDrivers;
+                ViewBag.AvailableDrivers = availableDriversRaw.Cast<dynamic>().ToList();
+                ViewBag.BusyDrivers = busyDriversRaw.Cast<dynamic>().ToList();
+
+                return PartialView("_AssignDriverModal");
+            }
+            catch (Exception ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return Content($@"
+<div class='modal-header bg-danger text-white'>
+    <h5 class='modal-title'>Error Loading Drivers</h5>
+    <button type='button' class='btn-close btn-close-white' data-bs-dismiss='modal'></button>
+</div>
+<div class='modal-body'>
+    <div class='alert alert-danger'><strong>Error:</strong> {inner}</div>
+</div>
+<div class='modal-footer'>
+    <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
+</div>", "text/html");
+            }
+        }
+
+
+        // =========================================================
+        // ASSIGN DRIVERS — POST
+        // ✅ Inserts DriverAttendance + DriverDtr + BatchAssignment
+        // ✅ After assignment, DPosition updated → moves to bottom of FIFO
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignDrivers(string batch, List<string> driverRefIds)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batch) || driverRefIds == null || !driverRefIds.Any())
+                    return Json(new { success = false, message = "Batch and at least one driver are required." });
+
+                var guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                int recommendedDrivers = GetRequiredStaffCount(guestCount);
+
+                if (driverRefIds.Count > recommendedDrivers)
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Cannot assign more than {recommendedDrivers} driver(s) for {guestCount} guest(s)."
+                    });
+
+                int driversCount = driverRefIds.Count;
+                int basePassengers = driversCount > 0 ? guestCount / driversCount : 0;
+                int remainder = driversCount > 0 ? guestCount % driversCount : 0;
+
+                var operatorId = await _context.Guests
+                    .Where(g => g.Batch == batch)
+                    .Select(g => (int?)g.OperatorId)
+                    .FirstOrDefaultAsync();
+
+                var assignedNames = new List<string>();
+
+                for (int i = 0; i < driversCount; i++)
+                {
+                    var refId = driverRefIds[i].Trim();
+                    var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.RefId == refId);
+                    if (driver == null) continue;
+
+                    int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
+                    int.TryParse(driver.RefId, out int rfidInt);
+
+                    _context.DriverAttendances.Add(new DriverAttendance
+                    {
+                        DriverId = driver.RefId,
+                        Date = UnixNow(),
+                        Passenger = assignedPassengers
+                    });
+
+                    _context.DriverDtrs.Add(new DriverDtr
+                    {
+                        Rfid = rfidInt > 0 ? rfidInt : driver.DriverId,
+                        Date = UnixNow(),
+                        Passenger = assignedPassengers.ToString(),
+                        ComDateDr = DtrDateNow()
+                    });
+
+                    _context.BatchAssignments.Add(new BatchAssignment
+                    {
+                        BatchCode = batch,
+                        OperatorId = operatorId,
+                        GuideId = null,
+                        DriverId = driver.DriverId
+                    });
+
+                    // Update DPosition → driver moves to bottom of FIFO queue
+                    driver.DPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+                    assignedNames.Add($"{driver.FName} {driver.LName}");
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"{driversCount} driver(s) assigned: {string.Join(", ", assignedNames)}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+
+        // =========================================================
+        // EDIT DRIVER ASSIGNMENT — update DriverDtr.Passenger
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditDriverAssignment(string driverRefId, int passengers)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Driver Ref ID is required." });
+
+                if (passengers < 1)
+                    return Json(new { success = false, message = "Passenger count must be at least 1." });
+
+                if (!int.TryParse(driverRefId, out int rfidInt))
+                    return Json(new { success = false, message = "Invalid driver Ref ID (must be numeric)." });
+
+                var dtr = await _context.DriverDtrs
+                    .Where(d => d.Rfid == rfidInt
+                             && !string.IsNullOrEmpty(d.Date)
+                             && string.Compare(d.Date, UnixTodayStart()) >= 0
+                             && string.Compare(d.Date, UnixTodayEnd()) < 0)
+                    .OrderByDescending(d => d.Id)
+                    .FirstOrDefaultAsync();
+
+                if (dtr == null)
+                    return Json(new { success = false, message = "No active DTR record found for this driver today." });
+
+                dtr.Passenger = passengers.ToString();
+                dtr.ComDateDr = DtrDateNow();
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = $"Passenger count updated to {passengers}." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+
+        // =========================================================
+        // REMOVE DRIVER ASSIGNMENT
+        // ✅ Removes DriverAttendance + DriverDtr + BatchAssignment
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveDriverAssignment(string driverRefId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Driver Ref ID is required." });
+
+                // Remove DriverAttendance
+                var attendances = await _context.DriverAttendances
+                    .Where(a => a.DriverId == driverRefId
+                             && string.Compare(a.Date, UnixTodayStart()) >= 0
+                             && string.Compare(a.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
+
+                if (attendances.Any())
+                    _context.DriverAttendances.RemoveRange(attendances);
+
+                // Remove DriverDtr
+                if (int.TryParse(driverRefId, out int rfidInt))
+                {
+                    var dtrs = await _context.DriverDtrs
+                        .Where(d => d.Rfid == rfidInt
+                                 && !string.IsNullOrEmpty(d.Date)
+                                 && string.Compare(d.Date, UnixTodayStart()) >= 0
+                                 && string.Compare(d.Date, UnixTodayEnd()) < 0)
+                        .ToListAsync();
+
+                    if (dtrs.Any())
+                        _context.DriverDtrs.RemoveRange(dtrs);
+                }
+
+                // Remove BatchAssignment
+                var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.RefId == driverRefId);
+                if (driver != null)
+                {
+                    var batchRecords = await _context.BatchAssignments
+                        .Where(b => b.DriverId == driver.DriverId)
+                        .ToListAsync();
+
+                    if (batchRecords.Any())
+                        _context.BatchAssignments.RemoveRange(batchRecords);
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Driver assignment has been removed." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+
+        // =========================================================
+        // MARK DRIVER ABSENT — Passenger = 0, stays in FIFO queue
+        // ✅ Ensures attendance exists + replaces DTR with Passenger = "0"
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkDriverAbsent(string driverRefId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(driverRefId))
+                    return Json(new { success = false, message = "Driver Ref ID is required." });
+
+                // Ensure attendance exists — driver stays in FIFO rotation
+                var attendance = await _context.DriverAttendances
+                    .Where(a => a.DriverId == driverRefId
+                             && string.Compare(a.Date, UnixTodayStart()) >= 0
+                             && string.Compare(a.Date, UnixTodayEnd()) < 0)
+                    .FirstOrDefaultAsync();
+
+                if (attendance == null)
+                {
+                    _context.DriverAttendances.Add(new DriverAttendance
+                    {
+                        DriverId = driverRefId,
+                        Date = UnixNow(),
+                        Passenger = 0
+                    });
+                }
+
+                // Replace DriverDtr with Passenger = "0"
+                if (int.TryParse(driverRefId, out int rfidInt))
+                {
+                    var existingDtrs = await _context.DriverDtrs
+                        .Where(d => d.Rfid == rfidInt
+                                 && !string.IsNullOrEmpty(d.Date)
+                                 && string.Compare(d.Date, UnixTodayStart()) >= 0
+                                 && string.Compare(d.Date, UnixTodayEnd()) < 0)
+                        .ToListAsync();
+
+                    if (existingDtrs.Any())
+                        _context.DriverDtrs.RemoveRange(existingDtrs);
+
+                    _context.DriverDtrs.Add(new DriverDtr
+                    {
+                        Rfid = rfidInt,
+                        Date = UnixNow(),
+                        Passenger = "0",
+                        ComDateDr = DtrDateNow()
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Driver marked as absent. Still in queue rotation." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
+
+        // =========================================================
         // GET ASSIGN GUIDE MODAL
         // ✅ FIFO ordered by Guide.TPosition (Unix timestamp)
         // ✅ TPosition passed to ViewBag for display in modal
         // =========================================================
         [HttpGet]
-        public async Task<IActionResult> GetAssignGuideModal(string batch)
+        public async Task<IActionResult> GetAssignGuideModal(string batch, string? startDate = null, string? endDate = null)
         {
             try
             {
@@ -1102,7 +1519,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     });
                 }
 
-                var guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
                 int recommendedGuides = GetRequiredStaffCount(guestCount);
 
                 ViewBag.Batch = batch ?? "";
@@ -1410,163 +1827,349 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-       
 
         // =========================================================
         // GET ASSIGN OUTSIDE GUIDE MODAL
         // ✅ FIFO from tourguide_priority (MAX Date per guide = last assigned)
-        // ✅ hasTrip / isAbsent / noOfGuest all from tourguide_priority today
-        // ✅ Pulls guides from outside_guide_from_operator
-        // ✅ Matches by OperatorId OR OperatorName (fallback)
+        // ✅ hasTrip / isAbsent / passengers from tourguide_priority today
+        // ✅ Pulls guides from outside_tourguide_details by OperatorId
+        // ✅ Fallback match by OperatorName if OperatorId yields nothing
+        // ✅ FIXED: Final fallback to ALL guides if operator yields nothing
         // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> GetAssignOutsideGuideModal(string batch, string? startDate = null, string? endDate = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batch))
+                    return BadRequest("Batch is required.");
 
+                // ── 1. Batch meta ─────────────────────────────────────────
+                var batchMeta = await _context.Guests
+                    .Where(g => g.Batch == batch)
+                    .GroupBy(g => new { g.Batch, g.OperatorId })
+                    .Select(g => new { GuestCount = g.Count(), OperatorId = g.Key.OperatorId })
+                    .FirstOrDefaultAsync();
+
+                int guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
+                int recommendedGuides = GetRequiredStaffCount(guestCount);
+
+                // ── 2. Operator ───────────────────────────────────────────
+                Operator? op = batchMeta?.OperatorId != null
+                    ? await _context.Operators.FindAsync(batchMeta.OperatorId)
+                    : null;
+
+                string operatorName = op?.Name ?? string.Empty;
+                string operatorId = op?.Id.ToString() ?? string.Empty;
+
+                // ── 3. Outside guides (with cascading fallback) ───────────
+                List<OutsideGuide> guides = new();
+
+                if (op != null)
+                {
+                    // 3a. Match by OperatorId (exact)
+                    guides = await _context.OutsideGuides
+                        .Where(g => g.OperatorId == op.Id)
+                        .ToListAsync();
+
+                    // 3b. Fallback: match by Operator.Name
+                    if (!guides.Any())
+                    {
+                        guides = await _context.OutsideGuides
+                            .Include(g => g.Operator)
+                            .Where(g => g.Operator != null && g.Operator.Name == op.Name)
+                            .ToListAsync();
+                    }
+                }
+
+                // 3c. Final fallback: load ALL outside guides
+                //     Covers the case where guides exist but are registered
+                //     under a different operator than the batch.
+                if (!guides.Any())
+                {
+                    guides = await _context.OutsideGuides
+                        .Include(g => g.Operator)
+                        .ToListAsync();
+                }
+
+                // ── 4. Parse RFIDs — skip duplicates & invalids ───────────
+                var rfidMap = guides
+                    .Where(g => !string.IsNullOrWhiteSpace(g.Rfid)
+                             && long.TryParse(g.Rfid.Trim(), out long v)
+                             && v > 0 && v <= int.MaxValue)
+                    .GroupBy(g => (int)long.Parse(g.Rfid.Trim()))
+                    .ToDictionary(grp => grp.Key, grp => grp.First());
+
+                var rfidInts = rfidMap.Keys.ToList();
+
+                if (!rfidInts.Any())
+                {
+                    ViewBag.Batch = batch;
+                    ViewBag.GuestCount = guestCount;
+                    ViewBag.RecommendedGuides = recommendedGuides;
+                    ViewBag.OperatorName = operatorName;
+                    ViewBag.OperatorId = operatorId;
+                    ViewBag.AvailableGuides = new List<object>();
+                    ViewBag.BusyGuides = new List<object>();
+                    return PartialView("_AssignOutsideGuideModal");
+                }
+
+                // ── 5. Today's priority rows ──────────────────────────────
+                var todayRows = await _context.TourGuidePriorities
+                    .Where(p => rfidInts.Contains(p.GuideIdPrior)
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
+
+                var todayState = todayRows
+                    .GroupBy(p => p.GuideIdPrior)
+                    .ToDictionary(g => g.Key, g => new
+                    {
+                        HasTrip = g.Any(x => x.NoOfGuest > 0),
+                        IsAbsent = g.All(x => x.NoOfGuest == 0),
+                        Passengers = g.Sum(x => x.NoOfGuest)
+                    });
+
+                // ── 6. FIFO last-assigned date ────────────────────────────
+                var lastDateMap = await _context.TourGuidePriorities
+                    .Where(p => rfidInts.Contains(p.GuideIdPrior))
+                    .GroupBy(p => p.GuideIdPrior)
+                    .Select(g => new { GuideId = g.Key, LastDate = g.Max(x => x.Date) })
+                    .ToDictionaryAsync(x => x.GuideId, x => x.LastDate);
+
+                // ── 7. Sort FIFO ──────────────────────────────────────────
+                var sorted = rfidMap
+                    .OrderBy(kv => lastDateMap.TryGetValue(kv.Key, out var d) ? d : "0")
+                    .Select(kv => kv.Value)
+                    .ToList();
+
+                // ── 8. Queue positions ────────────────────────────────────
+                var queuePosMap = sorted
+                    .Select((g, i) => new
+                    {
+                        Rfid = (int)long.Parse(g.Rfid.Trim()),
+                        Pos = i + 1
+                    })
+                    .ToDictionary(x => x.Rfid, x => x.Pos);
+
+                // ── 9. Available guides ───────────────────────────────────
+                var availableGuides = sorted.Select(g =>
+                {
+                    int rfid = (int)long.Parse(g.Rfid.Trim());
+                    var state = todayState.TryGetValue(rfid, out var s) ? s : null;
+                    var fullName = BuildFullName(g.FName, g.MName, g.LName);
+
+                    return (object)new
+                    {
+                        Rfid = g.Rfid.Trim(),
+                        fullName = fullName,
+                        Image = g.Image ?? string.Empty,
+                        queuePosition = queuePosMap[rfid],
+                        hasTrip = state?.HasTrip ?? false,
+                        isAbsent = state?.IsAbsent ?? false,
+                        passengers = state?.Passengers ?? 0
+                    };
+                }).ToList();
+
+                // ── 10. Busy guides ───────────────────────────────────────
+                var busyGuides = sorted
+                    .Where(g => todayState.ContainsKey((int)long.Parse(g.Rfid.Trim())))
+                    .Select(g =>
+                    {
+                        int rfid = (int)long.Parse(g.Rfid.Trim());
+                        var state = todayState[rfid];
+                        var fullName = BuildFullName(g.FName, g.MName, g.LName);
+
+                        return (object)new
+                        {
+                            Rfid = g.Rfid.Trim(),
+                            fullName = fullName,
+                            Image = g.Image ?? string.Empty,
+                            queuePos = queuePosMap[rfid],
+                            isAbsent = state.IsAbsent,
+                            passengers = state.Passengers
+                        };
+                    }).ToList();
+
+                // ── 11. ViewBag ───────────────────────────────────────────
+                ViewBag.Batch = batch;
+                ViewBag.GuestCount = guestCount;
+                ViewBag.RecommendedGuides = recommendedGuides;
+                ViewBag.OperatorName = operatorName;
+                ViewBag.OperatorId = operatorId;
+                ViewBag.AvailableGuides = availableGuides;
+                ViewBag.BusyGuides = busyGuides;
+
+                return PartialView("_AssignOutsideGuideModal");
+            }
+            catch (Exception ex)
+            {
+                var msg = ex.InnerException?.Message ?? ex.Message;
+                return Content($"<div class='p-3'><div class='alert alert-danger'>"
+                             + $"<strong>Error loading modal:</strong><br/>{msg}</div></div>",
+                               "text/html");
+            }
+        }
+
+        // ── Helper — safe full name build ────────────────────────────────────
+        private static string BuildFullName(string fName, string? mName, string lName)
+        {
+            return string.IsNullOrWhiteSpace(mName)
+                ? $"{fName} {lName}".Trim()
+                : $"{fName} {mName} {lName}".Trim();
+        }
 
         // =========================================================
         // ASSIGN OUTSIDE GUIDES — POST
         // ✅ Only inserts into tourguide_priority
         // ✅ One row per guide with distributed guest count
+        // ✅ Names sourced from outside_tourguide_details
         // =========================================================
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> AssignOutsideGuide(string batch, List<string> guideRfids)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrEmpty(batch) || guideRfids == null || !guideRfids.Any())
-        //            return Json(new { success = false, message = "Batch and at least one Guide are required." });
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignOutsideGuide(string batch, List<string> guideRfids)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batch) || guideRfids == null || !guideRfids.Any())
+                    return Json(new { success = false, message = "Batch and at least one guide are required." });
 
-        //        int guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
-        //        int recommendedGuides = GetRequiredStaffCount(guestCount);
+                int guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                int recommendedGuides = GetRequiredStaffCount(guestCount);
 
-        //        if (guideRfids.Count > recommendedGuides)
-        //            return Json(new
-        //            {
-        //                success = false,
-        //                message = $"Cannot assign more than {recommendedGuides} guide(s) for {guestCount} guest(s)."
-        //            });
+                if (guideRfids.Count > recommendedGuides)
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Cannot assign more than {recommendedGuides} guide(s) for {guestCount} guest(s)."
+                    });
 
-        //        int guidesCount = guideRfids.Count;
-        //        int baseGuests = guidesCount > 0 ? guestCount / guidesCount : 0;
-        //        int remainder = guidesCount > 0 ? guestCount % guidesCount : 0;
+                int guidesCount = guideRfids.Count;
+                int baseGuests = guidesCount > 0 ? guestCount / guidesCount : 0;
+                int remainder = guidesCount > 0 ? guestCount % guidesCount : 0;
 
-        //        // ── Fetch guide names from outside_guide_from_operator ───────
-        //        var trimmedRfids = guideRfids.Select(r => r.Trim()).ToList();
-        //        var outsideLinks = await _context.OutsideGuideFromOperators
-        //            .Where(x => trimmedRfids.Contains(x.OutsideGuideId.Trim()))
-        //            .ToListAsync();
+                // ── Fetch names from outside_tourguide_details ───────────
+                var trimmedRfids = guideRfids.Select(r => r.Trim()).ToList();
 
-        //        var nameMap = outsideLinks.ToDictionary(x => x.OutsideGuideId.Trim(), x => x.OutsideGuideName);
-        //        var assignedNames = new List<string>();
+                var nameMap = await _context.OutsideGuides
+                    .Where(g => trimmedRfids.Contains(g.Rfid.Trim()))
+                    .ToDictionaryAsync(g => g.Rfid.Trim(), g => g.FullName);
 
-        //        for (int i = 0; i < guidesCount; i++)
-        //        {
-        //            var rfidStr = guideRfids[i].Trim();
+                var assignedNames = new List<string>();
 
-        //            if (!long.TryParse(rfidStr, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
-        //                continue;
+                for (int i = 0; i < guidesCount; i++)
+                {
+                    var rfidStr = guideRfids[i].Trim();
 
-        //            int rfidInt = (int)rfidLong;
-        //            int assignedGuests = baseGuests + (i == 0 ? remainder : 0);
+                    if (!long.TryParse(rfidStr, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
+                        continue;
 
-        //            _context.TourGuidePriorities.Add(new TourGuidePriority
-        //            {
-        //                GuideIdPrior = rfidInt,
-        //                Date = UnixNow(),
-        //                NoOfGuest = assignedGuests
-        //            });
+                    int rfidInt = (int)rfidLong;
+                    int assignedGuests = baseGuests + (i == 0 ? remainder : 0);
 
-        //            assignedNames.Add(nameMap.TryGetValue(rfidStr, out var name) ? name : rfidStr);
-        //        }
+                    _context.TourGuidePriorities.Add(new TourGuidePriority
+                    {
+                        GuideIdPrior = rfidInt,
+                        Date = UnixNow(),
+                        NoOfGuest = assignedGuests
+                    });
 
-        //        await _context.SaveChangesAsync();
+                    assignedNames.Add(nameMap.TryGetValue(rfidStr, out var name) ? name : rfidStr);
+                }
 
-        //        var names = string.Join("; ", assignedNames);
-        //        return Json(new { success = true, message = $"{guidesCount} outside guide(s) assigned: {names}" });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
-        //    }
-        //}
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"{guidesCount} outside guide(s) assigned: {string.Join("; ", assignedNames)}"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
 
         // =========================================================
         // EDIT OUTSIDE GUIDE ASSIGNMENT
         // ✅ Updates latest tourguide_priority.NoOfGuest for today
         // =========================================================
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> EditOutsideGuideAssignment(string guideRfid, int passengers)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrEmpty(guideRfid))
-        //            return Json(new { success = false, message = "Guide RFID is required." });
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditOutsideGuideAssignment(string guideRfid, int passengers)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(guideRfid))
+                    return Json(new { success = false, message = "Guide RFID is required." });
 
-        //        if (passengers < 1)
-        //            return Json(new { success = false, message = "Guest count must be at least 1." });
+                if (passengers < 1)
+                    return Json(new { success = false, message = "Guest count must be at least 1." });
 
-        //        if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
-        //            return Json(new { success = false, message = "Invalid guide RFID." });
+                if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid guide RFID." });
 
-        //        int rfidInt = (int)rfidLong;
+                int rfidInt = (int)rfidLong;
 
-        //        var record = await _context.TourGuidePriorities
-        //            .Where(p => p.GuideIdPrior == rfidInt
-        //                     && string.Compare(p.Date, UnixTodayStart()) >= 0
-        //                     && string.Compare(p.Date, UnixTodayEnd()) < 0)
-        //            .OrderByDescending(p => p.Id)
-        //            .FirstOrDefaultAsync();
+                var record = await _context.TourGuidePriorities
+                    .Where(p => p.GuideIdPrior == rfidInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .OrderByDescending(p => p.Id)
+                    .FirstOrDefaultAsync();
 
-        //        if (record == null)
-        //            return Json(new { success = false, message = "No active assignment found for this guide today." });
+                if (record == null)
+                    return Json(new { success = false, message = "No active assignment found for this guide today." });
 
-        //        record.NoOfGuest = passengers;
+                record.NoOfGuest = passengers;
+                await _context.SaveChangesAsync();
 
-        //        await _context.SaveChangesAsync();
-        //        return Json(new { success = true, message = $"Guest count updated to {passengers}." });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
-        //    }
-        //}
+                return Json(new { success = true, message = $"Guest count updated to {passengers}." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
 
-        //// =========================================================
-        //// REMOVE OUTSIDE GUIDE ASSIGNMENT
-        //// ✅ Deletes all tourguide_priority records for this guide today
-        //// ✅ Guide returns to FIFO queue as if never assigned today
-        //// =========================================================
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> RemoveOutsideGuideAssignment(string guideRfid)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrEmpty(guideRfid))
-        //            return Json(new { success = false, message = "Guide RFID is required." });
+        // =========================================================
+        // REMOVE OUTSIDE GUIDE ASSIGNMENT
+        // ✅ Deletes all tourguide_priority records for this guide today
+        // ✅ Guide returns to FIFO queue as if never assigned today
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveOutsideGuideAssignment(string guideRfid)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(guideRfid))
+                    return Json(new { success = false, message = "Guide RFID is required." });
 
-        //        if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
-        //            return Json(new { success = false, message = "Invalid guide RFID." });
+                if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid guide RFID." });
 
-        //        int rfidInt = (int)rfidLong;
+                int rfidInt = (int)rfidLong;
 
-        //        var records = await _context.TourGuidePriorities
-        //            .Where(p => p.GuideIdPrior == rfidInt
-        //                     && string.Compare(p.Date, UnixTodayStart()) >= 0
-        //                     && string.Compare(p.Date, UnixTodayEnd()) < 0)
-        //            .ToListAsync();
+                var records = await _context.TourGuidePriorities
+                    .Where(p => p.GuideIdPrior == rfidInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
 
-        //        if (records.Any())
-        //            _context.TourGuidePriorities.RemoveRange(records);
+                if (records.Any())
+                    _context.TourGuidePriorities.RemoveRange(records);
 
-        //        await _context.SaveChangesAsync();
-        //        return Json(new { success = true, message = "Guide assignment has been removed." });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
-        //    }
-        //}
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Guide assignment has been removed." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
 
         // =========================================================
         // MARK OUTSIDE GUIDE ABSENT
@@ -1574,87 +2177,88 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // ✅ Inserts a 0-guest row if no record exists today
         // ✅ Guide stays in FIFO rotation
         // =========================================================
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> MarkOutsideGuideAbsent(string guideRfid)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrEmpty(guideRfid))
-        //            return Json(new { success = false, message = "Guide RFID is required." });
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkOutsideGuideAbsent(string guideRfid)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(guideRfid))
+                    return Json(new { success = false, message = "Guide RFID is required." });
 
-        //        if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
-        //            return Json(new { success = false, message = "Invalid guide RFID." });
+                if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid guide RFID." });
 
-        //        int rfidInt = (int)rfidLong;
+                int rfidInt = (int)rfidLong;
 
-        //        var todayRecords = await _context.TourGuidePriorities
-        //            .Where(p => p.GuideIdPrior == rfidInt
-        //                     && string.Compare(p.Date, UnixTodayStart()) >= 0
-        //                     && string.Compare(p.Date, UnixTodayEnd()) < 0)
-        //            .ToListAsync();
+                var todayRecords = await _context.TourGuidePriorities
+                    .Where(p => p.GuideIdPrior == rfidInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
 
-        //        if (todayRecords.Any())
-        //        {
-        //            foreach (var r in todayRecords)
-        //                r.NoOfGuest = 0;
-        //        }
-        //        else
-        //        {
-        //            _context.TourGuidePriorities.Add(new TourGuidePriority
-        //            {
-        //                GuideIdPrior = rfidInt,
-        //                Date = UnixNow(),
-        //                NoOfGuest = 0
-        //            });
-        //        }
+                if (todayRecords.Any())
+                {
+                    foreach (var r in todayRecords)
+                        r.NoOfGuest = 0;
+                }
+                else
+                {
+                    _context.TourGuidePriorities.Add(new TourGuidePriority
+                    {
+                        GuideIdPrior = rfidInt,
+                        Date = UnixNow(),
+                        NoOfGuest = 0
+                    });
+                }
 
-        //        await _context.SaveChangesAsync();
-        //        return Json(new { success = true, message = "Guide marked as absent. Still in queue rotation." });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
-        //    }
-        //}
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Guide marked as absent. Still in queue rotation." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
 
         // =========================================================
-        // CLEAR GUIDE ASSIGNMENT
+        // CLEAR OUTSIDE GUIDE ASSIGNMENT
         // ✅ Deletes today's tourguide_priority rows
         // ✅ Guide returns to queue as if never assigned today
         // =========================================================
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> ClearOutsideGuideAssignment(string guideRfid)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrEmpty(guideRfid))
-        //            return Json(new { success = false, message = "Guide RFID is required." });
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearOutsideGuideAssignment(string guideRfid)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(guideRfid))
+                    return Json(new { success = false, message = "Guide RFID is required." });
 
-        //        if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
-        //            return Json(new { success = false, message = "Invalid guide RFID." });
+                if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
+                    return Json(new { success = false, message = "Invalid guide RFID." });
 
-        //        int rfidInt = (int)rfidLong;
+                int rfidInt = (int)rfidLong;
 
-        //        var records = await _context.TourGuidePriorities
-        //            .Where(p => p.GuideIdPrior == rfidInt
-        //                     && string.Compare(p.Date, UnixTodayStart()) >= 0
-        //                     && string.Compare(p.Date, UnixTodayEnd()) < 0)
-        //            .ToListAsync();
+                var records = await _context.TourGuidePriorities
+                    .Where(p => p.GuideIdPrior == rfidInt
+                             && string.Compare(p.Date, UnixTodayStart()) >= 0
+                             && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                    .ToListAsync();
 
-        //        if (records.Any())
-        //            _context.TourGuidePriorities.RemoveRange(records);
+                if (records.Any())
+                    _context.TourGuidePriorities.RemoveRange(records);
 
-        //        await _context.SaveChangesAsync();
-        //        return Json(new { success = true, message = "Guide is now available." });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
-        //    }
-        //}
+                await _context.SaveChangesAsync();
 
-       
+                return Json(new { success = true, message = "Guide is now available." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
+        }
+
     }
 }

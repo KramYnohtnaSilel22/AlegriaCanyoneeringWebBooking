@@ -1,12 +1,12 @@
-﻿@{
-    var batch = ViewBag.Batch as string;
-    var guestCount = (int)(ViewBag.GuestCount ?? 0);
+@{
+    var batch             = ViewBag.Batch             as string;
+    var guestCount        = (int)(ViewBag.GuestCount        ?? 0);
     var recommendedGuides = (int)(ViewBag.RecommendedGuides ?? 0);
-    var operatorName = ViewBag.OperatorName as string;
-    var operatorId = ViewBag.OperatorId as string;
-    var availableGuides = ViewBag.AvailableGuides as IEnumerable<dynamic>;
-    var busyGuides = ViewBag.BusyGuides as IEnumerable<dynamic>;
-    int totalGuides = availableGuides?.Count() ?? 0;
+    var operatorName      = ViewBag.OperatorName      as string;
+    var operatorId        = ViewBag.OperatorId        as string;
+    var availableGuides   = ViewBag.AvailableGuides   as IEnumerable<dynamic>;
+    var busyGuides        = ViewBag.BusyGuides        as IEnumerable<dynamic>;
+    int totalGuides       = availableGuides?.Count()  ?? 0;
 }
 
 <div class="modal-header text-white" style="background:#6f42c1;">
@@ -49,7 +49,7 @@
     <!-- Limit Warning -->
     <div id="guideLimitWarning"
          class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3"
-         style="display:none !important;">
+         style="display:none;">
         <i class="fas fa-ban fa-lg"></i>
         <div>
             <strong>Limit Reached!</strong>
@@ -128,14 +128,14 @@
             {
                 foreach (var g in availableGuides)
                 {
-                    bool hasTrip = (bool)(g.hasTrip ?? false);
-                    bool isAbsent = (bool)(g.isAbsent ?? false);
-                    int qPos = (int)(g.queuePosition ?? 0);
-                    bool isTopN = qPos <= recommendedGuides && !isAbsent;
-                    string gRfid = (string)(g.Rfid ?? "");
-                    string gFullName = (string)(g.fullName ?? "");
-                    string gImage = (string)(g.Image ?? "");
-                    int gNoOfGuest = (int)(g.passengers ?? 0);
+                    bool   hasTrip    = (bool)(g.hasTrip       ?? false);
+                    bool   isAbsent   = (bool)(g.isAbsent      ?? false);
+                    int    qPos       = (int)(g.queuePosition  ?? 0);
+                    bool   isTopN     = qPos <= recommendedGuides && !isAbsent;
+                    string gRfid      = (string)(g.Rfid        ?? "");
+                    string gFullName  = (string)(g.fullName    ?? "");
+                    string gImage     = (string)(g.Image       ?? "");
+                    int    gNoOfGuest = (int)(g.passengers     ?? 0);
 
                     <div class="col-md-6 guide-item @(isAbsent ? "guide-absent-item" : "")"
                          data-name="@gFullName.ToLower()"
@@ -148,8 +148,8 @@
                          data-image="@gImage">
 
                         <div class="guide-card card border-2 h-100
-                                            @(isAbsent ? "guide-absent-card" : "")
-                                            @(isTopN ? "guide-top-card" : "")"
+                                    @(isAbsent ? "guide-absent-card" : "")
+                                    @(isTopN   ? "guide-top-card"    : "")"
                              style="cursor:pointer;" onclick="toggleSelectGuide(this)">
                             <div class="card-body d-flex align-items-center gap-2 p-2">
 
@@ -157,7 +157,7 @@
                                 <div class="d-flex flex-column align-items-center flex-shrink-0" style="min-width:34px;">
                                     <span class="badge text-white"
                                           style="font-size:11px;width:30px;text-align:center;
-                                                         background:@(isAbsent ? "#dc3545" : isTopN ? "#6f42c1" : "#6c757d");">
+                                                 background:@(isAbsent ? "#dc3545" : isTopN ? "#6f42c1" : "#6c757d");">
                                         #@qPos
                                     </span>
                                     @if (isTopN)
@@ -181,7 +181,7 @@
                                 {
                                     <div style="width:44px;height:44px;background:@(isAbsent ? "transparent" : "#6f42c1");"
                                          class="rounded-circle border d-flex align-items-center justify-content-center
-                                                            @(isAbsent ? "border-danger bg-danger bg-opacity-10" : "")">
+                                                @(isAbsent ? "border-danger bg-danger bg-opacity-10" : "")">
                                         <i class="fas fa-user-tie @(isAbsent ? "text-danger" : "text-white")"></i>
                                     </div>
                                 }
@@ -237,7 +237,7 @@
             {
                 <div class="col-12 text-center text-muted py-4">
                     <i class="fas fa-user-slash fa-2x mb-2 d-block"></i>
-                    <small>No outside guides are linked to this operator.</small>
+                    <small>No outside guides found.</small>
                 </div>
             }
         </div>
@@ -271,12 +271,12 @@
             {
                 foreach (var g in busyGuides)
                 {
-                    bool isAbsent = (bool)(g.isAbsent ?? false);
-                    int queuePosN = (int)(g.queuePos ?? 0);
-                    int gNoOfGuest = (int)(g.passengers ?? 0);
-                    string bRfid = (string)(g.Rfid ?? "");
-                    string bFullName = (string)(g.fullName ?? "");
-                    string bImage = (string)(g.Image ?? "");
+                    bool   isAbsent   = (bool)(g.isAbsent   ?? false);
+                    int    queuePosN  = (int)(g.queuePos    ?? 0);
+                    int    gNoOfGuest = (int)(g.passengers  ?? 0);
+                    string bRfid      = (string)(g.Rfid     ?? "");
+                    string bFullName  = (string)(g.fullName ?? "");
+                    string bImage     = (string)(g.Image    ?? "");
 
                     <div class="col-12 assigned-guide-row" id="assigned-guide-row-@bRfid">
                         <div class="card @(isAbsent ? "border-danger bg-danger bg-opacity-5" : "")"
@@ -334,7 +334,6 @@
                                         {
                                             <span class="badge text-white mb-1" style="background:#6f42c1;">On Trip</span>
                                         }
-
                                         <div class="d-flex gap-1">
                                             @if (!isAbsent)
                                             {
@@ -426,47 +425,38 @@
     .guide-card {
         transition: all 0.2s;
     }
-
-        .guide-card:hover {
-            border-color: #6f42c1 !important;
-            background-color: rgba(111,66,193,.05);
-        }
-
-        .guide-card.selected {
-            border-color: #0d6efd !important;
-            background-color: #cfe2ff;
-        }
-
+    .guide-card:hover {
+        border-color: #6f42c1 !important;
+        background-color: rgba(111,66,193,.05);
+    }
+    .guide-card.selected {
+        border-color: #0d6efd !important;
+        background-color: #cfe2ff;
+    }
     .guide-top-card {
         border-color: #6f42c1 !important;
         background-color: rgba(111,66,193,.05);
     }
-
     .guide-absent-card {
         border-color: #dc3545 !important;
         background-color: #fff5f5 !important;
         opacity: 0.75;
     }
-
     .guide-card.limit-locked {
         opacity: 0.4;
         cursor: not-allowed !important;
         pointer-events: none;
     }
-
     .guide-absent-item .guide-card {
         cursor: not-allowed !important;
     }
-
     .selected-guide-card {
         border-left: 4px solid #6f42c1 !important;
     }
-
     #tab-oguide-queue.active, #tab-oguide-assigned.active {
         border-bottom: 2px solid #6f42c1 !important;
         color: #6f42c1 !important;
     }
-
     .nav-link {
         cursor: pointer;
         border: none;
@@ -497,7 +487,10 @@
         var hasTrip  = wrapper.data('hastrip')  === 'true';
         var isAbsent = wrapper.data('isabsent') === 'true' || wrapper.data('isabsent') === true;
 
-        if (isAbsent) { showToast(`${fullName} is marked as absent and cannot be selected.`, 'Absent Guide', 'warning'); return; }
+        if (isAbsent) {
+            showToast(`${fullName} is marked as absent and cannot be selected.`, 'warning');
+            return;
+        }
         if (selectedGuides[rfid]) { deselectGuide(rfid, hasTrip); return; }
         if (Object.keys(selectedGuides).length >= guideLimit) {
             $('#guideLimitWarning').show();
@@ -525,8 +518,8 @@
                 toggleSelectGuide(card[0]); count++;
             }
         });
-        if (count === 0) showToast('No available guides to auto-select.', 'Info', 'info');
-        else showToast(`${count} guide(s) auto-selected from FIFO queue.`, 'Auto-Selected', 'success');
+        if (count === 0) showToast('No available guides to auto-select.', 'info');
+        else             showToast(`${count} guide(s) auto-selected from FIFO queue.`, 'success');
     }
 
     function deselectGuide(rfid, hasTrip) {
@@ -536,7 +529,7 @@
         var badge = $(`.guide-item[data-rfid="${rfid}"] .guide-status-badge`);
         card.removeClass('selected');
         if (hasTrip) badge.attr('style', '').removeClass('bg-primary').addClass('bg-warning text-dark').text('On Trip');
-        else badge.removeClass('bg-primary text-dark').addClass('text-white').attr('style', 'background:#6f42c1;').text('Free');
+        else         badge.removeClass('bg-primary text-dark').addClass('text-white').attr('style', 'background:#6f42c1;').text('Free');
         $(`#selected-guide-card-${rfid}`).remove();
         if ($('#selectedGuideList').children().length === 0) $('#selectedGuidesSection').hide();
         unlockGuideCards();
@@ -559,14 +552,18 @@
                             <div class="text-muted" style="font-size:10px;">RFID: ${rfid}</div>
                         </div>
                         <button class="btn btn-outline-danger btn-sm py-0 px-1" style="font-size:10px;"
-                                onclick="deselectGuide('${rfid}')"><i class="fas fa-times"></i></button>
+                                onclick="deselectGuide('${rfid}')">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                 </div>
             </div>`);
         $('#selectedGuidesSection').show();
     }
 
-    function clearAllSelectedGuides() { Object.keys(selectedGuides).forEach(rfid => deselectGuide(rfid)); }
+    function clearAllSelectedGuides() {
+        Object.keys(selectedGuides).forEach(rfid => deselectGuide(rfid));
+    }
 
     function updateGuideSelectedCount() {
         var count = Object.keys(selectedGuides).length;
@@ -586,8 +583,8 @@
     function filterGuides() {
         var q = $('#guideSearch').val().toLowerCase();
         $('.guide-item[data-panel="queue"]').each(function () {
-            var name = $(this).data('name')       || '';
-            var rfid = $(this).data('rfidSearch') || '';
+            var name = $(this).data('name')        || '';
+            var rfid = $(this).data('rfid-search') || '';
             $(this).toggle(name.includes(q) || rfid.includes(q));
         });
     }
@@ -626,12 +623,12 @@
                         `<i class="fas fa-users me-1"></i>Guests: <strong id="guide-guest-value-${rfid}">${noOfGuest}</strong>`
                     );
                     $(`#guide-edit-form-${rfid}`).slideUp(150);
-                    showToast(res.message, 'Updated', 'success');
+                    showToast(res.message, 'success');
                 } else {
-                    showToast(res.message, 'Error', 'danger');
+                    showToast(res.message, 'danger');
                 }
             },
-            error:    function () { showToast('Error updating assignment.', 'Error', 'danger'); },
+            error:    function () { showToast('Error updating assignment.', 'danger'); },
             complete: function () { btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Save'); }
         });
     }
@@ -645,7 +642,7 @@
         if (isAbsent) {
             $(`#guide-edit-form-${rfid}`).slideDown(150);
             $(`#guide-edit-noofguest-${rfid}`).val(1).focus().select();
-            showToast('Enter the correct guest count to restore this guide.', 'Unmark Absent', 'info');
+            showToast('Enter the correct guest count to restore this guide.', 'info');
             return;
         }
 
@@ -655,7 +652,10 @@
         $.ajax({
             url: '@Url.Action("MarkOutsideGuideAbsent", "Reserve")',
             type: 'POST',
-            data: { guideRfid: rfid, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+            data: {
+                guideRfid: rfid,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
             success: function (res) {
                 if (res.success) {
                     $(`#guide-guest-label-${rfid}`).html(
@@ -670,19 +670,18 @@
                           .removeClass('btn-outline-secondary').addClass('btn-outline-success')
                           .attr('title', 'Unmark Absent')
                           .html('<i class="fas fa-user-check"></i>');
-
                     var qCard = $(`.guide-item[data-rfid="${rfid}"]`);
                     qCard.addClass('guide-absent-item').attr('data-isabsent', 'true');
                     qCard.find('.guide-card').addClass('guide-absent-card').removeClass('guide-top-card');
                     qCard.find('.guide-status-badge').attr('style', '').removeClass().addClass('badge bg-danger guide-status-badge').text('Absent');
                     qCard.find('.guide-trip-info').remove();
                     if (selectedGuides[rfid]) deselectGuide(rfid, false);
-                    showToast(res.message, 'Marked Absent', 'warning');
+                    showToast(res.message, 'warning');
                 } else {
-                    showToast(res.message, 'Error', 'danger');
+                    showToast(res.message, 'danger');
                 }
             },
-            error:    function () { showToast('Error marking guide absent.', 'Error', 'danger'); },
+            error:    function () { showToast('Error marking guide absent.', 'danger'); },
             complete: function () { $(btn).prop('disabled', false); }
         });
     }
@@ -694,7 +693,10 @@
         $.ajax({
             url: '@Url.Action("RemoveOutsideGuideAssignment", "Reserve")',
             type: 'POST',
-            data: { guideRfid: rfid, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+            data: {
+                guideRfid: rfid,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
             success: function (res) {
                 if (res.success) {
                     row.fadeOut(300, function () {
@@ -717,15 +719,15 @@
                     unlockGuideCards();
                     if (Object.keys(selectedGuides).length >= guideLimit) lockUnselectedGuideCards();
                     if (selectedGuides[rfid]) deselectGuide(rfid, false);
-                    showToast(res.message, 'Removed', 'success');
+                    showToast(res.message, 'success');
                 } else {
                     row.find('.btn').prop('disabled', false);
-                    showToast(res.message, 'Error', 'danger');
+                    showToast(res.message, 'danger');
                 }
             },
             error: function () {
                 row.find('.btn').prop('disabled', false);
-                showToast('Error removing guide assignment.', 'Error', 'danger');
+                showToast('Error removing guide assignment.', 'danger');
             }
         });
     }
@@ -741,19 +743,23 @@
             url: '@Url.Action("AssignOutsideGuide", "Reserve")',
             type: 'POST',
             traditional: true,
-            data: { batch, guideRfids: rfids, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+            data: {
+                batch,
+                guideRfids: rfids,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
             success: function (res) {
                 if (res.success) {
                     $(document).trigger('outsideGuideAssigned', [batch]);
                     bootstrap.Modal.getInstance(document.getElementById('assignOutsideGuideModal')).hide();
-                    showToast(res.message, 'Success', 'success');
+                    showToast(res.message, 'success');
                 } else {
-                    showToast(res.message, 'Error', 'danger');
+                    showToast(res.message, 'danger');
                     resetAssignGuideBtn(rfids.length);
                 }
             },
             error: function () {
-                showToast('Error assigning outside guides.', 'Error', 'danger');
+                showToast('Error assigning outside guides.', 'danger');
                 resetAssignGuideBtn(rfids.length);
             }
         });

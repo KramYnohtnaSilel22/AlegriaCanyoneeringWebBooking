@@ -8,367 +8,153 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
 <style>
-    .bg-wrap * {
-        font-family: 'Outfit', sans-serif;
-    }
+    .bg-wrap * { font-family: 'Outfit', sans-serif; }
 
-    /* ── Header ──────────────────────────────────────────── */
     .bg-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.25rem;
-        flex-wrap: wrap;
-        gap: 0.75rem;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
     }
-
-        .bg-header h2 {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #0f3460;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    .bg-header h2 {
+        font-size: 1.35rem; font-weight: 700; color: #0f3460;
+        margin: 0; display: flex; align-items: center; gap: 0.5rem;
+    }
 
     .btn-gotd {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
+        display: inline-flex; align-items: center; gap: 0.4rem;
         padding: 0.55rem 1.1rem;
         background: linear-gradient(135deg,#f0a500,#b45309);
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        font-family: 'Outfit',sans-serif;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.2s,transform 0.15s;
+        color: #fff; border: none; border-radius: 10px;
+        font-family: 'Outfit',sans-serif; font-size: 0.875rem; font-weight: 600;
+        cursor: pointer; transition: opacity 0.2s,transform 0.15s;
         box-shadow: 0 3px 12px rgba(240,165,0,0.35);
     }
+    .btn-gotd:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        .btn-gotd:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-    /* ── Filter card ──────────────────────────────────────── */
     .bg-filter {
-        background: #fff;
-        border-radius: 14px;
+        background: #fff; border-radius: 14px;
         box-shadow: 0 2px 16px rgba(15,52,96,0.07);
-        border: 1px solid #e8edf5;
-        padding: 0.85rem 1.25rem;
+        border: 1px solid #e8edf5; padding: 0.85rem 1.25rem;
         margin-bottom: 1.25rem;
-        position: sticky;
-        top: calc(var(--header-height,50px) + 8px);
-        z-index: 1020;
-        display: inline-flex;
-        width: auto;
-        max-width: 100%;
+        position: sticky; top: calc(var(--header-height,50px) + 8px);
+        z-index: 1020; display: inline-flex; width: auto; max-width: 100%;
     }
-
-    .bg-filter-inner {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.65rem;
-    }
-
+    .bg-filter-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; }
     .bg-filter-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #0f3460;
-        white-space: nowrap;
+        font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em; color: #0f3460; white-space: nowrap;
     }
-
     .bg-date-input {
-        padding: 0.5rem 0.75rem;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 9px;
-        font-family: 'Outfit',sans-serif;
-        font-size: 0.875rem;
-        color: #1e293b;
-        background: #fafbff;
-        outline: none;
-        transition: border-color 0.2s,box-shadow 0.2s;
-        width: auto;
+        padding: 0.5rem 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 9px;
+        font-family: 'Outfit',sans-serif; font-size: 0.875rem; color: #1e293b;
+        background: #fafbff; outline: none;
+        transition: border-color 0.2s,box-shadow 0.2s; width: auto;
     }
-
-        .bg-date-input:focus {
-            border-color: #1a6ef5;
-            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
-            background: #fff;
-        }
+    .bg-date-input:focus {
+        border-color: #1a6ef5; box-shadow: 0 0 0 3px rgba(26,110,245,0.1); background: #fff;
+    }
 
     .btn-search {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
+        display: inline-flex; align-items: center; gap: 0.35rem;
         padding: 0.5rem 1rem;
         background: linear-gradient(135deg,#1a6ef5,#0f3460);
-        color: #fff;
-        border: none;
-        border-radius: 9px;
-        font-family: 'Outfit',sans-serif;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.15s,transform 0.12s;
+        color: #fff; border: none; border-radius: 9px;
+        font-family: 'Outfit',sans-serif; font-size: 0.875rem; font-weight: 600;
+        cursor: pointer; transition: opacity 0.15s,transform 0.12s;
         box-shadow: 0 3px 10px rgba(26,110,245,0.28);
     }
-
-        .btn-search:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
+    .btn-search:hover { opacity: 0.9; transform: translateY(-1px); }
 
     .bg-guest-count {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.5rem 0.8rem;
-        border-radius: 999px;
-        background: rgba(26,110,245,0.08);
-        border: 1px solid #bfdbfe;
-        color: #1a6ef5;
-        font-size: 0.82rem;
-        font-weight: 700;
-        white-space: nowrap;
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.5rem 0.8rem; border-radius: 999px;
+        background: rgba(26,110,245,0.08); border: 1px solid #bfdbfe;
+        color: #1a6ef5; font-size: 0.82rem; font-weight: 700; white-space: nowrap;
     }
+    .bg-guest-count strong { color: #0f3460; font-size: 0.9rem; }
 
-        .bg-guest-count strong {
-            color: #0f3460;
-            font-size: 0.9rem;
-        }
-
-    /* ── Table card ───────────────────────────────────────── */
     .bg-card {
-        background: #fff;
-        border-radius: 16px;
+        background: #fff; border-radius: 16px;
         box-shadow: 0 2px 20px rgba(15,52,96,0.08);
-        border: 1px solid #e8edf5;
-        overflow: hidden;
-        transition: box-shadow 0.4s ease;
+        border: 1px solid #e8edf5; overflow: hidden; transition: box-shadow 0.4s ease;
     }
-
-    .bg-card-body {
-        padding: 1.25rem;
-    }
+    .bg-card-body { padding: 1.25rem; }
 
     #batchesTable thead th {
-        background: #f8faff;
-        color: #0f3460;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        border-bottom: 2px solid #e8edf5;
-        white-space: nowrap;
-        padding: 0.75rem 1rem;
+        background: #f8faff; color: #0f3460;
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+        text-transform: uppercase; border-bottom: 2px solid #e8edf5;
+        white-space: nowrap; padding: 0.75rem 1rem;
     }
-
     #batchesTable tbody td {
-        vertical-align: middle;
-        font-size: 0.875rem;
-        color: #334155;
-        padding: 0.7rem 1rem;
+        vertical-align: middle; font-size: 0.875rem;
+        color: #334155; padding: 0.7rem 1rem;
     }
+    #batchesTable tbody tr:hover { background: #f0f6ff; }
 
-    #batchesTable tbody tr:hover {
-        background: #f0f6ff;
-    }
-
-    /* Status badges */
     .status-badge {
-        padding: 0.25rem 0.65rem;
-        border-radius: 20px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
+        padding: 0.25rem 0.65rem; border-radius: 20px;
+        font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
     }
+    .status-confirmed, .status-completed { background: rgba(22,163,74,0.1); color: #16a34a; }
+    .status-anticipated { background: rgba(26,110,245,0.08); color: #1a6ef5; }
+    .status-cancelled { background: rgba(239,68,68,0.08); color: #ef4444; }
+    .status-reserved { background: rgba(245,158,11,0.10); color: #d97706; }
 
-    .status-confirmed,
-    .status-completed {
-        background: rgba(22,163,74,0.1);
-        color: #16a34a;
-    }
-
-    .status-anticipated {
-        background: rgba(26,110,245,0.08);
-        color: #1a6ef5;
-    }
-
-    .status-cancelled {
-        background: rgba(239,68,68,0.08);
-        color: #ef4444;
-    }
-
-    .status-reserved {
-        background: rgba(245,158,11,0.10);
-        color: #d97706;
-    }
-
-    /* Action buttons */
     .btn-act {
-        padding: 0.28rem 0.6rem;
-        border-radius: 7px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        transition: opacity 0.15s;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
+        padding: 0.28rem 0.6rem; border-radius: 7px;
+        font-size: 0.78rem; font-weight: 600; border: none;
+        cursor: pointer; transition: opacity 0.15s;
+        display: inline-flex; align-items: center; gap: 0.3rem;
     }
+    .btn-act:hover { opacity: 0.82; }
+    .btn-view  { background: rgba(26,110,245,0.08);  color: #1a6ef5; border: 1px solid #bfdbfe; }
+    .btn-print { background: rgba(240,165,0,0.1);    color: #b45309; border: 1px solid #fde68a; }
+    .btn-assign{ background: rgba(100,116,139,0.08); color: #475569; border: 1px solid #e2e8f0; }
 
-        .btn-act:hover {
-            opacity: 0.82;
-        }
-
-    .btn-view {
-        background: rgba(26,110,245,0.08);
-        color: #1a6ef5;
-        border: 1px solid #bfdbfe;
-    }
-
-    .btn-print {
-        background: rgba(240,165,0,0.1);
-        color: #b45309;
-        border: 1px solid #fde68a;
-    }
-
-    .btn-assign {
-        background: rgba(100,116,139,0.08);
-        color: #475569;
-        border: 1px solid #e2e8f0;
-    }
-
-    /* Assign dropdown */
-    .assign-dropdown {
-        position: relative;
-        display: inline-block;
-    }
-
+    .assign-dropdown { position: relative; display: inline-block; }
     .assign-menu {
-        display: none;
-        position: absolute;
-        top: 110%;
-        right: 0;
-        background: #fff;
-        border: 1px solid #e8edf5;
-        border-radius: 12px;
+        display: none; position: absolute; top: 110%; right: 0;
+        background: #fff; border: 1px solid #e8edf5; border-radius: 12px;
         box-shadow: 0 8px 24px rgba(15,52,96,0.12);
-        min-width: 180px;
-        z-index: 200;
-        padding: 0.35rem 0;
+        min-width: 180px; z-index: 200; padding: 0.35rem 0;
         animation: dropFade 0.15s ease;
     }
-
     @@keyframes dropFade {
-        from {
-            opacity: 0;
-            transform: translateY(-6px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0);    }
     }
-
     .assign-dropdown:hover .assign-menu,
-    .assign-dropdown.open .assign-menu {
-        display: block;
-    }
-
+    .assign-dropdown.open  .assign-menu { display: block; }
     .assign-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        font-size: 0.82rem;
-        font-weight: 500;
-        color: #334155;
-        cursor: pointer;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-        transition: background 0.12s;
+        display: flex; align-items: center; gap: 0.5rem;
+        padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 500;
+        color: #334155; cursor: pointer; background: none;
+        border: none; width: 100%; text-align: left; transition: background 0.12s;
     }
+    .assign-item:hover { background: #f8faff; color: #0f3460; }
+    .assign-divider { border: none; border-top: 1px solid #f1f5f9; margin: 0.25rem 0; }
 
-        .assign-item:hover {
-            background: #f8faff;
-            color: #0f3460;
-        }
+    .bg-empty { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+    .bg-empty i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
 
-    .assign-divider {
-        border: none;
-        border-top: 1px solid #f1f5f9;
-        margin: 0.25rem 0;
-    }
-
-    /* Empty state */
-    .bg-empty {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: #94a3b8;
-    }
-
-        .bg-empty i {
-            font-size: 2.5rem;
-            display: block;
-            margin-bottom: 0.75rem;
-        }
-
-    /* Modals */
     .bg-modal-header {
         background: linear-gradient(135deg,#1a6ef5,#0f3460);
-        color: #fff;
-        padding: 1rem 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        color: #fff; padding: 1rem 1.5rem;
+        display: flex; align-items: center; justify-content: space-between;
     }
+    .bg-modal-header h5 { font-size: 1rem; font-weight: 700; margin: 0; }
+    .bg-modal-header.amber  { background: linear-gradient(135deg,#f0a500,#b45309); }
+    .bg-modal-header.purple { background: linear-gradient(135deg,#7c3aed,#4c1d95); }
 
-        .bg-modal-header h5 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .bg-modal-header.amber {
-            background: linear-gradient(135deg,#f0a500,#b45309);
-        }
-
-        .bg-modal-header.purple {
-            background: linear-gradient(135deg,#7c3aed,#4c1d95);
-        }
-
-    /* GOTD highlight pulse */
     @@keyframes gotdPulse {
         0%   { box-shadow: 0 0 0 0   rgba(240,165,0,0.50); }
         50%  { box-shadow: 0 0 0 8px rgba(240,165,0,0.15); }
         100% { box-shadow: 0 2px 20px rgba(15,52,96,0.08); }
     }
-
-    .gotd-highlight {
-        animation: gotdPulse 0.9s ease forwards;
-    }
+    .gotd-highlight { animation: gotdPulse 0.9s ease forwards; }
 
     @@media (max-width:768px) {
-        .bg-filter {
-            position: static !important;
-            display: flex !important;
-            width: 100% !important;
-            border-radius: 12px;
-        }
+        .bg-filter { position: static !important; display: flex !important; width: 100% !important; border-radius: 12px; }
     }
 </style>
 
@@ -424,6 +210,7 @@
                             <th>Batch</th>
                             <th>Total Guests</th>
                             <th>Operator</th>
+                            <th>Outside Guide</th>
                             <th>Arrival Date</th>
                             <th>Status</th>
                             <th class="text-center">Actions</th>
@@ -465,7 +252,8 @@
 @section Scripts {
     <script>
         // ─────────────────────────────────────────────────────────────
-        // TOAST HELPER
+        // TOAST HELPER — showToast(message, type)
+        // type: 'success' | 'danger' | 'warning' | 'info'
         // ─────────────────────────────────────────────────────────────
         function showToast(message, type) {
             type = type || 'success';
@@ -475,9 +263,10 @@
                 warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   title: 'Warning'      },
                 info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Notification' }
             };
-            var m = map[type] || map.success;
+            var m  = map[type] || map.success;
             var id = 'bgt-' + Date.now();
-            var html = '<div id="' + id + '" class="toast border-0 text-white"'
+            var html =
+                '<div id="' + id + '" class="toast border-0 text-white"'
                 + ' style="background:' + m.bg + ';border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);"'
                 + ' role="alert" aria-atomic="true" data-bs-delay="4000">'
                 + '<div class="toast-header border-0 text-white" style="background:transparent;">'
@@ -497,24 +286,19 @@
         $(function () {
             var table = null;
 
-            function updateGuestCount(count, startDate, endDate) {
-                var today = getTodayLocalIso();
-                var label = (startDate === today && endDate === today)
-                    ? 'Guests Today'
-                    : 'Total Guests';
-
-                $('#guestCountLabel').text(label);
-                $('#guestCountValue').text(count || 0);
-            }
-
             // ─────────────────────────────────────────────────────────
-            // DATE HELPER — returns "YYYY-MM-DD" in the browser's
-            // local timezone (avoids UTC-offset date-shift issues)
+            // DATE HELPER
             // ─────────────────────────────────────────────────────────
             function getTodayLocalIso() {
-                var now = new Date();
+                var now   = new Date();
                 var local = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
                 return local.toISOString().split('T')[0];
+            }
+
+            function updateGuestCount(count, startDate, endDate) {
+                var today = getTodayLocalIso();
+                $('#guestCountLabel').text(startDate === today && endDate === today ? 'Guests Today' : 'Total Guests');
+                $('#guestCountValue').text(count || 0);
             }
 
             // ─────────────────────────────────────────────────────────
@@ -534,6 +318,7 @@
                     $('#batchesTable').empty().append(
                         '<thead><tr>'
                         + '<th>Batch</th><th>Total Guests</th><th>Operator</th>'
+                        + '<th>Outside Guide</th>'
                         + '<th>Arrival Date</th><th>Status</th><th class="text-center">Actions</th>'
                         + '</tr></thead>'
                     );
@@ -560,13 +345,8 @@
                             $('#tableLoader').hide();
                             $('#batchesTableContainer').show();
                             updateGuestCount(json.totalGuestsCount || 0, startDate, endDate);
-
-                            if (json.data && json.data.length > 0) {
-                                $('#emptyState').hide();
-                            } else {
-                                $('#emptyState').show();
-                            }
-
+                            if (json.data && json.data.length > 0) $('#emptyState').hide();
+                            else                                    $('#emptyState').show();
                             return json.data || [];
                         }
                     },
@@ -581,9 +361,15 @@
                         {
                             data: 'operatorName',
                             render: function (d) {
-                                return d && d.trim()
-                                    ? d
-                                    : '<span class="text-muted">No Operator</span>';
+                                return d && d.trim() ? d : '<span class="text-muted">No Operator</span>';
+                            }
+                        },
+                        {
+                            data: 'outsideGuide',
+                            render: function (d) {
+                                if (!d || !d.trim()) return '<span class="text-muted">—</span>';
+                                return '<span class="badge" style="background:rgba(124,58,237,0.10);color:#7c3aed;font-size:0.75rem;font-weight:600;border-radius:20px;padding:0.25rem 0.6rem;">'
+                                    + '<i class="bi bi-compass me-1"></i>' + d + '</span>';
                             }
                         },
                         {
@@ -595,9 +381,7 @@
                         {
                             data: 'status',
                             render: function (d) {
-                                return d
-                                    ? '<span class="status-badge ' + statusClass(d) + '">' + d + '</span>'
-                                    : '';
+                                return d ? '<span class="status-badge ' + statusClass(d) + '">' + d + '</span>' : '';
                             }
                         },
                         {
@@ -607,7 +391,6 @@
                             className: 'text-center',
                             render: function (data, type, row) {
                                 var operatorId = row && row.operatorId != null ? row.operatorId : '';
-
                                 return '<div class="d-flex gap-1 justify-content-center align-items-center">'
                                     + '<button class="btn-act btn-view view-guest-details" data-batch="' + data + '" data-operator-id="' + operatorId + '"><i class="bi bi-eye"></i> View</button>'
                                     + '<button class="btn-act btn-print print-batch-details" data-batch="' + data + '"><i class="bi bi-printer"></i> Print</button>'
@@ -645,9 +428,9 @@
                 if (!s) return '';
                 var l = s.toLowerCase();
                 if (l === 'confirmed' || l === 'completed') return 'status-completed';
-                if (l === 'anticipated') return 'status-anticipated';
-                if (l === 'reserved')   return 'status-reserved';
-                if (l === 'cancelled' || l === 'canceled') return 'status-cancelled';
+                if (l === 'anticipated')                    return 'status-anticipated';
+                if (l === 'reserved')                       return 'status-reserved';
+                if (l === 'cancelled' || l === 'canceled')  return 'status-cancelled';
                 return '';
             }
 
@@ -658,16 +441,16 @@
                     + '<i class="bi bi-person-gear"></i> Assign <i class="bi bi-chevron-down" style="font-size:0.6rem;"></i>'
                     + '</button>'
                     + '<div class="assign-menu">'
-                    + '<button class="assign-item assign-guide" data-batch="' + batch + '"><i class="bi bi-compass text-success"></i> Guide</button>'
-                    + '<button class="assign-item assign-driver" data-batch="' + batch + '"><i class="bi bi-car-front" style="color:#1a6ef5;"></i> Driver</button>'
+                    + '<button class="assign-item assign-guide" data-batch="'         + batch + '"><i class="bi bi-compass text-success"></i> Guide</button>'
+                    + '<button class="assign-item assign-driver" data-batch="'        + batch + '"><i class="bi bi-car-front" style="color:#1a6ef5;"></i> Driver</button>'
                     + '<div class="assign-divider"></div>'
                     + '<button class="assign-item assign-outside-guide" data-batch="' + batch + '"><i class="bi bi-compass" style="color:#7c3aed;"></i> Outside Guide</button>'
                     + '</div></div>';
             }
 
-            var isStaff     = @(User.IsInRole("Staff")       ? "true" : "false");
-            var isSuperAdmin = @(User.IsInRole("Super Admin") ? "true" : "false");
-            var showAssign  = isStaff || isSuperAdmin;
+            var isStaff      = @(User.IsInRole("Staff")       ? "true" : "false");
+            var isSuperAdmin = @(User.IsInRole("Super Admin")  ? "true" : "false");
+            var showAssign   = isStaff || isSuperAdmin;
 
             // ─────────────────────────────────────────────────────────
             // FILTER FORM SUBMIT
@@ -678,70 +461,46 @@
             });
 
             // ─────────────────────────────────────────────────────────
-            // ✅ GUEST OF THE DAY BUTTON
-            // — Sets today's date in the filter and loads the table.
-            //   No more modal; goes straight to the DataTable.
+            // GUEST OF THE DAY
             // ─────────────────────────────────────────────────────────
             var btnGotd = document.getElementById('btnViewGuestOfDay');
             if (btnGotd) {
                 btnGotd.addEventListener('click', function (e) {
                     e.preventDefault();
-
                     var today = getTodayLocalIso();
-
-                    // 1. Fill both date pickers with today
                     $('#startDate').val(today);
                     $('#endDate').val(today);
-
-                    // 2. Load the DataTable for today
                     loadBatchesTable(today, today);
-
-                    // 3. Scroll the table card into view smoothly
                     var tableEl = document.getElementById('batchesTableContainer');
-                    if (tableEl) {
-                        setTimeout(function () {
-                            tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 150);
-                    }
-
-                    // 4. Pulse-highlight the card so the user notices it loaded
+                    if (tableEl) setTimeout(function () { tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
                     var $card = $('#batchesTableContainer');
                     $card.addClass('gotd-highlight');
-                    setTimeout(function () {
-                        $card.removeClass('gotd-highlight');
-                    }, 950);
-
-                    // 5. Friendly toast confirmation
+                    setTimeout(function () { $card.removeClass('gotd-highlight'); }, 950);
                     showToast('<i class="bi bi-calendar-check-fill me-1"></i> Showing guests for today — ' + today, 'info');
                 });
             }
 
             // ─────────────────────────────────────────────────────────
-            // VIEW GUEST DETAILS (batch row click)
+            // VIEW GUEST DETAILS
             // ─────────────────────────────────────────────────────────
             $('#batchesTableContainer').on('click', '.view-guest-details', function () {
-                var batchCode = $(this).data('batch');
+                var batchCode  = $(this).data('batch');
                 var operatorId = $(this).data('operator-id');
-                var startDate = $('#startDate').val();
-                var endDate = $('#endDate').val();
                 var $mc = $('#guestDetailsModalContainer');
                 $mc.html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>');
-
                 $.get('@Url.Action("GetGuestsByBatch", "Reserve")', {
-                    batchCode: batchCode,
+                    batchCode:  batchCode,
                     operatorId: operatorId || null,
-                    startDate: startDate,
-                    endDate: endDate
+                    startDate:  $('#startDate').val(),
+                    endDate:    $('#endDate').val()
                 })
-                    .done(function (html) {
-                        $mc.html(html);
-                        var modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
-                        modal.show();
-                        $('#guestDetailsModal').on('hidden.bs.modal', function () { $mc.empty(); });
-                    })
-                    .fail(function () {
-                        showToast('Failed to load guest details.', 'danger');
-                    });
+                .done(function (html) {
+                    $mc.html(html);
+                    var modal = new bootstrap.Modal(document.getElementById('guestDetailsModal'));
+                    modal.show();
+                    $('#guestDetailsModal').on('hidden.bs.modal', function () { $mc.empty(); });
+                })
+                .fail(function () { showToast('Failed to load guest details.', 'danger'); });
             });
 
             // ─────────────────────────────────────────────────────────
@@ -749,11 +508,7 @@
             // ─────────────────────────────────────────────────────────
             $('#batchesTableContainer').on('click', '.print-batch-details', function () {
                 var batchCode = $(this).data('batch');
-                var form = $('<form>', {
-                    action: '@Url.Action("PrintBatchGuests", "Reserve")',
-                    method: 'POST',
-                    target: '_blank'
-                });
+                var form = $('<form>', { action: '@Url.Action("PrintBatchGuests", "Reserve")', method: 'POST', target: '_blank' });
                 $('<input>').attr({ type: 'hidden', name: 'batchCode', value: batchCode }).appendTo(form);
                 form.appendTo('body').submit().remove();
             });
@@ -768,11 +523,11 @@
                     + '<p class="mt-2 text-muted" style="font-size:0.875rem;">Loading...</p>'
                     + '</div>'
                 );
-
-                $.get(url, { batch: batch })
-                    .done(function (html) {
-                        $('#' + contentId).html(html);
-                    })
+                // ✅ Pass current date filters so modal guest count matches the table row
+                var startDate = $('#startDate').val() || '';
+                var endDate   = $('#endDate').val()   || '';
+                $.get(url, { batch: batch, startDate: startDate, endDate: endDate })
+                    .done(function (html) { $('#' + contentId).html(html); })
                     .fail(function (xhr) {
                         $('#' + contentId).html(
                             '<div class="p-3"><div class="alert alert-danger mb-0">'
@@ -801,11 +556,17 @@
             });
 
             // ─────────────────────────────────────────────────────────
-            // AUTO-LOAD if query-string dates are present
+            // ✅ OUTSIDE GUIDE ASSIGNED — reload table
+            // ─────────────────────────────────────────────────────────
+            $(document).on('outsideGuideAssigned', function (e, batch) {
+                if (table) table.ajax.reload(null, false);
+            });
+
+            // ─────────────────────────────────────────────────────────
+            // AUTO-LOAD if query-string dates present
             // ─────────────────────────────────────────────────────────
             var initialStartDate = $('#startDate').val();
             var initialEndDate   = $('#endDate').val();
-
             if (initialStartDate && initialEndDate) {
                 loadBatchesTable(initialStartDate, initialEndDate);
             }
