@@ -632,7 +632,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-               // ─────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────
         // POST: /Reserve/GetGuestsData   (DataTables server-side)
         // ─────────────────────────────────────────────────────────────────────────
         [HttpPost]
@@ -891,11 +891,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // ─────────────────────────────────────────────────────────────────────────
         // GET: /Reserve/GetGuestsByBatch
-        // Called by the "View" button on each row of the DataTable.
-        // Returns _GuestDetailsBatchPartial with:
-        //   - Model  : List<GuestWithOperatorVM>  (primary + companions)
-        //   - ViewBag.AssignedGuides  : guides assigned to this batch today
-        //   - ViewBag.AssignedDrivers : drivers assigned to this batch today
+        // ✅ Absent drivers / guides / outside guides are excluded from the display
         // ─────────────────────────────────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> GetGuestsByBatch(string batchCode, int? operatorId, string? startDate, string? endDate)
@@ -905,13 +901,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (string.IsNullOrWhiteSpace(batchCode))
                 return BadRequest("Batch code is required.");
 
-            // ── 1. Load guests for this batch, then apply the same filters used by the grid ──
+            // ── 1. Load guests ──────────────────────────────────────────────────
             var guests = await _context.Guests
                 .AsNoTracking()
                 .Include(g => g.NationalityEntity)
                 .Include(g => g.Operators)
                 .Where(g => g.Batch == batchCode)
-                .OrderBy(g => g.Id)          // primary guest first (lowest Id)
+                .OrderBy(g => g.Id)
                 .ToListAsync();
 
             if (operatorId.HasValue)
@@ -926,15 +922,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .Where(g =>
                     {
                         var guestDate = ParseGuestDate(g.Date);
-                        if (!guestDate.HasValue)
-                            return false;
-
-                        if (hasStartDate && guestDate.Value.Date < parsedStartDate.Date)
-                            return false;
-
-                        if (hasEndDate && guestDate.Value.Date > parsedEndDate.Date)
-                            return false;
-
+                        if (!guestDate.HasValue) return false;
+                        if (hasStartDate && guestDate.Value.Date < parsedStartDate.Date) return false;
+                        if (hasEndDate && guestDate.Value.Date > parsedEndDate.Date) return false;
                         return true;
                     })
                     .OrderBy(g => g.Id)
@@ -942,32 +932,71 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             if (!guests.Any())
-                return PartialView(guestDetailsViewName,
-                                   new List<GuestWithOperatorVM>());
+                return PartialView(guestDetailsViewName, new List<GuestWithOperatorVM>());
 
             var operatorName = guests.First().Operators?.BusinessName ?? "No Operator";
-
             var model = guests.Select(g => new GuestWithOperatorVM
             {
                 Guest = g,
                 OperatorName = g.Operators?.BusinessName ?? operatorName
             }).ToList();
 
-            // ── 2. Assigned guides for this batch ──────────────────────────
-            // BatchAssignment → Guide (join on GuideId)
-            var guideAssignments = await _context.BatchAssignments
+            // ── Absent detection — load today's DTR records in memory ───────────
+            long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
+
+            // ✅ Absent DRIVERS: DriverDtr today where SUM(Passenger) == 0
+            var driverDtrToday = await _context.DriverDtrs
+                .Where(d => !string.IsNullOrEmpty(d.Date)
+                         && string.Compare(d.Date, UnixTodayStart()) >= 0
+                         && string.Compare(d.Date, UnixTodayEnd()) < 0)
+                .Select(d => new { d.Rfid, d.Passenger })
+                .ToListAsync();
+
+            var absentDriverRfids = driverDtrToday
+                .GroupBy(d => d.Rfid)
+                .Where(g => g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0) == 0)
+                .Select(g => g.Key)
+                .ToHashSet();                                    // HashSet<int>
+
+            // ✅ Absent GUIDES: TourGuideDtr today where SUM(NoOfGuest) == 0
+            var guideDtrToday = await _context.TourGuideDtrs
+                .Where(d => d.Date == todayLong)
+                .Select(d => new { d.Rfid, d.NoOfGuest })
+                .ToListAsync();
+
+            var absentGuideRfids = guideDtrToday
+                .GroupBy(d => d.Rfid)
+                .Where(g => g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0) == 0)
+                .Select(g => g.Key)
+                .ToHashSet();                                    // HashSet<long>
+
+            // ✅ Absent OUTSIDE GUIDES: TourGuidePriority today where SUM(NoOfGuest) == 0
+            var outsidePriorityToday = await _context.TourGuidePriorities
+                .Where(p => string.Compare(p.Date, UnixTodayStart()) >= 0
+                         && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                .Select(p => new { p.GuideIdPrior, p.NoOfGuest })
+                .ToListAsync();
+
+            var absentOutsideGuideRfids = outsidePriorityToday
+                .GroupBy(p => p.GuideIdPrior)
+                .Where(g => g.Sum(x => x.NoOfGuest) == 0)
+                .Select(g => g.Key)
+                .ToHashSet();                                    // HashSet<int>
+
+            // ── 2. Assigned guides — exclude absent ─────────────────────────────
+            var guideIds = await _context.BatchAssignments
                 .AsNoTracking()
                 .Where(b => b.BatchCode == batchCode && b.GuideId != null)
-                .Select(b => b.GuideId)
+                .Select(b => b.GuideId!.Value)
                 .Distinct()
                 .ToListAsync();
 
             var assignedGuides = new List<object>();
-            if (guideAssignments.Any())
+            if (guideIds.Any())
             {
                 var guideList = await _context.Guides
                     .AsNoTracking()
-                    .Where(g => guideAssignments.Contains(g.GuideId))
+                    .Where(g => guideIds.Contains(g.GuideId))
                     .Select(g => new
                     {
                         g.GuideId,
@@ -977,24 +1006,28 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     })
                     .ToListAsync();
 
-                assignedGuides = guideList.Cast<object>().ToList();
+                // ✅ Skip absent guides (Rfid parsed to long matched against absentGuideRfids)
+                assignedGuides = guideList
+                    .Where(g => !(long.TryParse(g.Rfid, out long rfidL)
+                                  && absentGuideRfids.Contains(rfidL)))
+                    .Cast<object>()
+                    .ToList();
             }
 
-            // ── 3. Assigned drivers for this batch ─────────────────────────
-            // BatchAssignment → Driver (join on DriverId)
-            var driverAssignments = await _context.BatchAssignments
+            // ── 3. Assigned drivers — exclude absent ────────────────────────────
+            var driverIds = await _context.BatchAssignments
                 .AsNoTracking()
                 .Where(b => b.BatchCode == batchCode && b.DriverId != null)
-                .Select(b => b.DriverId)
+                .Select(b => b.DriverId!.Value)
                 .Distinct()
                 .ToListAsync();
 
             var assignedDrivers = new List<object>();
-            if (driverAssignments.Any())
+            if (driverIds.Any())
             {
                 var driverList = await _context.Drivers
                     .AsNoTracking()
-                    .Where(d => driverAssignments.Contains((int?)d.DriverId))
+                    .Where(d => driverIds.Contains(d.DriverId))
                     .Select(d => new
                     {
                         d.DriverId,
@@ -1004,26 +1037,31 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     })
                     .ToListAsync();
 
-                assignedDrivers = driverList.Cast<object>().ToList();
+                // ✅ Skip absent drivers (RefId parsed to int matched against absentDriverRfids)
+                assignedDrivers = driverList
+                    .Where(d => !(int.TryParse(d.RefId, out int refInt)
+                                  && absentDriverRfids.Contains(refInt)))
+                    .Cast<object>()
+                    .ToList();
             }
 
             ViewBag.AssignedGuides = assignedGuides;
             ViewBag.AssignedDrivers = assignedDrivers;
 
-            // ── 4. Assigned outside guides for this batch ──────────────
-            var outsideGuideAssignments = await _context.BatchAssignments
+            // ── 4. Assigned outside guides — exclude absent ─────────────────────
+            var outsideGuideIds = await _context.BatchAssignments
                 .AsNoTracking()
                 .Where(b => b.BatchCode == batchCode && b.OutsideGuideId != null)
-                .Select(b => b.OutsideGuideId)
+                .Select(b => b.OutsideGuideId!.Value)
                 .Distinct()
                 .ToListAsync();
 
             var assignedOutsideGuides = new List<object>();
-            if (outsideGuideAssignments.Any())
+            if (outsideGuideIds.Any())
             {
                 var outsideGuideList = await _context.OutsideGuides
                     .AsNoTracking()
-                    .Where(g => outsideGuideAssignments.Contains(g.OutsideGuideId))
+                    .Where(g => outsideGuideIds.Contains(g.OutsideGuideId))
                     .Select(g => new
                     {
                         g.OutsideGuideId,
@@ -1033,15 +1071,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     })
                     .ToListAsync();
 
-                assignedOutsideGuides = outsideGuideList.Cast<object>().ToList();
+                // ✅ Skip absent outside guides (Rfid parsed to int matched against absentOutsideGuideRfids)
+                assignedOutsideGuides = outsideGuideList
+                    .Where(g => !(int.TryParse(g.Rfid, out int rfidInt)
+                                  && absentOutsideGuideRfids.Contains(rfidInt)))
+                    .Cast<object>()
+                    .ToList();
             }
 
             ViewBag.AssignedOutsideGuides = assignedOutsideGuides;
 
             return PartialView(guestDetailsViewName, model);
         }
-
-
 
         // =========================================================
         // SHARED HELPER — guest count filtered by date range
