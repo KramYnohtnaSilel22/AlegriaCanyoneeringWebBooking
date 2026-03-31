@@ -1114,6 +1114,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 : await _context.Guests.CountAsync(g => g.Batch == batch);
         }
 
+
         // =========================================================
         // ACTIVE ASSIGNED STAFF COUNT HELPER
         // =========================================================
@@ -1229,6 +1230,110 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             return (activeDrivers, activeGuides);
+        }
+
+        private sealed class BatchGuideSlot
+        {
+            public bool IsOutside { get; init; }
+            public long InternalRfid { get; init; }
+            public int OutsideRfid { get; init; }
+        }
+
+        private async Task RebalanceBatchGuideGuests(string batch, int guestCount)
+        {
+            if (string.IsNullOrWhiteSpace(batch))
+                return;
+
+            long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
+
+            var internalGuideRfids = (await _context.BatchAssignments
+                .AsNoTracking()
+                .Where(b => b.BatchCode == batch && b.GuideId != null)
+                .Select(b => b.GuideId!.Value)
+                .Distinct()
+                .Join(
+                    _context.Guides.AsNoTracking(),
+                    id => id,
+                    g => g.GuideId,
+                    (_, g) => g.Rfid)
+                .ToListAsync())
+                .Where(r => !string.IsNullOrWhiteSpace(r) && long.TryParse(r, out _))
+                .Select(long.Parse)
+                .Distinct()
+                .ToList();
+
+            var outsideGuideRfids = (await _context.BatchAssignments
+                .AsNoTracking()
+                .Where(b => b.BatchCode == batch && b.OutsideGuideId != null)
+                .Select(b => b.OutsideGuideId!.Value)
+                .Distinct()
+                .Join(
+                    _context.OutsideGuides.AsNoTracking(),
+                    id => id,
+                    g => g.OutsideGuideId,
+                    (_, g) => g.Rfid)
+                .ToListAsync())
+                .Where(r => !string.IsNullOrWhiteSpace(r) && int.TryParse(r, out _))
+                .Select(int.Parse)
+                .Distinct()
+                .ToList();
+
+            var internalToday = await _context.TourGuideDtrs
+                .Where(d => internalGuideRfids.Contains(d.Rfid) && d.Date == todayLong)
+                .ToListAsync();
+
+            var outsideToday = await _context.TourGuidePriorities
+                .Where(p => outsideGuideRfids.Contains(p.GuideIdPrior)
+                         && string.Compare(p.Date, UnixTodayStart()) >= 0
+                         && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                .ToListAsync();
+
+            var internalActive = internalToday
+                .GroupBy(d => d.Rfid)
+                .Select(g => g.OrderByDescending(x => x.Id).First())
+                .Where(d => int.TryParse(d.NoOfGuest, out var pax) && pax > 0)
+                .ToDictionary(d => d.Rfid);
+
+            var outsideActive = outsideToday
+                .GroupBy(p => p.GuideIdPrior)
+                .Select(g => g.OrderByDescending(x => x.Id).First())
+                .Where(p => p.NoOfGuest > 0)
+                .ToDictionary(p => p.GuideIdPrior);
+
+            var slots = internalActive.Keys
+                .Select(rfid => new BatchGuideSlot
+                {
+                    IsOutside = false,
+                    InternalRfid = rfid
+                })
+                .Concat(outsideActive.Keys.Select(rfid => new BatchGuideSlot
+                {
+                    IsOutside = true,
+                    OutsideRfid = rfid
+                }))
+                .ToList();
+
+            if (!slots.Any())
+                return;
+
+            int baseGuests = guestCount / slots.Count;
+            int remainder = guestCount % slots.Count;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                int assignedGuests = baseGuests + (i < remainder ? 1 : 0);
+                var slot = slots[i];
+
+                if (slot.IsOutside)
+                {
+                    outsideActive[slot.OutsideRfid].NoOfGuest = assignedGuests;
+                }
+                else
+                {
+                    internalActive[slot.InternalRfid].NoOfGuest = assignedGuests.ToString();
+                    internalActive[slot.InternalRfid].ComDate = DtrDateNow();
+                }
+            }
         }
 
 
@@ -1771,6 +1876,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
+
         // =========================================================
         // ASSIGN GUIDES — POST
         // ✅ Inserts TourGuideAttendance + TourGuideDtr + BatchAssignment
@@ -1802,10 +1908,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         message = $"Cannot assign more than {remainingGuideSlots} guide(s). Limit already reached by current active assignments."
                     });
 
-                int guidesCount = guideRfids.Count;
-                int basePassengers = guidesCount > 0 ? guestCount / guidesCount : 0;
-                int remainder = guidesCount > 0 ? guestCount % guidesCount : 0;
-
                 long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
 
                 var operatorId = await _context.Guests
@@ -1815,15 +1917,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 var assignedNames = new List<string>();
 
-                for (int i = 0; i < guidesCount; i++)
+                foreach (var rawRfid in guideRfids)
                 {
-                    var guideRfid = guideRfids[i].Trim();
+                    var guideRfid = rawRfid.Trim();
                     var guide = await _context.Guides.FirstOrDefaultAsync(g => g.Rfid == guideRfid);
                     if (guide == null)
                         continue;
 
                     long rfidLong = long.TryParse(guide.Rfid, out var parsed) ? parsed : guide.GuideId;
-                    int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
 
                     _context.TourGuideAttendances.Add(new TourGuideAttendance
                     {
@@ -1836,7 +1937,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     {
                         Rfid = rfidLong,
                         Date = todayLong,
-                        NoOfGuest = assignedPassengers.ToString(),
+                        NoOfGuest = "1",
                         ComDate = DtrDateNow()
                     });
 
@@ -1854,10 +1955,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 await _context.SaveChangesAsync();
 
+                await RebalanceBatchGuideGuests(batch, guestCount);
+                await _context.SaveChangesAsync();
+
                 return Json(new
                 {
                     success = true,
-                    message = $"{guidesCount} guide(s) assigned: {string.Join(", ", assignedNames)}"
+                    message = $"{assignedNames.Count} guide(s) assigned: {string.Join(", ", assignedNames)}"
                 });
             }
             catch (Exception ex)
@@ -1865,7 +1969,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
             }
         }
-
 
         // =========================================================
         // EDIT GUIDE ASSIGNMENT — update TourGuideDtr.NoOfGuest
@@ -2275,10 +2378,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .Select(g => (int?)g.OperatorId)
                     .FirstOrDefaultAsync();
 
-                int guidesCount = guideRfids.Count;
-                int baseGuests = guidesCount > 0 ? guestCount / guidesCount : 0;
-                int remainder = guidesCount > 0 ? guestCount % guidesCount : 0;
-
                 var trimmedRfids = guideRfids.Select(r => r.Trim()).ToList();
 
                 var guideMap = await _context.OutsideGuides
@@ -2287,21 +2386,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 var assignedNames = new List<string>();
 
-                for (int i = 0; i < guidesCount; i++)
+                foreach (var rfidStr in trimmedRfids)
                 {
-                    var rfidStr = guideRfids[i].Trim();
-
                     if (!long.TryParse(rfidStr, out var rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
                         continue;
 
                     int rfidInt = (int)rfidLong;
-                    int assignedGuests = baseGuests + (i == 0 ? remainder : 0);
 
                     _context.TourGuidePriorities.Add(new TourGuidePriority
                     {
                         GuideIdPrior = rfidInt,
                         Date = UnixNow(),
-                        NoOfGuest = assignedGuests
+                        NoOfGuest = 1
                     });
 
                     var outsideGuide = guideMap.TryGetValue(rfidStr, out var og) ? og : null;
@@ -2320,10 +2416,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 await _context.SaveChangesAsync();
 
+                await RebalanceBatchGuideGuests(batch, guestCount);
+                await _context.SaveChangesAsync();
+
                 return Json(new
                 {
                     success = true,
-                    message = $"{guidesCount} outside guide(s) assigned: {string.Join("; ", assignedNames)}"
+                    message = $"{assignedNames.Count} outside guide(s) assigned: {string.Join("; ", assignedNames)}"
                 });
             }
             catch (Exception ex)
