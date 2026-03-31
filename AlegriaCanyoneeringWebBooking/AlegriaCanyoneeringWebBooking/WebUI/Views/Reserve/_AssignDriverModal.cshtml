@@ -5,9 +5,11 @@
     var availableDrivers = ViewBag.AvailableDrivers as IEnumerable<dynamic>;
     var busyDrivers = ViewBag.BusyDrivers as IEnumerable<dynamic>;
     int totalDrivers = availableDrivers?.Count() ?? 0;
+    var filterStartDate = ViewBag.StartDate as string ?? "";
+    var filterEndDate = ViewBag.EndDate as string ?? "";
 }
 
-<div class="modal-header bg-info text-white">
+<div class="modal-header bg-info text-white">`
     <h5 class="modal-title">
         <i class="fas fa-car me-2"></i> Assign Drivers
     </h5>
@@ -515,6 +517,8 @@
     var selectedDrivers  = {};
     var driverLimit      = @recommendedDrivers;
     var driverGuestTotal = @guestCount;
+    var filterStartDate = '@filterStartDate';
+    var filterEndDate   = '@filterEndDate';
 
     function lockUnselectedDriverCards() {
         $('#driverLimitWarning').show();
@@ -822,6 +826,8 @@
             data: {
                 batch        : batch,
                 driverRefIds : refIds,
+                startDate    : filterStartDate,
+                endDate      : filterEndDate,
                 __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
             },
             success: function (res) {

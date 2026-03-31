@@ -7,6 +7,8 @@
     var availableGuides   = ViewBag.AvailableGuides   as IEnumerable<dynamic>;
     var busyGuides        = ViewBag.BusyGuides        as IEnumerable<dynamic>;
     int totalGuides       = availableGuides?.Count()  ?? 0;
+    var filterStartDate = ViewBag.StartDate as string ?? "";
+    var filterEndDate   = ViewBag.EndDate   as string ?? "";
 }
 
 <div class="modal-header text-white" style="background:#6f42c1;">
@@ -465,9 +467,11 @@
 </style>
 
 <script>
-    var selectedGuides  = {};
+     var selectedGuides  = {};
     var guideLimit      = @recommendedGuides;
     var guideGuestTotal = @guestCount;
+    var filterStartDate = '@filterStartDate';  
+    var filterEndDate   = '@filterEndDate';    
 
     function lockUnselectedGuideCards() {
         $('#guideLimitWarning').show();
@@ -745,7 +749,9 @@
             traditional: true,
             data: {
                 batch,
-                guideRfids: rfids,
+                guideRfids : rfids,
+                startDate  : filterStartDate,  
+                endDate    : filterEndDate,
                 __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
             },
             success: function (res) {

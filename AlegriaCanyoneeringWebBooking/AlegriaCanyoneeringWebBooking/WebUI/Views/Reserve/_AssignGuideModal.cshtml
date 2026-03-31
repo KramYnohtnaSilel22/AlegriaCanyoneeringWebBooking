@@ -1,10 +1,13 @@
 ﻿@{
-    var batch = ViewBag.Batch as string;
-    var guestCount = (int)(ViewBag.GuestCount ?? 0);
+    var batch             = ViewBag.Batch as string;
+    var guestCount        = (int)(ViewBag.GuestCount ?? 0);
     var recommendedGuides = (int)(ViewBag.RecommendedGuides ?? 0);
-    var availableGuides = ViewBag.AvailableGuides as IEnumerable<dynamic>;
-    var busyGuides = ViewBag.BusyGuides as IEnumerable<dynamic>;
-    int totalGuides = availableGuides?.Count() ?? 0;
+    var availableGuides   = ViewBag.AvailableGuides as IEnumerable<dynamic>;
+    var busyGuides        = ViewBag.BusyGuides as IEnumerable<dynamic>;
+    int totalGuides       = availableGuides?.Count() ?? 0;
+    // ✅ Read dates that the controller set in ViewBag
+    var filterStartDate   = ViewBag.StartDate as string ?? "";
+    var filterEndDate     = ViewBag.EndDate   as string ?? "";
 }
 
 <div class="modal-header bg-success text-white">
@@ -491,9 +494,11 @@
 </style>
 
 <script>
-    var selectedGuides = {};
-    var guideLimit     = @recommendedGuides;
-    var guestTotal     = @guestCount;
+    var selectedGuides  = {};
+    var guideLimit      = @recommendedGuides;
+    var guestTotal      = @guestCount;
+    var filterStartDate = '@filterStartDate'; 
+    var filterEndDate   = '@filterEndDate';     
 
     function lockUnselectedGuideCards() {
         $('#guideLimitWarning').show();
@@ -713,7 +718,10 @@
         $('#btnConfirmAssignGuide').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Assigning...');
         $.ajax({
             url: '@Url.Action("AssignGuides", "Reserve")', type: 'POST', traditional: true,
-            data: { batch: batch, guideRfids: rfids, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+            data: { batch: batch, guideRfids: rfids,
+                    startDate: filterStartDate,   
+                    endDate:   filterEndDate,      
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
             success: function (res) {
                 if (res.success) {
                     $(document).trigger('guideAssigned', [batch]);

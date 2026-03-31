@@ -47,7 +47,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
-
+       
 
         // =========================================================
         // PRINT BATCH GUESTS
@@ -1187,11 +1187,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
                 int recommendedDrivers = GetRequiredStaffCount(guestCount);
 
-                ViewBag.Batch = batch ?? "";
-                ViewBag.GuestCount = guestCount;
+                ViewBag.Batch             = batch ?? "";
+                ViewBag.GuestCount        = guestCount;
                 ViewBag.RecommendedDrivers = recommendedDrivers;
-                ViewBag.AvailableDrivers = availableDriversRaw.Cast<dynamic>().ToList();
-                ViewBag.BusyDrivers = busyDriversRaw.Cast<dynamic>().ToList();
+                ViewBag.AvailableDrivers   = availableDriversRaw.Cast<dynamic>().ToList();
+                ViewBag.BusyDrivers        = busyDriversRaw.Cast<dynamic>().ToList();
+                ViewBag.StartDate         = startDate ?? "";  
+                ViewBag.EndDate           = endDate ?? "";     
 
                 return PartialView("_AssignDriverModal");
             }
@@ -1220,14 +1222,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignDrivers(string batch, List<string> driverRefIds)
+        public async Task<IActionResult> AssignDrivers(string batch, List<string> driverRefIds,string? startDate = null, string? endDate = null)
         {
             try
             {
                 if (string.IsNullOrEmpty(batch) || driverRefIds == null || !driverRefIds.Any())
                     return Json(new { success = false, message = "Batch and at least one driver are required." });
 
-                var guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                // ✅ Use filtered count to match what the table shows
+                var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
                 int recommendedDrivers = GetRequiredStaffCount(guestCount);
 
                 if (driverRefIds.Count > recommendedDrivers)
@@ -1577,8 +1580,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ViewBag.RecommendedGuides = recommendedGuides;
                 ViewBag.AvailableGuides = availableGuidesRaw.Cast<dynamic>().ToList();
                 ViewBag.BusyGuides = busyGuidesRaw.Cast<dynamic>().ToList();
+                ViewBag.StartDate = startDate ?? "";   
+                ViewBag.EndDate = endDate ?? "";    
 
                 return PartialView("_AssignGuideModal");
+
+               
             }
             catch (Exception ex)
             {
@@ -1607,14 +1614,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignGuides(string batch, List<string> guideRfids)
+        public async Task<IActionResult> AssignGuides(string batch, List<string> guideRfids, string? startDate = null, string? endDate = null)
         {
             try
             {
                 if (string.IsNullOrEmpty(batch) || guideRfids == null || !guideRfids.Any())
                     return Json(new { success = false, message = "Batch and at least one Guide are required." });
 
-                var guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
                 int recommendedGuides = GetRequiredStaffCount(guestCount);
 
                 if (guideRfids.Count > recommendedGuides)
@@ -2049,6 +2056,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ViewBag.OperatorId = operatorId;
                 ViewBag.AvailableGuides = availableGuides;
                 ViewBag.BusyGuides = busyGuides;
+                ViewBag.StartDate = startDate ?? "";   
+                ViewBag.EndDate = endDate ?? ""; 
+
 
                 return PartialView("_AssignOutsideGuideModal");
             }
@@ -2078,14 +2088,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignOutsideGuide(string batch, List<string> guideRfids)
+        public async Task<IActionResult> AssignOutsideGuide(string batch, List<string> guideRfids, string? startDate = null, string? endDate = null)
         {
             try
             {
                 if (string.IsNullOrEmpty(batch) || guideRfids == null || !guideRfids.Any())
                     return Json(new { success = false, message = "Batch and at least one guide are required." });
 
-                int guestCount = await _context.Guests.CountAsync(g => g.Batch == batch);
+                // ✅ Use filtered count to match what the table shows
+                int guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
                 int recommendedGuides = GetRequiredStaffCount(guestCount);
 
                 if (guideRfids.Count > recommendedGuides)
