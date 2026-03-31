@@ -1,0 +1,287 @@
+@model AlegriaCanyoneeringWebBooking.Models.BatchAssignment
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var action = ViewData["Action"]?.ToString() ?? "Create";
+    var formAction = action == "Edit" ? "/BatchAssignments/Edit" : "/BatchAssignments/Create";
+
+    var guideTab = Model.OutsideGuideId.HasValue ? "outside" : "internal";
+
+    var operators = ViewBag.Operators as SelectList ?? new SelectList(Enumerable.Empty<SelectListItem>());
+    var guides = ViewBag.Guides as SelectList ?? new SelectList(Enumerable.Empty<SelectListItem>());
+    var outsideGuides = ViewBag.OutsideGuides as SelectList ?? new SelectList(Enumerable.Empty<SelectListItem>());
+    var drivers = ViewBag.Drivers as SelectList ?? new SelectList(Enumerable.Empty<SelectListItem>());
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    .bf-form * { font-family: 'Outfit', sans-serif; }
+
+    .bf-body { padding: 1.4rem 1.5rem 1rem; }
+
+    .bf-section {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #1a6ef5;
+        border-bottom: 1.5px solid #e8edf5;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1rem;
+        margin-top: 1.25rem;
+    }
+
+    .bf-section:first-child { margin-top: 0; }
+
+    .bf-field { margin-bottom: 1rem; }
+
+    .bf-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #0f3460;
+        display: block;
+        margin-bottom: 0.35rem;
+    }
+
+    .bf-label .req { color: #ef4444; margin-left: 2px; }
+
+    .bf-input, .bf-select {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background: #fafbff;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        appearance: none;
+    }
+
+    .bf-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.9rem center;
+        background-size: 12px;
+        padding-right: 2.5rem;
+    }
+
+    .bf-input:focus, .bf-select:focus {
+        border-color: #1a6ef5;
+        box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+        background: #fff;
+    }
+
+    .bf-input[readonly] {
+        background: #f1f5f9;
+        color: #94a3b8;
+        cursor: not-allowed;
+    }
+
+    .guide-toggle {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .guide-toggle-btn {
+        flex: 1;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1.5px solid #e2e8f0;
+        background: #f8faff;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    .guide-toggle-btn.active {
+        background: #eff6ff;
+        border-color: #1a6ef5;
+        color: #1a6ef5;
+    }
+
+    .bf-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0.9rem 1.5rem;
+        border-top: 1.5px solid #f1f5f9;
+        background: #fafbff;
+    }
+
+    .btn-bf-cancel {
+        padding: 0.6rem 1.25rem;
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-bf-cancel:hover { background: #e2e8f0; }
+
+    .btn-bf-save {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #1a6ef5, #0f3460);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        box-shadow: 0 3px 12px rgba(26,110,245,0.3);
+    }
+
+    .btn-bf-save:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-bf-save:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+</style>
+
+<form action="@formAction" method="post" novalidate class="bf-form" data-action="@action">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Id" value="@Model.Id" />
+
+    <div class="bf-body">
+
+        <div class="bf-section">Batch Info</div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="bf-field">
+                    <label class="bf-label">Batch Code</label>
+                    <input class="bf-input" name="BatchCode" value="@Model.BatchCode" readonly />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="bf-field">
+                    <label class="bf-label">Operator</label>
+                    <select class="bf-select" name="OperatorId">
+                        <option value="">— Select Operator —</option>
+                        @foreach (SelectListItem item in operators)
+                        {
+                            if (item.Selected)
+                            {
+                                <option value="@item.Value" selected>@item.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="bf-section">Guide Assignment</div>
+
+        <div class="guide-toggle">
+            <button type="button" class="guide-toggle-btn @(guideTab == "internal" ? "active" : "")"
+                    id="btnInternal" onclick="switchGuideTab('internal')">
+                <i class="bi bi-person-badge"></i> Internal Guide
+            </button>
+            <button type="button" class="guide-toggle-btn @(guideTab == "outside" ? "active" : "")"
+                    id="btnOutside" onclick="switchGuideTab('outside')">
+                <i class="bi bi-person-lines-fill"></i> Outside Guide
+            </button>
+        </div>
+
+        <div id="panelInternal" class="bf-field" style="@(guideTab != "internal" ? "display:none;" : "")">
+            <label class="bf-label">Internal Guide</label>
+            <select class="bf-select" name="GuideId" id="selectInternal">
+                <option value="">— Select Internal Guide —</option>
+                @foreach (SelectListItem item in guides)
+                {
+                    if (item.Selected)
+                    {
+                        <option value="@item.Value" selected>@item.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div id="panelOutside" class="bf-field" style="@(guideTab != "outside" ? "display:none;" : "")">
+            <label class="bf-label">Outside Guide</label>
+            <select class="bf-select" name="OutsideGuideId" id="selectOutside">
+                <option value="">— Select Outside Guide —</option>
+                @foreach (SelectListItem item in outsideGuides)
+                {
+                    if (item.Selected)
+                    {
+                        <option value="@item.Value" selected>@item.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="bf-section">Driver</div>
+        <div class="bf-field">
+            <label class="bf-label">Assigned Driver</label>
+            <select class="bf-select" name="DriverId">
+                <option value="">— Select Driver —</option>
+                @foreach (SelectListItem item in drivers)
+                {
+                    if (item.Selected)
+                    {
+                        <option value="@item.Value" selected>@item.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
+            </select>
+        </div>
+
+    </div>
+
+    <div class="bf-footer">
+        <button type="button" class="btn-bf-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn-bf-save">
+            <i class="bi bi-@(action == "Edit" ? "pencil" : "save") me-1"></i>
+            @(action == "Edit" ? "Update" : "Save")
+        </button>
+    </div>
+</form>
+
+<script>
+    function switchGuideTab(tab) {
+        const isInternal = tab === 'internal';
+
+        document.getElementById('panelInternal').style.display = isInternal ? '' : 'none';
+        document.getElementById('panelOutside').style.display = isInternal ? 'none' : '';
+
+        document.getElementById('btnInternal').classList.toggle('active', isInternal);
+        document.getElementById('btnOutside').classList.toggle('active', !isInternal);
+
+        if (isInternal) {
+            document.getElementById('selectOutside').value = '';
+        } else {
+            document.getElementById('selectInternal').value = '';
+        }
+    }
+</script>
