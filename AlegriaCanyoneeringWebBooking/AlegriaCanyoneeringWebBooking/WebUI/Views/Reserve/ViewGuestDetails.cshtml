@@ -3,6 +3,7 @@
 @{
     var assignedGuides = ViewBag.AssignedGuides as IEnumerable<dynamic>;
     var assignedDrivers = ViewBag.AssignedDrivers as IEnumerable<dynamic>;
+    var assignedOutsideGuides = ViewBag.AssignedOutsideGuides as IEnumerable<dynamic>;
 
     string FormatArrivalDate(string unixTimestamp)
     {
@@ -82,18 +83,18 @@
         scroll-behavior: smooth;
     }
 
-    .gb-modal-body::-webkit-scrollbar {
-        width: 10px;
-    }
+        .gb-modal-body::-webkit-scrollbar {
+            width: 10px;
+        }
 
-    .gb-modal-body::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 999px;
-    }
+        .gb-modal-body::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
 
-    .gb-modal-body::-webkit-scrollbar-track {
-        background: #f8fafc;
-    }
+        .gb-modal-body::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
 
     /* ── Staff cards ──────────────────────────────────────── */
     .staff-section-card {
@@ -310,7 +311,7 @@
                 <div class="row g-3 mb-3">
 
                     <!-- Guides -->
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="staff-section-card">
                             <div class="staff-section-header"
                                  style="background:linear-gradient(135deg,#16a34a,#15803d);">
@@ -356,7 +357,7 @@
                     </div>
 
                     <!-- Drivers -->
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="staff-section-card">
                             <div class="staff-section-header"
                                  style="background:linear-gradient(135deg,#0ea5e9,#0369a1);">
@@ -395,6 +396,52 @@
                                     <div class="staff-empty">
                                         <i class="bi bi-car-front"></i>
                                         No drivers assigned
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Outside Guides -->
+                    <div class="col-md-4">
+                        <div class="staff-section-card">
+                            <div class="staff-section-header"
+                                 style="background:linear-gradient(135deg,#7c3aed,#4c1d95);">
+                                <span><i class="bi bi-compass me-2"></i>Outside Guides</span>
+                                <span class="staff-count">@(assignedOutsideGuides?.Count() ?? 0)</span>
+                            </div>
+                            <div class="staff-section-body">
+                                @if (assignedOutsideGuides != null && assignedOutsideGuides.Any())
+                                {
+                                    @foreach (var og in assignedOutsideGuides)
+                                    {
+                                        <div class="staff-item">
+                                            @if (!string.IsNullOrEmpty((string)og.Image))
+                                            {
+                                                <img src="@og.Image" class="staff-avatar"
+                                                     style="border:2px solid #7c3aed;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="staff-avatar-placeholder"
+                                                     style="border:2px solid #7c3aed;">
+                                                    <i class="bi bi-compass" style="color:#7c3aed;"></i>
+                                                </div>
+                                            }
+                                            <div>
+                                                <div class="staff-name">@og.fullName</div>
+                                                <div class="staff-sub">
+                                                    <i class="bi bi-upc me-1"></i>RFID: @og.Rfid
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="staff-empty">
+                                        <i class="bi bi-compass"></i>
+                                        No outside guides assigned
                                     </div>
                                 }
                             </div>
@@ -455,8 +502,8 @@
                             <i class="bi bi-people-fill"></i>
                             Companion Guests
                             <span style="background:rgba(26,110,245,0.08);color:#1a6ef5;
-                                                 font-size:0.7rem;font-weight:700;padding:0.15rem 0.55rem;
-                                                 border-radius:20px;text-transform:none;letter-spacing:0;">
+                                font-size:0.7rem;font-weight:700;padding:0.15rem 0.55rem;
+                                border-radius:20px;text-transform:none;letter-spacing:0;">
                                 @companionsVM.Count
                             </span>
                         </div>
@@ -516,19 +563,19 @@
 
 <script>
     document.getElementById('printButton').addEventListener('click', function () {
-        const batchCode = '@Model?.FirstOrDefault()?.Guest.Batch';
-        if (!batchCode) { alert('Batch code is not available.'); return; }
-        const form    = document.createElement('form');
-        form.method   = 'POST';
-        form.action   = '/Reserve/PrintBatchGuests';
-        form.target   = '_blank';
-        const input   = document.createElement('input');
-        input.type    = 'hidden';
-        input.name    = 'batchCode';
-        input.value   = batchCode;
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
+    const batchCode = '@Model?.FirstOrDefault()?.Guest.Batch';
+    if (!batchCode) { alert('Batch code is not available.'); return; }
+    const form    = document.createElement('form');
+    form.method   = 'POST';
+    form.action   = '/Reserve/PrintBatchGuests';
+    form.target   = '_blank';
+    const input   = document.createElement('input');
+    input.type    = 'hidden';
+    input.name    = 'batchCode';
+    input.value   = batchCode;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
     });
 </script>

@@ -205,12 +205,11 @@
             </div>
             <div class="table-responsive">
                 <table id="batchesTable" class="table table-hover align-middle w-100">
-                    <thead>
+                      <thead>
                         <tr>
                             <th>Batch</th>
                             <th>Total Guests</th>
                             <th>Operator</th>
-                            <th>Outside Guide</th>
                             <th>Arrival Date</th>
                             <th>Status</th>
                             <th class="text-center">Actions</th>
@@ -318,7 +317,6 @@
                     $('#batchesTable').empty().append(
                         '<thead><tr>'
                         + '<th>Batch</th><th>Total Guests</th><th>Operator</th>'
-                        + '<th>Outside Guide</th>'
                         + '<th>Arrival Date</th><th>Status</th><th class="text-center">Actions</th>'
                         + '</tr></thead>'
                     );
@@ -350,7 +348,7 @@
                             return json.data || [];
                         }
                     },
-                    columns: [
+                                     columns: [
                         {
                             data: 'batch',
                             render: function (d) {
@@ -362,14 +360,6 @@
                             data: 'operatorName',
                             render: function (d) {
                                 return d && d.trim() ? d : '<span class="text-muted">No Operator</span>';
-                            }
-                        },
-                        {
-                            data: 'outsideGuide',
-                            render: function (d) {
-                                if (!d || !d.trim()) return '<span class="text-muted">—</span>';
-                                return '<span class="badge" style="background:rgba(124,58,237,0.10);color:#7c3aed;font-size:0.75rem;font-weight:600;border-radius:20px;padding:0.25rem 0.6rem;">'
-                                    + '<i class="bi bi-compass me-1"></i>' + d + '</span>';
                             }
                         },
                         {

@@ -7,7 +7,7 @@ using Microsoft.Azure.Amqp.Framing;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using System.Globalization;
-using System.Security.Claims;   
+using System.Security.Claims;
 using System.Text;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
@@ -45,7 +45,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return (int)Math.Ceiling(guestCount / 2.0);
         }
 
- 
+
 
 
 
@@ -219,7 +219,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-        
+
 
 
         [HttpPost]
@@ -632,7 +632,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
-        // ─────────────────────────────────────────────────────────────────────────
+               // ─────────────────────────────────────────────────────────────────────────
         // POST: /Reserve/GetGuestsData   (DataTables server-side)
         // ─────────────────────────────────────────────────────────────────────────
         [HttpPost]
@@ -686,11 +686,28 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             // Materialise before grouping (LINQ-to-Objects only)
             var materialised = filtered.ToList();
 
+            // ── Pre-load outside guide names per batch from BatchAssignment ──
+            var batchCodes = materialised
+                .Select(x => x.Guest.Batch ?? "")
+                .Distinct()
+                .ToList();
+
+            var outsideGuideMap = await _context.BatchAssignments
+                .AsNoTracking()
+                .Include(ba => ba.OutsideGuide)
+                .Where(ba => batchCodes.Contains(ba.BatchCode) && ba.OutsideGuideId != null)
+                .GroupBy(ba => ba.BatchCode)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => string.Join(", ", g
+                        .Select(ba => ba.OutsideGuide != null
+                            ? ba.OutsideGuide.FullName
+                            : "")
+                        .Where(n => !string.IsNullOrEmpty(n))
+                        .Distinct())
+                );
+
             var grouped = materialised
-                // ── FIX: group by Batch only — not by OperatorName.
-                // Grouping by both caused guests in the same batch with
-                // different/null operators to split into separate rows,
-                // making totalGuests show only a subset (e.g. 2 instead of 58).
                 .GroupBy(x => x.Guest.Batch ?? "")
                 .Select(g =>
                 {
@@ -709,12 +726,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         .FirstOrDefault(n => !string.IsNullOrEmpty(n))
                         ?? "No Operator";
 
+                    // Lookup outside guide name(s) from BatchAssignment
+                    var outsideGuideName = outsideGuideMap.TryGetValue(g.Key, out var name)
+                        ? name
+                        : "";
+
                     return new
                     {
                         batch = g.Key,
                         operatorId = g.Select(x => x.Guest.OperatorId).FirstOrDefault(),
                         operatorName = opName,
                         totalGuests = g.Count(),
+                        outsideGuide = outsideGuideName,
                         arrivalDate = arrivalDateStr,
                         status = statusLabel
                     };
@@ -733,7 +756,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 data = paged
             });
         }
-
 
         // ─────────────────────────────────────────────────────────────────────────
         // GET: /Reserve/GetGuestOfTheDay
@@ -988,10 +1010,38 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             ViewBag.AssignedGuides = assignedGuides;
             ViewBag.AssignedDrivers = assignedDrivers;
 
+            // ── 4. Assigned outside guides for this batch ──────────────
+            var outsideGuideAssignments = await _context.BatchAssignments
+                .AsNoTracking()
+                .Where(b => b.BatchCode == batchCode && b.OutsideGuideId != null)
+                .Select(b => b.OutsideGuideId)
+                .Distinct()
+                .ToListAsync();
+
+            var assignedOutsideGuides = new List<object>();
+            if (outsideGuideAssignments.Any())
+            {
+                var outsideGuideList = await _context.OutsideGuides
+                    .AsNoTracking()
+                    .Where(g => outsideGuideAssignments.Contains(g.OutsideGuideId))
+                    .Select(g => new
+                    {
+                        g.OutsideGuideId,
+                        Rfid = g.Rfid ?? "",
+                        fullName = ((g.FName ?? "") + " " + (g.MName ?? "") + " " + (g.LName ?? "")).Trim(),
+                        Image = g.Image ?? ""
+                    })
+                    .ToListAsync();
+
+                assignedOutsideGuides = outsideGuideList.Cast<object>().ToList();
+            }
+
+            ViewBag.AssignedOutsideGuides = assignedOutsideGuides;
+
             return PartialView(guestDetailsViewName, model);
         }
 
-        
+
 
         // =========================================================
         // SHARED HELPER — guest count filtered by date range
@@ -1001,7 +1051,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         private async Task<int> GetFilteredGuestCount(string batch, string? startDate, string? endDate)
         {
             bool hasStart = DateTime.TryParse(startDate, out var sd);
-            bool hasEnd   = DateTime.TryParse(endDate,   out var ed);
+            bool hasEnd = DateTime.TryParse(endDate, out var ed);
 
             if (!hasStart && !hasEnd)
                 return await _context.Guests.CountAsync(g => g.Batch == batch);
@@ -1015,7 +1065,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Select(ParseGuestDate)
                 .Where(d => d.HasValue
                     && (!hasStart || d!.Value.Date >= sd.Date)
-                    && (!hasEnd   || d!.Value.Date <= ed.Date))
+                    && (!hasEnd || d!.Value.Date <= ed.Date))
                 .Count();
 
             // Fallback: if date filter yields 0, return the full batch count
@@ -2021,7 +2071,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // =========================================================
         // ASSIGN OUTSIDE GUIDES — POST
-        // ✅ Only inserts into tourguide_priority
+        // ✅ Inserts into tourguide_priority
+        // ✅ Inserts into tbl_batch_assignments (OutsideGuideId)
         // ✅ One row per guide with distributed guest count
         // ✅ Names sourced from outside_tourguide_details
         // =========================================================
@@ -2044,16 +2095,21 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         message = $"Cannot assign more than {recommendedGuides} guide(s) for {guestCount} guest(s)."
                     });
 
+                var operatorId = await _context.Guests
+                    .Where(g => g.Batch == batch)
+                    .Select(g => (int?)g.OperatorId)
+                    .FirstOrDefaultAsync();
+
                 int guidesCount = guideRfids.Count;
                 int baseGuests = guidesCount > 0 ? guestCount / guidesCount : 0;
                 int remainder = guidesCount > 0 ? guestCount % guidesCount : 0;
 
-                // ── Fetch names from outside_tourguide_details ───────────
+                // ── Fetch outside guide records by RFID ───────────
                 var trimmedRfids = guideRfids.Select(r => r.Trim()).ToList();
 
-                var nameMap = await _context.OutsideGuides
+                var guideMap = await _context.OutsideGuides
                     .Where(g => trimmedRfids.Contains(g.Rfid.Trim()))
-                    .ToDictionaryAsync(g => g.Rfid.Trim(), g => g.FullName);
+                    .ToDictionaryAsync(g => g.Rfid.Trim(), g => g);
 
                 var assignedNames = new List<string>();
 
@@ -2074,7 +2130,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         NoOfGuest = assignedGuests
                     });
 
-                    assignedNames.Add(nameMap.TryGetValue(rfidStr, out var name) ? name : rfidStr);
+                    // ── Also save to BatchAssignment so BookedGuest can display it ──
+                    var outsideGuide = guideMap.TryGetValue(rfidStr, out var og) ? og : null;
+
+                    _context.BatchAssignments.Add(new BatchAssignment
+                    {
+                        BatchCode = batch,
+                        OperatorId = operatorId,
+                        GuideId = null,
+                        DriverId = null,
+                        OutsideGuideId = outsideGuide?.OutsideGuideId
+                    });
+
+                    assignedNames.Add(outsideGuide?.FullName ?? rfidStr);
                 }
 
                 await _context.SaveChangesAsync();
