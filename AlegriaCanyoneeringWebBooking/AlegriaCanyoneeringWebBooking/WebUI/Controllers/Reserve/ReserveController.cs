@@ -47,7 +47,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
 
 
-       
+
 
         // =========================================================
         // PRINT BATCH GUESTS
@@ -1045,9 +1045,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .ToList();
             }
 
-            ViewBag.AssignedGuides = assignedGuides;
-            ViewBag.AssignedDrivers = assignedDrivers;
-
             // ── 4. Assigned outside guides — exclude absent ─────────────────────
             var outsideGuideIds = await _context.BatchAssignments
                 .AsNoTracking()
@@ -1079,6 +1076,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .ToList();
             }
 
+            ViewBag.AssignedGuides = assignedGuides;
+            ViewBag.AssignedDrivers = assignedDrivers;
             ViewBag.AssignedOutsideGuides = assignedOutsideGuides;
 
             return PartialView(guestDetailsViewName, model);
@@ -1115,6 +1114,123 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 : await _context.Guests.CountAsync(g => g.Batch == batch);
         }
 
+        // =========================================================
+        // ACTIVE ASSIGNED STAFF COUNT HELPER
+        // =========================================================
+        private async Task<(int ActiveDrivers, int ActiveGuides)> GetActiveAssignedStaffCount(string batch)
+        {
+            if (string.IsNullOrWhiteSpace(batch))
+                return (0, 0);
+
+            long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
+
+            var driverDtrToday = await _context.DriverDtrs
+                .AsNoTracking()
+                .Where(d => !string.IsNullOrEmpty(d.Date)
+                         && string.Compare(d.Date, UnixTodayStart()) >= 0
+                         && string.Compare(d.Date, UnixTodayEnd()) < 0)
+                .Select(d => new { d.Rfid, d.Passenger })
+                .ToListAsync();
+
+            var absentDriverRfids = driverDtrToday
+                .GroupBy(d => d.Rfid)
+                .Where(g => g.Sum(x => int.TryParse(x.Passenger, out var p) ? p : 0) == 0)
+                .Select(g => g.Key)
+                .ToHashSet();
+
+            var guideDtrToday = await _context.TourGuideDtrs
+                .AsNoTracking()
+                .Where(d => d.Date == todayLong)
+                .Select(d => new { d.Rfid, d.NoOfGuest })
+                .ToListAsync();
+
+            var absentGuideRfids = guideDtrToday
+                .GroupBy(d => d.Rfid)
+                .Where(g => g.Sum(x => int.TryParse(x.NoOfGuest, out var p) ? p : 0) == 0)
+                .Select(g => g.Key)
+                .ToHashSet();
+
+            var outsidePriorityToday = await _context.TourGuidePriorities
+                .AsNoTracking()
+                .Where(p => string.Compare(p.Date, UnixTodayStart()) >= 0
+                         && string.Compare(p.Date, UnixTodayEnd()) < 0)
+                .Select(p => new { p.GuideIdPrior, p.NoOfGuest })
+                .ToListAsync();
+
+            var absentOutsideGuideRfids = outsidePriorityToday
+                .GroupBy(p => p.GuideIdPrior)
+                .Where(g => g.Sum(x => x.NoOfGuest) == 0)
+                .Select(g => g.Key)
+                .ToHashSet();
+
+            var assignments = await _context.BatchAssignments
+                .AsNoTracking()
+                .Where(b => b.BatchCode == batch)
+                .ToListAsync();
+
+            int activeDrivers = 0;
+            var driverIds = assignments
+                .Where(b => b.DriverId != null)
+                .Select(b => b.DriverId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (driverIds.Any())
+            {
+                var driverRefs = await _context.Drivers
+                    .AsNoTracking()
+                    .Where(d => driverIds.Contains(d.DriverId))
+                    .Select(d => d.RefId)
+                    .ToListAsync();
+
+                activeDrivers = driverRefs.Count(r =>
+                    !string.IsNullOrWhiteSpace(r) &&
+                    !(int.TryParse(r, out var rfidInt) && absentDriverRfids.Contains(rfidInt)));
+            }
+
+            int activeGuides = 0;
+
+            var guideIds = assignments
+                .Where(b => b.GuideId != null)
+                .Select(b => b.GuideId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (guideIds.Any())
+            {
+                var guideRfids = await _context.Guides
+                    .AsNoTracking()
+                    .Where(g => guideIds.Contains(g.GuideId))
+                    .Select(g => g.Rfid)
+                    .ToListAsync();
+
+                activeGuides += guideRfids.Count(r =>
+                    !string.IsNullOrWhiteSpace(r) &&
+                    !(long.TryParse(r, out var rfidLong) && absentGuideRfids.Contains(rfidLong)));
+            }
+
+            var outsideGuideIds = assignments
+                .Where(b => b.OutsideGuideId != null)
+                .Select(b => b.OutsideGuideId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (outsideGuideIds.Any())
+            {
+                var outsideRfids = await _context.OutsideGuides
+                    .AsNoTracking()
+                    .Where(g => outsideGuideIds.Contains(g.OutsideGuideId))
+                    .Select(g => g.Rfid)
+                    .ToListAsync();
+
+                activeGuides += outsideRfids.Count(r =>
+                    !string.IsNullOrWhiteSpace(r) &&
+                    !(int.TryParse(r, out var rfidInt) && absentOutsideGuideRfids.Contains(rfidInt)));
+            }
+
+            return (activeDrivers, activeGuides);
+        }
+
 
         // =========================================================
         // GET ASSIGN DRIVER MODAL
@@ -1138,36 +1254,32 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     })
                     .ToListAsync();
 
-                // Today's attendance — unix timestamp range
                 var attendanceToday = await _context.DriverAttendances
                     .Where(a => string.Compare(a.Date, UnixTodayStart()) >= 0
                              && string.Compare(a.Date, UnixTodayEnd()) < 0)
                     .ToListAsync();
 
-                // FIFO: last attendance Id per driver (DriverId = RefId string)
                 var lastAssignmentMap = attendanceToday
                     .Where(a => !string.IsNullOrEmpty(a.DriverId))
                     .GroupBy(a => a.DriverId)
                     .ToDictionary(g => g.Key, g => g.Max(x => x.Id));
 
-                // Passenger totals from DriverDtr today
                 var driverDtrToday = await _context.DriverDtrs
                     .Where(d => !string.IsNullOrEmpty(d.Date)
                              && string.Compare(d.Date, UnixTodayStart()) >= 0
                              && string.Compare(d.Date, UnixTodayEnd()) < 0)
                     .ToListAsync();
 
-                // Map: Rfid (int) → passenger total
                 var driverPassengerMap = driverDtrToday
                     .GroupBy(d => d.Rfid)
-                    .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.Passenger, out int p) ? p : 0));
+                    .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.Passenger, out var p) ? p : 0));
 
                 var driversWithDtrRfidSet = driverDtrToday.Select(d => d.Rfid).ToHashSet();
                 var absentDriverRefIds = new HashSet<string>();
 
                 foreach (var d in allDrivers.Where(x => lastAssignmentMap.ContainsKey(x.RefId)))
                 {
-                    if (int.TryParse(d.RefId, out int refInt)
+                    if (int.TryParse(d.RefId, out var refInt)
                         && driversWithDtrRfidSet.Contains(refInt)
                         && driverPassengerMap.ContainsKey(refInt)
                         && driverPassengerMap[refInt] == 0)
@@ -1176,7 +1288,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     }
                 }
 
-                // FIFO order: never-assigned first → then by DPosition
                 var orderedDrivers = allDrivers
                     .OrderBy(d => lastAssignmentMap.ContainsKey(d.RefId) ? 1 : 0)
                     .ThenBy(d => d.DPosition)
@@ -1186,7 +1297,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 for (int i = 0; i < orderedDrivers.Count; i++)
                 {
                     var d = orderedDrivers[i];
-                    int.TryParse(d.RefId, out int refInt);
+                    int.TryParse(d.RefId, out var refInt);
+
                     availableDriversRaw.Add(new
                     {
                         d.DriverId,
@@ -1197,7 +1309,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         isAbsent = absentDriverRefIds.Contains(d.RefId),
                         queuePosition = i + 1,
                         passengers = refInt > 0 && driverPassengerMap.ContainsKey(refInt)
-                                        ? driverPassengerMap[refInt] : 0,
+                            ? driverPassengerMap[refInt]
+                            : 0,
                         dPosition = d.DPosition
                     });
                 }
@@ -1210,7 +1323,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 for (int i = 0; i < assignedTodayList.Count; i++)
                 {
                     var d = assignedTodayList[i];
-                    int.TryParse(d.RefId, out int refInt2);
+                    int.TryParse(d.RefId, out var refInt2);
+
                     busyDriversRaw.Add(new
                     {
                         d.DriverId,
@@ -1220,21 +1334,24 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         isAbsent = absentDriverRefIds.Contains(d.RefId),
                         queuePos = i + 1,
                         passengers = refInt2 > 0 && driverPassengerMap.ContainsKey(refInt2)
-                                        ? driverPassengerMap[refInt2] : 0,
+                            ? driverPassengerMap[refInt2]
+                            : 0,
                         dPosition = d.DPosition
                     });
                 }
 
                 var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
-                int recommendedDrivers = GetRequiredStaffCount(guestCount);
+                int totalRequiredDrivers = GetRequiredStaffCount(guestCount);
+                var activeCounts = await GetActiveAssignedStaffCount(batch);
+                int recommendedDrivers = Math.Max(0, totalRequiredDrivers - activeCounts.ActiveDrivers);
 
-                ViewBag.Batch             = batch ?? "";
-                ViewBag.GuestCount        = guestCount;
+                ViewBag.Batch = batch ?? "";
+                ViewBag.GuestCount = guestCount;
                 ViewBag.RecommendedDrivers = recommendedDrivers;
-                ViewBag.AvailableDrivers   = availableDriversRaw.Cast<dynamic>().ToList();
-                ViewBag.BusyDrivers        = busyDriversRaw.Cast<dynamic>().ToList();
-                ViewBag.StartDate         = startDate ?? "";  
-                ViewBag.EndDate           = endDate ?? "";     
+                ViewBag.AvailableDrivers = availableDriversRaw.Cast<dynamic>().ToList();
+                ViewBag.BusyDrivers = busyDriversRaw.Cast<dynamic>().ToList();
+                ViewBag.StartDate = startDate ?? "";
+                ViewBag.EndDate = endDate ?? "";
 
                 return PartialView("_AssignDriverModal");
             }
@@ -1255,7 +1372,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-
         // =========================================================
         // ASSIGN DRIVERS — POST
         // ✅ Inserts DriverAttendance + DriverDtr + BatchAssignment
@@ -1263,22 +1379,26 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignDrivers(string batch, List<string> driverRefIds,string? startDate = null, string? endDate = null)
+        public async Task<IActionResult> AssignDrivers(string batch, List<string> driverRefIds, string? startDate = null, string? endDate = null)
         {
             try
             {
                 if (string.IsNullOrEmpty(batch) || driverRefIds == null || !driverRefIds.Any())
                     return Json(new { success = false, message = "Batch and at least one driver are required." });
 
-                // ✅ Use filtered count to match what the table shows
                 var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
-                int recommendedDrivers = GetRequiredStaffCount(guestCount);
+                int totalRequiredDrivers = GetRequiredStaffCount(guestCount);
+                var activeCounts = await GetActiveAssignedStaffCount(batch);
+                int remainingDriverSlots = Math.Max(0, totalRequiredDrivers - activeCounts.ActiveDrivers);
 
-                if (driverRefIds.Count > recommendedDrivers)
+                if (remainingDriverSlots <= 0)
+                    return Json(new { success = false, message = "Driver limit already reached for this batch." });
+
+                if (driverRefIds.Count > remainingDriverSlots)
                     return Json(new
                     {
                         success = false,
-                        message = $"Cannot assign more than {recommendedDrivers} driver(s) for {guestCount} guest(s)."
+                        message = $"Cannot assign more than {remainingDriverSlots} driver(s). Limit already reached by current active assignments."
                     });
 
                 int driversCount = driverRefIds.Count;
@@ -1296,10 +1416,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     var refId = driverRefIds[i].Trim();
                     var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.RefId == refId);
-                    if (driver == null) continue;
+                    if (driver == null)
+                        continue;
 
                     int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
-                    int.TryParse(driver.RefId, out int rfidInt);
+                    int.TryParse(driver.RefId, out var rfidInt);
 
                     _context.DriverAttendances.Add(new DriverAttendance
                     {
@@ -1324,15 +1445,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         DriverId = driver.DriverId
                     });
 
-                    // Update DPosition → driver moves to bottom of FIFO queue
                     driver.DPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
                     assignedNames.Add($"{driver.FName} {driver.LName}");
                 }
 
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = $"{driversCount} driver(s) assigned: {string.Join(", ", assignedNames)}" });
+                return Json(new
+                {
+                    success = true,
+                    message = $"{driversCount} driver(s) assigned: {string.Join(", ", assignedNames)}"
+                });
             }
             catch (Exception ex)
             {
@@ -1534,20 +1657,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                              && string.Compare(a.Date, UnixTodayEnd()) < 0)
                     .ToListAsync();
 
-                // ✅ FIFO: last attendance Id per guide (TGId = Rfid)
+                // FIFO: last attendance Id per guide (TGId = Rfid)
                 var lastAssignmentMap = attendanceToday
                     .Where(a => !string.IsNullOrEmpty(a.TGId))
                     .GroupBy(a => a.TGId)
                     .ToDictionary(g => g.Key, g => g.Max(x => x.Id));
 
-                // ✅ Passenger totals from TourGuideDtr (Date = yyyyMMdd long)
+                // Passenger totals from TourGuideDtr (Date = yyyyMMdd long)
                 var guideDtrToday = await _context.TourGuideDtrs
                     .Where(d => d.Date == todayLong)
                     .ToListAsync();
 
                 var guidePassengerMap = guideDtrToday
-                    .GroupBy(d => d.Rfid)
-                    .ToDictionary(g => g.Key, g => g.Sum(x => int.TryParse(x.NoOfGuest, out int p) ? p : 0));
+                      .GroupBy(d => d.Rfid)
+                      .ToDictionary(
+                          g => g.Key,
+                          g => g.Sum(x => int.TryParse(x.NoOfGuest, out var pax) ? pax : 0));
 
                 // ✅ Absent = has attendance today + DTR today + NoOfGuest total == 0
                 var guidesWithDtrRfidSet = guideDtrToday.Select(d => d.Rfid).ToHashSet();
@@ -1621,12 +1746,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ViewBag.RecommendedGuides = recommendedGuides;
                 ViewBag.AvailableGuides = availableGuidesRaw.Cast<dynamic>().ToList();
                 ViewBag.BusyGuides = busyGuidesRaw.Cast<dynamic>().ToList();
-                ViewBag.StartDate = startDate ?? "";   
-                ViewBag.EndDate = endDate ?? "";    
+                ViewBag.StartDate = startDate ?? "";
+                ViewBag.EndDate = endDate ?? "";
 
                 return PartialView("_AssignGuideModal");
 
-               
+
             }
             catch (Exception ex)
             {
@@ -1663,13 +1788,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     return Json(new { success = false, message = "Batch and at least one Guide are required." });
 
                 var guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
-                int recommendedGuides = GetRequiredStaffCount(guestCount);
+                int totalRequiredGuides = GetRequiredStaffCount(guestCount);
+                var activeCounts = await GetActiveAssignedStaffCount(batch);
+                int remainingGuideSlots = Math.Max(0, totalRequiredGuides - activeCounts.ActiveGuides);
 
-                if (guideRfids.Count > recommendedGuides)
+                if (remainingGuideSlots <= 0)
+                    return Json(new { success = false, message = "Guide limit already reached for this batch." });
+
+                if (guideRfids.Count > remainingGuideSlots)
                     return Json(new
                     {
                         success = false,
-                        message = $"Cannot assign more than {recommendedGuides} guide(s) for {guestCount} guest(s)."
+                        message = $"Cannot assign more than {remainingGuideSlots} guide(s). Limit already reached by current active assignments."
                     });
 
                 int guidesCount = guideRfids.Count;
@@ -1687,11 +1817,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 for (int i = 0; i < guidesCount; i++)
                 {
-                    var guideRfid = guideRfids[i];
+                    var guideRfid = guideRfids[i].Trim();
                     var guide = await _context.Guides.FirstOrDefaultAsync(g => g.Rfid == guideRfid);
-                    if (guide == null) continue;
+                    if (guide == null)
+                        continue;
 
-                    long rfidLong = long.TryParse(guide.Rfid, out long parsed) ? parsed : guide.GuideId;
+                    long rfidLong = long.TryParse(guide.Rfid, out var parsed) ? parsed : guide.GuideId;
                     int assignedPassengers = basePassengers + (i == 0 ? remainder : 0);
 
                     _context.TourGuideAttendances.Add(new TourGuideAttendance
@@ -1717,16 +1848,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         DriverId = null
                     });
 
-                    // ✅ Update TPosition so guide moves to the bottom of the FIFO queue
                     guide.TPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
                     assignedNames.Add($"{guide.FName} {guide.LName}");
                 }
 
                 await _context.SaveChangesAsync();
 
-                var names = string.Join(", ", assignedNames);
-                return Json(new { success = true, message = $"{guidesCount} guide(s) assigned: {names}" });
+                return Json(new
+                {
+                    success = true,
+                    message = $"{guidesCount} guide(s) assigned: {string.Join(", ", assignedNames)}"
+                });
             }
             catch (Exception ex)
             {
@@ -1942,7 +2074,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (string.IsNullOrEmpty(batch))
                     return BadRequest("Batch is required.");
 
-                // ── 1. Batch meta ─────────────────────────────────────────
                 var batchMeta = await _context.Guests
                     .Where(g => g.Batch == batch)
                     .GroupBy(g => new { g.Batch, g.OperatorId })
@@ -1950,9 +2081,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     .FirstOrDefaultAsync();
 
                 int guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
-                int recommendedGuides = GetRequiredStaffCount(guestCount);
+                int totalRequiredGuides = GetRequiredStaffCount(guestCount);
+                var activeCounts = await GetActiveAssignedStaffCount(batch);
+                int recommendedGuides = Math.Max(0, totalRequiredGuides - activeCounts.ActiveGuides);
 
-                // ── 2. Operator ───────────────────────────────────────────
                 Operator? op = batchMeta?.OperatorId != null
                     ? await _context.Operators.FindAsync(batchMeta.OperatorId)
                     : null;
@@ -1960,17 +2092,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 string operatorName = op?.Name ?? string.Empty;
                 string operatorId = op?.Id.ToString() ?? string.Empty;
 
-                // ── 3. Outside guides (with cascading fallback) ───────────
                 List<OutsideGuide> guides = new();
 
                 if (op != null)
                 {
-                    // 3a. Match by OperatorId (exact)
                     guides = await _context.OutsideGuides
                         .Where(g => g.OperatorId == op.Id)
                         .ToListAsync();
 
-                    // 3b. Fallback: match by Operator.Name
                     if (!guides.Any())
                     {
                         guides = await _context.OutsideGuides
@@ -1980,9 +2109,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     }
                 }
 
-                // 3c. Final fallback: load ALL outside guides
-                //     Covers the case where guides exist but are registered
-                //     under a different operator than the batch.
                 if (!guides.Any())
                 {
                     guides = await _context.OutsideGuides
@@ -1990,11 +2116,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         .ToListAsync();
                 }
 
-                // ── 4. Parse RFIDs — skip duplicates & invalids ───────────
                 var rfidMap = guides
                     .Where(g => !string.IsNullOrWhiteSpace(g.Rfid)
-                             && long.TryParse(g.Rfid.Trim(), out long v)
-                             && v > 0 && v <= int.MaxValue)
+                             && long.TryParse(g.Rfid.Trim(), out var v)
+                             && v > 0
+                             && v <= int.MaxValue)
                     .GroupBy(g => (int)long.Parse(g.Rfid.Trim()))
                     .ToDictionary(grp => grp.Key, grp => grp.First());
 
@@ -2009,10 +2135,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     ViewBag.OperatorId = operatorId;
                     ViewBag.AvailableGuides = new List<object>();
                     ViewBag.BusyGuides = new List<object>();
+                    ViewBag.StartDate = startDate ?? "";
+                    ViewBag.EndDate = endDate ?? "";
                     return PartialView("_AssignOutsideGuideModal");
                 }
 
-                // ── 5. Today's priority rows ──────────────────────────────
                 var todayRows = await _context.TourGuidePriorities
                     .Where(p => rfidInts.Contains(p.GuideIdPrior)
                              && string.Compare(p.Date, UnixTodayStart()) >= 0
@@ -2028,20 +2155,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         Passengers = g.Sum(x => x.NoOfGuest)
                     });
 
-                // ── 6. FIFO last-assigned date ────────────────────────────
                 var lastDateMap = await _context.TourGuidePriorities
                     .Where(p => rfidInts.Contains(p.GuideIdPrior))
                     .GroupBy(p => p.GuideIdPrior)
                     .Select(g => new { GuideId = g.Key, LastDate = g.Max(x => x.Date) })
                     .ToDictionaryAsync(x => x.GuideId, x => x.LastDate);
 
-                // ── 7. Sort FIFO ──────────────────────────────────────────
                 var sorted = rfidMap
                     .OrderBy(kv => lastDateMap.TryGetValue(kv.Key, out var d) ? d : "0")
                     .Select(kv => kv.Value)
                     .ToList();
 
-                // ── 8. Queue positions ────────────────────────────────────
                 var queuePosMap = sorted
                     .Select((g, i) => new
                     {
@@ -2050,7 +2174,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     })
                     .ToDictionary(x => x.Rfid, x => x.Pos);
 
-                // ── 9. Available guides ───────────────────────────────────
                 var availableGuides = sorted.Select(g =>
                 {
                     int rfid = (int)long.Parse(g.Rfid.Trim());
@@ -2060,7 +2183,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     return (object)new
                     {
                         Rfid = g.Rfid.Trim(),
-                        fullName = fullName,
+                        fullName,
                         Image = g.Image ?? string.Empty,
                         queuePosition = queuePosMap[rfid],
                         hasTrip = state?.HasTrip ?? false,
@@ -2069,7 +2192,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     };
                 }).ToList();
 
-                // ── 10. Busy guides ───────────────────────────────────────
                 var busyGuides = sorted
                     .Where(g => todayState.ContainsKey((int)long.Parse(g.Rfid.Trim())))
                     .Select(g =>
@@ -2081,15 +2203,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         return (object)new
                         {
                             Rfid = g.Rfid.Trim(),
-                            fullName = fullName,
+                            fullName,
                             Image = g.Image ?? string.Empty,
                             queuePos = queuePosMap[rfid],
                             isAbsent = state.IsAbsent,
                             passengers = state.Passengers
                         };
-                    }).ToList();
+                    })
+                    .ToList();
 
-                // ── 11. ViewBag ───────────────────────────────────────────
                 ViewBag.Batch = batch;
                 ViewBag.GuestCount = guestCount;
                 ViewBag.RecommendedGuides = recommendedGuides;
@@ -2097,18 +2219,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ViewBag.OperatorId = operatorId;
                 ViewBag.AvailableGuides = availableGuides;
                 ViewBag.BusyGuides = busyGuides;
-                ViewBag.StartDate = startDate ?? "";   
-                ViewBag.EndDate = endDate ?? ""; 
-
+                ViewBag.StartDate = startDate ?? "";
+                ViewBag.EndDate = endDate ?? "";
 
                 return PartialView("_AssignOutsideGuideModal");
             }
             catch (Exception ex)
             {
                 var msg = ex.InnerException?.Message ?? ex.Message;
-                return Content($"<div class='p-3'><div class='alert alert-danger'>"
-                             + $"<strong>Error loading modal:</strong><br/>{msg}</div></div>",
-                               "text/html");
+                return Content($"<div class='p-3'><div class='alert alert-danger'><strong>Error loading modal:</strong><br/>{msg}</div></div>", "text/html");
             }
         }
 
@@ -2136,15 +2255,19 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (string.IsNullOrEmpty(batch) || guideRfids == null || !guideRfids.Any())
                     return Json(new { success = false, message = "Batch and at least one guide are required." });
 
-                // ✅ Use filtered count to match what the table shows
                 int guestCount = await GetFilteredGuestCount(batch, startDate, endDate);
-                int recommendedGuides = GetRequiredStaffCount(guestCount);
+                int totalRequiredGuides = GetRequiredStaffCount(guestCount);
+                var activeCounts = await GetActiveAssignedStaffCount(batch);
+                int remainingGuideSlots = Math.Max(0, totalRequiredGuides - activeCounts.ActiveGuides);
 
-                if (guideRfids.Count > recommendedGuides)
+                if (remainingGuideSlots <= 0)
+                    return Json(new { success = false, message = "Guide limit already reached for this batch." });
+
+                if (guideRfids.Count > remainingGuideSlots)
                     return Json(new
                     {
                         success = false,
-                        message = $"Cannot assign more than {recommendedGuides} guide(s) for {guestCount} guest(s)."
+                        message = $"Cannot assign more than {remainingGuideSlots} guide(s). Limit already reached by current active assignments."
                     });
 
                 var operatorId = await _context.Guests
@@ -2156,7 +2279,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 int baseGuests = guidesCount > 0 ? guestCount / guidesCount : 0;
                 int remainder = guidesCount > 0 ? guestCount % guidesCount : 0;
 
-                // ── Fetch outside guide records by RFID ───────────
                 var trimmedRfids = guideRfids.Select(r => r.Trim()).ToList();
 
                 var guideMap = await _context.OutsideGuides
@@ -2169,7 +2291,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 {
                     var rfidStr = guideRfids[i].Trim();
 
-                    if (!long.TryParse(rfidStr, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
+                    if (!long.TryParse(rfidStr, out var rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
                         continue;
 
                     int rfidInt = (int)rfidLong;
@@ -2182,7 +2304,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         NoOfGuest = assignedGuests
                     });
 
-                    // ── Also save to BatchAssignment so BookedGuest can display it ──
                     var outsideGuide = guideMap.TryGetValue(rfidStr, out var og) ? og : null;
 
                     _context.BatchAssignments.Add(new BatchAssignment
