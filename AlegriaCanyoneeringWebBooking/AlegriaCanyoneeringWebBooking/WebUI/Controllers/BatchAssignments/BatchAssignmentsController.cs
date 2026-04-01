@@ -161,6 +161,7 @@ public class BatchAssignmentsController : Controller
             var searchValue = Request.Form["search[value]"].FirstOrDefault();
 
             var query = _context.BatchAssignments
+                .AsNoTracking()
                 .Include(b => b.Operator)
                 .Include(b => b.Guide)
                 .Include(b => b.OutsideGuide)
@@ -170,11 +171,18 @@ public class BatchAssignmentsController : Controller
             if (!string.IsNullOrWhiteSpace(searchValue))
             {
                 query = query.Where(b =>
-                    b.BatchCode.Contains(searchValue) ||
-                    (b.Guide != null && (b.Guide.FName + " " + b.Guide.LName).Contains(searchValue)) ||
-                    (b.OutsideGuide != null && b.OutsideGuide.DisplayName.Contains(searchValue)) ||
-                    // TODO: adjust Operator name property to match your model
-                    (b.Operator != null && b.Operator.Name.Contains(searchValue)));
+                    (b.BatchCode ?? "").Contains(searchValue) ||
+                    (b.Operator != null && (b.Operator.Name ?? "").Contains(searchValue)) ||
+                    (b.Guide != null &&
+                        (((b.Guide.FName ?? "") + " " + (b.Guide.LName ?? "")).Contains(searchValue))) ||
+                    (b.OutsideGuide != null &&
+                        (
+                            (((b.OutsideGuide.FName ?? "") + " " + (b.OutsideGuide.LName ?? "")).Contains(searchValue)) ||
+                            ((b.OutsideGuide.Nickname ?? "").Contains(searchValue))
+                        )) ||
+                    (b.Driver != null &&
+                        (((b.Driver.FName ?? "") + " " + (b.Driver.LName ?? "")).Contains(searchValue)))
+                );
             }
 
             var total = await query.CountAsync();
@@ -187,30 +195,58 @@ public class BatchAssignmentsController : Controller
                 {
                     b.Id,
                     b.BatchCode,
-                    // TODO: adjust Operator.Name to your actual property
-                    operatorName = b.Operator != null ? b.Operator.Name : null,
-                    guideName = b.Guide != null ? b.Guide.FName + " " + b.Guide.LName : null,
-                    outsideName = b.OutsideGuide != null ? b.OutsideGuide.DisplayName : null,
-                    // TODO: adjust Driver name fields to match your Driver model
-                    driverName = b.Driver != null ? b.Driver.FName + " " + b.Driver.LName : null,
-                    hasGuide = b.GuideId != null,
-                    hasOutside = b.OutsideGuideId != null
+                    OperatorName = b.Operator != null ? b.Operator.Name : null,
+
+                    GuideName = b.Guide != null
+                        ? (((b.Guide.FName ?? "") + " " + (b.Guide.LName ?? "")).Trim())
+                        : null,
+
+                    OutsideFName = b.OutsideGuide != null ? b.OutsideGuide.FName : null,
+                    OutsideMName = b.OutsideGuide != null ? b.OutsideGuide.MName : null,
+                    OutsideLName = b.OutsideGuide != null ? b.OutsideGuide.LName : null,
+                    OutsideNickname = b.OutsideGuide != null ? b.OutsideGuide.Nickname : null,
+
+                    DriverName = b.Driver != null
+                        ? (((b.Driver.FName ?? "") + " " + (b.Driver.LName ?? "")).Trim())
+                        : null,
+
+                    HasGuide = b.GuideId != null,
+                    HasOutside = b.OutsideGuideId != null
                 })
                 .ToListAsync();
 
-            var data = raw.Select(b => new
+            var data = raw.Select(b =>
             {
-                id = b.Id,
-                batchCode = b.BatchCode,
-                operatorName = b.operatorName ?? "—",
-                assignedGuide = b.hasOutside ? b.outsideName ?? "—"
-                               : b.hasGuide ? b.guideName ?? "—"
-                               : "No Guide Assigned",
-                guideType = b.hasOutside ? "Outside" : b.hasGuide ? "Internal" : "—",
-                driverName = b.driverName ?? "—"
+                var outsideFullName = string.IsNullOrWhiteSpace(b.OutsideMName)
+                    ? $"{b.OutsideFName} {b.OutsideLName}".Trim()
+                    : $"{b.OutsideFName} {b.OutsideMName} {b.OutsideLName}".Trim();
+
+                var outsideDisplayName = !string.IsNullOrWhiteSpace(b.OutsideNickname)
+                    ? $"{outsideFullName} ({b.OutsideNickname})"
+                    : outsideFullName;
+
+                return new
+                {
+                    id = b.Id,
+                    batchCode = b.BatchCode,
+                    operatorName = b.OperatorName ?? "—",
+                    assignedGuide = b.HasOutside
+                        ? (string.IsNullOrWhiteSpace(outsideDisplayName) ? "—" : outsideDisplayName)
+                        : b.HasGuide
+                            ? (b.GuideName ?? "—")
+                            : "No Guide Assigned",
+                    guideType = b.HasOutside ? "Outside" : b.HasGuide ? "Internal" : "—",
+                    driverName = b.DriverName ?? "—"
+                };
             }).ToList();
 
-            return Json(new { draw, recordsFiltered = total, recordsTotal = total, data });
+            return Json(new
+            {
+                draw,
+                recordsFiltered = total,
+                recordsTotal = total,
+                data
+            });
         }
         catch (Exception ex)
         {
@@ -220,7 +256,7 @@ public class BatchAssignmentsController : Controller
                 recordsFiltered = 0,
                 recordsTotal = 0,
                 data = new List<object>(),
-                error = ex.Message
+                error = ex.InnerException?.Message ?? ex.Message
             });
         }
     }

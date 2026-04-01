@@ -1621,10 +1621,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(driverRefId))
+                if (string.IsNullOrWhiteSpace(driverRefId))
                     return Json(new { success = false, message = "Driver Ref ID is required." });
 
-                // Remove DriverAttendance
+                var driver = await _context.Drivers
+                    .FirstOrDefaultAsync(d => d.RefId == driverRefId);
+
+                // Remove DriverAttendance for today
                 var attendances = await _context.DriverAttendances
                     .Where(a => a.DriverId == driverRefId
                              && string.Compare(a.Date, UnixTodayStart()) >= 0
@@ -1634,7 +1637,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (attendances.Any())
                     _context.DriverAttendances.RemoveRange(attendances);
 
-                // Remove DriverDtr
+                // Remove DriverDtr for today
                 if (int.TryParse(driverRefId, out int rfidInt))
                 {
                     var dtrs = await _context.DriverDtrs
@@ -1648,8 +1651,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         _context.DriverDtrs.RemoveRange(dtrs);
                 }
 
-                // Remove BatchAssignment
-                var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.RefId == driverRefId);
+                // Remove BatchAssignment for this driver
                 if (driver != null)
                 {
                     var batchRecords = await _context.BatchAssignments
@@ -1661,13 +1663,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Driver assignment has been removed." });
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Driver assignment and batch assignment have been removed."
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = ex.InnerException?.Message ?? ex.Message
+                });
             }
         }
+
 
 
         // =========================================================
@@ -2021,12 +2033,15 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(guideRfid))
+                if (string.IsNullOrWhiteSpace(guideRfid))
                     return Json(new { success = false, message = "Guide RFID is required." });
 
                 long todayLong = long.Parse(DateTime.Now.ToString("yyyyMMdd"));
 
-                // Remove TourGuideAttendance
+                var guide = await _context.Guides
+                    .FirstOrDefaultAsync(g => g.Rfid == guideRfid);
+
+                // Remove TourGuideAttendance for today
                 var attendances = await _context.TourGuideAttendances
                     .Where(a => a.TGId == guideRfid
                              && string.Compare(a.Date, UnixTodayStart()) >= 0
@@ -2036,7 +2051,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (attendances.Any())
                     _context.TourGuideAttendances.RemoveRange(attendances);
 
-                // Remove TourGuideDtr
+                // Remove TourGuideDtr for today
                 if (long.TryParse(guideRfid, out long rfidLong))
                 {
                     var dtrs = await _context.TourGuideDtrs
@@ -2047,8 +2062,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         _context.TourGuideDtrs.RemoveRange(dtrs);
                 }
 
-                // Remove BatchAssignment
-                var guide = await _context.Guides.FirstOrDefaultAsync(g => g.Rfid == guideRfid);
+                // Remove BatchAssignment for this guide
                 if (guide != null)
                 {
                     var batchRecords = await _context.BatchAssignments
@@ -2060,13 +2074,23 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Guide assignment has been removed." });
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Guide assignment and batch assignment have been removed."
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = ex.InnerException?.Message ?? ex.Message
+                });
             }
         }
+
 
 
         // =========================================================
@@ -2475,8 +2499,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // =========================================================
         // REMOVE OUTSIDE GUIDE ASSIGNMENT
-        // ✅ Deletes all tourguide_priority records for this guide today
-        // ✅ Guide returns to FIFO queue as if never assigned today
+        // ✅ Deletes today's tourguide_priority records
+        // ✅ Deletes BatchAssignment rows for this outside guide
         // =========================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -2484,7 +2508,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(guideRfid))
+                if (string.IsNullOrWhiteSpace(guideRfid))
                     return Json(new { success = false, message = "Guide RFID is required." });
 
                 if (!long.TryParse(guideRfid, out long rfidLong) || rfidLong <= 0 || rfidLong > int.MaxValue)
@@ -2492,6 +2516,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                 int rfidInt = (int)rfidLong;
 
+                var outsideGuide = await _context.OutsideGuides
+                    .FirstOrDefaultAsync(g => g.Rfid == guideRfid);
+
+                // Remove today's priority records
                 var records = await _context.TourGuidePriorities
                     .Where(p => p.GuideIdPrior == rfidInt
                              && string.Compare(p.Date, UnixTodayStart()) >= 0
@@ -2501,23 +2529,42 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (records.Any())
                     _context.TourGuidePriorities.RemoveRange(records);
 
+                // Remove BatchAssignment for this outside guide
+                if (outsideGuide != null)
+                {
+                    var batchRecords = await _context.BatchAssignments
+                        .Where(b => b.OutsideGuideId == outsideGuide.OutsideGuideId)
+                        .ToListAsync();
+
+                    if (batchRecords.Any())
+                        _context.BatchAssignments.RemoveRange(batchRecords);
+                }
+
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Guide assignment has been removed." });
+                return Json(new
+                {
+                    success = true,
+                    message = "Outside guide assignment and batch assignment have been removed."
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = ex.InnerException?.Message ?? ex.Message
+                });
             }
         }
 
-        // =========================================================
-        // MARK OUTSIDE GUIDE ABSENT
-        // ✅ Zeros out today's tourguide_priority.NoOfGuest
-        // ✅ Inserts a 0-guest row if no record exists today
-        // ✅ Guide stays in FIFO rotation
-        // =========================================================
-        [HttpPost]
+            // =========================================================
+            // MARK OUTSIDE GUIDE ABSENT
+            // ✅ Zeros out today's tourguide_priority.NoOfGuest
+            // ✅ Inserts a 0-guest row if no record exists today
+            // ✅ Guide stays in FIFO rotation
+            // =========================================================
+            [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkOutsideGuideAbsent(string guideRfid)
         {
