@@ -185,6 +185,7 @@
             error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error' },
             warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill', title: 'Warning' }
         };
+
         const { bg, icon, title } = map[type] || map.success;
         const id = 'bat-' + Date.now();
         const html = `
@@ -198,6 +199,7 @@
                 </div>
                 <div class="toast-body" style="padding-top:0;">${message}</div>
             </div>`;
+
         const c = document.getElementById('baToastContainer');
         c.insertAdjacentHTML('beforeend', html);
         const el = document.getElementById(id);
@@ -206,117 +208,84 @@
     }
 
     $(function () {
-        var table = $('#batchTable').DataTable({
+        const token = $('#__AjaxAntiForgeryForm input[name="__RequestVerificationToken"]').val();
+
+        if ($.fn.DataTable.isDataTable('#batchTable')) {
+            $('#batchTable').DataTable().clear().destroy();
+        }
+
+        $('#batchTable').DataTable({
             processing: true,
             serverSide: true,
+            destroy: true,
+            responsive: true,
+            searching: true,
+            ordering: true,
+            autoWidth: false,
             ajax: {
                 url: '@Url.Action("GetBatchAssignmentsData", "BatchAssignments")',
                 type: 'POST',
-                data: d => {
-                    d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                cache: false,
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                data: function (d) {
+                    d.__RequestVerificationToken = token;
+                },
+                dataSrc: function (json) {
+                    if (json.error) {
+                        showToast(json.error, 'error');
+                    }
+                    return json.data || [];
                 },
                 error: function (xhr) {
                     let msg = 'Error loading batch assignments.';
-                    try { const r = JSON.parse(xhr.responseText); if (r.error) msg = r.error; } catch (e) {}
+                    try {
+                        const r = JSON.parse(xhr.responseText);
+                        if (r.error) msg = r.error;
+                    } catch (e) { }
                     showToast(msg, 'error');
                 }
             },
             columns: [
                 {
                     data: 'batchCode',
-                    render: d => `<span class="badge-code">${d ?? '—'}</span>`
+                    render: function (d) {
+                        return `<span class="badge-code">${d ?? '—'}</span>`;
+                    }
                 },
-                { data: 'operatorName', defaultContent: '—' },
+                {
+                    data: 'operatorName',
+                    defaultContent: '—',
+                    render: function (d) {
+                        return d ?? '—';
+                    }
+                },
                 {
                     data: 'assignedGuide',
-                    render: d => `<span class="fw-semibold">${d ?? '—'}</span>`
+                    render: function (d) {
+                        return `<span class="fw-semibold">${d ?? '—'}</span>`;
+                    }
                 },
                 {
                     data: 'guideType',
-                    render: d => {
+                    render: function (d) {
                         if (d === 'Internal') return `<span class="badge-internal"><i class="bi bi-person-badge me-1"></i>Internal</span>`;
                         if (d === 'Outside') return `<span class="badge-outside"><i class="bi bi-person-lines-fill me-1"></i>Outside</span>`;
                         return `<span class="text-muted">—</span>`;
                     }
                 },
-                { data: 'driverName', defaultContent: '—' }
-            ],
-            responsive: true,
-            language: { emptyTable: 'No batch assignments found.' }
-        });
-
-        function openModal(url, title) {
-            var existing = bootstrap.Modal.getInstance(document.getElementById('batchModal'));
-            if (existing) existing.dispose();
-
-            $('#modalContent').html(`
-                <div class="text-center py-5 text-muted">
-                    <div class="spinner-border text-primary mb-3" role="status"></div>
-                    <div style="font-size:0.875rem;">Loading form...</div>
-                </div>`);
-
-            $('#batchModalLabel').html(`<i class="bi bi-layers me-2"></i>${title}`);
-
-            $.get(url, res => {
-                $('#modalContent').html(res);
-                new bootstrap.Modal(document.getElementById('batchModal')).show();
-            }).fail(xhr => {
-                $('#modalContent').html(`<div class="alert alert-danger m-3"><strong>HTTP ${xhr.status}:</strong> ${xhr.statusText}</div>`);
-                showToast('Error loading form.', 'error');
-            });
-        }
-
-        $('#btnCreate').click(() => openModal('@Url.Action("Create", "BatchAssignments")', 'New Batch Assignment'));
-
-        $('#batchTable').on('click', '.btn-edit', function (e) {
-            e.preventDefault();
-            openModal($(this).attr('href'), 'Edit Batch Assignment');
-        });
-
-        $('#batchModal').on('submit', 'form', function (e) {
-            e.preventDefault();
-            const form = $(this);
-            const formData = new FormData(form[0]);
-            const token = $('input[name="__RequestVerificationToken"]').val();
-            if (token) formData.set('__RequestVerificationToken', token);
-
-            const $btn = form.find('[type="submit"]');
-            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
-
-            $.ajax({
-                url: form.attr('action'),
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (res) {
-                    if (res.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('batchModal'))?.hide();
-                        table.ajax.reload(null, false);
-                        showToast(res.message, 'success');
-                    } else {
-                        form.find('.ba-alert').remove();
-                        if (res.errors?.length) {
-                            const errHtml = `<div class="alert alert-danger ba-alert m-3 mb-0">
-                                <strong>${res.message}</strong>
-                                <ul class="mb-0 mt-1">${res.errors.map(e => `<li>${e}</li>`).join('')}</ul>
-                            </div>`;
-                            form.find('.bf-body').prepend(errHtml);
-                        } else {
-                            showToast(res.message || 'Validation error.', 'error');
-                        }
-                        $btn.prop('disabled', false).html(
-                            form.data('action') === 'Edit'
-                                ? '<i class="bi bi-pencil me-1"></i>Update'
-                                : '<i class="bi bi-save me-1"></i>Save'
-                        );
+                {
+                    data: 'driverName',
+                    defaultContent: '—',
+                    render: function (d) {
+                        return d ?? '—';
                     }
-                },
-                error: function (xhr) {
-                    $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i>Save');
-                    showToast(`Error saving (HTTP ${xhr.status}).`, 'error');
                 }
-            });
+            ],
+            language: {
+                emptyTable: 'No batch assignments found.'
+            }
         });
     });
 </script>
