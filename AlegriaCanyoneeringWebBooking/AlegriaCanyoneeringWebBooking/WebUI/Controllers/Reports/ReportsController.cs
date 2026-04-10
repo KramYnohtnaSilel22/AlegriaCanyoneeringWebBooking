@@ -926,5 +926,230 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(report);
         }
+        
+        
+        // =========================================================
+        // OUTSIDE GUIDE DTR REPORT — uses tourguide_priority
+        // GET /Reports/OutsideGuideDtr?dateFrom=yyyy-MM-dd&dateTo=yyyy-MM-dd&area=
+        // ✅ TourGuidePriority.GuideIdPrior (int) = RFID → OutsideGuide.Rfid (string)
+        // ✅ TourGuidePriority.Date = Unix timestamp (long stored as string)
+        // ✅ TourGuidePriority.NoOfGuest (int)
+        // ✅ Area from Guest.Area via Guest.Batch → BatchAssignments
+        // =========================================================
+
+        private static readonly List<string> OutsideGuideAreas = new()
+        {
+            "Wonder Falls",
+            "Kanlaob",
+            "Kawasan Exit"
+        };
+
+        private static int GetOutsideGuideRate(string area) => area switch
+        {
+            "Wonder Falls" => 500,
+            "Kawasan Exit" => 600,
+            "Kanlaob" => 500,
+            _ => 0
+        };
+
+        // Unix timestamp helpers
+        private static long ToUnixDay(DateTime dt) =>
+            new DateTimeOffset(dt.Date, TimeSpan.Zero).ToUnixTimeSeconds();
+
+        private static long ToUnixDayEnd(DateTime dt) =>
+            new DateTimeOffset(dt.Date.AddDays(1).AddSeconds(-1), TimeSpan.Zero).ToUnixTimeSeconds();
+
+        [HttpGet]
+        public async Task<IActionResult> OutsideGuideDtr(
+         string? dateFrom, string? dateTo, string? area)
+        {
+            dateFrom ??= DateTime.Today.ToString("yyyy-MM-dd");
+            dateTo ??= DateTime.Today.ToString("yyyy-MM-dd");
+            area ??= "";
+
+            DateTime.TryParse(dateFrom, out var fromDt);
+            DateTime.TryParse(dateTo, out var toDt);
+
+            long unixFrom = ToUnixDay(fromDt);
+            long unixTo = ToUnixDayEnd(toDt);
+
+            System.Diagnostics.Debug.WriteLine("============================================");
+            System.Diagnostics.Debug.WriteLine($"[OutsideGuideDtr] Date Range : {dateFrom} → {dateTo}");
+            System.Diagnostics.Debug.WriteLine($"[OutsideGuideDtr] Unix Range : {unixFrom} → {unixTo}");
+            System.Diagnostics.Debug.WriteLine("============================================");
+
+            // ── 1. Load & filter TourGuidePriorities ──────────────────────────
+            var allPriorities = await _context.TourGuidePriorities.ToListAsync();
+            System.Diagnostics.Debug.WriteLine($"[1] Total TourGuidePriorities in DB: {allPriorities.Count}");
+
+            var priorities = allPriorities
+                .Where(p => p.Date != null
+                         && long.TryParse(p.Date, out long ts)
+                         && ts >= unixFrom
+                         && ts <= unixTo)
+                .ToList();
+
+            System.Diagnostics.Debug.WriteLine($"[1] Priorities in date range: {priorities.Count}");
+            foreach (var p in priorities.Take(5))
+                System.Diagnostics.Debug.WriteLine($"      GuideIdPrior={p.GuideIdPrior}, Date={p.Date}, Guests={p.NoOfGuest}");
+
+            // ── 2. Load outside guides keyed by RFID (int) ────────────────────
+            var outsideGuides = await _context.OutsideGuides
+                .Select(g => new
+                {
+                    g.OutsideGuideId,
+                    g.Rfid,
+                    g.Nickname,
+                    g.Address,
+                    FullName = ((g.LName ?? "").ToUpper() + ", "
+                               + (g.FName ?? "").ToUpper()
+                               + (!string.IsNullOrWhiteSpace(g.MName)
+                                   ? " " + g.MName!.ToUpper() : "")).Trim()
+                })
+                .ToListAsync();
+
+            var rfidGuideMap = outsideGuides
+                .Where(g => int.TryParse(g.Rfid, out _))
+                .ToDictionary(g => int.Parse(g.Rfid), g => g);
+
+            System.Diagnostics.Debug.WriteLine($"[2] OutsideGuides with numeric RFID: {rfidGuideMap.Count}");
+            foreach (var kv in rfidGuideMap.Take(5))
+                System.Diagnostics.Debug.WriteLine($"      RFID={kv.Key} → {kv.Value.FullName}");
+
+            // ── 3. Build day-bucket → Area map from Guest.ArrivalDate ─────────
+            //
+            //  ROOT CAUSE OF MISSING AREA:
+            //  The old code used BatchAssignments.GuideId which stores LOCAL guide IDs,
+            //  NOT OutsideGuideId — so TryGetValue always failed and Area stayed "".
+            //
+            //  FIX: TourGuidePriority.Date and Guest.ArrivalDate are both unix
+            //  timestamps. We normalise both to the same UTC start-of-day bucket
+            //  (floor to 86400 seconds) then join to get Guest.Area for that day.
+
+            var guests = await _context.Guests
+                .Where(g => g.ArrivalDate != null && g.Area != null && g.Area != "")
+                .Select(g => new { g.ArrivalDate, g.Area })
+                .ToListAsync();
+
+            System.Diagnostics.Debug.WriteLine($"[3] Guests with ArrivalDate+Area: {guests.Count}");
+
+            // Helper: floor unix timestamp string to UTC start-of-day
+            static long DayBucket(string? unixStr) =>
+                long.TryParse(unixStr, out long ts) ? (ts / 86400L) * 86400L : -1L;
+
+            // day-bucket → most common area on that day
+            var areaByDayBucket = guests
+                .GroupBy(g => DayBucket(g.ArrivalDate))
+                .Where(grp => grp.Key >= 0)
+                .ToDictionary(
+                    grp => grp.Key,
+                    grp => grp
+                        .GroupBy(x => x.Area!)
+                        .OrderByDescending(x => x.Count())
+                        .First().Key
+                );
+
+            System.Diagnostics.Debug.WriteLine($"[3] Day buckets with area: {areaByDayBucket.Count}");
+            foreach (var kv in areaByDayBucket.Take(5))
+                System.Diagnostics.Debug.WriteLine(
+                    $"      Bucket={kv.Key} ({DateTimeOffset.FromUnixTimeSeconds(kv.Key):yyyy-MM-dd}) → Area={kv.Value}");
+
+            // Diagnostics: show what bucket each priority row resolves to
+            System.Diagnostics.Debug.WriteLine("[3] Priority → bucket → area:");
+            foreach (var p in priorities.Take(5))
+            {
+                var bucket = DayBucket(p.Date);
+                var found = areaByDayBucket.TryGetValue(bucket, out var a);
+                System.Diagnostics.Debug.WriteLine(
+                    $"      PriorityDate={p.Date} bucket={bucket} → {(found ? a : "NOT FOUND — no Guest on this day with Area set")}");
+            }
+
+            // ── 4. Build report grouped by RFID ───────────────────────────────
+            var validRfids = new HashSet<int>(rfidGuideMap.Keys);
+
+            var report = priorities
+                .Where(p => validRfids.Contains(p.GuideIdPrior))
+                .GroupBy(p => p.GuideIdPrior)
+                .Select(g =>
+                {
+                    var info = rfidGuideMap.TryGetValue(g.Key, out var gi) ? gi : null;
+
+                    // Resolve area per row, pick most frequent across date range
+                    var resolvedAreas = g
+                        .Select(p =>
+                        {
+                            var bucket = DayBucket(p.Date);
+                            return areaByDayBucket.TryGetValue(bucket, out var a) ? a : "";
+                        })
+                        .Where(a => !string.IsNullOrEmpty(a))
+                        .ToList();
+
+                    string guideArea = resolvedAreas
+                        .GroupBy(a => a)
+                        .OrderByDescending(x => x.Count())
+                        .Select(x => x.Key)
+                        .FirstOrDefault() ?? "";
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[4] RFID={g.Key} Name={info?.FullName} → Area='{guideArea}' (resolved {resolvedAreas.Count}/{g.Count()} rows)");
+
+                    int rate = GetOutsideGuideRate(guideArea);
+                    int totalPax = g.Sum(p => p.NoOfGuest);
+                    decimal gross = totalPax * rate;
+
+                    return new OutsideGuideDtrReportViewModel
+                    {
+                        Rfid = g.Key.ToString(),
+                        GuideName = info?.FullName ?? $"RFID: {g.Key}",
+                        Nickname = info?.Nickname,
+                        Address = info?.Address ?? "Alegria, Cebu",
+                        Designation = "Outside Guide",
+                        TripCount = totalPax,
+                        TotalGuests = totalPax,
+                        RatePerJump = rate,
+                        GrossSalary = gross,
+                        NetPay = gross,
+                        Area = guideArea,
+                        PlaceOfIssue = "Alegria, Cebu"
+                    };
+                })
+                .ToList();
+
+            System.Diagnostics.Debug.WriteLine($"[4] Final report rows (before area filter): {report.Count}");
+            foreach (var r in report)
+                System.Diagnostics.Debug.WriteLine(
+                    $"      {r.GuideName} | Area={r.Area} | Rate={r.RatePerJump} | Gross={r.GrossSalary} | Net={r.NetPay}");
+
+            // ── 5. Optional area filter ────────────────────────────────────────
+            if (!string.IsNullOrEmpty(area))
+                report = report
+                    .Where(r => r.Area.Equals(area, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+            report = report.OrderBy(r => r.GuideName).ToList();
+
+            // ── 6. Period label + ViewBag ──────────────────────────────────────
+            string period = fromDt.Month == toDt.Month && fromDt.Year == toDt.Year
+                ? fromDt.ToString("MMMM dd").ToUpper() + " - " + toDt.ToString("dd, yyyy").ToUpper()
+                : fromDt.ToString("MMMM dd").ToUpper() + " - " + toDt.ToString("MMMM dd, yyyy").ToUpper();
+
+            string rateLabel = string.IsNullOrEmpty(area)
+                ? "Varies by Area"
+                : $"₱{GetOutsideGuideRate(area):N0} / Jump";
+
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
+            ViewBag.Period = period;
+            ViewBag.SelectedArea = area;
+            ViewBag.Areas = OutsideGuideAreas;
+            ViewBag.RateLabel = rateLabel;
+            ViewBag.TotalGuides = report.Count;
+            ViewBag.TotalTrips = report.Sum(r => r.TripCount);
+            ViewBag.TotalGuests = report.Sum(r => r.TotalGuests);
+            ViewBag.TotalGross = report.Sum(r => r.GrossSalary);
+            ViewBag.TotalNetPay = report.Sum(r => r.NetPay);
+
+            return View(report);
+        }
     }
 }
