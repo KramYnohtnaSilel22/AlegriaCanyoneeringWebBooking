@@ -520,11 +520,11 @@
 
         // ── Welcome toast (once per session) ─────────────────────
         $(document).ready(function () {
-            const name = '@User.Identity?.Name';
-            if (name && !sessionStorage.getItem('welcomeToastShown')) {
-                showToast(`Welcome back, ${name}! 👋`, 'success');
-                sessionStorage.setItem('welcomeToastShown', 'true');
-            }
-        });
+        const name = '@(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ?? "User")';
+        if (name && !sessionStorage.getItem('welcomeToastShown')) {
+        showToast(`Welcome back, ${name}! 👋`, 'success');
+        sessionStorage.setItem('welcomeToastShown', 'true');
+        }
+       });
     </script>
 }
