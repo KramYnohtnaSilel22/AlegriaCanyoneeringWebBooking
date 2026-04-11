@@ -39,7 +39,9 @@
                     title="Account options">
                 <i class="bi bi-person-circle header-avatar-icon"></i>
                 <div class="lh-sm text-start d-none d-sm-block">
-                    <div class="fw-semibold text-dark" style="font-size:0.875rem;">@User.Identity?.Name</div>
+                    <div class="fw-semibold text-dark" style="font-size:0.875rem;">
+                        @(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ?? "User")
+                    </div>
                 </div>
                 <i class="bi bi-chevron-down text-muted" style="font-size:0.65rem;"></i>
             </button>
@@ -48,12 +50,14 @@
                 <!-- User info header -->
                 <li class="px-3 py-2 border-bottom">
                     <div class="text-muted" style="font-size:0.7rem;">Signed in as</div>
-                    <div class="fw-semibold text-dark" style="font-size:0.875rem;">@User.Identity?.Name</div>
+                    <div class="fw-semibold text-dark" style="font-size:0.875rem;">
+                        @(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ?? "User")
+                    </div>
                 </li>
                 <!-- Update Info -->
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 py-2"
-                       asp-controller="Authentication" asp-action="Update">
+                           asp-controller="Authentication" asp-action="Update">
                         <i class="bi bi-pencil-square text-primary"></i>
                         <span>Update Info</span>
                     </a>
@@ -61,14 +65,14 @@
                 <!-- Change Password -->
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 py-2"
-                       asp-controller="Authentication" asp-action="ChangePassword">
+                           asp-controller="Authentication" asp-action="ChangePassword">
                         <i class="bi bi-shield-lock-fill text-warning"></i>
                         <span>Change Password</span>
                     </a>
                 </li>
                 <!-- Divider -->
                 <li><hr class="dropdown-divider my-1"></li>
-                <!-- Logout — triggers modal instead of direct navigate -->
+                <!-- Logout -->
                 <li>
                     <button type="button"
                             class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger"

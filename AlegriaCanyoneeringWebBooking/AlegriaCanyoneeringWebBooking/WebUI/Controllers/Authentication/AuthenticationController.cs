@@ -84,16 +84,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // ── Build claims ───────────────────────────────────────
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name,           user.Username),
-                new Claim(ClaimTypes.Email,          user.EmailAddress ?? ""),
-                new Claim(ClaimTypes.Role,           user.Roles.Name),
-                new Claim("UserId",       user.Id.ToString()),
-                new Claim("Role",         user.Roles.Name),
-                new Claim("RoleName",     user.Roles.Name),
-                new Claim("BusinessName", user.BusinessName ?? "")
-            };
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Name,           user.Username),
+        new Claim(ClaimTypes.Email,          user.EmailAddress ?? ""),
+        new Claim(ClaimTypes.Role,           user.Roles.Name),
+        new Claim("UserId",       user.Id.ToString()),
+        new Claim("Role",         user.Roles.Name),
+        new Claim("RoleName",     user.Roles.Name),
+        new Claim("FullName",     user.Name ?? ""),           // ✅ ADD THIS — Full name claim
+        new Claim("BusinessName", user.BusinessName ?? "")
+    };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
