@@ -9,6 +9,7 @@ using System.Linq;
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
+    [Route("Dashboard")]
     [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
     public class DashboardController : Controller
     {
@@ -25,6 +26,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             _context = context;
         }
 
+        [HttpGet]
+        [Route("")]
         public async Task<IActionResult> Index()
         {
             try
@@ -116,6 +119,87 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 ViewBag.YearlyGuestCounts = new List<int>();
                 ViewBag.GuestDates = new List<string>();
                 return View();
+            }
+        }
+
+        // ── Add this new action to return JSON data ────────────────────────────────
+        [HttpGet]
+        [Route("GetDashboardData")]
+        [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
+        public async Task<IActionResult> GetDashboardData()
+        {
+            try
+            {
+                var rawGuests = await _context.Guests
+                    .Select(g => new
+                    {
+                        g.ArrivalDate,
+                        g.DateShort,
+                        g.Date
+                    })
+                    .ToListAsync();
+
+                var guestDates = rawGuests
+                    .Select(g => ResolveArrivalDate(g.ArrivalDate, g.DateShort, g.Date))
+                    .Where(d => d.HasValue)
+                    .Select(d => d!.Value)
+                    .ToList();
+
+                var nowPh = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, PhilippineTime);
+                var todayPh = DateOnly.FromDateTime(nowPh);
+                var thisYearPh = todayPh.Year;
+                var thisMonthPh = todayPh.Month;
+                var prevMonthPh = todayPh.AddMonths(-1);
+
+                var guestsToday = guestDates.Count(d => d == todayPh);
+                var guestsThisMonth = guestDates.Count(d => d.Year == thisYearPh && d.Month == thisMonthPh);
+                var guestsPrevMonth = guestDates.Count(d => d.Year == prevMonthPh.Year && d.Month == prevMonthPh.Month);
+
+                var monthLabels = new List<string>();
+                var monthlyGuestCounts = new List<int>();
+                for (int m = 1; m <= 12; m++)
+                {
+                    monthLabels.Add(DateTimeFormatInfo.CurrentInfo.GetAbbreviatedMonthName(m));
+                    monthlyGuestCounts.Add(guestDates.Count(d => d.Year == thisYearPh && d.Month == m));
+                }
+
+                var oldYearLabels = new List<string> { "2018", "2019", "2020" };
+                var oldYearlyGuestCounts = oldYearLabels
+                    .Select(y => guestDates.Count(d => d.Year == int.Parse(y)))
+                    .ToList();
+
+                var yearLabels = new List<string>();
+                var yearlyGuestCounts = new List<int>();
+                for (int i = 0; i < 5; i++)
+                {
+                    int yr = thisYearPh - i;
+                    yearLabels.Add(yr.ToString());
+                    yearlyGuestCounts.Add(guestDates.Count(d => d.Year == yr));
+                }
+
+                yearLabels.Reverse();
+                yearlyGuestCounts.Reverse();
+
+                var combinedYearLabels = new List<string>(oldYearLabels);
+                combinedYearLabels.AddRange(yearLabels);
+
+                var combinedYearlyGuestCounts = new List<int>(oldYearlyGuestCounts);
+                combinedYearlyGuestCounts.AddRange(yearlyGuestCounts);
+
+                return Json(new
+                {
+                    guestsToday,
+                    guestsThisMonth,
+                    guestsPrevMonth,
+                    monthLabels,
+                    monthlyGuestCounts,
+                    yearLabels = combinedYearLabels,
+                    yearlyGuestCounts = combinedYearlyGuestCounts
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
             }
         }
 
