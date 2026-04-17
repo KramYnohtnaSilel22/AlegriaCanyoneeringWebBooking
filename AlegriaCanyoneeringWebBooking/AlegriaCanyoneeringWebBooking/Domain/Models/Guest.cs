@@ -73,20 +73,24 @@ namespace AlegriaCanyoneeringWebBooking.Models
 
         public enum BookingStatusEnum
         {
-            anticipated = 3,  // 'anticipated' instead of 'Anticipated'
-            canceled = 1,     // 'canceled' instead of 'Canceled'
-            reserved = 2,     // 'reserved' instead of 'Reserved'
-            confirmed = 0     // 'confirmed' instead of 'Confirmed'
+
+            confirmed = 1,
+            reserved = 2,
+            anticipated = 3,
+            canceled = 4
+
         }
 
         // ← ADD THIS
         public static class Status
         {
-            public const int Confirmed = 0;
-            public const int Canceled = 1;
+            public const int Confirmed = 1;
             public const int Reserved = 2;
             public const int Anticipated = 3;
+            public const int Canceled = 4;
         }
+
+
 
 
         [Column("Area")]
