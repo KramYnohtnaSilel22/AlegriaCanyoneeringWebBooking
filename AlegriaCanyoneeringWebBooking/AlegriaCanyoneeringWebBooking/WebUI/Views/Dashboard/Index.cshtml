@@ -1,22 +1,5 @@
 ﻿@{
     ViewData["Title"] = "Dashboard - Alegria Canyoneering";
-
-    var monthLabels = ViewBag.MonthLabels as List<string>;
-    var monthlyGuestCounts = ViewBag.MonthlyGuestCounts as List<int>;
-    var yearLabels = ViewBag.YearLabels as List<string>;
-    var yearlyGuestCounts = ViewBag.YearlyGuestCounts as List<int>;
-    var guestDates = ViewBag.GuestDates as List<string>;
-    var oldYearLabels = ViewBag.YearLabelsOld as List<string> ?? new List<string>();
-    var oldYearlyGuestCounts = ViewBag.YearlyGuestCountsOld as List<int> ?? new List<int>();
-
-    yearLabels.Reverse();
-    yearlyGuestCounts.Reverse();
-
-    var combinedYearLabels = new List<string>(oldYearLabels);
-    combinedYearLabels.AddRange(yearLabels);
-
-    var combinedYearlyGuestCounts = new List<int>(oldYearlyGuestCounts);
-    combinedYearlyGuestCounts.AddRange(yearlyGuestCounts);
 }
 
 <style>
@@ -281,7 +264,7 @@
                 <div class="stat-card">
                     <div class="stat-text">
                         <h6>Guests Today</h6>
-                        <h2 style="color:#1a6ef5;">@ViewBag.GuestsToday</h2>
+                        <h2 style="color:#1a6ef5;" data-stat="today">0</h2>
                         <div class="stat-sub">as of today</div>
                     </div>
                     <div class="stat-icon" style="background:rgba(26,110,245,0.08);">
@@ -295,7 +278,7 @@
                 <div class="stat-card" style="animation-delay:0.1s;">
                     <div class="stat-text">
                         <h6>Guests This Month</h6>
-                        <h2 style="color:#16a34a;">@ViewBag.GuestsThisMonth</h2>
+                        <h2 style="color:#16a34a;" data-stat="month">0</h2>
                         <div class="stat-sub">current month total</div>
                     </div>
                     <div class="stat-icon" style="background:rgba(22,163,74,0.08);">
@@ -309,7 +292,7 @@
                 <div class="stat-card" style="animation-delay:0.2s;">
                     <div class="stat-text">
                         <h6>Previous Month</h6>
-                        <h2 style="color:#f0a500;">@ViewBag.GuestsPrevMonth</h2>
+                        <h2 style="color:#f0a500;" data-stat="prevMonth">0</h2>
                         <div class="stat-sub">last month total</div>
                     </div>
                     <div class="stat-icon" style="background:rgba(240,165,0,0.08);">
@@ -366,130 +349,174 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // ── Live date badge ──────────────────────────────────────
-        document.getElementById('liveDateBadge').textContent =
-            new Date().toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+        let monthlyChart, yearlyChart;
 
-        // ── Data from server ─────────────────────────────────────
-        const monthLabels              = @Html.Raw(Json.Serialize(monthLabels));
-        const monthlyGuestCounts       = @Html.Raw(Json.Serialize(monthlyGuestCounts));
-        const yearLabelsCombined       = @Html.Raw(Json.Serialize(combinedYearLabels));
-        const yearlyGuestCountsCombined = @Html.Raw(Json.Serialize(combinedYearlyGuestCounts));
-
-        // ── Chart defaults ───────────────────────────────────────
-        Chart.defaults.font.family = "'Outfit', 'Segoe UI', sans-serif";
-        Chart.defaults.font.size   = 12;
-        Chart.defaults.color       = '#94a3b8';
-
-        const gridColor = 'rgba(226,232,240,0.7)';
-
-        const sharedOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 }
-                },
-                tooltip: {
-                    backgroundColor: '#0f3460',
-                    titleColor: '#ffffff',
-                    bodyColor: 'rgba(255,255,255,0.85)',
-                    padding: 12,
-                    cornerRadius: 8,
-                    callbacks: {
-                        label: ctx => ` ${ctx.parsed.y} guests`
-                    }
+        // ── Load dashboard data via AJAX ──────────────────────────────
+        async function loadDashboardData() {
+            try {
+                // Try this URL first
+                let response = await fetch('/Dashboard/GetDashboardData');
+                
+                // If that fails, the controller might be in SuperAdmin folder
+                if (!response.ok) {
+                    console.log('Trying alternate URL...');
+                    response = await fetch('/SuperAdmin/Dashboard/GetDashboardData');
                 }
-            },
-            scales: {
-                x: {
-                    grid: { color: gridColor, drawBorder: false },
-                    ticks: { color: '#94a3b8' }
-                },
-                y: {
-                    grid: { color: gridColor, drawBorder: false },
-                    ticks: {
-                        color: '#94a3b8',
-                        callback: v => Number.isInteger(v) ? v : null
-                    },
-                    beginAtZero: true
-                }
-            }
-        };
-
-        // ── Monthly Chart ────────────────────────────────────────
-        const ctxM = document.getElementById('monthlyGuestTrendChart').getContext('2d');
-        const gradM = ctxM.createLinearGradient(0, 0, 0, 300);
-        gradM.addColorStop(0, 'rgba(26,110,245,0.25)');
-        gradM.addColorStop(1, 'rgba(26,110,245,0.01)');
-
-        new Chart(ctxM, {
-            type: 'line',
-            data: {
-                labels: monthLabels,
-                datasets: [{
-                    label: 'Monthly Guests',
-                    data: monthlyGuestCounts,
-                    borderColor: '#1a6ef5',
-                    backgroundColor: gradM,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#1a6ef5',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    borderWidth: 2.5
-                }]
-            },
-            options: sharedOptions
-        });
-
-        // ── Yearly Chart ─────────────────────────────────────────
-        const ctxY = document.getElementById('yearlyGuestTrendChart').getContext('2d');
-        const gradY = ctxY.createLinearGradient(0, 0, 0, 300);
-        gradY.addColorStop(0, 'rgba(22,163,74,0.25)');
-        gradY.addColorStop(1, 'rgba(22,163,74,0.01)');
-
-        new Chart(ctxY, {
-            type: 'line',
-            data: {
-                labels: yearLabelsCombined,
-                datasets: [{
-                    label: 'Yearly Guests',
-                    data: yearlyGuestCountsCombined,
-                    borderColor: '#16a34a',
-                    backgroundColor: gradY,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#16a34a',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    borderWidth: 2.5
-                }]
-            },
-            options: sharedOptions
-        });
-
-        // ── Show dashboard after skeleton ────────────────────────
-        document.addEventListener("DOMContentLoaded", () => {
-            setTimeout(() => {
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                renderDashboard(data);
+            } catch (error) {
+                console.error('Dashboard error:', error);
+                showToast('Failed to load dashboard data', 'error');
                 document.getElementById('skeletonLoader').style.display = 'none';
-                const dash = document.getElementById('dashboardContent');
-                dash.style.display = 'block';
-                requestAnimationFrame(() => dash.classList.add('visible'));
-            }, 900);
-        });
+            }
+        }
 
-        // ── Toast utility ────────────────────────────────────────
+        // ── Render dashboard with fetched data ─────────────────────────
+        function renderDashboard(data) {
+            try {
+                // ── Update stat cards with null checking ─────────────────
+                const todayEl = document.querySelector('[data-stat="today"]');
+                const monthEl = document.querySelector('[data-stat="month"]');
+                const prevMonthEl = document.querySelector('[data-stat="prevMonth"]');
+                
+                if (!todayEl || !monthEl || !prevMonthEl) {
+                    console.error('Stat elements not found in DOM');
+                    return;
+                }
+                
+                todayEl.textContent = data.guestsToday;
+                monthEl.textContent = data.guestsThisMonth;
+                prevMonthEl.textContent = data.guestsPrevMonth;
+
+                // ── Chart defaults ───────────────────────────────────────
+                Chart.defaults.font.family = "'Outfit', 'Segoe UI', sans-serif";
+                Chart.defaults.font.size = 12;
+                Chart.defaults.color = '#94a3b8';
+
+                const gridColor = 'rgba(226,232,240,0.7)';
+
+                const sharedOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f3460',
+                            titleColor: '#ffffff',
+                            bodyColor: 'rgba(255,255,255,0.85)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: ctx => ` ${ctx.parsed.y} guests`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor, drawBorder: false },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { color: gridColor, drawBorder: false },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: v => Number.isInteger(v) ? v : null
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                };
+
+                // ── Monthly Chart ────────────────────────────────────────
+                const ctxM = document.getElementById('monthlyGuestTrendChart');
+                if (ctxM) {
+                    const gradM = ctxM.getContext('2d').createLinearGradient(0, 0, 0, 300);
+                    gradM.addColorStop(0, 'rgba(26,110,245,0.25)');
+                    gradM.addColorStop(1, 'rgba(26,110,245,0.01)');
+
+                    if (monthlyChart) monthlyChart.destroy();
+                    monthlyChart = new Chart(ctxM, {
+                        type: 'line',
+                        data: {
+                            labels: data.monthLabels,
+                            datasets: [{
+                                label: 'Monthly Guests',
+                                data: data.monthlyGuestCounts,
+                                borderColor: '#1a6ef5',
+                                backgroundColor: gradM,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#1a6ef5',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                borderWidth: 2.5
+                            }]
+                        },
+                        options: sharedOptions
+                    });
+                }
+
+                // ── Yearly Chart ─────────────────────────────────────────
+                const ctxY = document.getElementById('yearlyGuestTrendChart');
+                if (ctxY) {
+                    const gradY = ctxY.getContext('2d').createLinearGradient(0, 0, 0, 300);
+                    gradY.addColorStop(0, 'rgba(22,163,74,0.25)');
+                    gradY.addColorStop(1, 'rgba(22,163,74,0.01)');
+
+                    if (yearlyChart) yearlyChart.destroy();
+                    yearlyChart = new Chart(ctxY, {
+                        type: 'line',
+                        data: {
+                            labels: data.yearLabels,
+                            datasets: [{
+                                label: 'Yearly Guests',
+                                data: data.yearlyGuestCounts,
+                                borderColor: '#16a34a',
+                                backgroundColor: gradY,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#16a34a',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                borderWidth: 2.5
+                            }]
+                        },
+                        options: sharedOptions
+                    });
+                }
+
+                // ── Show dashboard ───────────────────────────────────────
+                setTimeout(() => {
+                    document.getElementById('skeletonLoader').style.display = 'none';
+                    const dash = document.getElementById('dashboardContent');
+                    if (dash) {
+                        dash.style.display = 'block';
+                        requestAnimationFrame(() => dash.classList.add('visible'));
+                    }
+                }, 300);
+            } catch (error) {
+                console.error('Error rendering dashboard:', error);
+                showToast('Error rendering dashboard data', 'error');
+                document.getElementById('skeletonLoader').style.display = 'none';
+            }
+        }
+
+        // ── Toast utility ────────────────────────────────────────────
         function showToast(message, type = 'success') {
             const map = {
-                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        title: 'Success' },
-                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error'   },
-                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          title: 'Info'    }
+                success: { bg: '#22c55e', icon: 'bi-check-circle-fill', title: 'Success' },
+                error: { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', title: 'Error' },
+                info: { bg: '#1a6ef5', icon: 'bi-info-circle-fill', title: 'Info' }
             };
             const { bg, icon, title } = map[type] || map.info;
             const id = 'toast-' + Date.now();
@@ -518,13 +545,20 @@
             el.addEventListener('hidden.bs.toast', () => el.remove());
         }
 
-        // ── Welcome toast (once per session) ─────────────────────
+        // ── Live date badge ──────────────────────────────────────────
+        document.getElementById('liveDateBadge').textContent =
+            new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+
+        // ── Welcome toast (once per session) ─────────────────────────
         $(document).ready(function () {
-        const name = '@(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ?? "User")';
-        if (name && !sessionStorage.getItem('welcomeToastShown')) {
-        showToast(`Welcome back, ${name}! 👋`, 'success');
-        sessionStorage.setItem('welcomeToastShown', 'true');
-        }
-       });
+            const name = '@(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ?? "User")';
+            if (name && !sessionStorage.getItem('welcomeToastShown')) {
+                showToast(`Welcome back, ${name}! 👋`, 'success');
+                sessionStorage.setItem('welcomeToastShown', 'true');
+            }
+            
+            // Load dashboard data
+            loadDashboardData();
+        });
     </script>
 }
