@@ -1,4 +1,4 @@
-﻿using AlegriaCanyoneeringWebBooking.Domain.Models;
+using AlegriaCanyoneeringWebBooking.Domain.Models;
 using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -396,7 +396,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                             BusinessName = businessName
                         },
 
-                        RFID = grp.Count(x => x.BookingStatus != 1),  // 1 = canceled
+
+
+
+                        RFID = grp.Count(x => x.BookingStatus != 4),  // 4 = canceled
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus,
                         Date = first.Date,
@@ -447,7 +450,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     return Content("<div class='text-center p-4'><i class='fas fa-exclamation-triangle fa-2x text-warning mb-3'></i><h5 class='text-warning'>Guest Not Found</h5></div>", "text/html");
 
                 var guestsInBatch = await _context.Guests
-                    .Where(g => g.Batch == guest.Batch && g.Id != guest.Id && g.BookingStatus != 1)
+                    .Where(g => g.Batch == guest.Batch && g.Id != guest.Id && g.BookingStatus != 4)
                     .Include(g => g.NationalityEntity)
                     .ToListAsync();
 
@@ -619,9 +622,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return intVal switch
                 {
                     Guest.Status.Confirmed => "Confirmed",
-                    Guest.Status.Canceled => "Canceled",
                     Guest.Status.Reserved => "Reserved",
                     Guest.Status.Anticipated => "Anticipated",
+                    Guest.Status.Canceled => "Canceled",                
                     _ => intVal.ToString()
                 };
             }
@@ -2558,13 +2561,13 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
-            // =========================================================
-            // MARK OUTSIDE GUIDE ABSENT
-            // ✅ Zeros out today's tourguide_priority.NoOfGuest
-            // ✅ Inserts a 0-guest row if no record exists today
-            // ✅ Guide stays in FIFO rotation
-            // =========================================================
-            [HttpPost]
+        // =========================================================
+        // MARK OUTSIDE GUIDE ABSENT
+        // ✅ Zeros out today's tourguide_priority.NoOfGuest
+        // ✅ Inserts a 0-guest row if no record exists today
+        // ✅ Guide stays in FIFO rotation
+        // =========================================================
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkOutsideGuideAbsent(string guideRfid)
         {

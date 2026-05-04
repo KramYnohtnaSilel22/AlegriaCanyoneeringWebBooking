@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 using AlegriaCanyoneeringWebBooking.Helpers;
 
@@ -12,10 +13,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
     public class AuthenticationController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMemoryCache _cache;
 
-        public AuthenticationController(ApplicationDbContext context)
+        // ── Lockout settings (tune freely) ────────────────────
+        private const int MaxFailedAttempts = 5;
+        private const int LockoutMinutes = 15;
+
+        public AuthenticationController(ApplicationDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         // =========================================================
@@ -53,30 +60,73 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return View();
             }
 
-            // ── Find user ──────────────────────────────────────────
+            // ── Rate limiter keys (per username) ───────────────────
+            var normalizedUser = username.ToLower().Trim();
+            var attemptKey = $"login_attempts:{normalizedUser}";
+            var lockoutKey = $"login_lockout:{normalizedUser}";
+
+            // ── Check if currently locked out ─────────────────────
+            if (_cache.TryGetValue(lockoutKey, out DateTimeOffset lockedUntil))
+            {
+                var timeLeft = lockedUntil - DateTimeOffset.UtcNow;
+                int minsLeft = (int)Math.Ceiling(timeLeft.TotalMinutes);
+
+                TempData["ErrorMessage"] = minsLeft > 1
+                    ? $"Too many failed attempts. Try again in {minsLeft} minutes."
+                    : "Too many failed attempts. Try again in less than a minute.";
+
+                return View();
+            }
+
+            // ── Find user & verify credentials ────────────────────
+            // NOTE: We intentionally look up the user AND verify password
+            //       before deciding to increment — prevents timing attacks
+            //       from revealing whether the username exists.
             var user = await _context.Operators
                 .Include(o => o.Roles)
                 .FirstOrDefaultAsync(u => u.Username == username);
 
-            if (user == null)
+            bool credentialsValid = user != null
+                                 && PasswordHelper.VerifyPassword(password, user.Password);
+
+            if (!credentialsValid)
             {
-                TempData["ErrorMessage"] = "Invalid username or password.";
+                // ── Increment failed attempt counter ───────────────
+                int attempts = _cache.TryGetValue(attemptKey, out int current) ? current : 0;
+                attempts++;
+
+                int attemptsLeft = MaxFailedAttempts - attempts;
+
+                if (attempts >= MaxFailedAttempts)
+                {
+                    // ── Trigger lockout ────────────────────────────
+                    var lockoutExpiry = DateTimeOffset.UtcNow.AddMinutes(LockoutMinutes);
+                    _cache.Set(lockoutKey, lockoutExpiry, TimeSpan.FromMinutes(LockoutMinutes));
+                    _cache.Remove(attemptKey); // counter no longer needed
+
+                    TempData["ErrorMessage"] =
+                        $"Too many failed attempts. Your account is locked for {LockoutMinutes} minutes.";
+                }
+                else
+                {
+                    // ── Still has attempts left ────────────────────
+                    // Counter TTL matches lockout window so it auto-expires cleanly
+                    _cache.Set(attemptKey, attempts, TimeSpan.FromMinutes(LockoutMinutes));
+
+                    TempData["ErrorMessage"] = attemptsLeft == 1
+                        ? "Invalid username or password. 1 attempt remaining before lockout."
+                        : $"Invalid username or password. {attemptsLeft} attempts remaining.";
+                }
+
                 return View();
             }
 
-            // ── Verify using SHA1 PasswordHelper ───────────────────
-            // ✅ This now works for ALL passwords:
-            //    - Original accounts (SHA1 hashed at registration)
-            //    - Passwords changed via ChangePassword  (SHA1)
-            //    - Passwords reset via ForgotPassword    (SHA1)
-            if (!PasswordHelper.VerifyPassword(password, user.Password))
-            {
-                TempData["ErrorMessage"] = "Invalid username or password.";
-                return View();
-            }
+            // ── Credentials valid — clear rate limit state ─────────
+            _cache.Remove(attemptKey);
+            _cache.Remove(lockoutKey);
 
             // ── Role check ─────────────────────────────────────────
-            if (user.Roles == null)
+            if (user!.Roles == null)
             {
                 TempData["ErrorMessage"] = "User role not found. Please contact the administrator.";
                 return View();
@@ -84,17 +134,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             // ── Build claims ───────────────────────────────────────
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new Claim(ClaimTypes.Name,           user.Username),
-        new Claim(ClaimTypes.Email,          user.EmailAddress ?? ""),
-        new Claim(ClaimTypes.Role,           user.Roles.Name),
-        new Claim("UserId",       user.Id.ToString()),
-        new Claim("Role",         user.Roles.Name),
-        new Claim("RoleName",     user.Roles.Name),
-        new Claim("FullName",     user.Name ?? ""),           // ✅ ADD THIS — Full name claim
-        new Claim("BusinessName", user.BusinessName ?? "")
-    };
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name,           user.Username),
+                new Claim(ClaimTypes.Email,          user.EmailAddress ?? ""),
+                new Claim(ClaimTypes.Role,           user.Roles.Name),
+                new Claim("UserId",       user.Id.ToString()),
+                new Claim("Role",         user.Roles.Name),
+                new Claim("RoleName",     user.Roles.Name),
+                new Claim("FullName",     user.Name ?? ""),
+                new Claim("BusinessName", user.BusinessName ?? "")
+            };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
@@ -162,14 +212,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return RedirectToAction("Login");
             }
 
-            // ✅ Verify current password with SHA1
             if (!PasswordHelper.VerifyPassword(model.CurrentPassword, op.Password))
             {
                 TempData["ErrorMessage"] = "Current password is incorrect.";
                 return View(model);
             }
 
-            // ✅ Hash new password with SHA1
             op.Password = PasswordHelper.HashPassword(model.NewPassword);
             _context.Update(op);
             await _context.SaveChangesAsync();
@@ -225,7 +273,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         <table width='600' cellpadding='0' cellspacing='0'
                style='background:#ffffff;border-radius:16px;overflow:hidden;
                       box-shadow:0 4px 24px rgba(15,52,96,0.10);max-width:600px;width:100%;'>
-         
           <tr>
             <td style='padding:40px 40px 32px;'>
               <div style='width:64px;height:64px;border-radius:50%;background:rgba(26,110,245,0.08);
@@ -293,8 +340,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
         // =========================================================
         // RESET PASSWORD — POST
-        // ✅ KEY FIX: use PasswordHelper.HashPassword (SHA1)
-        //    so Login can verify it with PasswordHelper.VerifyPassword
         // =========================================================
         [HttpPost]
         [AllowAnonymous]
@@ -310,7 +355,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (user == null)
                 return View("ResetPasswordConfirmation");
 
-            // ✅ SHA1 hash — consistent with Login and ChangePassword
             user.Password = PasswordHelper.HashPassword(model.NewPassword);
             await _context.SaveChangesAsync();
 

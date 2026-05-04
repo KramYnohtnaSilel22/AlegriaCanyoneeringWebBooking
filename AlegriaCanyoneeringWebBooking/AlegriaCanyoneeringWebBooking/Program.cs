@@ -18,6 +18,7 @@ if (builder.Environment.IsDevelopment())
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache(); // already there if you use sessions, but add it if not
 // ✅ SWAGGER CONFIGURATION
 builder.Services.AddSwaggerGen(options =>
 {
