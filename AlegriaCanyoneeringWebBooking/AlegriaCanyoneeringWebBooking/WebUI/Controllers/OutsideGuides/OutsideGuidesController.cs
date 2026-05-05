@@ -4,10 +4,9 @@ using AlegriaCanyoneeringWebBooking.WebUI.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 [Route("OutsideGuides")]
-[Authorize(Roles = "Super Admin,Operator")]
+[Authorize(Roles = "Super Admin")]
 public class OutsideGuidesController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -20,31 +19,29 @@ public class OutsideGuidesController : Controller
     }
 
     // =========================================================
-    // HELPERS — current user role & operator lookup
-    // =========================================================
-
-    private bool IsSuperAdmin => User.IsInRole("Super Admin");
-
-    /// <summary>
-    /// Returns the Operator record linked to the currently logged-in user.
-    /// Matches by Username claim (adjust if your claim type differs).
-    /// </summary>
-    private async Task<Operator?> GetCurrentOperatorAsync()
-    {
-        var username = User.Identity?.Name
-                    ?? User.FindFirstValue(ClaimTypes.Name)
-                    ?? User.FindFirstValue("preferred_username");
-
-        if (string.IsNullOrWhiteSpace(username)) return null;
-        return await _context.Operators.FirstOrDefaultAsync(o => o.Username == username);
-    }
-
-    // =========================================================
     // INDEX
     // =========================================================
     [HttpGet("")]
     [HttpGet("Index")]
     public IActionResult Index() => View();
+
+    // =========================================================
+    // OPERATOR FILTER DROPDOWN — uses operator_list
+    // =========================================================
+    [HttpGet("GetOperatorsForFilter")]
+    public async Task<IActionResult> GetOperatorsForFilter()
+    {
+        var operators = await _context.OperatorLists
+            .OrderBy(o => o.BusinessName)
+            .Select(o => new
+            {
+                id = o.OperatorId,
+                displayName = string.IsNullOrWhiteSpace(o.BusinessName) ? o.OwnerName : o.BusinessName
+            })
+            .ToListAsync();
+
+        return Json(operators);
+    }
 
     // =========================================================
     // DATATABLE
@@ -58,17 +55,17 @@ public class OutsideGuidesController : Controller
             var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
             var searchValue = Request.Form["search[value]"].FirstOrDefault();
+            var operatorFilter = Request.Form["operatorFilter"].FirstOrDefault();
 
-            var query = _context.OutsideGuides.Include(g => g.Operator).AsQueryable();
+            // ✅ Include OperatorList (operator_list table)
+            var query = _context.OutsideGuides
+                .Include(g => g.OperatorList)
+                .AsQueryable();
 
-            // ── Operators see ONLY their own guides ──────────────────────────────────
-            if (!IsSuperAdmin)
+            if (!string.IsNullOrWhiteSpace(operatorFilter) &&
+                int.TryParse(operatorFilter, out int filterOpId))
             {
-                var op = await GetCurrentOperatorAsync();
-                if (op == null)
-                    return Json(new { draw, recordsFiltered = 0, recordsTotal = 0, data = new List<object>() });
-
-                query = query.Where(g => g.OperatorId == op.Id);
+                query = query.Where(g => g.OperatorId == filterOpId);
             }
 
             if (!string.IsNullOrEmpty(searchValue))
@@ -77,13 +74,17 @@ public class OutsideGuidesController : Controller
                     (g.FName != null && g.FName.Contains(searchValue)) ||
                     (g.LName != null && g.LName.Contains(searchValue)) ||
                     (g.Rfid != null && g.Rfid.Contains(searchValue)) ||
-                    (g.Nickname != null && g.Nickname.Contains(searchValue)));
+                    (g.Nickname != null && g.Nickname.Contains(searchValue)) ||
+                    (g.OperatorList != null &&
+                        (g.OperatorList.BusinessName.Contains(searchValue) ||
+                         g.OperatorList.OwnerName.Contains(searchValue))));
             }
 
             var recordsTotal = await query.CountAsync();
 
             var rawData = await query
-                .OrderBy(g => g.TPosition)
+                .OrderBy(g => g.OperatorId)
+                .ThenBy(g => g.TPosition)
                 .Skip(start)
                 .Take(length)
                 .Select(g => new
@@ -96,7 +97,13 @@ public class OutsideGuidesController : Controller
                     nickname = g.Nickname ?? "----",
                     cNumber = g.CNumber ?? "----",
                     image = g.Image ?? "",
-                    operatorName = g.Operator != null ? g.Operator.BusinessName ?? g.Operator.Name : "—"
+                    operatorId = g.OperatorId,
+                    // ✅ Read from OperatorList
+                    operatorName = g.OperatorList != null
+                        ? (!string.IsNullOrWhiteSpace(g.OperatorList.BusinessName)
+                            ? g.OperatorList.BusinessName
+                            : g.OperatorList.OwnerName ?? "—")
+                        : "—"
                 })
                 .ToListAsync();
 
@@ -108,6 +115,7 @@ public class OutsideGuidesController : Controller
                 g.nickname,
                 g.cNumber,
                 g.operatorName,
+                g.operatorId,
                 image = NormalizeImagePath(g.image)
             }).ToList();
 
@@ -132,7 +140,6 @@ public class OutsideGuidesController : Controller
     [HttpGet("Create")]
     public async Task<IActionResult> Create()
     {
-        // Auto-increment Rfid starting at 200000 (different range from local guides)
         var allRfids = await _context.OutsideGuides.Select(g => g.Rfid).ToListAsync();
         int nextRfid = allRfids
             .Where(r => !string.IsNullOrEmpty(r) && int.TryParse(r, out _))
@@ -143,26 +150,22 @@ public class OutsideGuidesController : Controller
 
         int nextTPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-        // Resolve OperatorId for the current user (null for Super Admin → selectable in form)
-        int? operatorId = null;
-        if (!IsSuperAdmin)
-        {
-            var op = await GetCurrentOperatorAsync();
-            if (op == null) return Forbid();
-            operatorId = op.Id;
-        }
-
         ViewData["Action"] = "Create";
-        ViewData["IsSuperAdmin"] = IsSuperAdmin;
 
-        if (IsSuperAdmin)
-            ViewData["Operators"] = await _context.Operators.OrderBy(o => o.Name).ToListAsync();
+        // ✅ Dropdown from operator_list
+        ViewData["Operators"] = await _context.OperatorLists
+            .OrderBy(o => o.BusinessName)
+            .Select(o => new
+            {
+                Id = o.OperatorId,
+                DisplayName = string.IsNullOrWhiteSpace(o.BusinessName) ? o.OwnerName : o.BusinessName
+            })
+            .ToListAsync();
 
         return PartialView("_OutsideGuideForm", new OutsideGuide
         {
             Rfid = nextRfid.ToString(),
-            TPosition = nextTPosition,
-            OperatorId = operatorId
+            TPosition = nextTPosition
         });
     }
 
@@ -176,16 +179,7 @@ public class OutsideGuidesController : Controller
         ModelState.Remove("Image");
         ModelState.Remove("MName");
         ModelState.Remove("Nickname");
-        ModelState.Remove("Operators");
-
-        // Operators can only create guides for themselves — ignore any posted OperatorId
-        if (!IsSuperAdmin)
-        {
-            var op = await GetCurrentOperatorAsync();
-            if (op == null)
-                return Json(new { success = false, message = "Operator account not found." });
-            model.OperatorId = op.Id;
-        }
+        ModelState.Remove("OperatorList");
 
         if (!ModelState.IsValid)
         {
@@ -198,11 +192,9 @@ public class OutsideGuidesController : Controller
 
         try
         {
-            // Deduplicate Rfid
             if (await _context.OutsideGuides.AnyAsync(g => g.Rfid == model.Rfid))
             {
-                var max = (await _context.OutsideGuides
-                    .Select(g => g.Rfid).ToListAsync())
+                var max = (await _context.OutsideGuides.Select(g => g.Rfid).ToListAsync())
                     .Where(r => int.TryParse(r, out _))
                     .Select(r => int.Parse(r))
                     .DefaultIfEmpty(199999)
@@ -210,7 +202,6 @@ public class OutsideGuidesController : Controller
                 model.Rfid = (max + 1).ToString();
             }
 
-            // Fresh TPosition at save time
             model.TPosition = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             while (await _context.OutsideGuides.AnyAsync(g => g.TPosition == model.TPosition))
                 model.TPosition++;
@@ -226,9 +217,7 @@ public class OutsideGuidesController : Controller
         }
         catch (Exception ex)
         {
-            var inner = ex.InnerException?.Message ?? ex.Message;
-            Console.WriteLine($"[OutsideGuides] Create error: {inner}");
-            return Json(new { success = false, message = inner });
+            return Json(new { success = false, message = ex.InnerException?.Message ?? ex.Message });
         }
     }
 
@@ -243,18 +232,17 @@ public class OutsideGuidesController : Controller
             var guide = await _context.OutsideGuides.FindAsync(id);
             if (guide == null) return NotFound();
 
-            // Operators can only edit their own guides
-            if (!IsSuperAdmin)
-            {
-                var op = await GetCurrentOperatorAsync();
-                if (op == null || guide.OperatorId != op.Id) return Forbid();
-            }
-
             ViewData["Action"] = "Edit";
-            ViewData["IsSuperAdmin"] = IsSuperAdmin;
 
-            if (IsSuperAdmin)
-                ViewData["Operators"] = await _context.Operators.OrderBy(o => o.Name).ToListAsync();
+            // ✅ Dropdown from operator_list
+            ViewData["Operators"] = await _context.OperatorLists
+                .OrderBy(o => o.BusinessName)
+                .Select(o => new
+                {
+                    Id = o.OperatorId,
+                    DisplayName = string.IsNullOrWhiteSpace(o.BusinessName) ? o.OwnerName : o.BusinessName
+                })
+                .ToListAsync();
 
             return PartialView("_OutsideGuideForm", guide);
         }
@@ -274,23 +262,7 @@ public class OutsideGuidesController : Controller
         ModelState.Remove("Image");
         ModelState.Remove("MName");
         ModelState.Remove("Nickname");
-        ModelState.Remove("Operators");
-
-        // Operators can only edit their own
-        if (!IsSuperAdmin)
-        {
-            var op = await GetCurrentOperatorAsync();
-            if (op == null)
-                return Json(new { success = false, message = "Operator account not found." });
-
-            // Verify ownership against DB (don't trust the posted OperatorId)
-            var existing = await _context.OutsideGuides.AsNoTracking()
-                .FirstOrDefaultAsync(g => g.OutsideGuideId == model.OutsideGuideId);
-            if (existing == null || existing.OperatorId != op.Id)
-                return Json(new { success = false, message = "Access denied." });
-
-            model.OperatorId = op.Id; // lock it
-        }
+        ModelState.Remove("OperatorList");
 
         if (!ModelState.IsValid)
         {
@@ -337,14 +309,6 @@ public class OutsideGuidesController : Controller
             if (guide == null)
                 return Json(new { success = false, message = "Outside guide not found." });
 
-            // Operators can only delete their own
-            if (!IsSuperAdmin)
-            {
-                var op = await GetCurrentOperatorAsync();
-                if (op == null || guide.OperatorId != op.Id)
-                    return Json(new { success = false, message = "Access denied." });
-            }
-
             _context.OutsideGuides.Remove(guide);
             await _context.SaveChangesAsync();
 
@@ -357,21 +321,12 @@ public class OutsideGuidesController : Controller
     }
 
     // =========================================================
-    // ARRANGE GET — ordered by TPosition
+    // ARRANGE GET
     // =========================================================
     [HttpGet("Arrange")]
     public async Task<IActionResult> Arrange()
     {
-        var query = _context.OutsideGuides.AsQueryable();
-
-        if (!IsSuperAdmin)
-        {
-            var op = await GetCurrentOperatorAsync();
-            if (op == null) return Forbid();
-            query = query.Where(g => g.OperatorId == op.Id);
-        }
-
-        var guides = await query
+        var guides = await _context.OutsideGuides
             .OrderBy(g => g.TPosition)
             .Select(g => new OutsideGuideQueueItem
             {
@@ -399,16 +354,10 @@ public class OutsideGuidesController : Controller
             if (guideIds == null || !guideIds.Any())
                 return Json(new { success = false, message = "No guide IDs provided." });
 
-            var query = _context.OutsideGuides.Where(g => guideIds.Contains(g.OutsideGuideId));
+            var guides = await _context.OutsideGuides
+                .Where(g => guideIds.Contains(g.OutsideGuideId))
+                .ToListAsync();
 
-            if (!IsSuperAdmin)
-            {
-                var op = await GetCurrentOperatorAsync();
-                if (op == null) return Json(new { success = false, message = "Operator not found." });
-                query = query.Where(g => g.OperatorId == op.Id);
-            }
-
-            var guides = await query.ToListAsync();
             int baseTs = guides.Min(g => g.TPosition);
 
             for (int i = 0; i < guideIds.Count; i++)
@@ -438,16 +387,9 @@ public class OutsideGuidesController : Controller
         {
             const int UnixThreshold = 1_000_000_000;
 
-            var query = _context.OutsideGuides.AsQueryable();
-
-            if (!IsSuperAdmin)
-            {
-                var op = await GetCurrentOperatorAsync();
-                if (op == null) return Json(new { success = false, message = "Operator not found." });
-                query = query.Where(g => g.OperatorId == op.Id);
-            }
-
-            var allGuides = await query.OrderBy(g => g.TPosition).ToListAsync();
+            var allGuides = await _context.OutsideGuides
+                .OrderBy(g => g.TPosition)
+                .ToListAsync();
 
             int lastTs = allGuides
                 .Where(g => g.TPosition >= UnixThreshold)
@@ -460,7 +402,7 @@ public class OutsideGuidesController : Controller
             {
                 if (guide.TPosition < UnixThreshold)
                 {
-                    lastTs += 10;
+                    lastTs++;
                     while (allGuides.Any(g => g.OutsideGuideId != guide.OutsideGuideId && g.TPosition == lastTs))
                         lastTs++;
                     guide.TPosition = lastTs;
@@ -486,7 +428,9 @@ public class OutsideGuidesController : Controller
     private static string? NormalizeImagePath(string? path)
     {
         if (string.IsNullOrWhiteSpace(path)) return null;
-        if (path.Contains(":\\") || (path.Contains(":/") && !path.StartsWith("http", StringComparison.OrdinalIgnoreCase)) || path.StartsWith("\\\\"))
+        if (path.Contains(":\\") ||
+            (path.Contains(":/") && !path.StartsWith("http", StringComparison.OrdinalIgnoreCase)) ||
+            path.StartsWith("\\\\"))
             return null;
         return path;
     }
@@ -521,4 +465,3 @@ public class OutsideGuidesController : Controller
         }
     }
 }
-

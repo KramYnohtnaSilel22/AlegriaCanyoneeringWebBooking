@@ -54,11 +54,10 @@ namespace AlegriaCanyoneeringWebBooking.Models
         [Column("operatorid")]
         public int? OperatorId { get; set; }
 
-        // ── Navigation ────────────────────────────────────────────────
+        // ✅ Now points to OperatorList instead of Operator
         [ForeignKey(nameof(OperatorId))]
-        public Operator? Operator { get; set; }
+        public OperatorList? OperatorList { get; set; }
 
-        // ── Computed — never hits the DB ──────────────────────────────
         [NotMapped]
         public string FullName =>
             string.IsNullOrWhiteSpace(MName)

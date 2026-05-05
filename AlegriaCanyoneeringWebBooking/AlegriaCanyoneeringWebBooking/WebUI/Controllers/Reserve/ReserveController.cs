@@ -2111,8 +2111,8 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     if (!guides.Any())
                     {
                         guides = await _context.OutsideGuides
-                            .Include(g => g.Operator)
-                            .Where(g => g.Operator != null && g.Operator.Name == op.Name)
+                            .Include(g => g.OperatorList)
+                            .Where(g => g.OperatorList != null && g.OperatorList.BusinessName == op.BusinessName)
                             .ToListAsync();
                     }
                 }
@@ -2120,7 +2120,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (!guides.Any())
                 {
                     guides = await _context.OutsideGuides
-                        .Include(g => g.Operator)
+                        .Include(g => g.OperatorList)
                         .ToListAsync();
                 }
 
