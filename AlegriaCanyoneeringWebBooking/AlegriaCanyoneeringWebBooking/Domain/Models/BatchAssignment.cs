@@ -20,7 +20,7 @@ namespace AlegriaCanyoneeringWebBooking.Models
         public int? OperatorId { get; set; }
 
         [ForeignKey(nameof(OperatorId))]
-        public Operator? Operator { get; set; }
+        public OperatorList? OperatorList { get; set; }
 
         // FK → internal guide
         [Column("guide_id")]

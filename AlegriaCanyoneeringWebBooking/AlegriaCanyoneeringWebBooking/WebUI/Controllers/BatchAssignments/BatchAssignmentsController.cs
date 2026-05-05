@@ -27,18 +27,14 @@ public class BatchAssignmentsController : Controller
         var nextCode = await GenerateBatchCode();
         ViewData["Action"] = "Create";
         await PopulateDropdowns();
-
-        return PartialView("_BatchAssignmentForm", new BatchAssignment
-        {
-            BatchCode = nextCode
-        });
+        return PartialView("_BatchAssignmentForm", new BatchAssignment { BatchCode = nextCode });
     }
 
     [HttpPost("Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BatchAssignment model)
     {
-        ModelState.Remove("Operator");
+        ModelState.Remove("OperatorList");
         ModelState.Remove("Guide");
         ModelState.Remove("OutsideGuide");
         ModelState.Remove("Driver");
@@ -55,7 +51,6 @@ public class BatchAssignmentsController : Controller
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-
             return Json(new { success = false, message = "Validation failed.", errors });
         }
 
@@ -86,7 +81,6 @@ public class BatchAssignmentsController : Controller
 
         ViewData["Action"] = "Edit";
         await PopulateDropdowns(batch);
-
         return PartialView("_BatchAssignmentForm", batch);
     }
 
@@ -94,7 +88,7 @@ public class BatchAssignmentsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(BatchAssignment model)
     {
-        ModelState.Remove("Operator");
+        ModelState.Remove("OperatorList");
         ModelState.Remove("Guide");
         ModelState.Remove("OutsideGuide");
         ModelState.Remove("Driver");
@@ -111,7 +105,6 @@ public class BatchAssignmentsController : Controller
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-
             return Json(new { success = false, message = "Validation failed.", errors });
         }
 
@@ -144,9 +137,10 @@ public class BatchAssignmentsController : Controller
             var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
             var searchValue = Request.Form["search[value]"].FirstOrDefault()?.Trim();
 
+            // ✅ Use OperatorList instead of Operator
             var query = _context.BatchAssignments
                 .AsNoTracking()
-                .Include(b => b.Operator)
+                .Include(b => b.OperatorList)
                 .Include(b => b.Guide)
                 .Include(b => b.OutsideGuide)
                 .Include(b => b.Driver)
@@ -156,7 +150,7 @@ public class BatchAssignmentsController : Controller
             {
                 query = query.Where(b =>
                     (b.BatchCode ?? "").Contains(searchValue) ||
-                    (b.Operator != null && (b.Operator.BusinessName ?? "").Contains(searchValue)) ||
+                    (b.OperatorList != null && (b.OperatorList.BusinessName ?? "").Contains(searchValue)) ||
                     (b.Guide != null && (((b.Guide.FName ?? "") + " " + (b.Guide.LName ?? "")).Contains(searchValue))) ||
                     (b.OutsideGuide != null &&
                         ((((b.OutsideGuide.FName ?? "") + " " + (b.OutsideGuide.LName ?? "")).Contains(searchValue)) ||
@@ -175,7 +169,12 @@ public class BatchAssignmentsController : Controller
                 {
                     b.Id,
                     b.BatchCode,
-                    StoredOperatorName = b.Operator != null ? b.Operator.BusinessName : null,
+                    // ✅ OperatorList instead of Operator
+                    StoredOperatorName = b.OperatorList != null
+                        ? (string.IsNullOrWhiteSpace(b.OperatorList.BusinessName)
+                            ? b.OperatorList.OwnerName
+                            : b.OperatorList.BusinessName)
+                        : null,
 
                     GuideName = b.Guide != null
                         ? (((b.Guide.FName ?? "") + " " + (b.Guide.LName ?? "")).Trim())
@@ -202,20 +201,31 @@ public class BatchAssignmentsController : Controller
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var guestRows = await (
-                from g in _context.Guests.AsNoTracking()
-                join o in _context.Operators.AsNoTracking()
-                    on g.OperatorId equals o.Id into og
-                from o in og.DefaultIfEmpty()
-                where g.Batch != null
-                select new
+            // ✅ Load guests in memory, then look up OperatorList separately
+            var guestRows = await _context.Guests
+                .AsNoTracking()
+                .Where(g => g.Batch != null)
+                .Select(g => new
                 {
                     BatchCode = g.Batch,
                     GuestId = g.Id,
                     GuestDate = g.Date,
-                    OperatorName = o != null ? o.BusinessName : null
+                    g.OperatorId
                 })
                 .ToListAsync();
+
+            // ✅ Get distinct operator IDs and load their names
+            var operatorIds = guestRows
+                .Where(g => g.OperatorId.HasValue)
+                .Select(g => g.OperatorId!.Value)
+                .Distinct()
+                .ToList();
+
+            var operatorNameMap = await _context.OperatorLists
+                .Where(o => operatorIds.Contains(o.OperatorId))
+                .ToDictionaryAsync(
+                    o => o.OperatorId,
+                    o => string.IsNullOrWhiteSpace(o.BusinessName) ? o.OwnerName : o.BusinessName);
 
             var guestOperatorMapToday = guestRows
                 .Select(x => new
@@ -223,7 +233,7 @@ public class BatchAssignmentsController : Controller
                     BatchCode = NormalizeBatchCode(x.BatchCode),
                     x.GuestId,
                     ParsedDate = ParseGuestDate(x.GuestDate),
-                    x.OperatorName
+                    OperatorName = x.OperatorId.HasValue && operatorNameMap.TryGetValue(x.OperatorId.Value, out var n) ? n : null
                 })
                 .Where(x =>
                     normalizedBatchCodes.Contains(x.BatchCode, StringComparer.OrdinalIgnoreCase) &&
@@ -241,7 +251,7 @@ public class BatchAssignmentsController : Controller
                 {
                     BatchCode = NormalizeBatchCode(x.BatchCode),
                     x.GuestId,
-                    x.OperatorName
+                    OperatorName = x.OperatorId.HasValue && operatorNameMap.TryGetValue(x.OperatorId.Value, out var n) ? n : null
                 })
                 .Where(x =>
                     normalizedBatchCodes.Contains(x.BatchCode, StringComparer.OrdinalIgnoreCase) &&
@@ -267,18 +277,12 @@ public class BatchAssignmentsController : Controller
                 string operatorName;
                 if (guestOperatorMapToday.TryGetValue(batchCode, out var todayOperator) &&
                     !string.IsNullOrWhiteSpace(todayOperator))
-                {
                     operatorName = todayOperator;
-                }
                 else if (guestOperatorMapAny.TryGetValue(batchCode, out var anyOperator) &&
                          !string.IsNullOrWhiteSpace(anyOperator))
-                {
                     operatorName = anyOperator;
-                }
                 else
-                {
                     operatorName = b.StoredOperatorName ?? "—";
-                }
 
                 return new
                 {
@@ -296,13 +300,7 @@ public class BatchAssignmentsController : Controller
                 };
             }).ToList();
 
-            return Json(new
-            {
-                draw,
-                recordsFiltered = total,
-                recordsTotal = total,
-                data
-            });
+            return Json(new { draw, recordsFiltered = total, recordsTotal = total, data });
         }
         catch (Exception ex)
         {
@@ -360,13 +358,7 @@ public class BatchAssignmentsController : Controller
         var guests = await _context.Guests
             .AsNoTracking()
             .Where(g => g.Batch != null)
-            .Select(g => new
-            {
-                g.Batch,
-                g.OperatorId,
-                g.Id,
-                g.Date
-            })
+            .Select(g => new { g.Batch, g.OperatorId, g.Id, g.Date })
             .ToListAsync();
 
         var todayMatch = guests
@@ -385,16 +377,10 @@ public class BatchAssignmentsController : Controller
             .Select(g => g.OperatorId)
             .FirstOrDefault();
 
-        if (todayMatch != null)
-            return todayMatch;
+        if (todayMatch != null) return todayMatch;
 
         return guests
-            .Select(g => new
-            {
-                BatchCode = NormalizeBatchCode(g.Batch),
-                g.OperatorId,
-                g.Id
-            })
+            .Select(g => new { BatchCode = NormalizeBatchCode(g.Batch), g.OperatorId, g.Id })
             .Where(g => g.BatchCode == normalizedBatchCode)
             .OrderBy(g => g.Id)
             .Select(g => g.OperatorId)
@@ -403,54 +389,46 @@ public class BatchAssignmentsController : Controller
 
     private static string NormalizeBatchCode(string? batchCode)
     {
-        if (string.IsNullOrWhiteSpace(batchCode))
-            return string.Empty;
-
+        if (string.IsNullOrWhiteSpace(batchCode)) return string.Empty;
         var value = batchCode.Trim();
-
         if (value.StartsWith("BATCH-", StringComparison.OrdinalIgnoreCase))
             value = value[6..];
-
         return value.Trim();
     }
 
     private static DateTime? ParseGuestDate(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
+        if (string.IsNullOrWhiteSpace(value)) return null;
         var trimmed = value.Trim();
 
         if (long.TryParse(trimmed, out long unix))
         {
-            try
-            {
-                return DateTimeOffset.FromUnixTimeSeconds(unix)
-                    .ToOffset(TimeSpan.FromHours(8))
-                    .DateTime;
-            }
-            catch
-            {
-            }
+            try { return DateTimeOffset.FromUnixTimeSeconds(unix).ToOffset(TimeSpan.FromHours(8)).DateTime; }
+            catch { }
         }
 
         if (DateTime.TryParse(trimmed, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var dt))
             return dt;
 
-        if (DateTime.TryParse(trimmed, out dt))
-            return dt;
+        if (DateTime.TryParse(trimmed, out dt)) return dt;
 
         return null;
     }
 
     private async Task PopulateDropdowns(BatchAssignment? current = null)
     {
+        // ✅ Use OperatorLists instead of Operators
         ViewBag.Operators = new SelectList(
-            await _context.Operators
+            await _context.OperatorLists
                 .OrderBy(o => o.BusinessName)
+                .Select(o => new
+                {
+                    o.OperatorId,
+                    DisplayName = string.IsNullOrWhiteSpace(o.BusinessName) ? o.OwnerName : o.BusinessName
+                })
                 .ToListAsync(),
-            "Id",
-            "BusinessName",
+            "OperatorId",
+            "DisplayName",
             current?.OperatorId);
 
         ViewBag.Guides = new SelectList(

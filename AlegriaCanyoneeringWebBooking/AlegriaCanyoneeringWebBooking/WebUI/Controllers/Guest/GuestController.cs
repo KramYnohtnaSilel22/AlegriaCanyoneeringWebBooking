@@ -2,25 +2,14 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.Azure.Amqp.Framing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using QRCoder;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Globalization; 
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
+using System.Globalization;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
 using AlegriaCanyoneeringWebBooking.Models;
 using Microsoft.AspNetCore.Http;
-
 
 namespace AlegriaCanyoneeringWebBooking.Controllers
 {
@@ -31,22 +20,41 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<GuestController> _logger;
         private readonly IMemoryCache _cache;
+
         public GuestController(ApplicationDbContext context, IWebHostEnvironment environment, ILogger<GuestController> logger, IMemoryCache cache)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
             _cache = cache;
-            // Test connection
-            if (!_context.Database.CanConnect())
-            {
-                throw new Exception("Cannot connect to database. Please check your connection string.");
-            }
 
-            _cache = cache;
+            if (!_context.Database.CanConnect())
+                throw new Exception("Cannot connect to database. Please check your connection string.");
         }
 
+        // ─── Helper: hydrate OperatorList onto a list of guests ───────────────────
+        private async Task HydrateOperatorList(List<Guest> guests)
+        {
+            var operatorIds = guests
+                .Where(g => g.OperatorId.HasValue)
+                .Select(g => g.OperatorId!.Value)
+                .Distinct()
+                .ToList();
 
+            if (!operatorIds.Any()) return;
+
+            var operatorMap = await _context.OperatorLists
+                .Where(o => operatorIds.Contains(o.OperatorId))
+                .ToDictionaryAsync(o => o.OperatorId);
+
+            foreach (var g in guests)
+            {
+                if (g.OperatorId.HasValue && operatorMap.TryGetValue(g.OperatorId.Value, out var op))
+                    g.OperatorList = op;
+            }
+        }
+
+        // ─── GetGuestsData ────────────────────────────────────────────────────────
         [HttpPost]
         public async Task<IActionResult> GetGuestsData()
         {
@@ -55,7 +63,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "10");
             var search = Request.Form["search[value]"].FirstOrDefault()?.ToLower();
 
-            // Get current user's info
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
@@ -63,35 +70,34 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
                 currentOperatorId = parsedId;
 
-            // Base query with join to Operators to enable searching operator name
             var query = from g in _context.Guests.AsNoTracking()
-                        join o in _context.Operators.AsNoTracking()
-                            on g.OperatorId equals o.Id into opGroup
+                        join o in _context.OperatorLists.AsNoTracking()
+                            on g.OperatorId equals o.OperatorId into opGroup
                         from operatorItem in opGroup.DefaultIfEmpty()
                         where g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated
-                              && g.BookingStatus != (int)Guest.BookingStatusEnum.canceled
                         select new
                         {
                             Guest = g,
-                            OperatorName = operatorItem != null ? operatorItem.BusinessName : "No Operator"
+                            OperatorName = operatorItem != null
+                                ? (string.IsNullOrWhiteSpace(operatorItem.BusinessName)
+                                    ? operatorItem.OwnerName
+                                    : operatorItem.BusinessName)
+                                : "No Operator"
                         };
 
-            // Filter by operator role if applicable
             if (currentOperatorId.HasValue)
-            {
                 query = query.Where(x => x.Guest.OperatorId == currentOperatorId.Value);
-            }
 
-            // Apply search filter including operator name
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(x =>
-                    x.Guest.Fullname.ToLower().Contains(search) ||
-                    x.Guest.Batch.ToLower().Contains(search) ||
+                    (x.Guest.Fullname != null && x.Guest.Fullname.ToLower().Contains(search)) ||
+                    (x.Guest.Batch != null && x.Guest.Batch.ToLower().Contains(search)) ||
                     x.OperatorName.ToLower().Contains(search));
             }
 
-            // Group + paginate in DB
+            var recordsTotal = await query.CountAsync();
+
             var groupedData = await query
                 .OrderBy(x => x.Guest.OperatorId)
                 .ThenBy(x => x.Guest.Batch)
@@ -109,10 +115,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .Take(length)
                 .ToListAsync();
 
-            // Get total count for filtering
-            var recordsTotal = await query.CountAsync();
-
-            // Prepare result
             var result = groupedData.Select(g => new
             {
                 id = g.MainGuestId,
@@ -123,29 +125,22 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 bookingStatus = "anticipated"
             }).ToList();
 
-            // Return data in DataTables format
-            return Json(new
-            {
-                draw,
-                recordsFiltered = recordsTotal,
-                recordsTotal,
-                data = result
-            });
+            return Json(new { draw, recordsFiltered = recordsTotal, recordsTotal, data = result });
         }
 
-
-
-
+        // ─── GetBookingDetails ────────────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> GetBookingDetails(int id)
         {
             var guest = await _context.Guests
                 .Include(g => g.NationalityEntity)
-                .Include(g => g.Operators) // optional if you use operator in partial
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (guest == null)
                 return Content("<p class='text-danger'>Guest not found.</p>", "text/html");
+
+            // Manually hydrate OperatorList
+            await HydrateOperatorList(new List<Guest> { guest });
 
             var guestsInBatch = await _context.Guests
                 .Where(g => g.Batch == guest.Batch && g.Id != guest.Id)
@@ -158,73 +153,79 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 GuestsInBatch = guestsInBatch
             };
 
-            // Ensure the partial name matches the file you created:
             return PartialView("_BookingDetailsPartial", vm);
         }
 
-
-
+        // ─── PopulateDropdowns ────────────────────────────────────────────────────
         private async Task PopulateDropdowns()
         {
-
             ViewBag.OperatorList = new SelectList(await _context.OperatorLists.ToListAsync(), "OperatorId", "BusinessName");
-            ViewBag.NationalityList = new SelectList(await _context.Nationalities.ToListAsync(), "NationalityId", "NatName"); // Populate Nationality dropdown
+            ViewBag.NationalityList = new SelectList(await _context.Nationalities.ToListAsync(), "NationalityId", "NatName");
         }
-        // Fix for CS0029: Cannot implicitly convert type 'string' to 'int?'
-        // The issue is likely in the assignment of `guest.RFID` where `GenerateRFID()` returns a string but `RFID` expects an int?.
-        // Update the `GenerateRFID` method to return an int instead of a string.
-        private int GenerateRFID()
-        {
-            return 1;
-        }
-        // =========================================================
-        // NewBooking — GET
-        // =========================================================
+
+        private int GenerateRFID() => 1;
+
+        // ─── NewBooking GET ───────────────────────────────────────────────────────
         public async Task<IActionResult> NewBooking(string batch, int? id)
         {
             var userRole = User.FindFirstValue(ClaimTypes.Role);
             var username = User.Identity!.Name;
 
-            List<Operator> operators;
-            bool operatorLocked = false;   // flag passed to view
+            List<OperatorList> operators;
+            bool operatorLocked = false;
 
             if (userRole == "Operator")
             {
-                // Look up by Username — NOT by NameIdentifier (which is auth ID, not DB Id)
-                var loggedInOp = await _context.Operators
+                // Step 1: Find the login record in tbl_operator_mobile by username
+                var mobileOp = await _context.Operators
                     .FirstOrDefaultAsync(o => o.Username == username);
 
-                operators = loggedInOp != null
-                    ? new List<Operator> { loggedInOp }
-                    : new List<Operator>();
+                if (mobileOp != null)
+                {
+                    // Step 2: Match to operator_list by the same Id
+                    var matchedOp = await _context.OperatorLists
+                        .FirstOrDefaultAsync(o => o.OperatorId == mobileOp.Id);
 
-                operatorLocked = true;   // Operator cannot change this
+                    operators = matchedOp != null
+                        ? new List<OperatorList> { matchedOp }
+                        : new List<OperatorList>();
+                }
+                else
+                {
+                    operators = new List<OperatorList>();
+                }
+
+                operatorLocked = true;
             }
             else
             {
-                // Admin / Super Admin — see all
-                operators = await _context.Operators.ToListAsync();
+                // Admin / Super Admin — read from operator_list
+                operators = await _context.OperatorLists
+                    .Where(o => o.Status == 1)
+                    .OrderBy(o => o.BusinessName)
+                    .ToListAsync();
+
                 operatorLocked = false;
             }
 
-            // Build dropdown — fallback to owner Name if BusinessName is empty
             var operatorSelectList = operators.Select(o => new
             {
-                Id = o.Id,
+                Id = o.OperatorId,
                 DisplayName = !string.IsNullOrWhiteSpace(o.BusinessName)
                                 ? o.BusinessName
-                                : o.Name ?? "No Operator"
+                                : o.OwnerName ?? "No Operator"
             }).ToList();
 
             ViewBag.OperatorList = new SelectList(operatorSelectList, "Id", "DisplayName");
-            ViewBag.OperatorLocked = operatorLocked;   // ← used in the view to disable select
+            ViewBag.OperatorLocked = operatorLocked;
 
-            // ── Rest of the action unchanged below ──────────────────
-
+            // Load anticipated guests — NO Include for OperatorList
             var anticipatedGuests = await _context.Guests
-                .Include(g => g.Operators)
                 .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated)
                 .ToListAsync();
+
+            // Manually hydrate OperatorList
+            await HydrateOperatorList(anticipatedGuests);
 
             var model = new GuestListViewModel
             {
@@ -237,7 +238,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         return new Guest
                         {
                             OperatorId = grp.Key,
-                            Operators = first.Operators,
+                            OperatorList = first.OperatorList,
                             RFID = grp.Count(g => g.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
                             ArrivalDate = first.ArrivalDate,
                             Date = first.Date,
@@ -268,13 +269,9 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             if (!string.IsNullOrEmpty(model.NewGuest.Date) &&
                 DateTime.TryParse(model.NewGuest.Date, out DateTime bookingDate))
-            {
                 model.Html5BookingDate = bookingDate.ToString("yyyy-MM-ddTHH:mm");
-            }
             else
-            {
                 model.Html5BookingDate = null;
-            }
 
             if (!string.IsNullOrEmpty(model.NewGuest.ArrivalDate) &&
                 long.TryParse(model.NewGuest.ArrivalDate, out long unixTimestamp))
@@ -288,13 +285,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(model);
         }
 
-        // Helper method to convert Unix timestamp to DateTime
         private DateTime ConvertUnixToDateTime(long unixTimestamp)
-        {
-            return DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime.ToLocalTime();
-        }
+            => DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime.ToLocalTime();
 
-
+        // ─── NewBooking POST ──────────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> NewBooking(GuestListViewModel model, string batch = null, int? id = null, IFormFile Photo = null)
@@ -308,17 +302,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 if (batchGuests != null && batchGuests.Count > 0)
                 {
                     int insertedCount = 0;
-
-                    // ✅ Generate base timestamp ONCE for the whole batch
                     long baseUnixTimestamp = GetCurrentUnixTimestamp();
                     string firstGuestRFIDCode = null;
 
                     foreach (var guest in batchGuests)
                     {
-                        // ✅ ArrivalDate: each guest gets +60 seconds from base
                         long guestArrivalTimestamp = baseUnixTimestamp + (insertedCount * 60L);
-
-                        // ✅ RFIDCode: ArrivalDate + 500 + (index * 100)
                         long rfidTimestamp = guestArrivalTimestamp + 500L + (insertedCount * 100L);
                         string generatedRFIDCode = rfidTimestamp.ToString();
 
@@ -332,17 +321,14 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         guest.Year = guest.Year ?? DateTime.Today.Year.ToString();
                         guest.Month = DateTime.Today.ToString("MMMM");
 
-                        // ✅ Override ArrivalDate with incremented timestamp per guest
                         if (!string.IsNullOrEmpty(guest.ArrivalDate))
                         {
                             if (DateTime.TryParse(guest.ArrivalDate, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime dt))
                             {
-                                // Use the user's selected date but add per-guest offset (60s each)
                                 long userArrival = new DateTimeOffset(dt).ToUnixTimeSeconds();
                                 long uniqueArrival = userArrival + (insertedCount * 60L);
                                 guest.ArrivalDate = uniqueArrival.ToString();
 
-                                // ✅ Recalculate RFID based on actual user arrival
                                 rfidTimestamp = uniqueArrival + 500L + (insertedCount * 100L);
                                 guest.RFIDCode = rfidTimestamp.ToString();
 
@@ -364,20 +350,16 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
                     await _context.SaveChangesAsync();
 
-                    // ✅ Photo is linked to the FIRST guest's RFID code
                     if (Photo != null && Photo.Length > 0)
                     {
-                        using (var ms = new MemoryStream())
+                        using var ms = new MemoryStream();
+                        await Photo.CopyToAsync(ms);
+                        _context.Add(new GuestImage
                         {
-                            await Photo.CopyToAsync(ms);
-                            var guestImage = new GuestImage
-                            {
-                                WristbondGuestCode = firstGuestRFIDCode,
-                                Image = ms.ToArray()
-                            };
-                            _context.Add(guestImage);
-                            await _context.SaveChangesAsync();
-                        }
+                            WristbondGuestCode = firstGuestRFIDCode,
+                            Image = ms.ToArray()
+                        });
+                        await _context.SaveChangesAsync();
                     }
 
                     TempData["ToastMessage"] = "Guests added successfully";
@@ -394,45 +376,30 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(model);
         }
 
-        // Helper method to generate the current Unix timestamp
         private long GetCurrentUnixTimestamp()
-        {
-            DateTime utcNow = DateTime.UtcNow; // Get current UTC time
-            return (long)(utcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-        }
+            => (long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
-
-
+        // ─── GenerateBatchCode ────────────────────────────────────────────────────
         private async Task<string> GenerateBatchCode()
         {
-            // Get all batch codes that are valid integers only
             var numericBatches = _context.Guests
                 .AsEnumerable()
                 .Select(g => g.Batch)
-                .Where(batch =>
-                    !string.IsNullOrWhiteSpace(batch) &&
-                    batch.All(char.IsDigit) &&
-                    int.TryParse(batch, out _)) // ensure it's parseable
-                .Select(batch => int.Parse(batch)) // now it's safe
+                .Where(b => !string.IsNullOrWhiteSpace(b) && b.All(char.IsDigit) && int.TryParse(b, out _))
+                .Select(b => int.Parse(b))
                 .OrderByDescending(x => x)
                 .ToList();
 
-            int nextBatchCode = 10000;
-
-            if (numericBatches.Any())
-            {
-                nextBatchCode = numericBatches.First() + 1;
-            }
-
-            return nextBatchCode.ToString();
+            int next = numericBatches.Any() ? numericBatches.First() + 1 : 10000;
+            return next.ToString();
         }
 
-        private string GenerateRFIDCode()
-        {
-            return GetCurrentUnixTimestamp().ToString();
-        }
+        private string GenerateBatchCode(int? operatorId)
+            => $"OP{operatorId}-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
 
+        private string GenerateRFIDCode() => GetCurrentUnixTimestamp().ToString();
 
+        // ─── SaveGuest ────────────────────────────────────────────────────────────
         public async Task<IActionResult> SaveGuest()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -440,22 +407,18 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             int? currentOperatorId = null;
             if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
-            {
                 currentOperatorId = parsedId;
-            }
 
-            var anticipatedGuestsQuery = _context.Guests
-                .Include(g => g.Operators)
-                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated
-                            && g.BookingStatus != 0); // <-- exclude confirmed
+            var query = _context.Guests
+                .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated);
 
             if (currentOperatorId.HasValue)
-            {
-                anticipatedGuestsQuery = anticipatedGuestsQuery
-                    .Where(g => g.OperatorId == currentOperatorId.Value);
-            }
+                query = query.Where(g => g.OperatorId == currentOperatorId.Value);
 
-            var anticipatedGuests = await anticipatedGuestsQuery.ToListAsync();
+            var anticipatedGuests = await query.ToListAsync();
+
+            // ✅ Manually hydrate OperatorList
+            await HydrateOperatorList(anticipatedGuests);
 
             var grouped = anticipatedGuests
                 .GroupBy(g => g.OperatorId)
@@ -465,7 +428,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     return new Guest
                     {
                         OperatorId = grp.Key,
-                        Operators = first.Operators,
+                        OperatorList = first.OperatorList,
                         RFID = grp.Count(x => x.BookingStatus != (int)Guest.BookingStatusEnum.canceled),
                         ArrivalDate = first.ArrivalDate,
                         BookingStatus = first.BookingStatus
@@ -473,63 +436,41 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 })
                 .ToList();
 
-            var model = new GuestListViewModel
-            {
-                ReservedGuests = grouped
-            };
-
-            return View(model);
+            return View(new GuestListViewModel { ReservedGuests = grouped });
         }
 
-
-        private int GetCurrentOperatorId()
-        {
-            int operatorId;
-            if (int.TryParse(User.Identity?.Name, out operatorId))
-            {
-                return operatorId;
-            }
-            return 0;
-        }
-
+        // ─── GetNationalities ─────────────────────────────────────────────────────
         public async Task<IActionResult> GetNationalities()
         {
             try
             {
                 var nationalities = await _context.Nationalities
-                    .Where(n => n.NatName != "Within Cebu Province" &&
-                                n.NatName != "Outside Cebu Province")
+                    .Where(n => n.NatName != "Within Cebu Province" && n.NatName != "Outside Cebu Province")
                     .OrderBy(n => n.NatName)
-                    .Select(n => new
-                    {
-                        n.id,      // Return Id
-                        n.NatName  // Return Name
-                    })
+                    .Select(n => new { n.id, n.NatName })
                     .ToListAsync();
 
-                return Json(nationalities);  // Return the list of nationalities as JSON
+                return Json(nationalities);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });  // Return error if something goes wrong
+                return StatusCode(500, new { error = ex.Message });
             }
         }
 
-
-
-        private string GenerateBatchCode(int? operatorId)
-        {
-            return $"OP{operatorId}-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
-        }
+        // ─── BookingDetailsPartial ────────────────────────────────────────────────
         public IActionResult BookingDetailsPartial(int id)
         {
+            var guest = _context.Guests.FirstOrDefault(g => g.Id == id);
             var model = new GuestDetailsViewModel
             {
-                Guest = _context.Guests.FirstOrDefault(g => g.Id == id),
-                GuestsInBatch = _context.Guests.Where(g => g.Batch == _context.Guests.FirstOrDefault(x => x.Id == id).Batch).ToList()
+                Guest = guest,
+                GuestsInBatch = _context.Guests.Where(g => g.Batch == guest.Batch).ToList()
             };
             return PartialView("_BookingDetailsPartial", model);
         }
+
+        // ─── CancelGuest ──────────────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelGuest(int GuestId)
@@ -550,13 +491,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 return Json(new { success = false, message = "An error occurred while deleting the guest." });
             }
 
-            var updatedGuests = await _context.Guests
-                .Where(g => g.Batch == batch)
-                .ToListAsync();
-
             return Json(new { success = true, guestId = GuestId });
         }
 
+        // ─── GetUpdatedGuestList ──────────────────────────────────────────────────
         [HttpGet]
         public IActionResult GetUpdatedGuestList(string batchId)
         {
@@ -567,129 +505,63 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return PartialView("_BookingDetailsPartial", allGuests);
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> CancelGuest(int GuestId)
-        //{
-        //    var guest = await _context.Guests.FindAsync(GuestId);
-        //    if (guest == null)
-        //        return Json(new { success = false, message = "Guest not found" });
-
-        //    // Store batch before deleting
-        //    var batch = guest.Batch;
-
-        //    // Permanent delete the guest
-        //    _context.Guests.Remove(guest);
-
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    catch (DbUpdateConcurrencyException)
-        //    {
-        //        return Json(new { success = false, message = "An error occurred while deleting the guest." });
-        //    }
-
-        //    // Recalculate RFID for remaining guests in the batch
-        //    var updatedGuestCount = await _context.Guests
-        //        .Where(g => g.Batch == batch)
-        //        .CountAsync();
-
-        //    var guestsInBatch = await _context.Guests
-        //        .Where(g => g.Batch == batch)
-        //        .ToListAsync();
-
-        //    // Update RFID for all guests in the batch
-        //    foreach (var g in guestsInBatch)
-        //    {
-        //        g.RFID = updatedGuestCount;
-        //    }
-
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    catch (DbUpdateConcurrencyException)
-        //    {
-        //        return Json(new { success = false, message = "An error occurred while updating RFID for guests." });
-        //    }
-
-        //    return Json(new { success = true, guestId = GuestId });
-        //}
+        // ─── UpdateStatus ─────────────────────────────────────────────────────────
         public async Task<IActionResult> UpdateStatus(int id, int status)
         {
             var guest = await _context.Guests.FindAsync(id);
             if (guest == null)
-            {
                 return NotFound();
-            }
 
-            // Change the status of the selected guest to Reserved (2) automatically
-            guest.BookingStatus = 2;  // Set status to Reserved (2)
+            guest.BookingStatus = 2;
 
-            // Fetch all guests in the same batch as the current guest
-            var operatorGuests = await _context.Guests
-                .Where(g => g.Batch == guest.Batch && g.BookingStatus != 2) // Don't update already reserved guests
+            var batchGuests = await _context.Guests
+                .Where(g => g.Batch == guest.Batch && g.BookingStatus != 2)
                 .ToListAsync();
 
-            if (!operatorGuests.Any())
-            {
+            if (!batchGuests.Any())
                 return NotFound("No other guests found for this batch.");
-            }
 
-            // Update the status of all guests in this batch to Reserved (2)
-            foreach (var g in operatorGuests)
-            {
-                g.BookingStatus = 2;  // Set status to Reserved (2)
-            }
+            foreach (var g in batchGuests)
+                g.BookingStatus = 2;
 
             try
             {
-                // Save all changes
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                return Conflict("Concurrency conflict: guests may have been modified by another process.");
+                return Conflict("Concurrency conflict.");
             }
 
-            // Redirect back to the ReserveBooking page
             return RedirectToAction("ReserveBooking", "Reserve");
         }
 
-
+        // ─── DownloadQRCode ───────────────────────────────────────────────────────
         public IActionResult DownloadQRCode(string base64Image, string fileName)
         {
             if (string.IsNullOrEmpty(base64Image))
             {
                 TempData["ToastMessage"] = "No image data provided.";
-                TempData["ToastType"] = "danger"; // can be 'success', 'danger', etc.
-                return RedirectToAction("ReserveBookings"); // or whatever action/page, update as needed
+                TempData["ToastType"] = "danger";
+                return RedirectToAction("ReserveBookings");
             }
 
             try
             {
-                // Remove the "data:image/png;base64," prefix if it exists
                 var base64Data = base64Image.Substring(base64Image.IndexOf(",") + 1);
-                var imageBytes = Convert.FromBase64String(base64Data);
-
-                return File(imageBytes, "image/png", fileName);
+                return File(Convert.FromBase64String(base64Data), "image/png", fileName);
             }
             catch (Exception ex)
             {
                 TempData["ToastMessage"] = $"Error downloading QR code: {ex.Message}";
                 TempData["ToastType"] = "danger";
-                return RedirectToAction("reservebooking"); // fallback action
+                return RedirectToAction("reservebooking");
             }
         }
 
-        private bool GuestExists(int id)
-        {
-            return _context.Guests.Any(e => e.Id == id);
-        }
+        private bool GuestExists(int id) => _context.Guests.Any(e => e.Id == id);
 
-
-
+        private int GetCurrentOperatorId()
+            => int.TryParse(User.Identity?.Name, out int operatorId) ? operatorId : 0;
     }
 }
-

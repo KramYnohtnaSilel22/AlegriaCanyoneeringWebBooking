@@ -2,14 +2,9 @@
 @model GuestDetailsViewModel
 
 @{
-    var allGuests = new List<Guest>();
-    if (Model.Guest != null) allGuests.Add(Model.Guest);
-    if (Model.GuestsInBatch != null)
-        allGuests.AddRange(Model.GuestsInBatch.Where(g => g.BookingStatus != 1));
+    ViewData["Title"] = "Booking Details";
 }
 
-@Html.AntiForgeryToken()
-
 <div id="bookingDetailsContainer">
-    @Html.Partial("_BookingDetailsPartial", Model)
+    @await Html.PartialAsync("_BookingDetailsPartial", Model)
 </div>

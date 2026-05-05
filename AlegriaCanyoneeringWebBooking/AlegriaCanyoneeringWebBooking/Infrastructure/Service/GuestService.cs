@@ -18,7 +18,7 @@ public class GuestService : IGuestService
         var today = DateTime.Today;
 
         return _context.Guests
-            .Include(g => g.Operators)         // 👈 include Operator
+            .Include(g => g.OperatorList)         // 👈 include Operator
             .Include(g => g.NationalityEntity)    // 👈 include Nationality
             .AsEnumerable()
             .FirstOrDefault(g =>
