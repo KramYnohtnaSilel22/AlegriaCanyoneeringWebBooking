@@ -1,5 +1,4 @@
-﻿using AlegriaCanyoneeringWebBooking.Models;
-using AlegriaCanyoneeringWebBooking.WebUI.ViewModel;
+﻿using AlegriaCanyoneeringWebBooking.WebUI.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +15,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             _context = context;
         }
-       
-
 
         public IActionResult Guest(DateTime? dateFrom = null, DateTime? dateTo = null)
         {
@@ -157,52 +154,58 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             return View(viewModel);
         }
 
-   
 
 
-        public async Task<IActionResult> Operator(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
+
+
+        public IActionResult Operator(string filter = "daily", DateTime? dateFrom = null, DateTime? dateTo = null)
         {
             var fromDate = dateFrom ?? DateTime.Today;
             var toDate = dateTo ?? DateTime.Today;
 
+            // 🗓️ Save to ViewBag for date pickers
             ViewBag.Filter = filter;
             ViewBag.DateFrom = fromDate.ToString("yyyy-MM-dd");
             ViewBag.DateTo = toDate.ToString("yyyy-MM-dd");
 
-            var allGuests = await _context.Guests.ToListAsync();
-            await HydrateOperatorList(allGuests);
+            // 🔹 Load all guests with operator info
+            var allGuests = _context.Guests
+                .Include(g => g.Operators)
+                .ToList();
 
+            // 🔹 Filter guests by date range
             var guests = allGuests
                 .Where(g =>
                 {
                     if (!DateTime.TryParse(g.Date, out var guestDate))
                         return false;
-                    return g.OperatorList != null &&
+                    return g.Operators != null &&
                            guestDate.Date >= fromDate.Date &&
                            guestDate.Date <= toDate.Date;
                 })
                 .ToList();
 
+            // 🔹 Group guests by operator business name
             var operatorReport = guests
-                .Where(g => !string.IsNullOrWhiteSpace(g.Gender) && g.OperatorList != null)
-                .GroupBy(g => (!string.IsNullOrWhiteSpace(g.OperatorList!.BusinessName)
-                                ? g.OperatorList.BusinessName
-                                : g.OperatorList.OwnerName ?? "Unknown").Trim())
+                .Where(g => !string.IsNullOrWhiteSpace(g.Gender) && g.Operators != null)
+                .GroupBy(g => g.Operators.BusinessName.Trim())
                 .Select((g, index) => new
                 {
                     Seq = index + 1,
                     BusinessName = g.Key,
-                    Male = g.Count(x => x.Gender!.Trim().ToLower() == "male"),
-                    Female = g.Count(x => x.Gender!.Trim().ToLower() == "female"),
+                    Male = g.Count(x => x.Gender.Trim().ToLower() == "male"),
+                    Female = g.Count(x => x.Gender.Trim().ToLower() == "female"),
                     Total = g.Count()
                 })
                 .OrderByDescending(x => x.Total)
                 .ToList();
 
+            // 🔹 Compute totals
             ViewBag.TotalMale = operatorReport.Sum(x => x.Male);
             ViewBag.TotalFemale = operatorReport.Sum(x => x.Female);
             ViewBag.TotalEnding = operatorReport.Sum(x => x.Total);
 
+            // 🔹 Convert to ViewModel
             var viewModel = operatorReport.Select(x => new TourismReportViewModel
             {
                 Label = x.BusinessName,
@@ -212,30 +215,6 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(viewModel);
         }
-
-
-        // ✅ HydrateOperatorList must be INSIDE here
-        private async Task HydrateOperatorList(List<Guest> guests)
-        {
-            var operatorIds = guests
-                .Where(g => g.OperatorId.HasValue)
-                .Select(g => g.OperatorId!.Value)
-                .Distinct()
-                .ToList();
-
-            if (!operatorIds.Any()) return;
-
-            var operatorMap = await _context.OperatorLists
-                .Where(o => operatorIds.Contains(o.OperatorId))
-                .ToDictionaryAsync(o => o.OperatorId);
-
-            foreach (var g in guests)
-            {
-                if (g.OperatorId.HasValue && operatorMap.TryGetValue(g.OperatorId.Value, out var op))
-                    g.OperatorList = op;
-            }
-        }
-
 
         private static readonly List<string> AttendanceAreas = new()
         {
@@ -1172,7 +1151,5 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
 
             return View(report);
         }
-
-
     }
 }
