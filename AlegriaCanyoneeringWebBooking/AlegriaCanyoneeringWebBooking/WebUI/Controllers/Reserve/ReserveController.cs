@@ -53,15 +53,24 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         // PRINT BATCH GUESTS
         // =========================================================
         [HttpGet, HttpPost]
-        public IActionResult PrintBatchGuests(string batchCode)
+        public IActionResult PrintBatchGuests(string batchCode, int? operatorId)
         {
             if (string.IsNullOrEmpty(batchCode))
                 return BadRequest("Batch code is required.");
 
-            var rawGuests = _context.Guests
+            // Base query: guests matching batch
+            var query = _context.Guests
                 .Include(g => g.Operators)
-                .Where(g => g.Batch == batchCode)
-                .ToList();
+                .Where(g => g.Batch == batchCode);
+
+            // If operatorId was supplied (from the modal), limit to that operator
+            if (operatorId.HasValue && operatorId.Value > 0)
+                query = query.Where(g => g.OperatorId == operatorId.Value);
+
+            // Only include completed (confirmed) guests and exclude canceled
+            query = query.Where(g => g.BookingStatus == Guest.Status.Confirmed);
+
+            var rawGuests = query.ToList();
 
             var guests = rawGuests.Select(g => new
             {
@@ -69,16 +78,17 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 FullName = g.Fullname ?? "Unknown Guest",
                 ArrivalDate = ParseUnixTimestamp(g.ArrivalDate),
                 WristbandCode = g.RFIDCode,
-                QRBase64 = GenerateQRCodeBase64(g.Operators?.Id.ToString() ?? "0"),
+                QRBase64 = GenerateQRCodeBase64(g.Id.ToString()), // unique per guest
                 Operators = g.Operators?.BusinessName ?? "No Operators"
             }).ToList();
 
             if (!guests.Any())
-                return NotFound("No guests found for this batch.");
+                return NotFound("No completed guests found for this batch/operator.");
 
             ViewBag.BatchCode = batchCode;
             return View("PrintBatchGuests", guests);
         }
+
 
         // =========================================================
         // SCAN GUEST INFO

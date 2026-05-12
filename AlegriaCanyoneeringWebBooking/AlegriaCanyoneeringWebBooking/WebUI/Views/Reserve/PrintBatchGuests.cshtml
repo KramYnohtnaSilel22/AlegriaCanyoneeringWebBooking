@@ -1,6 +1,14 @@
-﻿@model IEnumerable<dynamic>
+﻿@using System.Linq
+@model IEnumerable<dynamic>
 @{
     Layout = null;
+
+    // safe count without relying on LINQ extensions
+    int totalTickets = 0;
+    if (Model != null)
+    {
+        foreach (var _ in Model) { totalTickets++; }
+    }
 }
 
 <!DOCTYPE html>
@@ -13,22 +21,24 @@
 </head>
 <body>
 
-    <button id="printBtn" onclick="window.print()">🖨️ Print Wristbands</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;">
+        <div><strong>Total Tickets:</strong> @totalTickets</div>
+        <div>
+            <button id="printBtn" onclick="window.print()">🖨️ Print Wristbands</button>
+        </div>
+    </div>
 
     <div id="ticketsContainer">
-        @foreach (var g in Model)
+        @foreach (var g in Model ?? Enumerable.Empty<dynamic>())
         {
             var batchId = Guid.NewGuid().ToString("N");
             <div class="ticket">
-                <!-- Left Section: 80mm width -->
                 <div class="ticket-left">
                     <div class="logo-qr-container">
                         <div class="logo">
                             <img src="/images/alegrialogo2025.jpeg" alt="Alegria Canyoneering Logo"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div class="logo-placeholder" style="display: none;">
-                  
-                            </div>
+                            <div class="logo-placeholder" style="display: none;"></div>
                         </div>
 
                         @if (!string.IsNullOrEmpty(g.QRBase64))
@@ -49,13 +59,36 @@
                     </div>
                 </div>
 
-                <!-- Right Section: 180mm width -->
                 <div class="ticket-right">
                     <div class="operator-name">@g.Operators</div>
                     <div class="guest-info">
                         <div class="guest-name">@g.FullName</div>
                         <div class="date-time">
-                            @DateTime.Now.ToLocalTime().ToString("M/d/yyyy h:mm tt")
+                            @{
+                                string arrivalText = "N/A";
+                                try
+                                {
+                                    if (g.ArrivalDate != null)
+                                    {
+                                        DateTime? dtNullable = g.ArrivalDate as DateTime?;
+                                        if (dtNullable.HasValue)
+                                        {
+                                            arrivalText = dtNullable.Value.ToLocalTime().ToString("M/d/yyyy h:mm tt");
+                                        }
+                                        else
+                                        {
+                                            var s = Convert.ToString(g.ArrivalDate);
+                                            long unixVal = 0;
+                                            if (!string.IsNullOrEmpty(s) && long.TryParse(s, out unixVal))
+                                                arrivalText = DateTimeOffset.FromUnixTimeSeconds(unixVal).LocalDateTime.ToString("M/d/yyyy h:mm tt");
+                                            else if (!string.IsNullOrEmpty(s))
+                                                arrivalText = s;
+                                        }
+                                    }
+                                }
+                                catch { arrivalText = "N/A"; }
+                            }
+                            @arrivalText
                         </div>
                     </div>
                 </div>
@@ -64,28 +97,27 @@
     </div>
 
     <script>
-        // Automatically trigger print dialog when the page loads
-              window.onload = function() {
-                  window.print();
-              };
-        let totalImages = 0;
-        let loadedImages = 0;
-        let erroredImages = 0;
+            window.onload = function () {
+                window.print();
+            };
+            let totalImages = 0;
+            let loadedImages = 0;
+            let erroredImages = 0;
 
-        window.addEventListener("DOMContentLoaded", () => {
-            totalImages = document.querySelectorAll(".qr img").length;
-            console.log(`🧾 Total tickets: ${document.querySelectorAll('.ticket').length}`);
-        });
+            window.addEventListener("DOMContentLoaded", () => {
+                totalImages = document.querySelectorAll(".qr img").length;
+                console.log(`🧾 Total tickets: ${document.querySelectorAll('.ticket').length}`);
+            });
 
-        function markLoaded(id) {
-            loadedImages++;
-            console.log(`✅ QR loaded (${loadedImages}/${totalImages})`);
-        }
+            function markLoaded(id) {
+                loadedImages++;
+                console.log(`✅ QR loaded (${loadedImages}/${totalImages})`);
+            }
 
-        function markError(id) {
-            erroredImages++;
-            console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
-        }
+            function markError(id) {
+                erroredImages++;
+                console.warn(`❌ QR failed to load (${erroredImages}/${totalImages})`);
+            }
     </script>
 
 </body>
