@@ -208,13 +208,24 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
 
             // Build dropdown — fallback to owner Name if BusinessName is empty
-            var operatorSelectList = operators.Select(o => new
-            {
-                Id = o.Id,
-                DisplayName = !string.IsNullOrWhiteSpace(o.BusinessName)
-                                ? o.BusinessName
-                                : o.Name ?? "No Operator"
-            }).ToList();
+            // Filter out operators with no valid name (NA / No Operator / blank)
+            var operatorSelectList = operators
+                .Where(o =>
+                {
+                    var display = !string.IsNullOrWhiteSpace(o.BusinessName)
+                                    ? o.BusinessName
+                                    : o.Name;
+                    return !string.IsNullOrWhiteSpace(display)
+                        && !display.Equals("NA", StringComparison.OrdinalIgnoreCase)
+                        && !display.Equals("No Operator", StringComparison.OrdinalIgnoreCase);
+                })
+                .Select(o => new
+                {
+                    Id = o.Id,
+                    DisplayName = !string.IsNullOrWhiteSpace(o.BusinessName)
+                                    ? o.BusinessName
+                                    : o.Name
+                }).ToList();
 
             ViewBag.OperatorList = new SelectList(operatorSelectList, "Id", "DisplayName");
             ViewBag.OperatorLocked = operatorLocked;   // ← used in the view to disable select
