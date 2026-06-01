@@ -481,7 +481,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         public IActionResult BookedGuest() => View();
 
         [HttpPost]
-        [Authorize(Roles = "Super Admin")]
+        [Authorize(Roles = "Super Admin,Admin,Operator,Staff")]
         public async Task<IActionResult> BookedGuest(string BatchCode)
         {
             try
@@ -504,8 +504,12 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     return Json(new { success = false, message = $"No batch code provided. Auto-generated: {newBatchNumber}." });
                 }
 
+                var batchNumbers = BatchCode.StartsWith("BATCH-", StringComparison.OrdinalIgnoreCase)
+                    ? BatchCode[6..]
+                    : BatchCode;
+
                 var guestsToFinalize = await _context.Guests
-                    .Where(g => g.Batch == BatchCode && g.BookingStatus == 2)
+                    .Where(g => g.Batch == batchNumbers && g.BookingStatus == 2)
                     .ToListAsync();
 
                 if (!guestsToFinalize.Any())
@@ -519,7 +523,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 }
 
                 foreach (var guest in guestsToFinalize)
-                    guest.BookingStatus = 0;
+                    guest.BookingStatus = Guest.Status.Confirmed;
 
                 await _context.SaveChangesAsync();
                 return Json(new { success = true, message = "Successfully confirmed" });
@@ -664,11 +668,11 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             if (userRole == "Operator" && int.TryParse(userId, out int parsedId))
                 currentOperatorId = parsedId;
 
-            // No BookingStatus filter — same scope as GetGuestOfTheDay
+            // Only include confirmed guests (BookingStatus == 1)
             var rawGuests = await _context.Guests
                 .AsNoTracking()
                 .Include(g => g.Operators)
-                .Where(g => !string.IsNullOrEmpty(g.Date))
+                .Where(g => !string.IsNullOrEmpty(g.Date) && g.BookingStatus == Guest.Status.Confirmed)
                 .ToListAsync();
 
             // Parse dates in memory
@@ -790,7 +794,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .AsNoTracking()
                 .Include(g => g.NationalityEntity)
                 .Include(g => g.Operators)
-                .Where(g => !string.IsNullOrEmpty(g.Date))
+                .Where(g => !string.IsNullOrEmpty(g.Date) && g.BookingStatus == Guest.Status.Confirmed)
                 .ToListAsync();
 
             var filteredGuests = rawGuests
@@ -919,7 +923,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                 .AsNoTracking()
                 .Include(g => g.NationalityEntity)
                 .Include(g => g.Operators)
-                .Where(g => g.Batch == batchCode)
+                .Where(g => g.Batch == batchCode && g.BookingStatus == Guest.Status.Confirmed)
                 .OrderBy(g => g.Id)
                 .ToListAsync();
 

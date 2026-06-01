@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -32,9 +32,10 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         {
             try
             {
-                // ── Pull ALL guests — no status filter ───────────────────────────────
+                // ── Pull only Confirmed guests (BookingStatus == 1) ──────────────────
                 // We only fetch the 3 date columns needed for counting.
                 var rawGuests = await _context.Guests
+                    .Where(g => g.BookingStatus == 1)
                     .Select(g => new
                     {
                         g.ArrivalDate,  // Primary  : Unix timestamp string
@@ -131,6 +132,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             try
             {
                 var rawGuests = await _context.Guests
+                    .Where(g => g.BookingStatus == 1)
                     .Select(g => new
                     {
                         g.ArrivalDate,

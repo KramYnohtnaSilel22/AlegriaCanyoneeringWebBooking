@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -447,7 +447,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             var anticipatedGuestsQuery = _context.Guests
                 .Include(g => g.Operators)
                 .Where(g => g.BookingStatus == (int)Guest.BookingStatusEnum.anticipated
-                            && g.BookingStatus != 0); // <-- exclude confirmed
+                            && g.BookingStatus != (int)Guest.BookingStatusEnum.confirmed); // <-- exclude confirmed
 
             if (currentOperatorId.HasValue)
             {
