@@ -9,39 +9,7 @@ namespace AlegriaCanyoneeringWebBooking
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
-            // Create Role table if not exists
-            Database.ExecuteSqlRaw(@"
-    CREATE TABLE IF NOT EXISTS `role` (
-        `RoleId` INT NOT NULL,
-        `Name` VARCHAR(255) NOT NULL,
-        PRIMARY KEY (`RoleId`)
-    );
-");
-
-            // Seed default roles if not exist
-            Database.ExecuteSqlRaw(@"
-    INSERT INTO `role` (RoleId, Name)
-    SELECT * FROM (SELECT 1 AS RoleId, 'Admin' AS Name) AS tmp
-    WHERE NOT EXISTS (SELECT 1 FROM `role` WHERE RoleId = 1);
-");
-
-            Database.ExecuteSqlRaw(@"
-    INSERT INTO `role` (RoleId, Name)
-    SELECT * FROM (SELECT 2 AS RoleId, 'Operator' AS Name) AS tmp
-    WHERE NOT EXISTS (SELECT 1 FROM `role` WHERE RoleId = 2);
-");
-
-            Database.ExecuteSqlRaw(@"
-    INSERT INTO `role` (RoleId, Name)
-    SELECT * FROM (SELECT 3 AS RoleId, 'Super Admin' AS Name) AS tmp
-    WHERE NOT EXISTS (SELECT 1 FROM `role` WHERE RoleId = 3);
-");
-
-            Database.ExecuteSqlRaw(@"
-    INSERT INTO `role` (RoleId, Name)
-    SELECT * FROM (SELECT 4 AS RoleId, 'Staff' AS Name) AS tmp
-    WHERE NOT EXISTS (SELECT 1 FROM `role` WHERE RoleId = 4);
-");
+          
 
         }
         public DbSet<Batch> Batches { get; set; }
