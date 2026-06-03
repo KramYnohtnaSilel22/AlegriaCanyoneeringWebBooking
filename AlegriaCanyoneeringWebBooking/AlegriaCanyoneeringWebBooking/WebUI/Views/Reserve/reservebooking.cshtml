@@ -149,6 +149,7 @@
         width: min(420px, 92vw);
         animation: popIn 0.3s cubic-bezier(.17,.67,.4,1.3) both;
     }
+
     @@keyframes popIn {
         from {
             transform: translateX(-50%) scale(0.85);
@@ -332,32 +333,32 @@
     <script>
         // ── Toast utility ──────────────────────────────────────
         function showToast(message, type = 'info', title = '') {
-            const map = {
-                success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        label: 'Success' },
-                error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', label: 'Error'   },
-                danger:  { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', label: 'Error'   },
-                warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   label: 'Warning' },
-                info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          label: 'Info'    }
-            };
-            const { bg, icon, label } = map[type] || map.info;
-            const id   = 'rbt-' + Date.now();
-            const html = `
-                <div id="${id}" class="toast border-0 text-white"
-                     style="background:${bg};border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);"
-                     role="alert" aria-atomic="true" data-bs-delay="4000">
-                    <div class="toast-header border-0 text-white" style="background:transparent;">
-                        <i class="bi ${icon} me-2"></i>
-                        <strong class="me-auto">${title || label}</strong>
-                        <button type="button" class="btn-close btn-close-white"
-                                data-bs-dismiss="toast"></button>
-                    </div>
-                    <div class="toast-body" style="padding-top:0;">${message}</div>
-                </div>`;
-            const container = document.getElementById('rbToastContainer');
-            container.insertAdjacentHTML('beforeend', html);
-            const el = document.getElementById(id);
-            new bootstrap.Toast(el).show();
-            el.addEventListener('hidden.bs.toast', () => el.remove());
+        const map = {
+        success: { bg: '#22c55e', icon: 'bi-check-circle-fill',        label: 'Success' },
+        error:   { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', label: 'Error'   },
+        danger:  { bg: '#ef4444', icon: 'bi-exclamation-triangle-fill', label: 'Error'   },
+        warning: { bg: '#f0a500', icon: 'bi-exclamation-circle-fill',   label: 'Warning' },
+        info:    { bg: '#1a6ef5', icon: 'bi-info-circle-fill',          label: 'Info'    }
+        };
+        const { bg, icon, label } = map[type] || map.info;
+        const id   = 'rbt-' + Date.now();
+        const html = `
+        <div id="${id}" class="toast border-0 text-white"
+        style="background:${bg};border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15);"
+        role="alert" aria-atomic="true" data-bs-delay="4000">
+        <div class="toast-header border-0 text-white" style="background:transparent;">
+        <i class="bi ${icon} me-2"></i>
+        <strong class="me-auto">${title || label}</strong>
+        <button type="button" class="btn-close btn-close-white"
+        data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" style="padding-top:0;">${message}</div>
+        </div>`;
+        const container = document.getElementById('rbToastContainer');
+        container.insertAdjacentHTML('beforeend', html);
+        const el = document.getElementById(id);
+        new bootstrap.Toast(el).show();
+        el.addEventListener('hidden.bs.toast', () => el.remove());
         }
 
         // ── Scanner input ──────────────────────────────────────
@@ -365,337 +366,449 @@
         let typingTimer, currentScannedBatch = '', dataTable;
 
         input.addEventListener('keyup', () => {
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => {
-                const val = input.value.trim();
-                input.value = '';
-                if (val) processInput(val);
-            }, 1000);
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+        const val = input.value.trim();
+        input.value = '';
+        if (val) processInput(val);
+        }, 1000);
         });
         input.addEventListener('keydown', () => clearTimeout(typingTimer));
 
         function processInput(value) {
-            let batch = value.trim();
-            if (batch.startsWith('BATCH-')) batch = batch.substring(6);
-            currentScannedBatch = batch;
-            verifyBatchExistence(batch);
+        let batch = value.trim();
+        if (batch.startsWith('BATCH-')) batch = batch.substring(6);
+        currentScannedBatch = batch;
+        verifyBatchExistence(batch);
         }
 
         function verifyBatchExistence(batch) {
-            $.ajax({
-                url: '/Reserve/VerifyBatchExistence', type: 'POST',
-                data: { Batch: batch },
-                success: function (r) {
-                    if (r.exists) showScanConfirmCard(batch);
-                    else { showToast('Batch not found in reserved bookings.', 'warning'); currentScannedBatch = ''; }
-                },
-                error: function () {
-                    showToast('Error verifying batch. Please try again.', 'error');
-                    fallbackBatchSearch(batch);
-                }
-            });
+        $.ajax({
+        url: '/Reserve/VerifyBatchExistence', type: 'POST',
+        data: { Batch: batch },
+        success: function (r) {
+        if (r.exists) showScanConfirmCard(batch);
+        else { showToast('Batch not found in reserved bookings.', 'warning'); currentScannedBatch = ''; }
+        },
+        error: function () {
+        showToast('Error verifying batch. Please try again.', 'error');
+        fallbackBatchSearch(batch);
+        }
+        });
         }
 
         function fallbackBatchSearch(batch) {
-            if (!dataTable) { showToast('System unavailable. Please try again.', 'danger'); return; }
-            const found = dataTable.rows().data().toArray().find(r => r.batch === batch);
-            if (found) { showScanConfirmCard(batch); highlightTableRow(batch); }
-            else { showToast(`Batch ${batch} not found.`, 'warning'); currentScannedBatch = ''; }
+        if (!dataTable) { showToast('System unavailable. Please try again.', 'danger'); return; }
+        const found = dataTable.rows().data().toArray().find(r => r.batch === batch);
+        if (found) { showScanConfirmCard(batch); highlightTableRow(batch); }
+        else { showToast(`Batch ${batch} not found.`, 'warning'); currentScannedBatch = ''; }
         }
 
         // ── Scan confirm card ──────────────────────────────────
         function showScanConfirmCard(batch) {
-            batch = String(batch);   // ✅ guarantee string regardless of caller
-            $('.scan-confirm-btn').remove();
-            const html = `
-                <div class="scan-confirm-btn">
-                    <div class="scan-confirm-card">
-                        <div class="scan-confirm-header">
-                            <i class="bi bi-qr-code-scan me-2"></i>Batch Found
-                        </div>
-                        <div class="scan-confirm-body">
-                            <p style="color:#64748b;font-size:0.85rem;margin-bottom:0.25rem;">Batch Code</p>
-                            <div class="scan-batch-code">${batch}</div>
-                            <p style="color:#64748b;font-size:0.85rem;margin-bottom:1rem;">
-                                Confirm this batch booking?
-                            </p>
-                            <div style="display:flex;gap:0.75rem;justify-content:center;">
-                                <button class="btn-confirm-yes"
-                                        onclick="confirmScannedBatch('${batch.replace(/'/g,"\\'")}')">
-                                    <i class="bi bi-check-lg me-1"></i> Yes, Confirm
-                                </button>
-                                <button class="btn-confirm-no" onclick="closeScanConfirm()">
-                                    <i class="bi bi-x-lg me-1"></i> No
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            $('body').append(html);
-            showToast(`Batch <strong>${batch}</strong> ready for confirmation.`, 'info');
+        batch = String(batch);   // ✅ guarantee string regardless of caller
+        $('.scan-confirm-btn').remove();
+        const html = `
+        <div class="scan-confirm-btn">
+        <div class="scan-confirm-card">
+        <div class="scan-confirm-header">
+        <i class="bi bi-qr-code-scan me-2"></i>Batch Found
+        </div>
+        <div class="scan-confirm-body">
+        <p style="color:#64748b;font-size:0.85rem;margin-bottom:0.25rem;">Batch Code</p>
+        <div class="scan-batch-code">${batch}</div>
+        <p style="color:#64748b;font-size:0.85rem;margin-bottom:1rem;">
+        Confirm this batch booking?
+        </p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+        <button class="btn-confirm-yes"
+        onclick="confirmScannedBatch('${batch.replace(/'/g,"\\'")}')">
+        <i class="bi bi-check-lg me-1"></i> Yes, Confirm
+        </button>
+        <button class="btn-confirm-no" onclick="closeScanConfirm()">
+        <i class="bi bi-x-lg me-1"></i> No
+        </button>
+        </div>
+        </div>
+        </div>
+        </div>`;
+        $('body').append(html);
+        showToast(`Batch <strong>${batch}</strong> ready for confirmation.`, 'info');
         }
 
         function confirmScannedBatch(batch) {
-            const $btn = $('.scan-confirm-btn .btn-confirm-yes');
-            $btn.prop('disabled', true).html(
-                '<span class="spinner-border spinner-border-sm me-1"></span> Confirming...'
-            );
-            $.ajax({
-                url: '/Reserve/BookedGuest', type: 'POST',
-                data: { BatchCode: batch },
-                success: function (r) {
-                    closeScanConfirm();
-                    if (r.success) { showToast(r.message, 'success'); if (dataTable) dataTable.ajax.reload(null, false); }
-                    else { showToast(r.message, 'warning'); }
-                },
-                error: function () {
-                    showToast('Error confirming batch. Please try again.', 'error');
-                    $btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i> Yes, Confirm');
-                }
-            });
+        const $btn = $('.scan-confirm-btn .btn-confirm-yes');
+        $btn.prop('disabled', true).html(
+        '<span class="spinner-border spinner-border-sm me-1"></span> Confirming...'
+        );
+        $.ajax({
+        url: '/Reserve/BookedGuest', type: 'POST',
+        data: { BatchCode: batch },
+        success: function (r) {
+        closeScanConfirm();
+        if (r.success) { showToast(r.message, 'success'); if (dataTable) dataTable.ajax.reload(null, false); }
+        else { showToast(r.message, 'warning'); }
+        },
+        error: function () {
+        showToast('Error confirming batch. Please try again.', 'error');
+        $btn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i> Yes, Confirm');
+        }
+        });
         }
 
         function closeScanConfirm() {
-            $('.scan-confirm-btn').remove();
-            currentScannedBatch = '';
-            removeTableHighlight();
-            if (dataTable) dataTable.search('').draw();
+        $('.scan-confirm-btn').remove();
+        currentScannedBatch = '';
+        removeTableHighlight();
+        if (dataTable) dataTable.search('').draw();
         }
 
         function highlightTableRow(batch) {
-            removeTableHighlight();
-            if (!dataTable) return;
-            dataTable.rows().every(function () {
-                if (this.data().batch === batch) {
-                    $(this.node()).addClass('row-highlight');
-                    this.node().scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
+        removeTableHighlight();
+        if (!dataTable) return;
+        dataTable.rows().every(function () {
+        if (this.data().batch === batch) {
+        $(this.node()).addClass('row-highlight');
+        this.node().scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        });
         }
         function removeTableHighlight() {
-            $('#reservedGuestsTable tr').removeClass('row-highlight');
+        $('#reservedGuestsTable tr').removeClass('row-highlight');
         }
 
         // ── DataTable ──────────────────────────────────────────
         $(document).ready(function () {
-            dataTable = $('#reservedGuestsTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: '/Reserve/GetReservedGuestsData', type: 'POST',
-                    error: (xhr, err) => console.error('DataTable error:', err)
-                },
-                columns: [
-                    {
-                        data: 'operatorName',
-                        render: d => d?.trim()
-                            ? `<span class="fw-semibold">${d}</span>`
-                            : `<span class="text-muted">No Operator</span>`
-                    },
-                    { data: 'registrationDate' },
-                    {
-                        data: 'totalGuests',
-                        render: d => `<span style="background:rgba(26,110,245,0.08);color:#1a6ef5;
-                                            font-size:0.8rem;font-weight:600;padding:0.2rem 0.6rem;
-                                            border-radius:20px;">${d}</span>`
-                    },
-                    {
-                        data: 'bookingStatus',
-                        render: d => `<span style="background:rgba(22,163,74,0.08);color:#16a34a;
-                                            font-size:0.72rem;font-weight:700;padding:0.25rem 0.65rem;
-                                            border-radius:20px;text-transform:uppercase;
-                                            letter-spacing:0.05em;">${d}</span>`
-                    },
-                    {
-                        data: 'batch', orderable: false, searchable: false,
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            const b   = data.replace(/'/g, "\\'");
-                            const op  = (row.operatorName || '').replace(/'/g, "\\'");
-                            const qr  = (row.qrBase64 || '').replace(/'/g, "\\'");
-                            const id  = row.id;
+        dataTable = $('#reservedGuestsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+        url: '/Reserve/GetReservedGuestsData', type: 'POST',
+        error: (xhr, err) => console.error('DataTable error:', err)
+        },
+        columns: [
+        {
+        data: 'operatorName',
+        render: d => d?.trim()
+        ? `<span class="fw-semibold">${d}</span>`
+        : `<span class="text-muted">No Operator</span>`
+        },
+        { data: 'registrationDate' },
+        {
+        data: 'totalGuests',
+        render: d => `<span style="background:rgba(26,110,245,0.08);color:#1a6ef5;
+        font-size:0.8rem;font-weight:600;padding:0.2rem 0.6rem;
+        border-radius:20px;">${d}</span>`
+        },
+        {
+        data: 'bookingStatus',
+        render: d => `<span style="background:rgba(22,163,74,0.08);color:#16a34a;
+        font-size:0.72rem;font-weight:700;padding:0.25rem 0.65rem;
+        border-radius:20px;text-transform:uppercase;
+        letter-spacing:0.05em;">${d}</span>`
+        },
+        {
+        data: 'batch', orderable: false, searchable: false,
+        className: 'text-center',
+        render: function (data, type, row) {
+        const b   = data.replace(/'/g, "\\'");
+        const op  = (row.operatorName || '').replace(/'/g, "\\'");
+        const qr  = (row.qrBase64 || '').replace(/'/g, "\\'");
+        const id  = row.id;
 
-                            let html = `
-                                <div class="d-flex flex-wrap justify-content-center gap-1">
-                                    <button class="btn btn-sm btn-primary"
-                                            style="border-radius:8px;font-size:0.8rem;"
-                                            onclick="loadBatchDetails(${id})">
-                                        <i class="bi bi-eye me-1"></i> View
-                                    </button>`;
+        let html = `
+        <div class="d-flex flex-wrap justify-content-center gap-1">
+        <button class="btn btn-sm btn-primary"
+        style="border-radius:8px;font-size:0.8rem;"
+        onclick="loadBatchDetails(${id})">
+        <i class="bi bi-eye me-1"></i> View
+        </button>`;
 
-                            @if (User.IsInRole("Super Admin"))
-                            {
-                                    <text>
-                                    html += `
-                                        <button type="button" class="btn btn-sm btn-info"
-                                                style="border-radius:8px;font-size:0.8rem;"
-                                                onclick="showQrModal('${b}','${op}',${row.totalGuests},'${qr}')">
-                                            <i class="bi bi-qr-code me-1"></i> QR
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-sm btn-success confirm-batch-btn"
-                                                style="border-radius:8px;font-size:0.8rem;"
-                                                data-batch="${b}">
-                                            <i class="bi bi-check-lg me-1"></i> Confirm
-                                        </button>`;
-                                    </text>
-                            }
+        @if (User.IsInRole("Super Admin"))
+        {
+            <text>
+                html += `
+                <button type="button" class="btn btn-sm btn-info"
+                        style="border-radius:8px;font-size:0.8rem;"
+                        onclick="showQrModal('${b}','${op}',${row.totalGuests},'${qr}')">
+                    <i class="bi bi-qr-code me-1"></i> QR
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-success confirm-batch-btn"
+                        style="border-radius:8px;font-size:0.8rem;"
+                        data-batch="${b}">
+                    <i class="bi bi-check-lg me-1"></i> Confirm
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-danger delete-batch-btn"
+                        style="border-radius:8px;font-size:0.8rem;"
+                        data-batch="${b}">
+                    <i class="bi bi-trash me-1"></i> Delete
+                </button>`;
+            </text>
+        }
 
-                            html += '</div>';
-                            return html;
-                        }
-                    }
-                ],
-                language: { emptyTable: 'No reserved batches found.' },
-                responsive: true,
-                order: [[1, 'desc']],
-                pageLength: 10,
-                drawCallback: function () {
-                    const headers = $('#reservedGuestsTable thead th')
-                        .map(function () { return $(this).text().trim(); }).get();
-                    $('#reservedGuestsTable tbody tr').each(function () {
-                        $(this).find('td').each(function (i) {
-                            $(this).attr('data-label', headers[i]);
-                        });
-                    });
-                }
-            });
+        html += '</div>';
+        return html;
+        }
+        }
+        ],
+        language: { emptyTable: 'No reserved batches found.' },
+        responsive: true,
+        order: [[1, 'desc']],
+        pageLength: 10,
+        drawCallback: function () {
+        const headers = $('#reservedGuestsTable thead th')
+        .map(function () { return $(this).text().trim(); }).get();
+        $('#reservedGuestsTable tbody tr').each(function () {
+        $(this).find('td').each(function (i) {
+        $(this).attr('data-label', headers[i]);
+        });
+        });
+        }
+        });
 
-            // Confirm batch via table button
-            $(document).on('click', '.confirm-batch-btn', function () {
-                const batch = $(this).data('batch');
-                confirmBatchBooking(batch);
-            });
+        // Confirm batch via table button
+        $(document).on('click', '.confirm-batch-btn', function () {
+        const batch = $(this).data('batch');
+        confirmBatchBooking(batch);
+        });
+
+        // Delete batch via table button
+        $(document).on('click', '.delete-batch-btn', function () {
+        const batch = String($(this).data('batch'));
+        showDeleteConfirmModal(
+        'Delete Batch',
+        `Are you sure you want to delete <strong>all guests</strong> in batch <strong>${batch}</strong>? This action cannot be undone.`,
+        function () { performDeleteBatch(batch); }
+        );
+        });
         });
 
         // ── Confirm batch (table button) ───────────────────────
         function confirmBatchBooking(batchCode) {
-            showScanConfirmCard(String(batchCode));   // ✅ coerce to string — data-* can come back as number
+        showScanConfirmCard(String(batchCode));   // ✅ coerce to string — data-* can come back as number
         }
 
         // ── Load batch details modal ───────────────────────────
         function loadBatchDetails(guestId) {
-            const $body = $('#bookingDetailsModalBody');
-            $body.html(`
-                <div class="text-center py-5 text-muted">
-                    <div class="spinner-border text-primary mb-3" role="status"></div>
-                    <div style="font-size:0.875rem;">Loading details...</div>
-                </div>`);
+        const $body = $('#bookingDetailsModalBody');
+        $body.html(`
+        <div class="text-center py-5 text-muted">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <div style="font-size:0.875rem;">Loading details...</div>
+        </div>`);
 
-            const modal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
-            modal.show();
+        const modal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
+        modal.show();
 
-            $.get('/Reserve/GetBookingDetails?id=' + guestId)
-                .done(function (html) {
-                    $body.html(html);
-                    setTimeout(() => {
-                        if ($('#companionsTable').length && !$.fn.DataTable.isDataTable('#companionsTable')) {
-                            $('#companionsTable').DataTable({
-                                responsive: true, pageLength: 5,
-                                lengthMenu: [5, 10, 25],
-                                columnDefs: [{ orderable: false, targets: 0 }],
-                                language: { searchPlaceholder: 'Search guest...', search: '' }
-                            });
-                        }
-                    }, 100);
-                })
-                .fail(function (xhr) {
-                    $body.html(`
-                        <div class="text-center p-4">
-                            <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:2rem;"></i>
-                            <h6 class="mt-2" style="color:#0f3460;">Failed to Load</h6>
-                            <p class="text-muted" style="font-size:0.875rem;">
-                                HTTP ${xhr.status}: ${xhr.statusText}
-                            </p>
-                            <button class="btn btn-sm btn-primary rounded-pill mt-1"
-                                    onclick="loadBatchDetails(${guestId})">
-                                <i class="bi bi-arrow-clockwise me-1"></i> Retry
-                            </button>
-                        </div>`);
-                });
+        $.get('/Reserve/GetBookingDetails?id=' + guestId)
+        .done(function (html) {
+        $body.html(html);
+        setTimeout(() => {
+        if ($('#companionsTable').length && !$.fn.DataTable.isDataTable('#companionsTable')) {
+        $('#companionsTable').DataTable({
+        responsive: true, pageLength: 5,
+        lengthMenu: [5, 10, 25],
+        columnDefs: [{ orderable: false, targets: 0 }],
+        language: { searchPlaceholder: 'Search guest...', search: '' }
+        });
+        }
+        }, 100);
+        })
+        .fail(function (xhr) {
+        $body.html(`
+        <div class="text-center p-4">
+        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:2rem;"></i>
+        <h6 class="mt-2" style="color:#0f3460;">Failed to Load</h6>
+        <p class="text-muted" style="font-size:0.875rem;">
+        HTTP ${xhr.status}: ${xhr.statusText}
+        </p>
+        <button class="btn btn-sm btn-primary rounded-pill mt-1"
+        onclick="loadBatchDetails(${guestId})">
+        <i class="bi bi-arrow-clockwise me-1"></i> Retry
+        </button>
+        </div>`);
+        });
         }
 
         // ── QR Modal ───────────────────────────────────────────
         function showQrModal(batchCode, operatorName, totalGuests, qrBase64) {
-            $('#dynamicQrModal').remove();
+        $('#dynamicQrModal').remove();
 
-            const hasQr = qrBase64 && (qrBase64.startsWith('http') || qrBase64.startsWith('data:image'));
-            const qrHtml = hasQr
-                ? `<img src="${qrBase64}" alt="QR Code"
-                        style="width:180px;height:180px;border:1.5px solid #e8edf5;
-                               border-radius:12px;padding:8px;background:#fff;"
-                        onerror="this.style.display='none'" />`
-                : `<div style="width:180px;height:180px;border:1.5px dashed #e2e8f0;border-radius:12px;
-                               display:flex;flex-direction:column;align-items:center;justify-content:center;
-                               color:#94a3b8;font-size:0.8rem;gap:0.5rem;">
-                       <i class="bi bi-qr-code" style="font-size:2rem;"></i>
-                       QR not available
-                   </div>`;
+        const hasQr = qrBase64 && (qrBase64.startsWith('http') || qrBase64.startsWith('data:image'));
+        const qrHtml = hasQr
+        ? `<img src="${qrBase64}" alt="QR Code"
+        style="width:180px;height:180px;border:1.5px solid #e8edf5;
+        border-radius:12px;padding:8px;background:#fff;"
+        onerror="this.style.display='none'" />`
+        : `<div style="width:180px;height:180px;border:1.5px dashed #e2e8f0;border-radius:12px;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        color:#94a3b8;font-size:0.8rem;gap:0.5rem;">
+        <i class="bi bi-qr-code" style="font-size:2rem;"></i>
+        QR not available
+        </div>`;
 
-            const downloadBtn = hasQr
-                ? `<button class="btn btn-sm btn-success rounded-pill"
-                           onclick="downloadBatchQRCode('${batchCode.replace(/'/g,"\\'")}','${operatorName.replace(/'/g,"\\'")}',${totalGuests})">
-                       <i class="bi bi-download me-1"></i> Download
-                   </button>`
-                : '';
+        const downloadBtn = hasQr
+        ? `<button class="btn btn-sm btn-success rounded-pill"
+        onclick="downloadBatchQRCode('${batchCode.replace(/'/g,"\\'")}','${operatorName.replace(/'/g,"\\'")}',${totalGuests})">
+        <i class="bi bi-download me-1"></i> Download
+        </button>`
+        : '';
 
-            const html = `
-                <div class="modal fade" id="dynamicQrModal" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
-                        <div class="modal-content">
-                            <div class="modal-header-blue d-flex align-items-center justify-content-between">
-                                <h5><i class="bi bi-qr-code me-2"></i>Batch QR Code</h5>
-                                <button type="button" class="btn-close btn-close-white"
-                                        data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body p-4">
-                                <div class="d-flex gap-3 align-items-center">
-                                    <div>${qrHtml}</div>
-                                    <div>
-                                        <div style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">Operator</div>
-                                        <div style="font-weight:600;color:#0f3460;margin-bottom:0.75rem;">${operatorName || '—'}</div>
-                                        <div style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">Total Guests</div>
-                                        <div style="font-size:1.5rem;font-weight:800;color:#1a6ef5;">${totalGuests}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0 justify-content-center pb-3">${downloadBtn}</div>
-                        </div>
-                    </div>
-                </div>`;
+        const html = `
+        <div class="modal fade" id="dynamicQrModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content">
+        <div class="modal-header-blue d-flex align-items-center justify-content-between">
+        <h5><i class="bi bi-qr-code me-2"></i>Batch QR Code</h5>
+        <button type="button" class="btn-close btn-close-white"
+        data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+        <div class="d-flex gap-3 align-items-center">
+        <div>${qrHtml}</div>
+        <div>
+        <div style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">Operator</div>
+        <div style="font-weight:600;color:#0f3460;margin-bottom:0.75rem;">${operatorName || '—'}</div>
+        <div style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">Total Guests</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#1a6ef5;">${totalGuests}</div>
+        </div>
+        </div>
+        </div>
+        <div class="modal-footer border-0 justify-content-center pb-3">${downloadBtn}</div>
+        </div>
+        </div>
+        </div>`;
 
-            $('body').append(html);
-            const modal = new bootstrap.Modal(document.getElementById('dynamicQrModal'));
-            modal.show();
-            $('#dynamicQrModal').on('hidden.bs.modal', function () { $(this).remove(); });
+        $('body').append(html);
+        const modal = new bootstrap.Modal(document.getElementById('dynamicQrModal'));
+        modal.show();
+        $('#dynamicQrModal').on('hidden.bs.modal', function () { $(this).remove(); });
         }
 
         // ── Download QR ────────────────────────────────────────
         function downloadBatchQRCode(batchCode, operator, totalGuests) {
-            const img = document.querySelector('#dynamicQrModal img');
-            if (!img) { showToast('QR image not found.', 'warning'); return; }
+        const img = document.querySelector('#dynamicQrModal img');
+        if (!img) { showToast('QR image not found.', 'warning'); return; }
 
-            const dl = new Image();
-            dl.crossOrigin = 'Anonymous';
-            dl.src = img.src + (img.src.includes('?') ? '&' : '?') + 't=' + Date.now();
-            dl.onload = function () {
-                const canvas = document.createElement('canvas');
-                canvas.width = 300; canvas.height = 340;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 300, 340);
-                ctx.drawImage(dl, 50, 20, 200, 200);
-                ctx.fillStyle = '#0f3460'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
-                ctx.fillText('Operator: ' + operator, 150, 245);
-                ctx.fillText('Total Guests: ' + totalGuests, 150, 265);
-                ctx.fillStyle = '#94a3b8'; ctx.font = '10px Arial';
-                ctx.fillText('Generated: ' + new Date().toLocaleDateString(), 150, 285);
-                const link = document.createElement('a');
-                link.download = `BatchQR-${batchCode}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                showToast('QR Code downloaded!', 'success');
-            };
-            dl.onerror = () => showToast('Failed to load image for download.', 'danger');
+        const dl = new Image();
+        dl.crossOrigin = 'Anonymous';
+        dl.src = img.src + (img.src.includes('?') ? '&' : '?') + 't=' + Date.now();
+        dl.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = 300; canvas.height = 340;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 300, 340);
+        ctx.drawImage(dl, 50, 20, 200, 200);
+        ctx.fillStyle = '#0f3460'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('Operator: ' + operator, 150, 245);
+        ctx.fillText('Total Guests: ' + totalGuests, 150, 265);
+        ctx.fillStyle = '#94a3b8'; ctx.font = '10px Arial';
+        ctx.fillText('Generated: ' + new Date().toLocaleDateString(), 150, 285);
+        const link = document.createElement('a');
+        link.download = `BatchQR-${batchCode}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('QR Code downloaded!', 'success');
+        };
+        dl.onerror = () => showToast('Failed to load image for download.', 'danger');
+        }
+
+        // ── Delete confirm modal ──────────────────────────────────
+        let pendingDeleteCallback = null;
+
+        function showDeleteConfirmModal(title, bodyHtml, onConfirm) {
+        $('#deleteConfirmModal').remove();
+        const html = `
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content" style="border-radius:16px;border:0;box-shadow:0 8px 40px rgba(15,52,96,0.18);">
+        <div style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;padding:1rem 1.5rem;border-radius:16px 16px 0 0;">
+        <h5 style="font-size:1rem;font-weight:700;margin:0;"><i class="bi bi-exclamation-triangle-fill me-2"></i>${title}</h5>
+        </div>
+        <div class="modal-body p-4" style="text-align:center;">
+        <i class="bi bi-trash" style="font-size:2.5rem;color:#ef4444;margin-bottom:0.75rem;display:block;"></i>
+        <p style="color:#334155;font-size:0.9rem;margin-bottom:1.25rem;">${bodyHtml}</p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+        <button type="button" class="btn btn-danger px-4" id="deleteConfirmYes"
+        style="border-radius:50px;font-weight:600;font-size:0.9rem;">
+        <i class="bi bi-trash me-1"></i> Yes, Delete
+        </button>
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal"
+        style="border-radius:50px;font-weight:600;font-size:0.9rem;">
+        Cancel
+        </button>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>`;
+        $('body').append(html);
+        pendingDeleteCallback = onConfirm;
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+        $('#deleteConfirmYes').on('click', function () {
+        modal.hide();
+        if (pendingDeleteCallback) pendingDeleteCallback();
+        });
+        $('#deleteConfirmModal').on('hidden.bs.modal', function () { $(this).remove(); pendingDeleteCallback = null; });
+        }
+
+        // ── Delete batch ──────────────────────────────────────────
+        function performDeleteBatch(batchCode) {
+        $.ajax({
+        url: '/Reserve/DeleteBatch',
+        type: 'POST',
+        data: { batchCode: batchCode },
+        success: function (r) {
+        if (r.success) {
+        showToast(r.message, 'success');
+        if (dataTable) dataTable.ajax.reload(null, false);
+        } else {
+        showToast(r.message, 'warning');
+        }
+        },
+        error: function () {
+        showToast('Error deleting batch. Please try again.', 'error');
+        }
+        });
+        }
+
+        // ── Delete single guest (from modal) ─────────────────────
+        function deleteGuest(guestId, guestName) {
+        showDeleteConfirmModal(
+        'Delete Guest',
+        `Are you sure you want to delete <strong>${guestName}</strong>? This action cannot be undone.`,
+        function () {
+        $.ajax({
+        url: '/Reserve/DeleteGuest',
+        type: 'POST',
+        data: { id: guestId },
+        success: function (r) {
+        if (r.success) {
+        showToast(r.message, 'success');
+        // Remove row from modal table
+        const $row = $(`tr[data-guest-row="${guestId}"]`);
+        if ($row.length) {
+        if ($.fn.DataTable.isDataTable('#companionsTable')) {
+        $('#companionsTable').DataTable().row($row).remove().draw();
+        } else {
+        $row.fadeOut(300, function () { $(this).remove(); });
+        }
+        }
+        // Refresh main table too
+        if (dataTable) dataTable.ajax.reload(null, false);
+        } else {
+        showToast(r.message, 'warning');
+        }
+        },
+        error: function () {
+        showToast('Error deleting guest. Please try again.', 'error');
+        }
+        });
+        }
+        );
         }
     </script>
 }

@@ -535,6 +535,67 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
         }
 
 
+        // =========================================================
+        // DELETE BATCH — removes all guests in a batch
+        // =========================================================
+        [HttpPost]
+        [Authorize(Roles = "Super Admin")]
+        public async Task<IActionResult> DeleteBatch(string batchCode)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batchCode))
+                    return Json(new { success = false, message = "Batch code is required." });
+
+                var batchNumbers = batchCode.StartsWith("BATCH-", StringComparison.OrdinalIgnoreCase)
+                    ? batchCode[6..]
+                    : batchCode;
+
+                var guestsToDelete = await _context.Guests
+                    .Where(g => g.Batch == batchNumbers)
+                    .ToListAsync();
+
+                if (!guestsToDelete.Any())
+                    return Json(new { success = false, message = "No guests found for this batch." });
+
+                int count = guestsToDelete.Count;
+                _context.Guests.RemoveRange(guestsToDelete);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"Successfully deleted batch {batchNumbers} ({count} guest{(count > 1 ? "s" : "")})." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting batch {BatchCode}", batchCode);
+                return Json(new { success = false, message = "Error deleting batch. Please try again." });
+            }
+        }
+
+        // =========================================================
+        // DELETE GUEST — removes a single guest by ID
+        // =========================================================
+        [HttpPost]
+        [Authorize(Roles = "Super Admin")]
+        public async Task<IActionResult> DeleteGuest(int id)
+        {
+            try
+            {
+                var guest = await _context.Guests.FindAsync(id);
+                if (guest == null)
+                    return Json(new { success = false, message = "Guest not found." });
+
+                _context.Guests.Remove(guest);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"Guest \"{guest.Fullname}\" deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting guest {GuestId}", id);
+                return Json(new { success = false, message = "Error deleting guest. Please try again." });
+            }
+        }
+
 
         // =========================================================
         // TIMEZONE
@@ -638,7 +699,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                     Guest.Status.Confirmed => "Confirmed",
                     Guest.Status.Reserved => "Reserved",
                     Guest.Status.Anticipated => "Anticipated",
-                    Guest.Status.Canceled => "Canceled",                
+                    Guest.Status.Canceled => "Canceled",
                     _ => intVal.ToString()
                 };
             }
@@ -759,7 +820,7 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
                         status = statusLabel
                     };
                 })
-                .OrderBy(x => x.batch)
+                .OrderByDescending(x => x.batch)
                 .ToList();
 
             var paged = grouped.Skip(start).Take(length).ToList();

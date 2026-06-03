@@ -1,4 +1,4 @@
-﻿@model GuestListViewModel
+@model GuestListViewModel
 @{
     ViewData["Title"] = "Booked Guests";
     var startDate = Context.Request.Query["startDate"].FirstOrDefault();
@@ -389,6 +389,7 @@
                             }
                         }
                     ],
+                    order: [[0, 'desc']],
                     pageLength: 10,
                     responsive: true,
                     autoWidth: false,
