@@ -596,6 +596,130 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
+        // =========================================================
+        // EDIT GUEST & BATCH
+        // =========================================================
+
+        [HttpGet]
+        public async Task<IActionResult> GetOperators()
+        {
+            var ops = await _context.Operators
+                .Where(o => !string.IsNullOrEmpty(o.BusinessName) && o.BusinessName != "NA")
+                .Select(o => new { o.Id, Name = o.BusinessName })
+                .ToListAsync();
+            return Json(ops);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetNationalities()
+        {
+            var nats = await _context.Nationalities
+                .OrderBy(n => n.NatName)
+                .Select(n => new { id = n.id, natName = n.NatName })
+                .ToListAsync();
+            return Json(nats);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetGuestForEdit(int id)
+        {
+            var guest = await _context.Guests.FindAsync(id);
+            if (guest == null) return Json(new { success = false });
+            return Json(new { success = true, data = new { guest.Id, guest.Fullname, guest.Age, guest.Gender, guest.NationalityType, guest.NationalityId } });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditGuest(int Id, string Fullname, string Age, string Gender, string NationalityType, int? NationalityId)
+        {
+            try
+            {
+                var guest = await _context.Guests.FindAsync(Id);
+                if (guest == null) return Json(new { success = false, message = "Guest not found." });
+                
+                guest.Fullname = Fullname;
+                guest.Age = Age;
+                guest.Gender = Gender;
+                guest.NationalityType = NationalityType;
+                guest.NationalityId = NationalityId;
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Guest updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error updating guest. Please try again." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetBatchForEdit(string batchCode)
+        {
+            var batchNumbers = batchCode.StartsWith("BATCH-", StringComparison.OrdinalIgnoreCase) ? batchCode.Substring(6) : batchCode;
+            var guests = await _context.Guests.Where(g => g.Batch == batchNumbers).ToListAsync();
+            if (!guests.Any()) return Json(new { success = false });
+            
+            var firstGuest = guests.First();
+            return Json(new { 
+                success = true, 
+                data = new { 
+                    operatorId = firstGuest.OperatorId,
+                    guests = guests.Select(g => new {
+                        g.Id,
+                        g.Fullname,
+                        g.Age,
+                        g.Gender,
+                        g.NationalityType,
+                        g.NationalityId
+                    }).ToList()
+                } 
+            });
+        }
+
+        public class GuestEditDto
+        {
+            public int Id { get; set; }
+            public string? Fullname { get; set; }
+            public string? Age { get; set; }
+            public string? Gender { get; set; }
+            public string? NationalityType { get; set; }
+            public int? NationalityId { get; set; }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditBatch(string BatchCode, int? OperatorId, string GuestsJson)
+        {
+            try
+            {
+                var batchNumbers = BatchCode.StartsWith("BATCH-", StringComparison.OrdinalIgnoreCase) ? BatchCode.Substring(6) : BatchCode;
+                var guests = await _context.Guests.Where(g => g.Batch == batchNumbers).ToListAsync();
+                if (!guests.Any()) return Json(new { success = false, message = "Batch not found." });
+                
+                var guestsDto = System.Text.Json.JsonSerializer.Deserialize<List<GuestEditDto>>(GuestsJson ?? "[]", new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                foreach(var guest in guests)
+                {
+                    guest.OperatorId = OperatorId;
+                    
+                    var dto = guestsDto?.FirstOrDefault(d => d.Id == guest.Id);
+                    if(dto != null)
+                    {
+                        guest.Fullname = dto.Fullname;
+                        guest.Age = dto.Age;
+                        guest.Gender = dto.Gender;
+                        guest.NationalityType = dto.NationalityType;
+                        guest.NationalityId = dto.NationalityId;
+                    }
+                }
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Batch updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error updating batch. Please try again." });
+            }
+        }
+
+
 
         // =========================================================
         // TIMEZONE
