@@ -250,6 +250,8 @@
             background: rgba(26,110,245,0.04);
         }
 
+    .btn-delete-guest { white-space: nowrap; border-radius: 7px; font-size: 0.75rem; font-weight: 600; }
+
     /* ── Empty state ──────────────────────────────────────── */
     .gb-empty {
         text-align: center;
@@ -471,6 +473,10 @@
                                     <th>Nationality</th>
                                     <th>Area</th>
                                     <th>Arrival</th>
+                                    @if (User.IsInRole("Super Admin"))
+                                    {
+                                        <th class="text-center">Action</th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
@@ -490,6 +496,15 @@
                                     <td style="white-space:nowrap;font-size:0.8rem;">
                                         @FormatArrivalDate(primaryVM.Guest.ArrivalDate)
                                     </td>
+                                    @if (User.IsInRole("Super Admin"))
+                                    {
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-outline-danger btn-sm btn-delete-guest delete-booked-guest"
+                                                    data-guest-id="@primaryVM.Guest.Id" data-guest-name="@primaryVM.Guest.Fullname">
+                                                <i class="bi bi-trash me-1"></i>Delete
+                                            </button>
+                                        </td>
+                                    }
                                 </tr>
                             </tbody>
                         </table>
@@ -517,6 +532,10 @@
                                         <th>Contact</th>
                                         <th>Gender</th>
                                         <th>Nationality</th>
+                                        @if (User.IsInRole("Super Admin"))
+                                        {
+                                            <th class="text-center">Action</th>
+                                        }
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -528,6 +547,15 @@
                                             <td>@vm.Guest.ContactNumber</td>
                                             <td>@vm.Guest.Gender</td>
                                             <td>@(vm.Guest.NationalityEntity?.NatName ?? "N/A")</td>
+                                            @if (User.IsInRole("Super Admin"))
+                                            {
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm btn-delete-guest delete-booked-guest"
+                                                            data-guest-id="@vm.Guest.Id" data-guest-name="@vm.Guest.Fullname">
+                                                        <i class="bi bi-trash me-1"></i>Delete
+                                                    </button>
+                                                </td>
+                                            }
                                         </tr>
                                     }
                                 </tbody>

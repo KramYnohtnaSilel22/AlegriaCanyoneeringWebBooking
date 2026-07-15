@@ -596,6 +596,71 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
+        // Reserved Booking page only: removes every still-reserved guest in a batch.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Super Admin")]
+        public async Task<IActionResult> DeleteReservedBatch(string batchCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(batchCode))
+                    return Json(new { success = false, message = "Batch code is required." });
+
+                var batchNumbers = batchCode.StartsWith("BATCH-", StringComparison.OrdinalIgnoreCase)
+                    ? batchCode[6..]
+                    : batchCode;
+
+                var reservedGuests = await _context.Guests
+                    .Where(g => g.Batch == batchNumbers && g.BookingStatus == Guest.Status.Reserved)
+                    .ToListAsync();
+
+                if (!reservedGuests.Any())
+                    return Json(new { success = false, message = "No reserved guests found for this batch." });
+
+                var count = reservedGuests.Count;
+                _context.Guests.RemoveRange(reservedGuests);
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"Reserved batch {batchNumbers} deleted successfully ({count} guest{(count == 1 ? "" : "s")})."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting reserved batch {BatchCode}", batchCode);
+                return Json(new { success = false, message = "Error deleting reserved batch. Please try again." });
+            }
+        }
+
+        // Reserved Booking page only: removes one guest while the guest is still reserved.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Super Admin")]
+        public async Task<IActionResult> DeleteReservedGuest(int id)
+        {
+            try
+            {
+                var guest = await _context.Guests
+                    .FirstOrDefaultAsync(g => g.Id == id && g.BookingStatus == Guest.Status.Reserved);
+
+                if (guest == null)
+                    return Json(new { success = false, message = "Reserved guest not found." });
+
+                _context.Guests.Remove(guest);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"Guest \"{guest.Fullname}\" deleted from reserved bookings." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting reserved guest {GuestId}", id);
+                return Json(new { success = false, message = "Error deleting reserved guest. Please try again." });
+            }
+        }
+
         // =========================================================
         // EDIT GUEST & BATCH
         // =========================================================

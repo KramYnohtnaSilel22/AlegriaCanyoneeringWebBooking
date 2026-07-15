@@ -64,12 +64,15 @@
                                             onclick="editGuest(@guest.Id)">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger"
-                                            style="border-radius:8px;font-size:0.78rem;"
-                                            onclick="deleteGuest(@guest.Id, '@guest.Fullname?.Replace("'", "\\'")')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    @if (User.IsInRole("Super Admin"))
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                style="border-radius:8px;font-size:0.78rem;"
+                                                onclick="deleteGuest(@guest.Id, '@guest.Fullname?.Replace("'", "\\'")')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }

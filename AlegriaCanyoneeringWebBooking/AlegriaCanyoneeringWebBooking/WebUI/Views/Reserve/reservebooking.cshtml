@@ -3,6 +3,10 @@
     ViewData["Title"] = "Reserved Booking";
 }
 
+<form id="reservedBookingAntiForgeryForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
 <style>
     @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -893,10 +897,15 @@
 
         // ── Delete batch ──────────────────────────────────────────
         function performDeleteBatch(batchCode) {
+        const antiForgeryToken = $('#reservedBookingAntiForgeryForm input[name="__RequestVerificationToken"]').val();
         $.ajax({
-        url: '/Reserve/DeleteBatch',
+        url: '@Url.Action("DeleteReservedBatch", "Reserve")',
         type: 'POST',
-        data: { batchCode: batchCode },
+        headers: { 'RequestVerificationToken': antiForgeryToken },
+        data: {
+        batchCode: batchCode,
+        __RequestVerificationToken: antiForgeryToken
+        },
         success: function (r) {
         if (r.success) {
         showToast(r.message, 'success');
@@ -917,10 +926,15 @@
         'Delete Guest',
         `Are you sure you want to delete <strong>${guestName}</strong>? This action cannot be undone.`,
         function () {
+        const antiForgeryToken = $('#reservedBookingAntiForgeryForm input[name="__RequestVerificationToken"]').val();
         $.ajax({
-        url: '/Reserve/DeleteGuest',
+        url: '@Url.Action("DeleteReservedGuest", "Reserve")',
         type: 'POST',
-        data: { id: guestId },
+        headers: { 'RequestVerificationToken': antiForgeryToken },
+        data: {
+        id: guestId,
+        __RequestVerificationToken: antiForgeryToken
+        },
         success: function (r) {
         if (r.success) {
         showToast(r.message, 'success');

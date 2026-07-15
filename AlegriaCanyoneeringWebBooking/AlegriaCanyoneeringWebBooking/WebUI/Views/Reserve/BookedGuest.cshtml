@@ -110,6 +110,7 @@
     .btn-view  { background: rgba(26,110,245,0.08);  color: #1a6ef5; border: 1px solid #bfdbfe; }
     .btn-print { background: rgba(240,165,0,0.1);    color: #b45309; border: 1px solid #fde68a; }
     .btn-assign{ background: rgba(100,116,139,0.08); color: #475569; border: 1px solid #e2e8f0; }
+    .btn-delete{ background: rgba(239,68,68,0.08);   color: #dc2626; border: 1px solid #fecaca; }
 
     .assign-dropdown { position: relative; display: inline-block; }
     .assign-menu {
@@ -385,6 +386,7 @@
                                     + '<button class="btn-act btn-view view-guest-details" data-batch="' + data + '" data-operator-id="' + operatorId + '"><i class="bi bi-eye"></i> View</button>'
                                     + '<button class="btn-act btn-print print-batch-details" data-batch="' + data + '"><i class="bi bi-printer"></i> Print</button>'
                                     + buildAssign(data, showAssign)
+                                    + (isSuperAdmin ? '<button class="btn-act btn-delete delete-booked-batch" data-batch="' + data + '"><i class="bi bi-trash"></i> Delete Batch</button>' : '')
                                     + '</div>';
                             }
                         }
@@ -502,6 +504,88 @@
                 var form = $('<form>', { action: '@Url.Action("PrintBatchGuests", "Reserve")', method: 'POST', target: '_blank' });
                 $('<input>').attr({ type: 'hidden', name: 'batchCode', value: batchCode }).appendTo(form);
                 form.appendTo('body').submit().remove();
+            });
+
+            function showBookedDeleteConfirmModal(title, message, onConfirm) {
+                $('#bookedDeleteConfirmModal').remove();
+                var html =
+                    '<div class="modal fade" id="bookedDeleteConfirmModal" tabindex="-1" aria-hidden="true">'
+                    + '<div class="modal-dialog modal-dialog-centered" style="max-width:420px;">'
+                    + '<div class="modal-content" style="border-radius:16px;border:0;box-shadow:0 8px 40px rgba(15,52,96,0.18);">'
+                    + '<div style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;padding:1rem 1.5rem;border-radius:16px 16px 0 0;">'
+                    + '<h5 style="font-size:1rem;font-weight:700;margin:0;"><i class="bi bi-exclamation-triangle-fill me-2"></i><span class="delete-modal-title"></span></h5>'
+                    + '</div><div class="modal-body p-4 text-center">'
+                    + '<i class="bi bi-trash" style="font-size:2.5rem;color:#ef4444;margin-bottom:0.75rem;display:block;"></i>'
+                    + '<p class="delete-modal-message" style="color:#334155;font-size:0.9rem;margin-bottom:1.25rem;"></p>'
+                    + '<div class="d-flex gap-2 justify-content-center">'
+                    + '<button type="button" class="btn btn-danger px-4 booked-delete-confirm" style="border-radius:50px;font-weight:600;font-size:0.9rem;"><i class="bi bi-trash me-1"></i> Yes, Delete</button>'
+                    + '<button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" style="border-radius:50px;font-weight:600;font-size:0.9rem;">Cancel</button>'
+                    + '</div></div></div></div></div>';
+
+                $('body').append(html);
+                var $modal = $('#bookedDeleteConfirmModal');
+                $modal.find('.delete-modal-title').text(title);
+                $modal.find('.delete-modal-message').text(message);
+                var modal = bootstrap.Modal.getOrCreateInstance($modal[0]);
+                $modal.one('click', '.booked-delete-confirm', function () {
+                    $(this).prop('disabled', true);
+                    modal.hide();
+                    onConfirm();
+                });
+                $modal.one('hidden.bs.modal', function () { $(this).remove(); });
+                modal.show();
+            }
+
+            $('#batchesTableContainer').on('click', '.delete-booked-batch', function () {
+                var batchCode = String($(this).data('batch') || '');
+                if (!batchCode) return;
+                var $button = $(this);
+                showBookedDeleteConfirmModal('Delete Batch', 'Delete batch ' + batchCode + ' and every guest in it? This action cannot be undone.', function () {
+                    $button.prop('disabled', true);
+                    $.post('@Url.Action("DeleteBatch", "Reserve")', {
+                        batchCode: batchCode,
+                        __RequestVerificationToken: $('#__AjaxAntiForgeryForm input[name="__RequestVerificationToken"]').val()
+                    }).done(function (result) {
+                        if (!result || !result.success) {
+                            showToast(result && result.message ? result.message : 'Failed to delete batch.', 'danger');
+                            $button.prop('disabled', false);
+                            return;
+                        }
+                        showToast(result.message, 'success');
+                        table.ajax.reload(null, false);
+                    }).fail(function () {
+                        showToast('Failed to delete batch.', 'danger');
+                        $button.prop('disabled', false);
+                    });
+                });
+            });
+
+            $(document).on('click', '.delete-booked-guest', function () {
+                var guestId = Number($(this).data('guest-id'));
+                var guestName = String($(this).data('guest-name') || 'this guest');
+                if (!guestId) return;
+                var modalElement = document.getElementById('guestDetailsModal');
+                var $button = $(this);
+                showBookedDeleteConfirmModal('Delete Guest', 'Delete ' + guestName + '? This action cannot be undone.', function () {
+                    $button.prop('disabled', true);
+                    var antiForgeryToken = $('#__AjaxAntiForgeryForm input[name="__RequestVerificationToken"]').val();
+                    $.post('@Url.Action("DeleteGuest", "Reserve")', {
+                        id: guestId,
+                        __RequestVerificationToken: antiForgeryToken
+                    }).done(function (result) {
+                        if (!result || !result.success) {
+                            showToast(result && result.message ? result.message : 'Failed to delete guest.', 'danger');
+                            $button.prop('disabled', false);
+                            return;
+                        }
+                        if (modalElement) bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+                        showToast(result.message, 'success');
+                        table.ajax.reload(null, false);
+                    }).fail(function () {
+                        showToast('Failed to delete guest.', 'danger');
+                        $button.prop('disabled', false);
+                    });
+                });
             });
 
             // ─────────────────────────────────────────────────────────
