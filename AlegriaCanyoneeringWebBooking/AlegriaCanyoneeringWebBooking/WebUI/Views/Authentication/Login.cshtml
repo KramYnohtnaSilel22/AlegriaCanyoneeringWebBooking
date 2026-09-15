@@ -336,6 +336,78 @@
             box-shadow: 0 8px 40px rgba(0,0,0,0.25);
         }
     }
+
+    /* ── PWA Install Banner ─────────────────────────── */
+    .pwa-install-banner {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--blue-mid), var(--blue-deep));
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(15,52,96,0.3);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        max-width: 350px;
+    }
+
+    .pwa-text {
+        flex: 1;
+    }
+
+    .pwa-text strong {
+        display: block;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+
+    .pwa-text span {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+
+    .pwa-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-pwa-install {
+        background: white;
+        color: var(--blue-mid);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-pwa-install:hover {
+        background: var(--gray-soft);
+        transform: translateY(-1px);
+    }
+
+    .btn-pwa-close {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+    .btn-pwa-close:hover {
+        background: rgba(255,255,255,0.3);
+    }
 </style>
 
 <div class="login-wrap">
@@ -408,6 +480,22 @@
         </div>
     </div>
 
+</div>
+
+<!-- PWA Install Banner -->
+<div id="pwaInstallBanner" class="pwa-install-banner" style="display: flex;">
+    <div class="pwa-text">
+        <strong>Install Alegria Booking</strong>
+        <span>Add to home screen for quick access and offline support.</span>
+    </div>
+    <div class="pwa-actions">
+        <button id="pwaInstallBtn" class="btn-pwa-install">
+            <i class="bi bi-download"></i> Install
+        </button>
+        <button class="btn-pwa-close" onclick="document.getElementById('pwaInstallBanner').style.display='none';">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
 </div>
 
 <!-- Toast container -->

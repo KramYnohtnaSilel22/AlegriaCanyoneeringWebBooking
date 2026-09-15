@@ -1,12 +1,19 @@
 ﻿@{
     ViewData["Title"] = "Landing Page";
-    Layout = "Layout_Login";
+    Layout = null;
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="theme-color" content="#0f3460" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Alegria Booking" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/images/icon-192.png" />
+    <link rel="icon" href="/images/icon-192.png" type="image/jpeg" />
     <title>Alegria Canyoneering — Web Booking</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
@@ -343,7 +350,7 @@
                 flex-shrink: 0;
             }
 
-        /* Testimonials */
+            /* Testimonials */
         .testimonial-wrap {
             position: relative;
         }
@@ -374,6 +381,60 @@
             font-weight: 700;
             color: var(--blue-mid);
         }
+
+        /* Contact */
+        .contact-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: #334155;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            background: #f8faff;
+            border: 1px solid #e8edf5;
+            transition: background 0.2s;
+        }
+
+            .contact-link i {
+                color: var(--blue-mid);
+                font-size: 1rem;
+            }
+
+            .contact-link:hover {
+                background: #eef3ff;
+                color: var(--blue-mid);
+            }
+
+        .btn-talk {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 2rem;
+            background: linear-gradient(135deg, var(--blue-mid), var(--green));
+            color: var(--white);
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            box-shadow: 0 4px 16px rgba(26,110,245,0.3);
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+            .btn-talk:hover {
+                opacity: 0.9;
+                transform: translateY(-1px);
+                color: var(--white);
+            }
+
 
         /* Contact */
         .contact-links {
@@ -472,7 +533,7 @@
             transition: opacity 0.3s, transform 0.2s;
             opacity: 0;
             pointer-events: none;
-            z-index: 9999;
+            z-index: 10000;
         }
 
             .fab.show {
@@ -484,6 +545,7 @@
                 transform: scale(1.1);
             }
 
+      
         /* Mobile nav */
         .nav-hamburger {
             display: none;
@@ -524,12 +586,286 @@
                 display: block;
             }
         }
+
+        /* ── PWA Install Banner ────────────────────── */
+        .pwa-install-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            padding: 0.55rem 0.85rem;
+            background: linear-gradient(135deg, var(--blue-deep), var(--blue-mid));
+            color: var(--white);
+            position: fixed;
+            bottom: 1.25rem;
+            left: 1rem;
+            z-index: 9997;
+            border-radius: 999px;
+            box-shadow: 0 6px 20px rgba(15,52,96,0.35);
+            max-width: calc(100% - 5rem);
+        }
+
+            .pwa-install-banner .pwa-text {
+                font-size: 0.82rem;
+                font-weight: 500;
+                line-height: 1.3;
+            }
+
+                .pwa-install-banner .pwa-text strong {
+                    display: block;
+                    font-size: 0.85rem;
+                }
+
+            .pwa-install-banner .pwa-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                flex-shrink: 0;
+            }
+
+        .btn-pwa-install {
+            padding: 0.45rem 0.9rem;
+            background: var(--accent);
+            color: #1e293b;
+            border: none;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(240,165,0,0.35);
+            transition: transform 0.15s, opacity 0.2s;
+        }
+
+            .btn-pwa-install:hover {
+                opacity: 0.9;
+                transform: translateY(-1px);
+            }
+
+        .btn-pwa-close {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .btn-pwa-close:hover {
+                background: rgba(255,255,255,0.3);
+                color: var(--white);
+            }
+
+        /* ── Mobile improvements ───────────────────── */
+        @@media (max-width: 768px) {
+            * {
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            body {
+                overscroll-behavior-y: none;
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            .navbar {
+                padding: 0.75rem 1rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .nav-brand {
+                gap: 0.5rem;
+            }
+
+            .nav-logo {
+                width: 36px;
+                height: 36px;
+            }
+
+            .nav-name {
+                font-size: 0.95rem;
+            }
+
+                .nav-name span {
+                    font-size: 0.65rem;
+                }
+
+            .nav-hamburger {
+                font-size: 1.3rem;
+            }
+
+            .hero {
+                padding: 3.5rem 1.25rem 2.5rem;
+            }
+
+                .hero::before {
+                    width: 300px;
+                    height: 300px;
+                    border-width: 50px;
+                    top: -100px;
+                    left: -100px;
+                }
+
+                .hero::after {
+                    width: 200px;
+                    height: 200px;
+                    border-width: 30px;
+                    bottom: -60px;
+                    right: -60px;
+                }
+
+            .hero-logo {
+                width: 70px;
+                height: 70px;
+                margin-bottom: 1rem;
+            }
+
+            .hero h1 {
+                font-size: clamp(1.6rem, 6vw, 2.25rem);
+            }
+
+            .hero p {
+                font-size: 0.95rem;
+                padding: 0 0.5rem;
+            }
+
+            .hero-cta {
+                padding: 0.75rem 2rem;
+                font-size: 0.95rem;
+            }
+
+            .content-wrap {
+                padding: 0 0.75rem;
+                gap: 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+                border-radius: 16px;
+            }
+
+            .card-title {
+                font-size: 1.1rem;
+                margin-bottom: 1rem;
+            }
+
+            .steps li {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+
+            .step-num {
+                width: 24px;
+                height: 24px;
+                font-size: 0.7rem;
+            }
+
+            .testimonial-card {
+                padding: 1.25rem;
+            }
+
+            .quote-text {
+                font-size: 0.95rem;
+            }
+
+            .contact-link {
+                padding: 0.85rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-talk {
+                width: 100%;
+                justify-content: center;
+                padding: 0.85rem;
+            }
+
+            .fab {
+                width: 42px;
+                height: 42px;
+                bottom: 1.25rem;
+                right: 1rem;
+                font-size: 1rem;
+                z-index: 10000;
+            }
+
+            .nav-mobile {
+                padding: 1rem;
+            }
+
+            .pwa-install-banner {
+                left: 0.75rem;
+                right: 0.75rem;
+                bottom: 5.5rem;
+                max-width: none;
+                border-radius: 999px;
+                padding: 0.5rem 0.75rem;
+                gap: 0.5rem;
+            }
+
+                .pwa-install-banner .pwa-text strong {
+                    font-size: 0.8rem;
+                }
+
+                .pwa-install-banner .pwa-text {
+                    font-size: 0.75rem;
+                }
+
+                .pwa-install-banner .pwa-actions {
+                    gap: 0.35rem;
+                }
+
+            .btn-pwa-install {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.75rem;
+            }
+
+            .btn-pwa-close {
+                width: 24px;
+                height: 24px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @@media (max-width: 400px) {
+            .navbar {
+                padding: 0.6rem 0.75rem;
+            }
+
+            .nav-logo {
+                width: 30px;
+                height: 30px;
+            }
+
+            .nav-name {
+                font-size: 0.85rem;
+            }
+
+            .hero {
+                padding: 2.5rem 1rem 2rem;
+            }
+
+            .hero-logo {
+                width: 60px;
+                height: 60px;
+            }
+
+            .card {
+                padding: 1.25rem;
+            }
+        }
     </style>
 </head>
 <body>
 
     <!-- Loading overlay -->
-    <div id="loadingOverlay" style="position:fixed;inset:0;background:white;display:flex;align-items:center;justify-content:center;z-index:9999;">
+    <div id="loadingOverlay" style="position:fixed;inset:0;background:white;display:flex;align-items:center;justify-content:center;z-index:10001;">
         <div style="width:48px;height:48px;border:4px solid #e2e8f0;border-top-color:#1a6ef5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
         <style>
             @@keyframes spin {
@@ -537,6 +873,22 @@
                     transform: rotate(360deg)
                 }
             }</style>
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div id="pwaInstallBanner" class="pwa-install-banner" style="display: flex;">
+        <div class="pwa-text">
+            <strong>Download Alegria App</strong>
+            Add to home screen for quick access and offline support.
+        </div>
+        <div class="pwa-actions">
+            <button id="pwaInstallBtn" class="btn-pwa-install">
+                <i class="bi bi-download"></i> Download App
+            </button>
+            <button class="btn-pwa-close" onclick="document.getElementById('pwaInstallBanner').style.display='none';">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Navbar -->
@@ -549,6 +901,9 @@
             <a href="#how-to-use">How to Use</a>
             <a href="#testimonials">Testimonials</a>
             <a href="#contact">Contact</a>
+            <button id="pwaNavInstallBtn" class="btn-pwa-install-nav" type="button" style="border: 1.5px solid #1a6ef5; color: #1a6ef5; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: rgba(26, 110, 245, 0.08); border-radius: 999px; padding: 0.45rem 1.1rem; font-size: 0.88rem; transition: all 0.2s;">
+                <i class="bi bi-download"></i> Download App
+            </button>
             <a href="/Authentication/Login" class="btn-login">
                 <i class="bi bi-box-arrow-in-right"></i> Login
             </a>
@@ -558,6 +913,9 @@
         </button>
     </nav>
     <div id="mobileNav" class="nav-mobile">
+        <button id="pwaMobileInstallBtn" type="button" style="background: linear-gradient(135deg, #1a6ef5, #0f3460); border: none; border-radius: 10px; padding: 0.65rem 1rem; color: white; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.75rem; width: 100%;">
+            <i class="bi bi-download"></i> Download App
+        </button>
         <a href="#how-to-use">How to Use</a>
         <a href="#testimonials">Testimonials</a>
         <a href="#contact">Contact</a>
@@ -599,10 +957,10 @@
             </div>
         </div>
 
-        <!-- Testimonials -->
+         <!-- Testimonials -->
         <div class="card" id="testimonials">
             <div class="card-title" style="color:#15803d;">
-                <i style="background:rgba(22,163,74,0.1);color:#16a34a;" class="bi bi-chat-square-quote-fill"></i>
+                <i style="background:rgba(22,163,74,0.testimonials);color:#16a34a;" class="bi bi-chat-square-quote-fill"></i>
                 What Our Users Say
             </div>
             <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
@@ -637,6 +995,7 @@
                 </button>
             </div>
         </div>
+
 
         <!-- Contact -->
         <div class="card" id="contact">
@@ -692,9 +1051,11 @@
         window.addEventListener('load', () => {
             setTimeout(() => {
                 const o = document.getElementById('loadingOverlay');
+                if (!o) return;
                 o.style.transition = 'opacity 0.4s';
                 o.style.opacity = '0';
-                setTimeout(() => o.style.display = 'none', 400);
+                o.style.pointerEvents = 'none';
+                setTimeout(() => { o.style.display = 'none'; }, 400);
             }, 800);
         });
 
@@ -721,6 +1082,11 @@
             });
         }, { threshold: 0.1 });
         document.querySelectorAll('.card').forEach(c => io.observe(c));
+
     </script>
+    <script src="~/js/pwa-install.js?v=20260915_4" asp-append-version="true"></script>
 </body>
 </html>
+
+
+

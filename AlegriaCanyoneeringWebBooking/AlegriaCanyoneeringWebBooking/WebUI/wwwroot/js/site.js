@@ -54,6 +54,8 @@ document.addEventListener('DOMContentLoaded', function () {
         updateSelectedItems(selectElement, displayDiv);
     }
 
-    attachHandlers(driverSelect, selectedDriversDiv);
-    attachHandlers(guideSelect, selectedGuidesDiv);
+    if (driverSelect && guideSelect && selectedDriversDiv && selectedGuidesDiv) {
+        attachHandlers(driverSelect, selectedDriversDiv);
+        attachHandlers(guideSelect, selectedGuidesDiv);
+    }
 });
