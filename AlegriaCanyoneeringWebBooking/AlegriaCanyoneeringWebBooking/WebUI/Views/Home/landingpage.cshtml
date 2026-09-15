@@ -860,6 +860,107 @@
                 padding: 1.25rem;
             }
         }
+
+        /* ── Testimonial carousel (Bootstrap JS without Bootstrap CSS) ── */
+        #testimonialCarousel {
+            position: relative;
+        }
+
+        #testimonialCarousel .carousel-inner {
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+        }
+
+        #testimonialCarousel .carousel-item {
+            display: none;
+            transition: transform 0.6s ease;
+            backface-visibility: hidden;
+        }
+
+        #testimonialCarousel .carousel-item.active,
+        #testimonialCarousel .carousel-item-next,
+        #testimonialCarousel .carousel-item-prev {
+            display: block;
+        }
+
+        #testimonialCarousel .carousel-item-next,
+        #testimonialCarousel .carousel-item-prev {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+
+        #testimonialCarousel .carousel-item-next {
+            transform: translateX(100%);
+        }
+
+        #testimonialCarousel .carousel-item-prev {
+            transform: translateX(-100%);
+        }
+
+        #testimonialCarousel .carousel-item-next.carousel-item-start,
+        #testimonialCarousel .carousel-item-prev.carousel-item-end {
+            transform: translateX(0);
+        }
+
+        #testimonialCarousel .carousel-item.active.carousel-item-start {
+            transform: translateX(-100%);
+        }
+
+        #testimonialCarousel .carousel-item.active.carousel-item-end {
+            transform: translateX(100%);
+        }
+
+        #testimonialCarousel .carousel-control-prev,
+        #testimonialCarousel .carousel-control-next {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 42px;
+            border: 0;
+            background: transparent;
+            opacity: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            transition: opacity 0.2s;
+        }
+
+        #testimonialCarousel .carousel-control-prev {
+            left: 0;
+        }
+
+        #testimonialCarousel .carousel-control-next {
+            right: 0;
+        }
+
+        #testimonialCarousel .carousel-control-prev:hover,
+        #testimonialCarousel .carousel-control-next:hover {
+            opacity: 0.7;
+        }
+
+        #testimonialCarousel .carousel-control-prev-icon,
+        #testimonialCarousel .carousel-control-next-icon {
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: transparent;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100% 100%;
+        }
+
+        #testimonialCarousel .carousel-control-prev-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2394a3b8'%3e%3cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3e%3c/svg%3e");
+        }
+
+        #testimonialCarousel .carousel-control-next-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2394a3b8'%3e%3cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        }
     </style>
 </head>
 <body>
@@ -960,7 +1061,7 @@
          <!-- Testimonials -->
         <div class="card" id="testimonials">
             <div class="card-title" style="color:#15803d;">
-                <i style="background:rgba(22,163,74,0.testimonials);color:#16a34a;" class="bi bi-chat-square-quote-fill"></i>
+                <i style="background:rgba(22,163,74,0.1);color:#16a34a;" class="bi bi-chat-square-quote-fill"></i>
                 What Our Users Say
             </div>
             <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
