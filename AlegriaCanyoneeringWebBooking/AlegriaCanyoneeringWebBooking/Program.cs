@@ -1,4 +1,4 @@
-﻿using AlegriaCanyoneeringWebBooking;
+using AlegriaCanyoneeringWebBooking;
 using AlegriaCanyoneeringWebBooking.Domain.Models;
 using AlegriaCanyoneeringWebBooking.Middleware;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -7,6 +7,20 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var candidateWebRoots = new[]
+{
+    Path.Combine(builder.Environment.ContentRootPath, "WebUI", "wwwroot"),
+    Path.Combine(Directory.GetCurrentDirectory(), "WebUI", "wwwroot"),
+    Path.Combine(builder.Environment.ContentRootPath, "wwwroot"),
+    Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")
+};
+var matchedWebRoot = candidateWebRoots.FirstOrDefault(Directory.Exists);
+if (matchedWebRoot != null)
+{
+    builder.Environment.WebRootPath = matchedWebRoot;
+    builder.Environment.WebRootFileProvider = new PhysicalFileProvider(matchedWebRoot);
+}
 
 // ✅ CRITICAL: Add User Secrets FIRST
 if (builder.Environment.IsDevelopment())
@@ -124,20 +138,21 @@ builder.Services.AddResponseCompression();
 var app = builder.Build();
 
 #region Static Files (works locally + IIS)
-var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "WebUI", "wwwroot");
+var activeStaticRoot = builder.Environment.WebRootPath
+    ?? candidateWebRoots.FirstOrDefault(Directory.Exists);
 
-// Serve default wwwroot
-if (Directory.Exists(wwwrootPath))
+if (activeStaticRoot != null && Directory.Exists(activeStaticRoot))
 {
     app.UseStaticFiles(new StaticFileOptions
     {
-        FileProvider = new PhysicalFileProvider(wwwrootPath),
+        FileProvider = new PhysicalFileProvider(activeStaticRoot),
         RequestPath = "" // root
     });
 }
 else
 {
-    Console.WriteLine($"[Warning] wwwroot folder not found: {wwwrootPath}");
+    Console.WriteLine("[Warning] wwwroot folder not found in any candidate paths");
+    app.UseStaticFiles();
 }
 #endregion
 

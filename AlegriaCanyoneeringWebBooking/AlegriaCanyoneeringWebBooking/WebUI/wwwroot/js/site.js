@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     var toastEl = document.getElementById("toastMessage");
     if (toastEl) {
         var toast = new bootstrap.Toast(toastEl, {
@@ -18,7 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectedGuidesDiv = document.getElementById('selectedGuides');
 
     function updateSelectedItems(selectElement, displayDiv) {
-        const selectedOptions = Array.from(selectElement.selectedOptions);
+        if (!selectElement || !displayDiv) return;
+        const selectedOptions = Array.from(selectElement.selectedOptions || []);
         displayDiv.innerHTML = '';
 
         if (selectedOptions.length === 0) {
@@ -32,20 +33,25 @@ document.addEventListener('DOMContentLoaded', function () {
             item.innerHTML = `${option.text} <span class="remove-item" data-value="${option.value}">&times;</span>`;
             displayDiv.appendChild(item);
 
-            item.querySelector('.remove-item').addEventListener('click', function () {
-                option.selected = false;
-                updateSelectedItems(selectElement, displayDiv);
-            });
+            const removeBtn = item.querySelector('.remove-item');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function () {
+                    option.selected = false;
+                    updateSelectedItems(selectElement, displayDiv);
+                });
+            }
         });
     }
 
     function attachHandlers(selectElement, displayDiv) {
+        if (!selectElement || !displayDiv) return;
+
         selectElement.addEventListener('change', function () {
             updateSelectedItems(selectElement, displayDiv);
         });
 
         selectElement.addEventListener('dblclick', function (e) {
-            if (e.target.tagName === 'OPTION') {
+            if (e.target && e.target.tagName === 'OPTION') {
                 e.target.selected = !e.target.selected;
                 updateSelectedItems(selectElement, displayDiv);
             }
@@ -54,8 +60,10 @@ document.addEventListener('DOMContentLoaded', function () {
         updateSelectedItems(selectElement, displayDiv);
     }
 
-    if (driverSelect && guideSelect && selectedDriversDiv && selectedGuidesDiv) {
+    if (driverSelect && selectedDriversDiv) {
         attachHandlers(driverSelect, selectedDriversDiv);
+    }
+    if (guideSelect && selectedGuidesDiv) {
         attachHandlers(guideSelect, selectedGuidesDiv);
     }
 });
