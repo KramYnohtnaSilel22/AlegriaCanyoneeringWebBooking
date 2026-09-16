@@ -2,72 +2,72 @@
  * Alegria Canyoneering Web Booking - Universal PWA Installer with Progress Bar
  */
 (function () {
-  let deferredPrompt = null;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    let deferredPrompt = null;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-  function showAllInstallUI() {
-    if (isStandalone) return;
-    document.querySelectorAll('#pwaInstallBanner, .pwa-install-banner').forEach(b => {
-      b.style.display = 'flex';
-      b.style.visibility = 'visible';
+    function showAllInstallUI() {
+        if (isStandalone) return;
+        document.querySelectorAll('#pwaInstallBanner, .pwa-install-banner').forEach(b => {
+            b.style.display = 'flex';
+            b.style.visibility = 'visible';
+        });
+        document.querySelectorAll('#pwaInstallBtn, .btn-pwa-install, #pwaNavInstallBtn, #pwaMobileInstallBtn').forEach(b => {
+            b.style.display = 'inline-flex';
+        });
+    }
+
+    function hideAllInstallUI() {
+        document.querySelectorAll('#pwaInstallBanner, .pwa-install-banner, #pwaInstallBtn, .btn-pwa-install, #pwaNavInstallBtn, #pwaMobileInstallBtn').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+
+    if (isStandalone) {
+        hideAllInstallUI();
+        return;
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', showAllInstallUI);
+    } else {
+        showAllInstallUI();
+    }
+
+    // Capture beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('[PWA] Native install prompt captured.');
+        showAllInstallUI();
     });
-    document.querySelectorAll('#pwaInstallBtn, .btn-pwa-install, #pwaNavInstallBtn, #pwaMobileInstallBtn').forEach(b => {
-      b.style.display = 'inline-flex';
+
+    window.addEventListener('appinstalled', () => {
+        console.log('[PWA] App successfully installed.');
+        deferredPrompt = null;
+        hideAllInstallUI();
+        const modal = document.getElementById('pwaSimpleDownloadModal');
+        if (modal) modal.style.display = 'none';
     });
-  }
 
-  function hideAllInstallUI() {
-    document.querySelectorAll('#pwaInstallBanner, .pwa-install-banner, #pwaInstallBtn, .btn-pwa-install, #pwaNavInstallBtn, #pwaMobileInstallBtn').forEach(el => {
-      el.style.display = 'none';
-    });
-  }
+    // Windows Desktop Shortcut (.url) fallback
+    function downloadDesktopShortcut() {
+        const urlContent = `[InternetShortcut]\r\nURL=${window.location.origin}/\r\nIconIndex=0\r\nIconFile=${window.location.origin}/favicon.ico\r\n`;
+        const blob = new Blob([urlContent], { type: 'application/x-mswinurl' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Alegria Canyoneering Booking.url';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    }
 
-  if (isStandalone) {
-    hideAllInstallUI();
-    return;
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', showAllInstallUI);
-  } else {
-    showAllInstallUI();
-  }
-
-  // Capture beforeinstallprompt
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    console.log('[PWA] Native install prompt captured.');
-    showAllInstallUI();
-  });
-
-  window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App successfully installed.');
-    deferredPrompt = null;
-    hideAllInstallUI();
-    const modal = document.getElementById('pwaSimpleDownloadModal');
-    if (modal) modal.style.display = 'none';
-  });
-
-  // Windows Desktop Shortcut (.url) fallback
-  function downloadDesktopShortcut() {
-    const urlContent = `[InternetShortcut]\r\nURL=${window.location.origin}/\r\nIconIndex=0\r\nIconFile=${window.location.origin}/favicon.ico\r\n`;
-    const blob = new Blob([urlContent], { type: 'application/x-mswinurl' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'Alegria Canyoneering Booking.url';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-  }
-
-  function openDownloadModal() {
-    let modal = document.getElementById('pwaSimpleDownloadModal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'pwaSimpleDownloadModal';
-      modal.innerHTML = `
+    function openDownloadModal() {
+        let modal = document.getElementById('pwaSimpleDownloadModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'pwaSimpleDownloadModal';
+            modal.innerHTML = `
         <div class="pwa-download-overlay" id="pwaDownloadOverlay">
           <div class="pwa-download-card" role="dialog" aria-modal="true">
             <button class="pwa-download-close" id="pwaDownloadCloseBtn" aria-label="Close">&times;</button>
@@ -122,21 +122,15 @@
                 </button>
               </div>
 
-              <!-- Desktop Shortcut Fallback -->
-              <div class="pwa-alt-section">
-                <button class="pwa-secondary-btn" id="pwaShortcutBtn">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M14 9l3 3-3 3"/></svg>
-                  <span>Or Save Desktop Shortcut Icon</span>
-                </button>
               </div>
             </div>
           </div>
         </div>
       `;
 
-      // Inject Styles
-      const style = document.createElement('style');
-      style.textContent = `
+            // Inject Styles
+            const style = document.createElement('style');
+            style.textContent = `
         .pwa-download-overlay {
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
@@ -336,135 +330,129 @@
           color: #0f172a;
         }
       `;
-      document.head.appendChild(style);
-      document.body.appendChild(modal);
+            document.head.appendChild(style);
+            document.body.appendChild(modal);
 
-      // Close handler
-      const close = () => { modal.style.display = 'none'; };
-      document.getElementById('pwaDownloadCloseBtn').addEventListener('click', close);
-      document.getElementById('pwaDownloadOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'pwaDownloadOverlay') close();
-      });
+            // Close handler
+            const close = () => { modal.style.display = 'none'; };
+            document.getElementById('pwaDownloadCloseBtn').addEventListener('click', close);
+            document.getElementById('pwaDownloadOverlay').addEventListener('click', (e) => {
+                if (e.target.id === 'pwaDownloadOverlay') close();
+            });
 
-      // Simulation Function with realistic stages and percent update
-      function startProgressBar() {
-        const initialState = document.getElementById('pwaInitialState');
-        const progressContainer = document.getElementById('pwaProgressContainer');
-        const completedBox = document.getElementById('pwaCompletedBox');
-        const progressBar = document.getElementById('pwaProgressBar');
-        const percentText = document.getElementById('pwaPercentText');
-        const progressStatus = document.getElementById('pwaProgressStatus');
-        const subStatus = document.getElementById('pwaSubStatus');
+            // Simulation Function with realistic stages and percent update
+            function startProgressBar() {
+                const initialState = document.getElementById('pwaInitialState');
+                const progressContainer = document.getElementById('pwaProgressContainer');
+                const completedBox = document.getElementById('pwaCompletedBox');
+                const progressBar = document.getElementById('pwaProgressBar');
+                const percentText = document.getElementById('pwaPercentText');
+                const progressStatus = document.getElementById('pwaProgressStatus');
+                const subStatus = document.getElementById('pwaSubStatus');
 
-        initialState.style.display = 'none';
-        progressContainer.style.display = 'block';
-        completedBox.style.display = 'none';
+                initialState.style.display = 'none';
+                progressContainer.style.display = 'block';
+                completedBox.style.display = 'none';
 
-        let percent = 0;
+                let percent = 0;
 
-        const stages = [
-          { at: 20, status: 'Downloading assets...', sub: 'Caching app icons and layout styles' },
-          { at: 50, status: 'Setting up offline database...', sub: 'Configuring cache trust storage' },
-          { at: 80, status: 'Registering service worker...', sub: 'Preparing background sync' },
-          { at: 95, status: 'Finalizing installation...', sub: 'Registering app launcher' },
-          { at: 100, status: 'Completed!', sub: 'Installation ready' }
-        ];
+                const stages = [
+                    { at: 20, status: 'Downloading assets...', sub: 'Caching app icons and layout styles' },
+                    { at: 50, status: 'Setting up offline database...', sub: 'Configuring cache trust storage' },
+                    { at: 80, status: 'Registering service worker...', sub: 'Preparing background sync' },
+                    { at: 95, status: 'Finalizing installation...', sub: 'Registering app launcher' },
+                    { at: 100, status: 'Completed!', sub: 'Installation ready' }
+                ];
 
-        const interval = setInterval(() => {
-          // Increment percent smoothly
-          const step = percent < 60 ? Math.floor(Math.random() * 8) + 4 : Math.floor(Math.random() * 5) + 3;
-          percent = Math.min(100, percent + step);
+                const interval = setInterval(() => {
+                    // Increment percent smoothly
+                    const step = percent < 60 ? Math.floor(Math.random() * 8) + 4 : Math.floor(Math.random() * 5) + 3;
+                    percent = Math.min(100, percent + step);
 
-          progressBar.style.width = percent + '%';
-          percentText.textContent = percent + '%';
+                    progressBar.style.width = percent + '%';
+                    percentText.textContent = percent + '%';
 
-          // Update stage messages
-          for (let i = 0; i < stages.length; i++) {
-            if (percent >= stages[i].at) {
-              progressStatus.textContent = stages[i].status;
-              subStatus.textContent = stages[i].sub;
-            }
-          }
-
-          if (percent >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              progressContainer.style.display = 'none';
-              completedBox.style.display = 'block';
-
-              // Automatically trigger native prompt if available
-              if (deferredPrompt) {
-                try {
-                  deferredPrompt.prompt();
-                  deferredPrompt.userChoice.then(({ outcome }) => {
-                    if (outcome === 'accepted') {
-                      deferredPrompt = null;
-                      hideAllInstallUI();
-                      close();
+                    // Update stage messages
+                    for (let i = 0; i < stages.length; i++) {
+                        if (percent >= stages[i].at) {
+                            progressStatus.textContent = stages[i].status;
+                            subStatus.textContent = stages[i].sub;
+                        }
                     }
-                  });
-                } catch (err) {
-                  console.log('[PWA] Prompt trigger:', err);
-                }
-              }
-            }, 400);
-          }
-        }, 120);
-      }
 
-      // Start progress when user clicks Main Download button
-      document.getElementById('pwaMainActionBtn').addEventListener('click', () => {
-        startProgressBar();
-      });
+                    if (percent >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            progressContainer.style.display = 'none';
+                            completedBox.style.display = 'block';
 
-      // When in completed state, trigger prompt button
-      document.getElementById('pwaPromptTriggerBtn').addEventListener('click', async () => {
-        if (deferredPrompt) {
-          try {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-              deferredPrompt = null;
-              hideAllInstallUI();
-              close();
+                            // Automatically trigger native prompt if available
+                            if (deferredPrompt) {
+                                try {
+                                    deferredPrompt.prompt();
+                                    deferredPrompt.userChoice.then(({ outcome }) => {
+                                        if (outcome === 'accepted') {
+                                            deferredPrompt = null;
+                                            hideAllInstallUI();
+                                            close();
+                                        }
+                                    });
+                                } catch (err) {
+                                    console.log('[PWA] Prompt trigger:', err);
+                                }
+                            }
+                        }, 400);
+                    }
+                }, 120);
             }
-          } catch (err) {
-            console.error(err);
-          }
+
+            // Start progress when user clicks Main Download button
+            document.getElementById('pwaMainActionBtn').addEventListener('click', () => {
+                startProgressBar();
+            });
+
+            // When in completed state, trigger prompt button
+            document.getElementById('pwaPromptTriggerBtn').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    try {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            deferredPrompt = null;
+                            hideAllInstallUI();
+                            close();
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+            });
         }
-      });
 
-      // Shortcut button
-      document.getElementById('pwaShortcutBtn').addEventListener('click', () => {
-        downloadDesktopShortcut();
-        close();
-      });
+        modal.style.display = 'block';
     }
 
-    modal.style.display = 'block';
-  }
+    // Expose globally so it can be triggered programmatically or via inline click
+    window.openDownloadModal = openDownloadModal;
 
-  // Expose globally so it can be triggered programmatically or via inline click
-  window.openDownloadModal = openDownloadModal;
-
-  // Handle click on any install/download button anywhere on the page
-  document.addEventListener('click', (e) => {
-    const target = e.target.closest('#pwaInstallBtn, .btn-pwa-install, #pwaNavInstallBtn, #pwaMobileInstallBtn');
-    if (target) {
-      e.preventDefault();
-      openDownloadModal();
-    }
-  });
-
-  // Service Worker Registration
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(reg => {
-          console.log('[SW] Registered, scope:', reg.scope);
-          reg.update();
-        })
-        .catch(err => console.error('[SW] Registration failed:', err));
+    // Handle click on any install/download button anywhere on the page
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('#pwaInstallBtn, .btn-pwa-install, #pwaNavInstallBtn, #pwaMobileInstallBtn');
+        if (target) {
+            e.preventDefault();
+            openDownloadModal();
+        }
     });
-  }
+
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => {
+                    console.log('[SW] Registered, scope:', reg.scope);
+                    reg.update();
+                })
+                .catch(err => console.error('[SW] Registration failed:', err));
+        });
+    }
 })();
