@@ -1,4 +1,4 @@
-﻿@model LoginViewModel
+@model LoginViewModel
 @{
     Layout = "Layout_Login";
     ViewData["Title"] = "Login";
@@ -489,7 +489,7 @@
         <span>Add to home screen for quick access and offline support.</span>
     </div>
     <div class="pwa-actions">
-        <button id="pwaInstallBtn" class="btn-pwa-install">
+        <button id="pwaInstallBtn" class="btn-pwa-install" onclick="if(window.openDownloadModal) window.openDownloadModal();">
             <i class="bi bi-download"></i> Install
         </button>
         <button class="btn-pwa-close" onclick="document.getElementById('pwaInstallBanner').style.display='none';">
