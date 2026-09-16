@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+This file is used by the publish/package process of your Web project. You can customize the behavior of this process
+by editing this MSBuild file. In order to learn more about this please visit https://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project>
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <EncryptedPassword>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAs5r4p6urlkW0PPScLykziAAAAAACAAAAAAAQZgAAAAEAACAAAABsfwY4EsSsjTfT/fka4nEM42QaAC4zCi8dr01a+lTo8QAAAAAOgAAAAAIAACAAAADt2coz0+124zOwmOvEX+G1RAutWXX76ohnHYFUMdcu6iAAAAAOUI7NvP2So2/whOrhk8V2Hugx7y/S9TAg+wvfGxwwVEAAAADizyYHsrwxnpMlv9fKssqt0vuX2AOnqTwQu5xNmiTAJtZkTvbdn8tr2L0QYPyXLRPq59RH/PKHtNnv3sAFLg01</EncryptedPassword>
+    <History>True|2026-09-16T09:43:59.4189757Z||;True|2026-09-16T17:34:43.3013942+08:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="DefaultConnection">
+      <Value>Server=64.251.21.13%3bPort=3306%3bDatabase=tsujkcilc_canyoneeringdb%3bUid=tsujkcilc_ivmbooking1%3bPwd=%24O%3f%28Vu%2arb_7w%3bSslMode=None%3b</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+</Project>

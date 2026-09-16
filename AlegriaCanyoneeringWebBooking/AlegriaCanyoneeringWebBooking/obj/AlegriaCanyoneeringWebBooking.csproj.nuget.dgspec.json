@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Darius Cumpio\\Source\\Repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj": {}
+    "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Darius Cumpio\\Source\\Repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj": {
+    "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Darius Cumpio\\Source\\Repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj",
+        "projectUniqueName": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj",
         "projectName": "AlegriaCanyoneeringWebBooking",
-        "projectPath": "C:\\Users\\Darius Cumpio\\Source\\Repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj",
+        "projectPath": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking.csproj",
         "packagesPath": "C:\\Users\\Darius Cumpio\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Darius Cumpio\\Source\\Repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\obj\\",
+        "outputPath": "C:\\Users\\Darius Cumpio\\source\\repos\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\AlegriaCanyoneeringWebBooking\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -45,12 +45,16 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "BCrypt": {
+              "target": "Package",
+              "version": "[1.0.0, )"
+            },
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.0.3, )"
@@ -59,9 +63,17 @@
               "target": "Package",
               "version": "[2.0.151, )"
             },
+            "MSTest.TestFramework": {
+              "target": "Package",
+              "version": "[4.0.0, )"
+            },
             "MailKit": {
               "target": "Package",
-              "version": "[4.13.0, )"
+              "version": "[4.14.0, )"
+            },
+            "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation": {
+              "target": "Package",
+              "version": "[8.0.0, )"
             },
             "Microsoft.Azure.Amqp": {
               "target": "Package",
@@ -91,6 +103,14 @@
               "target": "Package",
               "version": "[9.0.8, )"
             },
+            "Microsoft.Extensions.Logging": {
+              "target": "Package",
+              "version": "[8.0.1, )"
+            },
+            "Microsoft.NET.Test.Sdk": {
+              "target": "Package",
+              "version": "[18.0.0, )"
+            },
             "MySql.Data": {
               "target": "Package",
               "version": "[9.4.0, )"
@@ -103,9 +123,35 @@
               "target": "Package",
               "version": "[1.6.0, )"
             },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.Annotations": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
             "System.Drawing.Common": {
               "target": "Package",
               "version": "[9.0.8, )"
+            },
+            "xunit": {
+              "target": "Package",
+              "version": "[2.9.3, )"
+            },
+            "xunit.assert": {
+              "target": "Package",
+              "version": "[2.9.3, )"
+            },
+            "xunit.extensibility.core": {
+              "target": "Package",
+              "version": "[2.9.3, )"
+            },
+            "xunit.runner.visualstudio": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.4.5, )"
             }
           },
           "imports": [
@@ -127,7 +173,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

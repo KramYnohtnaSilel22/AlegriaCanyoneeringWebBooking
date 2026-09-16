@@ -1,0 +1,126 @@
+﻿body {
+    font-family: 'Inter', sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+header {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem 2rem;
+    box-sizing: border-box;
+}
+
+.exit-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+    .exit-btn:hover {
+        background-color: #b02a37;
+    }
+
+    .exit-btn i {
+        margin-right: 6px;
+        font-size: 1rem;
+    }
+
+h2 {
+    margin-top: 0.5rem;
+    color: #333;
+}
+
+form {
+    margin: 1rem 0 2rem 0;
+    display: flex;
+    gap: 0.5rem;
+}
+
+input[type="text"] {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    width: 260px;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+    input[type="text"]:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0,123,255,0.3);
+        outline: none;
+    }
+
+button {
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+.guest-info {
+    background: white;
+    padding: 1.8rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-width: 420px;
+    width: 100%;
+    text-align: left;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+}
+
+    .guest-info.fade-out {
+        opacity: 0;
+    }
+
+    .guest-info h3 {
+        margin-top: 0;
+        color: #222;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .guest-info p {
+        margin: 0.4rem 0;
+        color: #444;
+        font-size: 0.95rem;
+    }
+
+        .guest-info p strong {
+            color: #000;
+        }
+
+@@media (max-width: 500px) {
+    input[type="text"] {
+        width: 180px;
+    }
+
+    .guest-info {
+        padding: 1rem 1.2rem;
+    }
+}
