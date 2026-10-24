@@ -784,6 +784,73 @@ namespace AlegriaCanyoneeringWebBooking.Controllers
             }
         }
 
+        // =========================================================
+        // UPDATE BATCH OPERATOR
+        // =========================================================
+        [HttpPost]
+        [Authorize(Roles = "Super Admin,Admin")]
+        public async Task<IActionResult> UpdateBatchOperator(string batchCode, int? operatorId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(batchCode))
+                    return Json(new { success = false, message = "Batch code is required." });
+
+                var batchNumbers = batchCode.StartsWith("BATCH-", StringComparison.OrdinalIgnoreCase)
+                    ? batchCode.Substring(6)
+                    : batchCode;
+
+                var guests = await _context.Guests.Where(g => g.Batch == batchNumbers).ToListAsync();
+                if (!guests.Any())
+                    return Json(new { success = false, message = "Batch not found." });
+
+                foreach (var guest in guests)
+                {
+                    guest.OperatorId = operatorId;
+                }
+
+                if (int.TryParse(batchNumbers, out int bId))
+                {
+                    var batchRecord = await _context.Batches.FirstOrDefaultAsync(b => b.BatchId == bId);
+                    if (batchRecord != null)
+                    {
+                        batchRecord.OperatorId = operatorId ?? 0;
+                    }
+                }
+
+                var assignments = await _context.BatchAssignments
+                    .Where(ba => ba.BatchCode == batchNumbers || ba.BatchCode == batchCode)
+                    .ToListAsync();
+                foreach (var ba in assignments)
+                {
+                    ba.OperatorId = operatorId;
+                }
+
+                await _context.SaveChangesAsync();
+
+                string newOperatorName = "No Operator";
+                if (operatorId.HasValue && operatorId.Value > 0)
+                {
+                    var op = await _context.Operators.FindAsync(operatorId.Value);
+                    if (op != null && !string.IsNullOrEmpty(op.BusinessName))
+                        newOperatorName = op.BusinessName;
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"Operator for Batch {batchNumbers} updated to '{newOperatorName}'.",
+                    operatorName = newOperatorName,
+                    operatorId = operatorId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating operator for batch {BatchCode}", batchCode);
+                return Json(new { success = false, message = "Error updating operator. Please try again." });
+            }
+        }
+
 
 
         // =========================================================
